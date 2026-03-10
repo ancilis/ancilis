@@ -8,6 +8,7 @@ import type { EvaluationResult } from "../engine/result.js";
 import { buildAction } from "./action-builder.js";
 import { registerToolsFromList } from "./discovery.js";
 import type { DriftEvent } from "./discovery.js";
+import { EvidenceStore } from "../evidence/store.js";
 import { scanResponse } from "./response-scanner.js";
 import type { ScanResult } from "./response-scanner.js";
 
@@ -45,6 +46,7 @@ export class AncilisMiddleware {
   private _evaluationLog: EvaluationResult[] = [];
   private _scanResults: ScanResult[] = [];
   private _driftEvents: DriftEvent[] = [];
+  private _evidenceStore: EvidenceStore;
 
   constructor(client: McpClientLike, options: AncilisMiddlewareOptions = {}) {
     if (options.config) {
@@ -58,10 +60,12 @@ export class AncilisMiddleware {
     this._client = client;
     this._registry = new ToolRegistry();
     this._engine = new Engine(this._config, { registry: this._registry });
+    this._evidenceStore = new EvidenceStore(this._config);
   }
 
   get config(): ResolvedConfig { return this._config; }
   get registry(): ToolRegistry { return this._registry; }
+  get evidenceStore(): EvidenceStore { return this._evidenceStore; }
   get evaluationLog(): EvaluationResult[] { return [...this._evaluationLog]; }
   get scanResults(): ScanResult[] { return [...this._scanResults]; }
   get driftEvents(): DriftEvent[] { return [...this._driftEvents]; }
@@ -74,15 +78,18 @@ export class AncilisMiddleware {
     const evaluation = this._engine.evaluate(action);
     this._evaluationLog.push(evaluation);
 
-    // 3. Enforce
+    // 3. Store evidence
+    await this._evidenceStore.store(evaluation, name);
+
+    // 4. Enforce
     if (evaluation.decision === "BLOCK") {
       throw new BlockedToolCallError(name, evaluation);
     }
 
-    // 4. Forward to MCP server
+    // 5. Forward to MCP server
     const result = await this._client.callTool({ name, arguments: args });
 
-    // 5. Scan response
+    // 6. Scan response
     const responseText = this.extractResponseText(result);
     if (responseText) {
       const scan = scanResponse(name, responseText);
@@ -91,7 +98,7 @@ export class AncilisMiddleware {
       }
     }
 
-    // 6. Return
+    // 7. Return
     return result;
   }
 

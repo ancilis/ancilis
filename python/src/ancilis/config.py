@@ -166,6 +166,7 @@ class ResolvedConfig:
         self.scope_max_actions_per_minute: int | None = None
         self.scope_allowed_destinations: list[str] = []
         self.scope_blocked_destinations: list[str] = []
+        self.active_certifications: list[str] = []
 
 
 # --- Config Parser ---

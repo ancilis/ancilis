@@ -15,6 +15,7 @@ from ancilis.engine.registry import ToolRegistry
 from ancilis.engine.result import EvaluationResult
 from ancilis.middleware.action_builder import build_action
 from ancilis.middleware.discovery import DriftEvent, register_tools_from_list
+from ancilis.evidence.store import EvidenceStore
 from ancilis.middleware.response_scanner import ScanResult, scan_response
 
 logger = logging.getLogger("ancilis.middleware")
@@ -56,6 +57,11 @@ class AncilisMiddleware:
         self._evaluation_log: list[EvaluationResult] = []
         self._scan_results: list[ScanResult] = []
         self._drift_events: list[DriftEvent] = []
+        self._evidence_store = EvidenceStore(self._config)
+
+    @property
+    def evidence_store(self) -> EvidenceStore:
+        return self._evidence_store
 
     @property
     def config(self) -> ResolvedConfig:
@@ -90,24 +96,27 @@ class AncilisMiddleware:
         evaluation = self._engine.evaluate(action)
         self._evaluation_log.append(evaluation)
 
+        # 3. Store evidence
+        self._evidence_store.store(evaluation, tool_name=name)
+
         logger.info(
             "Evaluated tool call '%s': decision=%s, mode=%s",
             name, evaluation.decision, evaluation.mode,
         )
 
-        # 3. Enforce decision
+        # 4. Enforce decision
         if evaluation.decision == "BLOCK":
             logger.warning("BLOCKED tool call '%s': %s", name, evaluation.decision_reason)
             raise BlockedToolCallError(name, evaluation)
 
-        # 4. Forward to MCP server
+        # 5. Forward to MCP server
         try:
             result = await self._session.call_tool(name, arguments)
         except Exception:
             logger.exception("MCP server error calling tool '%s'", name)
             raise
 
-        # 5. Scan response
+        # 6. Scan response
         response_text = self._extract_response_text(result)
         if response_text:
             scan = scan_response(name, response_text)
@@ -118,7 +127,7 @@ class AncilisMiddleware:
                 for finding in scan.encryption_findings:
                     logger.info("Positive finding: %s", finding.detail)
 
-        # 6. Return result to agent
+        # 7. Return result to agent
         return result
 
     async def list_tools(self) -> Any:
