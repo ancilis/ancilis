@@ -1,0 +1,33 @@
+{
+  "id": "hipaa",
+  "name": "HIPAA Security Rule",
+  "version": "0.1",
+  "description": "Healthcare data protection overlay. Activated by health_records or patient_data declarations.",
+  "triggered_by_classifications": ["DC-PHI"],
+  "applicable_data_types": ["health_records", "patient_data"],
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["session_id", "access_purpose"],
+      "regulatory_citation": "HIPAA 164.312(d) - Person or entity authentication"
+    },
+    "PR-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["minimum_necessary_justification"],
+      "regulatory_citation": "HIPAA 164.502(b) - Minimum necessary standard"
+    },
+    "PR-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["phi_categories_detected", "encryption_status"],
+      "regulatory_citation": "HIPAA 164.312(e)(1) - Transmission security"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["access_type", "phi_accessed"],
+      "regulatory_citation": "HIPAA 164.312(b) - Audit controls"
+    }
+  },
+  "evidence_retention_minimum_days": 2190,
+  "human_oversight_required": false,
+  "notes": "HIPAA Security Rule requires audit controls, access controls, transmission security, and integrity controls. This overlay tightens baseline thresholds and adds healthcare-specific evidence fields."
+}

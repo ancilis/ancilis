@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Ancilis Configuration",
+  "description": "Schema for ancilis.yaml configuration files",
+  "type": "object",
+  "required": ["agent"],
+  "additionalProperties": true,
+  "properties": {
+    "agent": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Agent identifier"
+        },
+        "description": {
+          "type": "string",
+          "default": "",
+          "description": "Human-readable description"
+        },
+        "owner": {
+          "type": "string",
+          "default": "",
+          "description": "Human owner for accountability"
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["audit", "enforce"],
+          "default": "audit",
+          "description": "audit: evaluate all, log results, allow all actions. enforce: evaluate all, block policy violations."
+        },
+        "controls": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": {
+            "^(PR-0[1-5]|DE-01)$": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": true
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "tools": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allowed": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Allowlist. Empty = discover at runtime, all allowed."
+            },
+            "blocked": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Blocklist. Takes precedence over allowed."
+            }
+          }
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_actions_per_minute": {
+              "type": ["integer", "null"],
+              "default": null,
+              "description": "Rate limiting. null = no limit."
+            },
+            "allowed_destinations": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Where the agent can send data. Empty = unrestricted."
+            },
+            "blocked_destinations": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [],
+              "description": "Where the agent cannot send data."
+            }
+          }
+        }
+      }
+    },
+    "data_handling": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "health_records", "patient_data", "personal_info", "credit_cards",
+          "financial_records", "government_documents", "childrens_data",
+          "public_data", "biometric_data", "legal_data", "trade_secrets",
+          "export_controlled", "critical_infrastructure", "ai_training_data",
+          "federal_contract_info", "mnpi"
+        ]
+      },
+      "description": "Declaring data types activates compliance overlays."
+    },
+    "compliance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "overlays": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Which overlays to activate. Auto-detected from data_handling if omitted."
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "storage": {
+              "type": "string",
+              "enum": ["local"],
+              "default": "local",
+              "description": "Evidence storage backend."
+            },
+            "retention_days": {
+              "type": "integer",
+              "default": 365,
+              "minimum": 1,
+              "description": "How long to keep evidence records."
+            }
+          }
+        }
+      }
+    }
+  }
+}

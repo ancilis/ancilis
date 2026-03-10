@@ -1,0 +1,24 @@
+{
+  "id": "PR-05",
+  "name": "Audit Logging",
+  "function": "PROTECT",
+  "csf_mapping": "PR.DS",
+  "description": "Every action generates a tamper-evident log entry with full context for incident investigation and compliance demonstration.",
+  "threat_addressed": "Without logging, incidents cannot be investigated and compliance cannot be demonstrated. Missing audit trails make it impossible to reconstruct agent behavior during security events.",
+  "enforcement_mechanism": "Every action generates tamper-evident log entry with: timestamp, agent identity, action type, target, parameters (sensitive data redacted), evaluation results, and decision outcome.",
+  "security_outcome": {
+    "pass": "Log entry generated with all required fields.",
+    "fail": "Missing or incomplete log entry."
+  },
+  "evidence_fields": [
+    "agent_id",
+    "action_type",
+    "target",
+    "parameters_redacted",
+    "evaluation_results",
+    "decision_outcome",
+    "timestamp"
+  ],
+  "default_enabled": true,
+  "baseline": true
+}

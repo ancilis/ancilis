@@ -1,0 +1,28 @@
+{
+  "id": "eu-ai-act",
+  "name": "EU AI Act",
+  "version": "0.1",
+  "description": "EU AI Act overlay for high-risk AI systems. Activated by AI training data or biometric data declarations.",
+  "triggered_by_classifications": ["DC-AI", "DC-BIO"],
+  "applicable_data_types": ["ai_training_data", "biometric_data"],
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["ai_system_id", "risk_classification"],
+      "regulatory_citation": "EU AI Act Art. 16 - Obligations of providers of high-risk AI systems"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["ai_decision_rationale", "human_oversight_status", "risk_level"],
+      "regulatory_citation": "EU AI Act Art. 12 - Record-keeping"
+    },
+    "DE-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["performance_metrics", "drift_indicators", "bias_indicators"],
+      "regulatory_citation": "EU AI Act Art. 9(2) - Risk management, ongoing monitoring"
+    }
+  },
+  "evidence_retention_minimum_days": 3650,
+  "human_oversight_required": true,
+  "notes": "EU AI Act requires risk classification, human oversight for high-risk systems, transparency, and extensive record-keeping. Biometric identification systems are classified as high-risk. This overlay enforces strict monitoring and human oversight requirements."
+}

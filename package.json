@@ -1,0 +1,60 @@
+{
+  "name": "ancilis",
+  "version": "0.1.0",
+  "description": "Runtime evaluation and policy enforcement for AI agent tool calls",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "shared"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint typescript/src",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "mcp",
+    "middleware",
+    "policy",
+    "evaluation",
+    "compliance",
+    "runtime"
+  ],
+  "author": {
+    "name": "Kevin Bauer",
+    "email": "kevin.e.bauer@gmail.com"
+  },
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kevbauer/ancilis.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "yaml": "^2.4.0",
+    "duckdb": "^1.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "eslint": "^9.0.0",
+    "@types/node": "^22.0.0"
+  }
+}
