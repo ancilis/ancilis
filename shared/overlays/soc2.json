@@ -1,0 +1,43 @@
+{
+  "id": "soc2",
+  "name": "SOC 2 Type II",
+  "version": "0.1",
+  "description": "SOC 2 Type II overlay. Universal baseline for B2B SaaS. Activated by any data type declaration.",
+  "triggered_by_classifications": ["DC-PHI", "DC-CHD", "DC-CUI", "DC-MNPI", "DC-PII", "DC-FIN", "DC-GOV", "DC-AI", "DC-ITAR", "DC-CRIT", "DC-MINOR", "DC-BIO", "DC-FCI", "DC-GEN", "DC-LEGAL", "DC-IP"],
+  "applicable_data_types": ["health_records", "patient_data", "personal_info", "credit_cards", "financial_records", "government_documents", "childrens_data", "public_data", "biometric_data", "legal_data", "trade_secrets", "export_controlled", "critical_infrastructure", "ai_training_data", "federal_contract_info", "mnpi"],
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "standard",
+      "additional_evidence_fields": ["authentication_method"],
+      "regulatory_citation": "SOC 2 CC6.1 - Logical and physical access controls"
+    },
+    "PR-02": {
+      "threshold_adjustment": "standard",
+      "additional_evidence_fields": ["access_review_date"],
+      "regulatory_citation": "SOC 2 CC6.3 - Role-based access and least privilege"
+    },
+    "PR-03": {
+      "threshold_adjustment": "standard",
+      "additional_evidence_fields": ["change_management_ticket"],
+      "regulatory_citation": "SOC 2 CC8.1 - Change management"
+    },
+    "PR-04": {
+      "threshold_adjustment": "standard",
+      "additional_evidence_fields": ["data_classification"],
+      "regulatory_citation": "SOC 2 CC6.7 - Restriction of data transmission"
+    },
+    "PR-05": {
+      "threshold_adjustment": "standard",
+      "additional_evidence_fields": ["log_integrity_hash"],
+      "regulatory_citation": "SOC 2 CC7.2 - Monitoring of system components"
+    },
+    "DE-01": {
+      "threshold_adjustment": "standard",
+      "additional_evidence_fields": ["alert_severity", "response_action"],
+      "regulatory_citation": "SOC 2 CC7.3 - Evaluation of security events"
+    }
+  },
+  "evidence_retention_minimum_days": 365,
+  "human_oversight_required": false,
+  "notes": "SOC 2 Type II is the universal B2B compliance baseline. Covers Trust Services Criteria: CC1 (Control Environment), CC6 (Logical Access), CC7 (System Operations), CC8 (Change Management). All controls at standard threshold with additional evidence fields for audit trail completeness."
+}

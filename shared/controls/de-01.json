@@ -1,0 +1,24 @@
+{
+  "id": "DE-01",
+  "name": "Behavioral Anomaly Detection",
+  "function": "DETECT",
+  "csf_mapping": "DE.AE",
+  "description": "Detects anomalous agent behavior by comparing real-time activity against per-agent behavioral baselines.",
+  "threat_addressed": "Compromised agents operating within authorized scope but exhibiting anomalous behavior — unusual patterns, volume spikes, rapid sequences — evade scope-based controls.",
+  "enforcement_mechanism": "Per-agent behavioral baselines built from operational history. Real-time comparison of current activity against baseline. Anomalies trigger alerts. MVP tracks tool call frequency, scope patterns, and timing.",
+  "security_outcome": {
+    "pass": "Behavior within baseline parameters.",
+    "fail": "Behavioral anomaly detected — deviation from established baseline."
+  },
+  "evidence_fields": [
+    "agent_id",
+    "baseline_metric",
+    "current_value",
+    "baseline_value",
+    "deviation_score",
+    "anomaly_type",
+    "timestamp"
+  ],
+  "default_enabled": true,
+  "baseline": true
+}

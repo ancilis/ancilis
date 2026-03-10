@@ -1,0 +1,21 @@
+{
+  "id": "PR-01",
+  "name": "Agent Identity & Authentication",
+  "function": "PROTECT",
+  "csf_mapping": "PR.AA",
+  "description": "Verifies agent presents valid credentials for every action. No anonymous tool calls.",
+  "threat_addressed": "Agents operating without verified identity cannot be held accountable. Unauthorized agents can access tools and data without attribution, making incident investigation and compliance demonstration impossible.",
+  "enforcement_mechanism": "Every agent action must include a verified identity token. Actions without valid identity are blocked (enforce) or flagged (audit). Identity verified against registered agent credentials.",
+  "security_outcome": {
+    "pass": "Agent identity verified for this action.",
+    "fail": "Agent identity missing or invalid for this action."
+  },
+  "evidence_fields": [
+    "agent_id",
+    "identity_token_hash",
+    "verification_result",
+    "timestamp"
+  ],
+  "default_enabled": true,
+  "baseline": true
+}

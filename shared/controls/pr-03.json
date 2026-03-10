@@ -1,0 +1,24 @@
+{
+  "id": "PR-03",
+  "name": "Tool Provenance Verification",
+  "function": "PROTECT",
+  "csf_mapping": "PR.DS",
+  "description": "Verifies tool registration, approval, version, and description integrity before every invocation.",
+  "threat_addressed": "Tool descriptions modified after approval constitute a semantic supply chain attack. Agents following tampered descriptions may execute unintended operations.",
+  "enforcement_mechanism": "Before every tool invocation — verify tool is registered, approved, version-matched, and description hash matches audited baseline. Mismatch triggers block and alert.",
+  "security_outcome": {
+    "pass": "Tool provenance verified — registered, approved, version and hash match.",
+    "fail": "Unregistered tool, hash mismatch, or version mismatch detected."
+  },
+  "evidence_fields": [
+    "agent_id",
+    "tool_name",
+    "tool_version",
+    "description_hash",
+    "registered_hash",
+    "verification_result",
+    "timestamp"
+  ],
+  "default_enabled": true,
+  "baseline": true
+}

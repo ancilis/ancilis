@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+.venv/
+venv/
+env/
+.python-version
+
+# TypeScript / Node
+node_modules/
+dist/
+*.js.map
+*.d.ts
+!src/**/*.d.ts
+.npm
+.yarn/
+*.tsbuildinfo
+
+# Testing
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# DuckDB evidence storage
+*.duckdb
+*.duckdb.wal
+
+# Ancilis
+ancilis-reports/
+.ancilis-cache/

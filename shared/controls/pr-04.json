@@ -1,0 +1,24 @@
+{
+  "id": "PR-04",
+  "name": "Data Exposure Prevention",
+  "function": "PROTECT",
+  "csf_mapping": "PR.DS",
+  "description": "Scans outbound tool call parameters for sensitive data patterns and blocks transmission to unauthorized destinations.",
+  "threat_addressed": "Sensitive data leaving agent's control through outbound tool calls can result in data breaches, regulatory violations, and loss of confidential information.",
+  "enforcement_mechanism": "Scan outbound tool call parameters for sensitive data patterns. Block or flag transmission to unauthorized destinations. MVP implements Layer A (outbound action scanning) only.",
+  "security_outcome": {
+    "pass": "No sensitive data detected in outbound parameters, or destination authorized.",
+    "fail": "Sensitive data detected going to unauthorized destination."
+  },
+  "evidence_fields": [
+    "agent_id",
+    "tool_name",
+    "destination",
+    "data_patterns_detected",
+    "destination_authorized",
+    "evaluation_result",
+    "timestamp"
+  ],
+  "default_enabled": true,
+  "baseline": true
+}

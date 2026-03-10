@@ -1,0 +1,23 @@
+{
+  "id": "PR-02",
+  "name": "Permission Scope Enforcement",
+  "function": "PROTECT",
+  "csf_mapping": "PR.AA",
+  "description": "Enforces machine-readable permission boundaries per agent. Every action evaluated against declared scope.",
+  "threat_addressed": "Agents exceeding authorized scope can access unauthorized data and tools, leading to data breaches and compliance violations.",
+  "enforcement_mechanism": "Machine-readable scope definition per agent. Per-action evaluation against scope using security.tools.allowed, security.tools.blocked, and security.scope configuration. Out-of-scope actions are blocked (enforce) or flagged (audit).",
+  "security_outcome": {
+    "pass": "Action within declared permission scope.",
+    "fail": "Action outside declared permission scope."
+  },
+  "evidence_fields": [
+    "agent_id",
+    "action_type",
+    "target_resource",
+    "scope_definition",
+    "evaluation_result",
+    "timestamp"
+  ],
+  "default_enabled": true,
+  "baseline": true
+}

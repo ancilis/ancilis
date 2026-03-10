@@ -1,0 +1,119 @@
+{
+  "version": "0.1",
+  "classifications": [
+    {
+      "code": "DC-PHI",
+      "name": "Protected Health Information",
+      "description": "Health data subject to HIPAA Security Rule, HITECH.",
+      "overlays": ["hipaa", "gdpr"]
+    },
+    {
+      "code": "DC-CHD",
+      "name": "Cardholder Data",
+      "description": "Payment card data subject to PCI-DSS v4.0.",
+      "overlays": ["pci-dss"]
+    },
+    {
+      "code": "DC-CUI",
+      "name": "Controlled Unclassified Information",
+      "description": "Government data subject to CMMC Level 2, NIST 800-171r3.",
+      "overlays": ["cmmc", "fedramp"]
+    },
+    {
+      "code": "DC-MNPI",
+      "name": "Material Non-Public Information",
+      "description": "Securities data subject to SEC Reg FD, SOX.",
+      "overlays": ["sec-cyber"]
+    },
+    {
+      "code": "DC-PII",
+      "name": "Personally Identifiable Information",
+      "description": "Personal data subject to GDPR, CCPA/CPRA.",
+      "overlays": ["gdpr"]
+    },
+    {
+      "code": "DC-FIN",
+      "name": "Financial Services Data",
+      "description": "Financial data subject to GLBA, BSA/AML, SOX, DORA.",
+      "overlays": ["glba", "soc2"]
+    },
+    {
+      "code": "DC-GOV",
+      "name": "Government System Data",
+      "description": "Federal system data subject to FedRAMP, FISMA.",
+      "overlays": ["fedramp"]
+    },
+    {
+      "code": "DC-AI",
+      "name": "AI Training / Model Data",
+      "description": "AI system data subject to EU AI Act, NIST AI RMF.",
+      "overlays": ["eu-ai-act"]
+    },
+    {
+      "code": "DC-ITAR",
+      "name": "Export-Controlled Data",
+      "description": "Defense and dual-use data subject to ITAR, EAR.",
+      "overlays": ["itar"]
+    },
+    {
+      "code": "DC-CRIT",
+      "name": "Critical Infrastructure OT Data",
+      "description": "SCADA/ICS data subject to NERC CIP, NIS2.",
+      "overlays": ["nerc-cip", "nis2"]
+    },
+    {
+      "code": "DC-MINOR",
+      "name": "Children's Data",
+      "description": "Data from minors subject to COPPA, GDPR Art. 8, FERPA.",
+      "overlays": ["coppa", "ferpa"]
+    },
+    {
+      "code": "DC-BIO",
+      "name": "Biometric Data",
+      "description": "Biometric identifiers subject to BIPA, GDPR Art. 9, EU AI Act.",
+      "overlays": ["gdpr", "eu-ai-act"]
+    },
+    {
+      "code": "DC-FCI",
+      "name": "Federal Contract Information",
+      "description": "Non-public federal contract data subject to CMMC Level 1.",
+      "overlays": ["cmmc"]
+    },
+    {
+      "code": "DC-GEN",
+      "name": "General / Public Data",
+      "description": "Non-sensitive data. Baseline controls apply.",
+      "overlays": ["soc2"]
+    },
+    {
+      "code": "DC-LEGAL",
+      "name": "Legal Privileged Data",
+      "description": "Attorney-client privileged communications, work product.",
+      "overlays": []
+    },
+    {
+      "code": "DC-IP",
+      "name": "Trade Secrets & Proprietary",
+      "description": "Trade secrets, proprietary algorithms, competitive intelligence.",
+      "overlays": []
+    }
+  ],
+  "developer_type_mapping": {
+    "health_records": ["DC-PHI", "DC-PII"],
+    "patient_data": ["DC-PHI", "DC-PII"],
+    "personal_info": ["DC-PII"],
+    "credit_cards": ["DC-CHD", "DC-FIN"],
+    "financial_records": ["DC-FIN"],
+    "government_documents": ["DC-GOV", "DC-CUI"],
+    "childrens_data": ["DC-MINOR"],
+    "public_data": ["DC-GEN"],
+    "biometric_data": ["DC-BIO"],
+    "legal_data": ["DC-LEGAL"],
+    "trade_secrets": ["DC-IP"],
+    "export_controlled": ["DC-ITAR"],
+    "critical_infrastructure": ["DC-CRIT"],
+    "ai_training_data": ["DC-AI"],
+    "federal_contract_info": ["DC-FCI"],
+    "mnpi": ["DC-MNPI"]
+  }
+}
