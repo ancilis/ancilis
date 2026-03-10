@@ -151,6 +151,7 @@ class UnavailableOverlay:
 class ResolvedConfig:
     def __init__(self) -> None:
         self.agent_name: str = ""
+        self.agent_owner: str = ""
         self.mode: str = "audit"
         self.controls: dict[str, ControlStatus] = {}
         self.data_classifications: dict[str, list[str]] = {}  # data_type -> [DC codes]
@@ -160,6 +161,11 @@ class ResolvedConfig:
         self.evidence_retention_days: int = 365
         self.human_oversight_required: bool = False
         self.warnings: list[str] = []
+        self.tools_allowed: list[str] = []
+        self.tools_blocked: list[str] = []
+        self.scope_max_actions_per_minute: int | None = None
+        self.scope_allowed_destinations: list[str] = []
+        self.scope_blocked_destinations: list[str] = []
 
 
 # --- Config Parser ---
@@ -198,8 +204,14 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     """Resolve a validated config into full runtime configuration."""
     result = ResolvedConfig()
     result.agent_name = config.agent.name
+    result.agent_owner = config.agent.owner
     result.mode = config.security.mode
     result.warnings = warnings or []
+    result.tools_allowed = list(config.security.tools.allowed)
+    result.tools_blocked = list(config.security.tools.blocked)
+    result.scope_max_actions_per_minute = config.security.scope.max_actions_per_minute
+    result.scope_allowed_destinations = list(config.security.scope.allowed_destinations)
+    result.scope_blocked_destinations = list(config.security.scope.blocked_destinations)
 
     # Load shared data
     control_defs = load_control_definitions()
