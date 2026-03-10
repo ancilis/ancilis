@@ -167,6 +167,7 @@ export interface ResolvedConfig {
   scopeMaxActionsPerMinute: number | null;
   scopeAllowedDestinations: string[];
   scopeBlockedDestinations: string[];
+  activeCertifications: string[];
 }
 
 // --- Validation ---
@@ -235,6 +236,7 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
     scopeMaxActionsPerMinute: config.security.scope.max_actions_per_minute,
     scopeAllowedDestinations: [...config.security.scope.allowed_destinations],
     scopeBlockedDestinations: [...config.security.scope.blocked_destinations],
+    activeCertifications: [],
   };
 
   const controlDefs = loadControlDefinitions();

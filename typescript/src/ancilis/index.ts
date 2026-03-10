@@ -8,3 +8,6 @@ export type { Action, ToolInfo, ActionParameters, ActionContext, ControlResult, 
 
 export { AncilisMiddleware, BlockedToolCallError } from "./middleware/index.js";
 export type { AncilisMiddlewareOptions, McpClientLike, ScanResult, EncryptionFinding, DriftEvent } from "./middleware/index.js";
+
+export { EvidenceStore, GENESIS_SEED, canonicalPayload, computeHash } from "./evidence/index.js";
+export type { EvidenceRecord } from "./evidence/index.js";

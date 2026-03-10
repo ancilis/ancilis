@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Ancilis Evidence Record",
+  "description": "Immutable evidence record from a control engine evaluation, stored with cryptographic hash chain",
+  "type": "object",
+  "required": [
+    "record_id",
+    "evaluation_id",
+    "timestamp",
+    "agent_id",
+    "tool_name",
+    "decision",
+    "mode",
+    "control_results",
+    "active_overlays",
+    "data_classifications",
+    "active_certifications",
+    "record_hash",
+    "previous_hash",
+    "total_duration_ms"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "record_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this evidence record"
+    },
+    "evaluation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "References the EvaluationResult that generated this record"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when the evaluation occurred"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent that was evaluated"
+    },
+    "tool_name": {
+      "type": "string",
+      "description": "Name of the tool that was called"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ALLOW", "BLOCK", "FLAG"],
+      "description": "Final enforcement decision"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["audit", "enforce"],
+      "description": "Security mode during evaluation"
+    },
+    "control_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["control_id", "control_name", "result", "detail"],
+        "properties": {
+          "control_id": { "type": "string" },
+          "control_name": { "type": "string" },
+          "result": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "SKIP", "ERROR"]
+          },
+          "detail": { "type": "string" },
+          "evidence_data": {
+            "type": "object",
+            "description": "Control-specific evidence fields"
+          },
+          "duration_ms": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Results from each control evaluation"
+    },
+    "active_overlays": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Overlay IDs active during evaluation"
+    },
+    "data_classifications": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "DC codes active during evaluation"
+    },
+    "active_certifications": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Certification targets active for this agent (always array, never null)"
+    },
+    "record_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the canonical record content"
+    },
+    "previous_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the previous record in the chain (genesis seed for first record)"
+    },
+    "total_duration_ms": {
+      "type": "number",
+      "description": "Total evaluation time in milliseconds"
+    }
+  }
+}
