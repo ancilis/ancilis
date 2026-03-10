@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Ancilis Action",
+  "description": "Standardized representation of an agent action for control evaluation",
+  "type": "object",
+  "required": ["action_id", "timestamp", "agent_id", "action_type", "tool", "parameters"],
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this action"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when the action was initiated"
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the agent performing the action"
+    },
+    "agent_owner": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Human owner if configured"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": ["tool_call", "api_request", "data_access"],
+      "description": "Type of action being performed"
+    },
+    "tool": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Tool identifier"
+        },
+        "version": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Tool version if known"
+        },
+        "server": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "MCP server identifier if applicable"
+        },
+        "description_hash": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "SHA-256 of tool description for provenance checking"
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "required": ["raw", "parameter_hash"],
+      "additionalProperties": false,
+      "properties": {
+        "raw": {
+          "type": "object",
+          "description": "The actual parameters being passed to the tool"
+        },
+        "parameter_hash": {
+          "type": "string",
+          "description": "SHA-256 of serialized parameters for evidence"
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "session_id": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "Session identifier"
+        },
+        "parent_action_id": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "If this action was triggered by another action"
+        },
+        "data_classifications": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "DC codes from config"
+        },
+        "active_overlays": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Overlay IDs currently active"
+        }
+      }
+    }
+  }
+}

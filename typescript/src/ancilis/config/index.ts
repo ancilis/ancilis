@@ -152,6 +152,7 @@ export interface UnavailableOverlay {
 
 export interface ResolvedConfig {
   agentName: string;
+  agentOwner: string;
   mode: string;
   controls: Map<string, ControlStatus>;
   dataClassifications: Map<string, string[]>;
@@ -161,6 +162,11 @@ export interface ResolvedConfig {
   evidenceRetentionDays: number;
   humanOversightRequired: boolean;
   warnings: string[];
+  toolsAllowed: string[];
+  toolsBlocked: string[];
+  scopeMaxActionsPerMinute: number | null;
+  scopeAllowedDestinations: string[];
+  scopeBlockedDestinations: string[];
 }
 
 // --- Validation ---
@@ -214,6 +220,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
 function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfig {
   const result: ResolvedConfig = {
     agentName: config.agent.name,
+    agentOwner: config.agent.owner,
     mode: config.security.mode,
     controls: new Map(),
     dataClassifications: new Map(),
@@ -223,6 +230,11 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
     evidenceRetentionDays: config.compliance.evidence.retention_days,
     humanOversightRequired: false,
     warnings,
+    toolsAllowed: [...config.security.tools.allowed],
+    toolsBlocked: [...config.security.tools.blocked],
+    scopeMaxActionsPerMinute: config.security.scope.max_actions_per_minute,
+    scopeAllowedDestinations: [...config.security.scope.allowed_destinations],
+    scopeBlockedDestinations: [...config.security.scope.blocked_destinations],
   };
 
   const controlDefs = loadControlDefinitions();

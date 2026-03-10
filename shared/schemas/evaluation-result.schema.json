@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Ancilis Evaluation Result",
+  "description": "Structured result from control engine evaluation of an action",
+  "type": "object",
+  "required": ["evaluation_id", "action_id", "timestamp", "agent_id", "mode", "control_results", "decision", "decision_reason", "total_duration_ms"],
+  "additionalProperties": false,
+  "properties": {
+    "evaluation_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this evaluation"
+    },
+    "action_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "References the Action that was evaluated"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp when evaluation completed"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Agent that was evaluated"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["audit", "enforce"],
+      "description": "Security mode during evaluation"
+    },
+    "control_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["control_id", "control_name", "result", "detail", "evidence_data", "duration_ms"],
+        "additionalProperties": false,
+        "properties": {
+          "control_id": {
+            "type": "string",
+            "description": "Control identifier"
+          },
+          "control_name": {
+            "type": "string",
+            "description": "Human-readable control name"
+          },
+          "result": {
+            "type": "string",
+            "enum": ["PASS", "FAIL", "SKIP", "ERROR"],
+            "description": "Evaluation result"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Human-readable explanation"
+          },
+          "evidence_data": {
+            "type": "object",
+            "description": "Control-specific evidence fields"
+          },
+          "duration_ms": {
+            "type": "number",
+            "description": "Evaluation duration in milliseconds"
+          }
+        }
+      }
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["ALLOW", "BLOCK", "FLAG"],
+      "description": "Final decision"
+    },
+    "decision_reason": {
+      "type": "string",
+      "description": "Why this decision was made"
+    },
+    "active_overlays": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Overlay IDs active during evaluation"
+    },
+    "data_classifications": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "DC codes active during evaluation"
+    },
+    "total_duration_ms": {
+      "type": "number",
+      "description": "Total evaluation time in milliseconds"
+    }
+  }
+}
