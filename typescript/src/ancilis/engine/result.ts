@@ -7,6 +7,9 @@ export interface ControlResult {
   detail: string;
   evidenceData: Record<string, unknown>;
   durationMs: number;
+  displayName?: string;
+  displayDetail?: string;
+  remediationHint?: string;
 }
 
 export interface EvaluationResult {
