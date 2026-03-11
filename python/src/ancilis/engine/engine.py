@@ -6,7 +6,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 
-from ancilis.config import ResolvedConfig
+from ancilis.config import ResolvedConfig, load_control_definitions
 from ancilis.engine.action import Action
 from ancilis.engine.evaluators.base import ControlEvaluator
 from ancilis.engine.evaluators.pr01_identity import PR01IdentityEvaluator
@@ -34,6 +34,7 @@ class Engine:
     ) -> None:
         self.config = config
         self.registry = registry or ToolRegistry()
+        self._control_defs = load_control_definitions()
         self._evaluators: dict[str, ControlEvaluator] = {
             "PR-01": PR01IdentityEvaluator(),
             "PR-02": PR02ScopeEvaluator(rate_tracker=rate_tracker),
@@ -91,6 +92,14 @@ class Engine:
                         duration_ms=0.0,
                     )
                 )
+
+        # Post-process: fill display fields from control definitions
+        for cr in control_results:
+            cdef = self._control_defs.get(cr.control_id)
+            if cdef and not cr.display_name:
+                cr.display_name = cdef.get("display_name", cr.control_name)
+                cr.display_detail = cdef.get("display_detail", "")
+                cr.remediation_hint = cdef.get("remediation_hint_template", "")
 
         # Decision logic
         has_failure = any(r.result in ("FAIL", "ERROR") for r in control_results)

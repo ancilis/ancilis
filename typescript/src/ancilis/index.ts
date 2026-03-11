@@ -17,3 +17,8 @@ export type { ActivationSpec, ClassificationRecommendation, CertificationUpgrade
 
 export { PR05AuditEvaluator, DE01BaselineEvaluator } from "./controls/index.js";
 export type { BaselineWindow, DeviationFlag } from "./controls/index.js";
+
+export { ReportGenerator, renderTerminal, renderMarkdown } from "./report/index.js";
+export type { ReportData, EvidenceSummary } from "./report/index.js";
+
+export { formatStatus, validateAndFormat, approveTool } from "./cli/index.js";

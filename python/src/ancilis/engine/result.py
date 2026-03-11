@@ -10,10 +10,13 @@ from typing import Any
 class ControlResult:
     control_id: str
     control_name: str
-    result: str  # "PASS" | "FAIL" | "SKIP" | "ERROR"
+    result: str  # "PASS" | "FAIL" | "SKIP" | "ERROR" | "FLAG"
     detail: str
     evidence_data: dict[str, Any] = field(default_factory=dict)
     duration_ms: float = 0.0
+    display_name: str = ""
+    display_detail: str = ""
+    remediation_hint: str = ""
 
 
 @dataclass

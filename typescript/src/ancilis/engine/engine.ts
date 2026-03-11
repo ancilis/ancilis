@@ -1,6 +1,9 @@
 /** Decision engine — orchestrates control evaluation. */
 
 import { randomUUID } from "node:crypto";
+import { readFileSync, readdirSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ResolvedConfig } from "../config/index.js";
 import type { Action } from "./action.js";
 import type { ControlEvaluator } from "./evaluators/base.js";
@@ -15,10 +18,26 @@ import type { BaselineWindow } from "../controls/de01Baseline.js";
 import { ToolRegistry } from "./registry.js";
 import type { ControlResult, EvaluationResult } from "./result.js";
 
+const __engineFilename = fileURLToPath(import.meta.url);
+const CONTROLS_DIR = resolve(__engineFilename, "..", "..", "..", "..", "..", "shared", "controls");
+
+function loadControlDefs(): Map<string, Record<string, unknown>> {
+  const controls = new Map<string, Record<string, unknown>>();
+  try {
+    const files = readdirSync(CONTROLS_DIR).filter(f => f.endsWith(".json")).sort();
+    for (const file of files) {
+      const data = JSON.parse(readFileSync(join(CONTROLS_DIR, file), "utf-8"));
+      controls.set(data.id, data);
+    }
+  } catch { /* shared dir may not exist in tests */ }
+  return controls;
+}
+
 export class Engine {
   private config: ResolvedConfig;
   readonly registry: ToolRegistry;
   private evaluators: Map<string, ControlEvaluator>;
+  private controlDefs: Map<string, Record<string, unknown>>;
 
   constructor(
     config: ResolvedConfig,
@@ -26,6 +45,7 @@ export class Engine {
   ) {
     this.config = config;
     this.registry = options?.registry ?? new ToolRegistry();
+    this.controlDefs = loadControlDefs();
     this.evaluators = new Map<string, ControlEvaluator>([
       ["PR-01", new PR01IdentityEvaluator()],
       ["PR-02", new PR02ScopeEvaluator(options?.rateTracker)],
@@ -78,6 +98,16 @@ export class Engine {
           evidenceData: { error: String(e) },
           durationMs: 0,
         });
+      }
+    }
+
+    // Post-process: fill display fields from control definitions
+    for (const cr of controlResults) {
+      const cdef = this.controlDefs.get(cr.controlId);
+      if (cdef && !cr.displayName) {
+        cr.displayName = (cdef.display_name as string) ?? cr.controlName;
+        cr.displayDetail = (cdef.display_detail as string) ?? "";
+        cr.remediationHint = (cdef.remediation_hint_template as string) ?? "";
       }
     }
 

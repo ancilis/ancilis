@@ -40,7 +40,7 @@ dev = [
 ]
 
 [project.scripts]
-ancilis = "ancilis.cli:main"
+ancilis = "ancilis.cli.main:cli"
 
 [project.urls]
 Homepage = "https://github.com/kevbauer/ancilis"
