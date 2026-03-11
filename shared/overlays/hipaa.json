@@ -27,6 +27,18 @@
       "regulatory_citation": "HIPAA 164.312(b) - Audit controls"
     }
   },
+  "evidence_requirements": {
+    "PR-04": ["transmission_destination", "classification_at_time_of_call", "block_reason"],
+    "PR-05": ["log_completeness", "retention_compliance"]
+  },
+  "framework_mapping": {
+    "PR-01": ["164.312(d)"],
+    "PR-02": ["164.312(a)(1)", "164.308(a)(3)"],
+    "PR-03": ["164.312(a)(2)(iv)"],
+    "PR-04": ["164.312(e)(1)", "164.312(e)(2)"],
+    "PR-05": ["164.312(b)", "164.308(a)(1)(ii)(D)"],
+    "DE-01": ["164.308(a)(1)(ii)(D)", "164.308(a)(5)(ii)(C)"]
+  },
   "evidence_retention_minimum_days": 2190,
   "human_oversight_required": false,
   "notes": "HIPAA Security Rule requires audit controls, access controls, transmission security, and integrity controls. This overlay tightens baseline thresholds and adds healthcare-specific evidence fields."

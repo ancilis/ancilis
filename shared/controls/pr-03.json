@@ -20,5 +20,8 @@
     "timestamp"
   ],
   "default_enabled": true,
-  "baseline": true
+  "baseline": true,
+  "display_name": "Tool provenance check",
+  "display_detail": "Verifies tool registration, approval status, version, and description integrity before every invocation.",
+  "remediation_hint_template": "Tool provenance verification failed. The tool may be unregistered or its description may have changed since approval. Re-register the tool with: ancilis approve-tool {tool_name}"
 }

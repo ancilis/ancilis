@@ -17,5 +17,8 @@
     "timestamp"
   ],
   "default_enabled": true,
-  "baseline": true
+  "baseline": true,
+  "display_name": "Identity verification",
+  "display_detail": "Verifies the agent presents valid credentials for every tool call. Prevents anonymous or unauthorized actions.",
+  "remediation_hint_template": "Agent identity could not be verified. Ensure agent.name in ancilis.yaml matches the agent making tool calls."
 }

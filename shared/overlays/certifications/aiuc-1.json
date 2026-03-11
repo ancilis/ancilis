@@ -1,0 +1,40 @@
+{
+  "id": "aiuc-1",
+  "name": "AIUC-1 AI Agent Certification Standard",
+  "version": "1.0",
+  "trigger_type": "certification_intent",
+  "description": "First certifiable standard for AI agents. Covers data & privacy, security, safety, reliability, accountability, and societal impact.",
+  "required_aksi_controls": [
+    "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"
+  ],
+  "evidence_packaging": {
+    "format": "aiuc1-readiness",
+    "retention_days": 365,
+    "quarterly_summary": true
+  },
+  "aksi_to_requirement_map": {
+    "PR-01": ["B001", "E001"],
+    "PR-02": ["A003", "B002", "E002"],
+    "PR-03": ["B003", "B004"],
+    "PR-04": ["A001", "A002", "A004", "A005"],
+    "PR-05": ["E003", "E004", "E005"],
+    "DE-01": ["D001", "D002", "C001"]
+  },
+  "operator_action_required": [
+    {
+      "requirement_id": "A006",
+      "description": "Data processing agreements and privacy policies must be documented by the operator. Ancilis generates the evidence these documents cite.",
+      "category": "governance_documentation"
+    },
+    {
+      "requirement_id": "E010",
+      "description": "Transparency report published at least annually. Ancilis evidence records provide the underlying data.",
+      "category": "governance_documentation"
+    },
+    {
+      "requirement_id": "F001",
+      "description": "Policy prohibiting use of agent for CBRN or cyberweapon assistance must be documented by operator.",
+      "category": "governance_documentation"
+    }
+  ]
+}

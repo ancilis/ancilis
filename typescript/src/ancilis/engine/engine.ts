@@ -9,6 +9,9 @@ import { PR02ScopeEvaluator } from "./evaluators/pr02-scope.js";
 import type { RateTracker } from "./evaluators/pr02-scope.js";
 import { PR03ProvenanceEvaluator } from "./evaluators/pr03-provenance.js";
 import { PR04ExposureEvaluator } from "./evaluators/pr04-exposure.js";
+import { PR05AuditEvaluator } from "../controls/pr05Audit.js";
+import { DE01BaselineEvaluator } from "../controls/de01Baseline.js";
+import type { BaselineWindow } from "../controls/de01Baseline.js";
 import { ToolRegistry } from "./registry.js";
 import type { ControlResult, EvaluationResult } from "./result.js";
 
@@ -19,7 +22,7 @@ export class Engine {
 
   constructor(
     config: ResolvedConfig,
-    options?: { registry?: ToolRegistry; rateTracker?: RateTracker },
+    options?: { registry?: ToolRegistry; rateTracker?: RateTracker; baselineWindow?: BaselineWindow },
   ) {
     this.config = config;
     this.registry = options?.registry ?? new ToolRegistry();
@@ -28,6 +31,8 @@ export class Engine {
       ["PR-02", new PR02ScopeEvaluator(options?.rateTracker)],
       ["PR-03", new PR03ProvenanceEvaluator(this.registry)],
       ["PR-04", new PR04ExposureEvaluator()],
+      ["PR-05", new PR05AuditEvaluator()],
+      ["DE-01", new DE01BaselineEvaluator(options?.baselineWindow)],
     ]);
   }
 

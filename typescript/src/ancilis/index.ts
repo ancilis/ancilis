@@ -11,3 +11,9 @@ export type { AncilisMiddlewareOptions, McpClientLike, ScanResult, EncryptionFin
 
 export { EvidenceStore, GENESIS_SEED, canonicalPayload, computeHash } from "./evidence/index.js";
 export type { EvidenceRecord } from "./evidence/index.js";
+
+export { ActivationResolver, BASELINE_CONTROLS, EXTENDED_CONTROLS, ClassificationAdvisory } from "./activation/index.js";
+export type { ActivationSpec, ClassificationRecommendation, CertificationUpgradeAdvisory, PatternDetection } from "./activation/index.js";
+
+export { PR05AuditEvaluator, DE01BaselineEvaluator } from "./controls/index.js";
+export type { BaselineWindow, DeviationFlag } from "./controls/index.js";

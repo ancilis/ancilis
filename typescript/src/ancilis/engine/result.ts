@@ -3,7 +3,7 @@
 export interface ControlResult {
   controlId: string;
   controlName: string;
-  result: "PASS" | "FAIL" | "SKIP" | "ERROR";
+  result: "PASS" | "FAIL" | "SKIP" | "ERROR" | "FLAG";
   detail: string;
   evidenceData: Record<string, unknown>;
   durationMs: number;

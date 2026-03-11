@@ -20,5 +20,8 @@
     "timestamp"
   ],
   "default_enabled": true,
-  "baseline": true
+  "baseline": true,
+  "display_name": "Data exposure scan",
+  "display_detail": "Scans outbound tool call parameters for sensitive data patterns and validates destination authorization.",
+  "remediation_hint_template": "Sensitive data patterns detected in outbound parameters. To approve this tool for sensitive data, run: ancilis approve-tool {tool_name} --classification {classification}"
 }

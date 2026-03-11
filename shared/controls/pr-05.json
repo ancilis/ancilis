@@ -20,5 +20,8 @@
     "timestamp"
   ],
   "default_enabled": true,
-  "baseline": true
+  "baseline": true,
+  "display_name": "Audit logging",
+  "display_detail": "Validates that structured logging is active and producing complete, tamper-evident records for incident investigation.",
+  "remediation_hint_template": "Audit logging is not properly configured. Ensure evidence storage is enabled and log format is structured (JSON). Check compliance.evidence settings in ancilis.yaml."
 }
