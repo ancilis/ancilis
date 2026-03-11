@@ -19,5 +19,8 @@
     "timestamp"
   ],
   "default_enabled": true,
-  "baseline": true
+  "baseline": true,
+  "display_name": "Scope enforcement",
+  "display_detail": "Enforces permission boundaries for each agent action. Checks tool allowlists, rate limits, and destination restrictions.",
+  "remediation_hint_template": "Action exceeded declared permission scope. Review security.tools and security.scope in ancilis.yaml. To allow this tool, add it to security.tools.allowed."
 }

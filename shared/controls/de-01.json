@@ -20,5 +20,8 @@
     "timestamp"
   ],
   "default_enabled": true,
-  "baseline": true
+  "baseline": true,
+  "display_name": "Behavioral baseline monitor",
+  "display_detail": "Tracks agent behavior patterns and flags deviations from established baselines. Monitors tool call frequency, diversity, and timing.",
+  "remediation_hint_template": "Behavioral anomaly detected — agent activity deviates from established baseline. Review recent tool call patterns and verify this activity is expected."
 }

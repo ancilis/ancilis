@@ -22,6 +22,19 @@
       "regulatory_citation": "EU AI Act Art. 9(2) - Risk management, ongoing monitoring"
     }
   },
+  "evidence_requirements": {
+    "PR-01": ["ai_system_id", "risk_classification"],
+    "PR-05": ["ai_decision_rationale", "human_oversight_status", "risk_level"],
+    "DE-01": ["performance_metrics", "drift_indicators", "bias_indicators"]
+  },
+  "framework_mapping": {
+    "PR-01": ["Art. 16"],
+    "PR-02": ["Art. 9"],
+    "PR-03": ["Art. 15"],
+    "PR-04": ["Art. 10"],
+    "PR-05": ["Art. 12", "Art. 19"],
+    "DE-01": ["Art. 9(2)", "Art. 72"]
+  },
   "evidence_retention_minimum_days": 3650,
   "human_oversight_required": true,
   "notes": "EU AI Act requires risk classification, human oversight for high-risk systems, transparency, and extensive record-keeping. Biometric identification systems are classified as high-risk. This overlay enforces strict monitoring and human oversight requirements."

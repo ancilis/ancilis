@@ -37,6 +37,22 @@
       "regulatory_citation": "SOC 2 CC7.3 - Evaluation of security events"
     }
   },
+  "evidence_requirements": {
+    "PR-01": ["authentication_method", "identity_verification_result"],
+    "PR-02": ["access_review_date", "scope_evaluation_result"],
+    "PR-03": ["change_management_ticket", "version_verification"],
+    "PR-04": ["data_classification", "transmission_destination"],
+    "PR-05": ["log_integrity_hash", "log_completeness"],
+    "DE-01": ["alert_severity", "response_action", "deviation_type"]
+  },
+  "framework_mapping": {
+    "PR-01": ["CC6.1", "CC6.2"],
+    "PR-02": ["CC6.1", "CC6.3"],
+    "PR-03": ["CC8.1"],
+    "PR-04": ["CC6.7", "CC6.1"],
+    "PR-05": ["CC7.2", "CC7.1"],
+    "DE-01": ["CC7.2", "CC7.3", "CC9.2"]
+  },
   "evidence_retention_minimum_days": 365,
   "human_oversight_required": false,
   "notes": "SOC 2 Type II is the universal B2B compliance baseline. Covers Trust Services Criteria: CC1 (Control Environment), CC6 (Logical Access), CC7 (System Operations), CC8 (Change Management). All controls at standard threshold with additional evidence fields for audit trail completeness."

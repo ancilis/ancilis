@@ -15,9 +15,11 @@ from ancilis.engine.evaluators.pr03_provenance import PR03ProvenanceEvaluator
 from ancilis.engine.evaluators.pr04_exposure import PR04ExposureEvaluator
 from ancilis.engine.registry import ToolRegistry
 from ancilis.engine.result import ControlResult, EvaluationResult
+from ancilis.controls.pr05_audit import PR05AuditEvaluator
+from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow
 
-# Controls that have evaluators in this unit
-EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04"}
+# Controls that have evaluators
+EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"}
 
 
 class Engine:
@@ -28,6 +30,7 @@ class Engine:
         config: ResolvedConfig,
         registry: ToolRegistry | None = None,
         rate_tracker: RateTracker | None = None,
+        baseline_window: BaselineWindow | None = None,
     ) -> None:
         self.config = config
         self.registry = registry or ToolRegistry()
@@ -36,6 +39,8 @@ class Engine:
             "PR-02": PR02ScopeEvaluator(rate_tracker=rate_tracker),
             "PR-03": PR03ProvenanceEvaluator(registry=self.registry),
             "PR-04": PR04ExposureEvaluator(),
+            "PR-05": PR05AuditEvaluator(),
+            "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
         }
 
     def evaluate(self, action: Action) -> EvaluationResult:
