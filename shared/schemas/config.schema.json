@@ -111,6 +111,14 @@
       },
       "description": "Declaring data types activates compliance overlays."
     },
+    "certification_targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Certification standards to target. Activates required controls and evidence packaging. Example: ['aiuc-1']"
+    },
     "compliance": {
       "type": "object",
       "additionalProperties": false,

@@ -163,8 +163,11 @@ def _render_compliance_terminal(lines: list[str], section: dict[str, Any]) -> No
 
 def _render_certification_terminal(lines: list[str], cert: dict[str, Any]) -> None:
     lines.append(f"{cert['certification_name']} Readiness")
-    lines.append(f"  Automated: {cert['automated_count']} of {cert['total_requirements']} requirements ({cert['automated_percentage']}%)")
-    lines.append(f"  Operator action required: {cert['operator_count']} requirements")
+    readiness = cert.get("readiness_percentage", 0)
+    coverage = cert.get("coverage_percentage", 0)
+    ready = cert.get("ready_count", 0)
+    lines.append(f"  Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
+    lines.append(f"  Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
     chain = "intact" if cert.get("chain_valid", True) else "BROKEN"
     lines.append(f"  Evidence records: {cert.get('evidence_count', 0):,}, hash chain {chain}")
 
@@ -233,8 +236,11 @@ def _render_compliance_markdown(lines: list[str], section: dict[str, Any]) -> No
 def _render_certification_markdown(lines: list[str], cert: dict[str, Any]) -> None:
     lines.append("## AIUC-1 Certification Readiness")
     lines.append("")
-    lines.append(f"- Automated by Ancilis: {cert['automated_count']} of {cert['total_requirements']} requirements ({cert['automated_percentage']}%)")
-    lines.append(f"- Operator action required: {cert['operator_count']} requirements")
+    readiness = cert.get("readiness_percentage", 0)
+    ready = cert.get("ready_count", 0)
+    coverage = cert.get("coverage_percentage", 0)
+    lines.append(f"- Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
+    lines.append(f"- Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
     chain = "intact (verified)" if cert.get("chain_valid", True) else "**BROKEN**"
     lines.append(f"- Evidence records: {cert.get('evidence_count', 0):,}")
     lines.append(f"- Hash chain: {chain}")
@@ -277,10 +283,13 @@ def _render_aiuc1_readiness_markdown(lines: list[str], data: ReportData) -> None
     lines.append("")
 
     # Coverage summary
-    lines.append("## Coverage Summary")
+    lines.append("## Readiness Summary")
     lines.append("")
-    lines.append(f"- Automated by Ancilis: {cert['automated_count']} of {cert['total_requirements']} requirements ({cert['automated_percentage']}%)")
-    lines.append(f"- Operator action required: {cert['operator_count']} requirements")
+    readiness = cert.get("readiness_percentage", 0)
+    ready = cert.get("ready_count", 0)
+    coverage = cert.get("coverage_percentage", 0)
+    lines.append(f"- Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
+    lines.append(f"- Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
     lines.append(f"- Evidence records: {cert.get('evidence_count', 0):,} over reporting period")
     chain = "intact (verified)" if cert.get("chain_valid", True) else "**BROKEN**"
     lines.append(f"- Hash chain: {chain}")

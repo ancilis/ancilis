@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from ancilis.config import ResolvedConfig
@@ -39,7 +39,7 @@ def build_action(
 
     return Action(
         action_id=str(uuid.uuid4()),
-        timestamp=datetime.now(UTC).isoformat(),
+        timestamp=datetime.now(timezone.utc).isoformat(),
         agent_id=config.agent_name,
         agent_owner=config.agent_owner or None,
         action_type="tool_call",

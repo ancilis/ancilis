@@ -449,7 +449,8 @@ class TestEngineIntegration:
     def test_all_six_controls_evaluate(self):
         config = load_config(raw={"agent": {"name": "test-agent"}})
         registry = ToolRegistry()
-        registry.register(ToolEntry(name="my-tool", approved=True))
+        from ancilis.engine.registry import ToolStatus
+        registry.register(ToolEntry(name="my-tool", status=ToolStatus.APPROVED))
         engine = Engine(config, registry=registry)
         action = make_action()
         result = engine.evaluate(action)

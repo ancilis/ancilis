@@ -15,8 +15,8 @@ from click.testing import CliRunner
 from ancilis.cli.main import cli
 from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.engine import Engine
-from ancilis.engine.action import Action, ActionParameters, ActionContext
-from ancilis.engine.registry import ToolRegistry, ToolEntry
+from ancilis.engine.action import Action, ActionParameters, ActionContext, ToolInfo
+from ancilis.engine.registry import ToolRegistry, ToolEntry, ToolStatus
 from ancilis.evidence.store import EvidenceStore
 from ancilis.report.generator import ReportGenerator, ReportData
 from ancilis.report.renderer import render_terminal, render_markdown
@@ -58,7 +58,7 @@ def _make_action(tool_name: str = "read_file", agent_id: str = "test-agent") -> 
         agent_id=agent_id,
         agent_owner="test-owner",
         action_type="tool_call",
-        tool=ToolEntry(name=tool_name, approved=True),
+        tool=ToolInfo(name=tool_name),
         parameters=ActionParameters(raw={}),
         context=ActionContext(session_id="sess-1"),
     )
@@ -67,7 +67,7 @@ def _make_action(tool_name: str = "read_file", agent_id: str = "test-agent") -> 
 def _populate_evidence(config: ResolvedConfig, store: EvidenceStore, n: int = 5) -> None:
     """Run evaluations to populate evidence store."""
     registry = ToolRegistry()
-    registry.register(ToolEntry(name="read_file", approved=True))
+    registry.register(ToolEntry(name="read_file", status=ToolStatus.APPROVED))
     engine = Engine(config, registry=registry)
 
     for i in range(n):
@@ -234,7 +234,7 @@ class TestApproveTool:
         runner = CliRunner()
         result = runner.invoke(cli, ["approve-tool", "send_email", "--config", str(cfg)])
         assert result.exit_code == 0
-        assert "Added 'send_email'" in result.output
+        assert "Approved 'send_email'" in result.output
 
         # Verify it was written
         data = yaml.safe_load(cfg.read_text())
@@ -587,7 +587,7 @@ class TestDisplayFields:
         """Engine post-processes results to include display fields from control JSON."""
         config = load_config(raw=_minimal_config())
         registry = ToolRegistry()
-        registry.register(ToolEntry(name="read_file", approved=True))
+        registry.register(ToolEntry(name="read_file", status=ToolStatus.APPROVED))
         engine = Engine(config, registry=registry)
 
         action = _make_action()

@@ -49,7 +49,13 @@ def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: boo
                 "hint": "Review recent activity: ancilis report --period 1d",
             })
 
-    passing_str = "all passing" if all_passing else "issues detected"
+    total = summary.get("total_evaluations", 0)
+    if total == 0:
+        passing_str = "not yet evaluated"
+    elif all_passing:
+        passing_str = "all passing"
+    else:
+        passing_str = "issues detected"
     lines.append(f"  Controls: {len(enabled)} active, {passing_str}")
 
     # Certification one-liners
@@ -67,9 +73,6 @@ def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: boo
                     data_type = first.split(" via ")[1]
                     trigger = f" — triggered by {data_type} declaration"
             lines.append(f"  {oa.name}: active{trigger}")
-
-    # Evaluation counts
-    total = summary.get("total_evaluations", 0)
     decisions = summary.get("decisions", {})
     blocked = decisions.get("BLOCK", 0)
     if total > 0:
@@ -88,16 +91,20 @@ def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: boo
             fail_count = stats.get("FAIL", 0) + stats.get("ERROR", 0)
             flag_count = stats.get("FLAG", 0)
 
-            if fail_count > 0:
+            total_evals = sum(stats.values()) if stats else 0
+            if total_evals == 0:
+                mark = "–"
+                status_str = "not yet evaluated"
+            elif fail_count > 0:
                 mark = "\u2717"
-                suffix = f" ({fail_count} failures)"
+                status_str = f"failing ({fail_count} failures)"
             elif flag_count > 0:
                 mark = "\u2713"
-                suffix = f" ({flag_count} flags)"
+                status_str = f"passing ({flag_count} flags)"
             else:
                 mark = "\u2713"
-                suffix = ""
-            lines.append(f"    {mark} {display_name} — passing{suffix}")
+                status_str = "passing"
+            lines.append(f"    {mark} {display_name} — {status_str}")
 
         # Activation details
         if config.active_certifications or config.active_overlays:

@@ -139,7 +139,7 @@ class TestEvidenceRecord:
 class TestEvidenceStore:
     def test_store_creates_record(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
         ev = make_evaluation()
 
         record = store.store(ev, tool_name="my-tool")
@@ -151,7 +151,7 @@ class TestEvidenceStore:
 
     def test_first_record_uses_genesis_seed(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
         ev = make_evaluation()
 
         record = store.store(ev, tool_name="tool-a")
@@ -160,7 +160,7 @@ class TestEvidenceStore:
 
     def test_hash_chain_links(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         ev1 = make_evaluation(evaluation_id="e1")
         ev2 = make_evaluation(evaluation_id="e2")
@@ -175,7 +175,7 @@ class TestEvidenceStore:
 
     def test_count(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         assert store.count() == 0
         store.store(make_evaluation(evaluation_id="e1"), tool_name="t1")
@@ -186,7 +186,7 @@ class TestEvidenceStore:
 
     def test_get_records_all(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         store.store(make_evaluation(evaluation_id="e1"), tool_name="t1")
         store.store(make_evaluation(evaluation_id="e2"), tool_name="t2")
@@ -197,7 +197,7 @@ class TestEvidenceStore:
 
     def test_get_records_filter_tool(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         store.store(make_evaluation(evaluation_id="e1"), tool_name="tool-a")
         store.store(make_evaluation(evaluation_id="e2"), tool_name="tool-b")
@@ -209,7 +209,7 @@ class TestEvidenceStore:
 
     def test_get_records_filter_decision(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         store.store(make_evaluation(evaluation_id="e1", decision="ALLOW"), tool_name="t1")
         store.store(make_evaluation(evaluation_id="e2", decision="BLOCK"), tool_name="t2")
@@ -221,7 +221,7 @@ class TestEvidenceStore:
 
     def test_verify_chain_valid(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         store.store(make_evaluation(evaluation_id="e1"), tool_name="t1")
         store.store(make_evaluation(evaluation_id="e2"), tool_name="t2")
@@ -234,7 +234,7 @@ class TestEvidenceStore:
 
     def test_verify_chain_empty(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         valid, errors = store.verify_chain()
         assert valid is True
@@ -244,7 +244,7 @@ class TestEvidenceStore:
     def test_active_certifications_stored(self):
         config = make_config()
         config.active_certifications = ["SOC2", "HIPAA"]
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         record = store.store(make_evaluation(), tool_name="t1")
         assert record.active_certifications == ["SOC2", "HIPAA"]
@@ -252,7 +252,7 @@ class TestEvidenceStore:
 
     def test_active_certifications_default_empty(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         record = store.store(make_evaluation(), tool_name="t1")
         assert record.active_certifications == []
@@ -260,7 +260,7 @@ class TestEvidenceStore:
 
     def test_blocked_evaluation_stored(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         ev = make_evaluation(decision="BLOCK")
         record = store.store(ev, tool_name="blocked-tool")
@@ -275,7 +275,7 @@ class TestEvidenceStore:
 class TestSummary:
     def test_get_summary_empty(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         summary = store.get_summary()
         assert summary["total_evaluations"] == 0
@@ -284,7 +284,7 @@ class TestSummary:
 
     def test_get_summary_with_records(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         store.store(make_evaluation(evaluation_id="e1", decision="ALLOW"), tool_name="tool-a")
         store.store(make_evaluation(evaluation_id="e2", decision="ALLOW"), tool_name="tool-b")
@@ -300,7 +300,7 @@ class TestSummary:
 
     def test_get_summary_control_pass_rates(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         store.store(make_evaluation(evaluation_id="e1"), tool_name="t1")
         store.store(
@@ -326,7 +326,7 @@ class TestSummary:
 class TestPurge:
     def test_purge_before(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         ev1 = make_evaluation(evaluation_id="e1")
         ev1.timestamp = "2024-01-01T00:00:00Z"
@@ -344,7 +344,7 @@ class TestPurge:
 
     def test_purge_none_removed(self):
         config = make_config()
-        store = EvidenceStore(config)
+        store = EvidenceStore(config, in_memory=True)
 
         ev = make_evaluation()
         ev.timestamp = "2025-06-01T00:00:00Z"
