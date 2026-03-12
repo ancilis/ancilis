@@ -13,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const SHARED_DIR = resolve(__filename, "..", "..", "..", "..", "..", "shared");
 const CONTROLS_DIR = join(SHARED_DIR, "controls");
 const OVERLAYS_DIR = join(SHARED_DIR, "overlays");
+const CERTIFICATIONS_DIR = join(OVERLAYS_DIR, "certifications");
 const CLASSIFICATIONS_FILE = join(SHARED_DIR, "classifications", "taxonomy.json");
 
 // --- Zod Schemas ---
@@ -59,6 +60,7 @@ const AncilisConfigSchema = z.object({
   }),
   security: SecurityConfigSchema,
   data_handling: z.array(z.string()).default([]),
+  certification_targets: z.array(z.string()).default([]),
   compliance: ComplianceConfigSchema,
 });
 
@@ -128,6 +130,17 @@ function loadTaxonomy(): Taxonomy {
   return JSON.parse(readFileSync(CLASSIFICATIONS_FILE, "utf-8")) as Taxonomy;
 }
 
+function loadValidCertTargets(): Set<string> {
+  const targets = new Set<string>();
+  try {
+    const files = readdirSync(CERTIFICATIONS_DIR).filter(f => f.endsWith(".json"));
+    for (const file of files) {
+      targets.add(file.replace(".json", ""));
+    }
+  } catch { /* dir may not exist */ }
+  return targets;
+}
+
 // --- Resolution Result ---
 
 export interface ControlStatus {
@@ -176,7 +189,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
   const warnings: string[] = [];
 
   // Check for unknown top-level keys
-  const knownKeys = new Set(["agent", "security", "data_handling", "compliance"]);
+  const knownKeys = new Set(["agent", "security", "data_handling", "certification_targets", "compliance"]);
   for (const key of Object.keys(raw)) {
     if (!knownKeys.has(key)) {
       warnings.push(`Unknown top-level key: '${key}'`);
@@ -207,6 +220,21 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
         throw new Error(
           `Unknown data type in data_handling: '${dt}'. ` +
           `Valid types: ${[...validTypes].sort().join(", ")}`
+        );
+      }
+    }
+  }
+
+  // Validate certification_targets
+  const certTargets = raw.certification_targets as string[] | undefined;
+  if (Array.isArray(certTargets)) {
+    const validCerts = loadValidCertTargets();
+    for (const ct of certTargets) {
+      if (!validCerts.has(ct)) {
+        const available = validCerts.size > 0 ? [...validCerts].sort().join(", ") : "none available";
+        warnings.push(
+          `certification_targets contains unrecognized value '${ct}'. ` +
+          `Available targets: ${available}`
         );
       }
     }
@@ -367,6 +395,14 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
     }
   }
   result.evidenceRetentionDays = maxRetention;
+
+  // Resolve certification targets
+  const validCerts = loadValidCertTargets();
+  for (const ct of config.certification_targets) {
+    if (validCerts.has(ct)) {
+      result.activeCertifications.push(ct);
+    }
+  }
 
   return result;
 }

@@ -21,6 +21,7 @@ export interface McpClientLike {
 export class BlockedToolCallError extends Error {
   tool_name: string;
   evaluation: EvaluationResult;
+  displayMessage: string;
 
   constructor(toolName: string, evaluation: EvaluationResult) {
     const failed = evaluation.controlResults
@@ -30,6 +31,15 @@ export class BlockedToolCallError extends Error {
     this.name = "BlockedToolCallError";
     this.tool_name = toolName;
     this.evaluation = evaluation;
+    // Developer-facing message using display names
+    const reasons = evaluation.controlResults
+      .filter(r => r.result === "FAIL" || r.result === "ERROR")
+      .map(r => (r.displayName ?? r.controlName).toLowerCase());
+    const reasonStr = reasons.length > 0 ? reasons.join(", ") : "policy violation";
+    this.displayMessage =
+      `Ancilis [blocked]: Tool '${toolName}' blocked — ${reasonStr}.\n` +
+      `  To approve: ancilis approve-tool ${toolName}\n` +
+      `  To review: ancilis status`;
   }
 }
 
@@ -47,6 +57,7 @@ export class AncilisMiddleware {
   private _scanResults: ScanResult[] = [];
   private _driftEvents: DriftEvent[] = [];
   private _evidenceStore: EvidenceStore;
+  private _issueCount = 0;
 
   constructor(client: McpClientLike, options: AncilisMiddlewareOptions = {}) {
     if (options.config) {
@@ -80,6 +91,11 @@ export class AncilisMiddleware {
 
     // 3. Store evidence
     await this._evidenceStore.store(evaluation, name);
+
+    // Track issues for summary line
+    if (evaluation.controlResults.some(r => r.result === "FAIL" || r.result === "ERROR")) {
+      this._issueCount++;
+    }
 
     // 4. Enforce
     if (evaluation.decision === "BLOCK") {
@@ -121,6 +137,12 @@ export class AncilisMiddleware {
       recs.push(...scan.recommendations);
     }
     return recs;
+  }
+
+  getSummaryLine(): string {
+    const total = this._evaluationLog.length;
+    const issues = this._issueCount;
+    return `Ancilis: ${total} tool calls evaluated. ${issues} issues. Run \`ancilis status\` for details.`;
   }
 
   getLastEvaluation(): EvaluationResult | undefined {

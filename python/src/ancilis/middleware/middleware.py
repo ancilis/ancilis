@@ -27,10 +27,21 @@ class BlockedToolCallError(Exception):
     def __init__(self, tool_name: str, evaluation: EvaluationResult):
         self.tool_name = tool_name
         self.evaluation = evaluation
-        failed = [r.control_id for r in evaluation.control_results if r.result in ("FAIL", "ERROR")]
+        # Build developer-facing message using display names
+        reasons: list[str] = []
+        for r in evaluation.control_results:
+            if r.result in ("FAIL", "ERROR"):
+                display = r.display_name or r.control_name
+                reasons.append(display.lower())
+        reason_str = ", ".join(reasons) if reasons else "policy violation"
+        self.display_message = (
+            f"Ancilis [blocked]: Tool '{tool_name}' blocked — {reason_str}.\n"
+            f"  To approve: ancilis approve-tool {tool_name}\n"
+            f"  To review: ancilis status"
+        )
         super().__init__(
             f"Tool call '{tool_name}' blocked by policy. "
-            f"Failed controls: {', '.join(failed)}"
+            f"Failed controls: {', '.join(r.control_id for r in evaluation.control_results if r.result in ('FAIL', 'ERROR'))}"
         )
 
 
@@ -58,6 +69,7 @@ class AncilisMiddleware:
         self._scan_results: list[ScanResult] = []
         self._drift_events: list[DriftEvent] = []
         self._evidence_store = EvidenceStore(self._config)
+        self._issue_count: int = 0
 
     @property
     def evidence_store(self) -> EvidenceStore:
@@ -99,15 +111,16 @@ class AncilisMiddleware:
         # 3. Store evidence
         self._evidence_store.store(evaluation, tool_name=name)
 
-        logger.info(
-            "Evaluated tool call '%s': decision=%s, mode=%s",
-            name, evaluation.decision, evaluation.mode,
-        )
+        # Track issues for summary line
+        has_issues = any(r.result in ("FAIL", "ERROR") for r in evaluation.control_results)
+        if has_issues:
+            self._issue_count += 1
 
         # 4. Enforce decision
         if evaluation.decision == "BLOCK":
-            logger.warning("BLOCKED tool call '%s': %s", name, evaluation.decision_reason)
-            raise BlockedToolCallError(name, evaluation)
+            error = BlockedToolCallError(name, evaluation)
+            logger.warning("%s", error.display_message)
+            raise error
 
         # 5. Forward to MCP server
         try:
@@ -122,8 +135,16 @@ class AncilisMiddleware:
             scan = scan_response(name, response_text)
             if scan.patterns or scan.encryption_findings:
                 self._scan_results.append(scan)
-                for rec in scan.recommendations:
-                    logger.info("Recommendation: %s", rec)
+                # Alert-level: sensitive data detected
+                if scan.patterns:
+                    pattern_names = [p.pattern_type for p in scan.patterns]
+                    logger.warning(
+                        "Ancilis [alert]: Sensitive data pattern (%s) detected in "
+                        "outbound parameters for tool '%s'.\n"
+                        "  Recommended: review data handling declarations in ancilis.yaml\n"
+                        "  Details: ancilis status",
+                        ", ".join(pattern_names), name,
+                    )
                 for finding in scan.encryption_findings:
                     logger.info("Positive finding: %s", finding.detail)
 
@@ -149,6 +170,15 @@ class AncilisMiddleware:
         for scan in self._scan_results:
             recs.extend(scan.recommendations)
         return recs
+
+    def get_summary_line(self) -> str:
+        """Get the single-line summary of middleware activity.
+
+        This is the default console output — one line, periodic.
+        """
+        total = len(self._evaluation_log)
+        issues = self._issue_count
+        return f"Ancilis: {total} tool calls evaluated. {issues} issues. Run `ancilis status` for details."
 
     def get_last_evaluation(self) -> EvaluationResult | None:
         """Get the most recent evaluation result."""
