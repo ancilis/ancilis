@@ -76,13 +76,14 @@ class AncilisConfig(BaseModel):
     agent: AgentConfig
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     data_handling: list[str] = Field(default_factory=list)
+    certification_targets: list[str] = Field(default_factory=list)
     compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
 
     @model_validator(mode="before")
     @classmethod
     def warn_unknown_keys(cls, values: Any) -> Any:
         if isinstance(values, dict):
-            known = {"agent", "security", "data_handling", "compliance"}
+            known = {"agent", "security", "data_handling", "certification_targets", "compliance"}
             unknown = set(values.keys()) - known
             if unknown:
                 # Store warnings for later reporting
@@ -97,6 +98,22 @@ class AncilisConfig(BaseModel):
 # --- Shared JSON Loaders ---
 
 VALID_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"}
+CERTIFICATIONS_DIR = SHARED_DIR / "overlays" / "certifications"
+
+VALID_CERTIFICATION_TARGETS: set[str] = set()
+
+
+def _load_valid_certification_targets() -> set[str]:
+    """Discover available certification targets from shared/overlays/certifications/."""
+    global VALID_CERTIFICATION_TARGETS
+    if VALID_CERTIFICATION_TARGETS:
+        return VALID_CERTIFICATION_TARGETS
+    targets: set[str] = set()
+    if CERTIFICATIONS_DIR.exists():
+        for path in CERTIFICATIONS_DIR.glob("*.json"):
+            targets.add(path.stem)
+    VALID_CERTIFICATION_TARGETS = targets
+    return targets
 
 
 def load_control_definitions() -> dict[str, dict[str, Any]]:
@@ -195,6 +212,18 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
                 raise ValueError(
                     f"Unknown data type in data_handling: '{dt}'. "
                     f"Valid types: {', '.join(sorted(valid_types))}"
+                )
+
+    # Validate certification_targets
+    cert_targets = raw.get("certification_targets", [])
+    if isinstance(cert_targets, list):
+        valid_certs = _load_valid_certification_targets()
+        for ct in cert_targets:
+            if ct not in valid_certs:
+                available = ", ".join(sorted(valid_certs)) if valid_certs else "none available"
+                warnings.append(
+                    f"certification_targets contains unrecognized value '{ct}'. "
+                    f"Available targets: {available}"
                 )
 
     config = AncilisConfig(**raw)
@@ -303,6 +332,12 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
             result.human_oversight_required = True
 
     result.evidence_retention_days = max_retention
+
+    # Resolve certification targets
+    valid_certs = _load_valid_certification_targets()
+    for ct in config.certification_targets:
+        if ct in valid_certs:
+            result.active_certifications.append(ct)
 
     return result
 

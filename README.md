@@ -20,16 +20,32 @@ npm install ancilis
 
 ## Quick Start
 
-### 1. Configure
+### 1. Get AIUC-1 Certification Coverage
+
+Your enterprise customer asked for AIUC-1 certification. Here's how to get coverage in under five minutes.
 
 Create `ancilis.yaml` in your project root:
 
 ```yaml
 agent:
   name: my-agent
+certification_targets:
+  - aiuc-1
 ```
 
-That's it. One field. Ancilis discovers tools at runtime from your MCP connection, auto-registers them, and applies baseline security controls with sensible defaults.
+That's it. Two fields. Ancilis activates all six security controls, starts collecting evidence, and generates a readiness report mapping your agent's behavior to AIUC-1 requirements.
+
+```bash
+ancilis report --format aiuc1-readiness
+```
+
+```
+AIUC-1 READINESS REPORT
+  Automated by Ancilis:     19 of 36 requirements (53%)
+  Operator action required: 17 requirements
+  Evidence records:         38,412 over reporting period
+  Hash chain:               intact (verified)
+```
 
 ### 2. Add Middleware
 
@@ -51,63 +67,51 @@ import { AncilisMiddleware } from 'ancilis';
 const client = new AncilisMiddleware(mcpClient);
 ```
 
-Every tool call now flows through the security evaluation engine. In audit mode (the default), nothing is blocked — Ancilis observes, evaluates, and logs.
+Every tool call now flows through the security evaluation engine. In audit mode (the default), nothing is blocked — Ancilis observes, evaluates, and logs. You'll see a single summary line:
 
-### 3. Observe
+```
+Ancilis: 47 tool calls evaluated. 0 issues. Run `ancilis status` for details.
+```
 
-Check your agent's security posture:
+### 3. Check Status
 
 ```bash
 ancilis status
 ```
 
-The SDK evaluates every tool call against six baseline controls:
+```
+Ancilis — my-agent
+  Mode: audit
+  Controls: 6 active, all passing
+  AIUC-1: active
+  Tool calls: 1,247 evaluated, 0 blocked
 
-| Control | What It Does |
-|---|---|
-| Agent Identity & Authentication | Verifies agent presents valid credentials. No anonymous tool calls. |
-| Permission Scope Enforcement | Constrains agent to authorized tools and action types. |
-| Tool Provenance Verification | Verifies tool identity against registry. Checks version pin and description hash for drift. |
-| Data Exposure Prevention | Scans outbound parameters for sensitive data patterns. Blocks/flags unauthorized transmission. |
-| Audit Logging | Structured logging of every tool call evaluation with full context. |
-| Behavioral Baseline | Tracks tool call frequency, scope patterns, timing. Flags deviations. |
+  Warnings:
+    [scope] Agent called 'send_email' — not in approved tool list.
+            To approve: ancilis approve-tool send_email
+```
 
-In audit mode, you see what *would* have been blocked, what passed, and what patterns were detected — without disrupting your agent.
-
-### 4. Configure (Optional)
-
-Ancilis generates a recommended policy based on observed behavior: tools discovered, data patterns detected, scope boundaries inferred. Review it, adjust it, tighten what matters to you.
+Every warning includes what to do about it. Approve the tool and the warning resolves:
 
 ```bash
-ancilis config validate
+ancilis approve-tool send_email
 ```
 
-### 5. Enforce
+### 4. Deepen Coverage with Data Declarations
 
-When you trust the policy, flip to enforce mode:
+When your agent handles regulated data, declare it for overlay activation:
 
 ```yaml
 agent:
   name: my-agent
-  mode: enforce
+certification_targets:
+  - aiuc-1
+data_handling:
+  - health_records
+  - personal_info
 ```
 
-Unauthorized actions are now blocked.
-
-### 6. Declare Data Types (Optional)
-
-When you need compliance coverage, declare what data your agent handles:
-
-```yaml
-agent:
-  name: my-agent
-  mode: enforce
-  data_handling:
-    - health_records
-    - personal_info
-```
-
-Ancilis translates these plain-English declarations into the appropriate regulatory overlays and adjusts control thresholds automatically. You never touch classification codes or framework mappings.
+One line added, compliance posture measurably improved. Ancilis activates HIPAA and GDPR overlays, tightens control thresholds, and adds framework-specific evidence fields — zero compliance knowledge required.
 
 | You Declare | Compliance Coverage You Get |
 |---|---|
@@ -118,76 +122,26 @@ Ancilis translates these plain-English declarations into the appropriate regulat
 | `financial_records` | GLBA, SOC 2 |
 | `government_documents` | FedRAMP, CMMC |
 | `childrens_data` | COPPA, FERPA |
-| `public_data` | SOC 2 (baseline) |
 
-### 7. Export Posture Report
+### 5. Export Posture Report
 
 ```bash
-ancilis report --format pdf --period 30d
+ancilis report --format pdf --period 90d
 ```
 
-Hand this to your customer's procurement team.
-
-## Sample Posture Report
-
-```
-ANCILIS SECURITY POSTURE REPORT
-================================
-Agent: claims-processor    Period: 2026-02-08 to 2026-03-10
-Mode: enforce
-
-BASELINE SECURITY
------------------
-Controls Active:         6/6
-Tool Calls Evaluated:    14,832
-Tool Calls Blocked:      23
-Tool Calls Flagged:      147
-
-Tools Discovered:        12
-  Provenance Verified:   11
-  Provenance Unknown:    1 (jira-legacy-connector v0.3.1)
-
-Data Patterns Detected:
-  DC-PHI (health records):    4,201 calls
-  DC-PII (personal info):     8,944 calls
-  DC-FIN (financial):         1,687 calls
-
-Behavioral Baseline:
-  Deviation Alerts:      3
-  Highest Severity:      MEDIUM (unusual call frequency spike, 2026-02-22)
-
-COMPLIANCE COVERAGE
--------------------
-Active Overlays:         HIPAA, GDPR, SOC 2
-Activation Trigger:      data_handling: [health_records, personal_info]
-
-HIPAA:
-  Controls Mapped:       14/14
-  Evidence Sufficient:   13/14
-  Gap:                   PR-03 (tool provenance) — 1 unverified tool
-
-GDPR:
-  Controls Mapped:       11/11
-  Evidence Sufficient:   11/11
-
-SOC 2 (Type II):
-  Controls Mapped:       18/18
-  Evidence Sufficient:   17/18
-  Gap:                   DE-01 (behavioral baseline) — insufficient observation period
-
-RECOMMENDATIONS
----------------
-1. Verify provenance for jira-legacy-connector or add to exception list
-2. Extend observation period to 90 days for SOC 2 Type II evidence sufficiency
-3. Review 3 behavioral deviation alerts for false positive tuning
-```
+Hand this to your customer's procurement team. The report includes framework-by-framework compliance coverage, evidence counts, and hash chain verification — professional enough to attach to a procurement response.
 
 ## CLI
 
 ```bash
-ancilis report --format pdf --period 30d    # Generate posture report
-ancilis status                               # Current agent security posture
+ancilis status                               # Current security posture (plain language)
+ancilis status --verbose                     # Per-control detail with activation sources
 ancilis config validate                      # Validate configuration
+ancilis approve-tool <name>                  # Add tool to approved list
+ancilis report --format terminal             # Quick review in terminal
+ancilis report --format markdown             # Markdown for review
+ancilis report --format pdf --period 30d     # PDF for procurement/audit
+ancilis report --format aiuc1-readiness      # AIUC-1 certification readiness report
 ```
 
 ## Why Ancilis?
@@ -198,9 +152,9 @@ ancilis config validate                      # Validate configuration
 
 **Compliance should be a byproduct, not a project.** When every tool call is evaluated and every enforcement decision is recorded with full context, you already have the evidence. You don't need a separate compliance workstream — you need a report export.
 
-**Data classification should drive requirements.** Tell Ancilis your agent handles health records, and it activates HIPAA controls. Declare financial data, and PCI-DSS coverage appears. You describe your data in plain English; the SDK maps it to frameworks, adjusts thresholds, and tracks evidence — automatically.
+**Certification in one config line.** Add `certification_targets: [aiuc-1]` and your agent is being evaluated against the first certifiable standard for AI agents. The readiness report tells you exactly where you stand — what's automated, what your team needs to document.
 
-**Zero-friction entry, progressive disclosure.** Start with one line of config and audit mode. See your agent's security posture. Tighten controls when you're ready. Add compliance coverage when your customer asks for it. Every step adds value without requiring the previous step to be exhaustive.
+**Zero-friction entry, progressive disclosure.** Start with one line of config and audit mode. See your agent's security posture. Add certification targets when your customer asks. Declare data types for deeper regulatory coverage. Every step adds value without requiring the previous step to be exhaustive.
 
 ## Architecture
 
