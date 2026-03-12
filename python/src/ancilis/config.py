@@ -333,11 +333,38 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
 
     result.evidence_retention_days = max_retention
 
-    # Resolve certification targets
+    # Resolve certification targets — use activation resolver for richer logic
     valid_certs = _load_valid_certification_targets()
     for ct in config.certification_targets:
         if ct in valid_certs:
             result.active_certifications.append(ct)
+
+    # When certifications are active, apply their control and evidence requirements
+    if result.active_certifications:
+        from ancilis.activation.resolver import ActivationResolver
+
+        resolver = ActivationResolver()
+        spec = resolver.resolve(
+            data_handling=config.data_handling or None,
+            certification_targets=result.active_certifications,
+        )
+
+        # Activate any controls required by certifications that aren't already active
+        for cid in spec.active_controls:
+            if cid in result.controls:
+                result.controls[cid].enabled = True
+            # Apply stricter thresholds from certification profiles
+            threshold = spec.control_thresholds.get(cid, "standard")
+            if threshold == "strict" and cid in result.controls:
+                result.controls[cid].threshold = "strict"
+
+        # Honour the strictest evidence retention from certification profiles
+        if spec.evidence_retention_days > result.evidence_retention_days:
+            result.evidence_retention_days = spec.evidence_retention_days
+
+        # Merge human oversight requirement
+        if spec.human_oversight_required:
+            result.human_oversight_required = True
 
     return result
 

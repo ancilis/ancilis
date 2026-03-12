@@ -11,7 +11,7 @@ Ancilis is a cross-platform SDK (Python + TypeScript) that sits between your AI 
 ## Install
 
 ```bash
-pip install ancilis
+pip install ancilis[mcp]
 ```
 
 ```bash
@@ -41,10 +41,10 @@ ancilis report --format aiuc1-readiness
 
 ```
 AIUC-1 READINESS REPORT
-  Automated by Ancilis:     19 of 36 requirements (53%)
-  Operator action required: 17 requirements
-  Evidence records:         38,412 over reporting period
-  Hash chain:               intact (verified)
+  Readiness:        85% (17 of 20 requirements passing)
+  Coverage:         85% (17 automated, 3 operator)
+  Evidence records: 38,412 over reporting period
+  Hash chain:       intact (verified)
 ```
 
 ### 2. Add Middleware

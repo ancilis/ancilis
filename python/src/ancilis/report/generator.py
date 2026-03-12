@@ -82,8 +82,8 @@ class ReportGenerator:
             report_format=report_format,
         )
 
-        # Get evidence summary
-        summary = self._store.get_summary()
+        # Get evidence summary (period-filtered)
+        summary = self._store.get_summary(since=period_start.isoformat())
         data.total_evaluations = summary.get("total_evaluations", 0)
         data.chain_valid = summary.get("chain_valid", True)
         data.chain_errors = summary.get("chain_errors", [])

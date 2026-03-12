@@ -16,6 +16,7 @@ from ancilis.engine import (
     ToolRegistry,
 )
 from ancilis.engine.evaluators.pr02_scope import RateTracker
+from ancilis.engine.registry import ToolStatus
 
 
 def _make_action(
@@ -53,13 +54,16 @@ def _make_config(**overrides):
 
 
 def _make_registry(*tools: tuple) -> ToolRegistry:
-    """Create a registry with tool entries: (name, version, hash)."""
+    """Create a registry with approved tool entries: (name, version, hash)."""
     reg = ToolRegistry()
     for t in tools:
         name = t[0]
         version = t[1] if len(t) > 1 else None
         desc_hash = t[2] if len(t) > 2 else None
-        reg.register(ToolEntry(name=name, version=version, description_hash=desc_hash))
+        reg.register(ToolEntry(
+            name=name, version=version, description_hash=desc_hash,
+            status=ToolStatus.APPROVED,
+        ))
     return reg
 
 
@@ -215,15 +219,17 @@ class TestPR03Provenance:
         assert pr03.result == "FAIL"
         assert "tampering" in pr03.detail.lower()
 
-    def test_no_hash_stored_passes(self):
+    def test_no_hash_baseline_flags(self):
+        """Approved tool with no description hash baseline returns FLAG, not PASS."""
         reg = _make_registry(("test-tool", "1.0"))
         config = _make_config()
         action = _make_action(tool_version="1.0")
         engine = Engine(config, registry=reg)
         result = engine.evaluate(action)
         pr03 = next(r for r in result.control_results if r.control_id == "PR-03")
-        assert pr03.result == "PASS"
-        assert pr03.evidence_data["hash_match"] == "no_hash"
+        assert pr03.result == "FLAG"
+        assert pr03.evidence_data["hash_match"] == "no_baseline"
+        assert "no description baseline" in pr03.detail
 
     def test_version_mismatch_fails(self):
         reg = _make_registry(("test-tool", "1.0", "hash123"))

@@ -11,7 +11,7 @@ from mcp.types import CallToolResult, TextContent
 
 from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.engine import Engine
-from ancilis.engine.registry import ToolRegistry
+from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.middleware.action_builder import build_action
 from ancilis.middleware.discovery import DriftEvent, register_tools_from_list
@@ -63,6 +63,15 @@ class AncilisMiddleware:
 
         self._session = session
         self._registry = ToolRegistry()
+
+        # Pre-seed registry with config-approved tools so PR-03 passes
+        # even before list_tools() / discovery runs.
+        for tool_name in self._config.tools_allowed:
+            self._registry.register(ToolEntry(
+                name=tool_name,
+                status=ToolStatus.APPROVED,
+            ))
+
         self._engine = Engine(self._config, registry=self._registry)
 
         self._evaluation_log: list[EvaluationResult] = []
@@ -70,6 +79,7 @@ class AncilisMiddleware:
         self._drift_events: list[DriftEvent] = []
         self._evidence_store = EvidenceStore(self._config)
         self._issue_count: int = 0
+        self._closed: bool = False
 
     @property
     def evidence_store(self) -> EvidenceStore:
@@ -156,7 +166,9 @@ class AncilisMiddleware:
         result = await self._session.list_tools()
         tools = result.tools if hasattr(result, "tools") else []
 
-        drift = register_tools_from_list(tools, self._registry)
+        drift = register_tools_from_list(
+            tools, self._registry, pre_approved=self._config.tools_allowed
+        )
         self._drift_events.extend(drift)
 
         registered_count = len(tools)
@@ -183,6 +195,18 @@ class AncilisMiddleware:
     def get_last_evaluation(self) -> EvaluationResult | None:
         """Get the most recent evaluation result."""
         return self._evaluation_log[-1] if self._evaluation_log else None
+
+    def close(self) -> None:
+        """Flush and close the evidence store. Safe to call multiple times."""
+        if not self._closed:
+            self._evidence_store.close()
+            self._closed = True
+
+    async def __aenter__(self) -> "AncilisMiddleware":
+        return self
+
+    async def __aexit__(self, *exc: Any) -> None:
+        self.close()
 
     @staticmethod
     def _extract_response_text(result: CallToolResult) -> str:

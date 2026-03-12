@@ -32,6 +32,7 @@ class PR03ProvenanceEvaluator:
         if entry is None:
             evidence["registered"] = False
             evidence["hash_match"] = "no_hash"
+            evidence["approved"] = False
             return ControlResult(
                 control_id=self.control_id,
                 control_name=self.control_name,
@@ -42,11 +43,29 @@ class PR03ProvenanceEvaluator:
             )
 
         evidence["registered"] = True
+        evidence["approved"] = entry.approved
+        evidence["tool_status"] = entry.status.value
         evidence["registry_entry"] = {
             "name": entry.name,
             "version": entry.version,
-            "approved": entry.approved,
+            "status": entry.status.value,
         }
+
+        # Check approval status — observed tools have not been vetted
+        if not entry.approved:
+            evidence["hash_match"] = "no_hash"
+            return ControlResult(
+                control_id=self.control_id,
+                control_name=self.control_name,
+                result="FAIL",
+                detail=(
+                    f"Tool '{tool_name}' is registered but not approved "
+                    f"(status: {entry.status.value}). "
+                    f"Run: ancilis approve-tool {tool_name}"
+                ),
+                evidence_data=evidence,
+                duration_ms=(time.perf_counter() - start) * 1000,
+            )
 
         # Check version
         if action.tool.version and entry.version and action.tool.version != entry.version:
@@ -74,13 +93,28 @@ class PR03ProvenanceEvaluator:
                 )
             evidence["hash_match"] = True
         else:
-            evidence["hash_match"] = "no_hash"
+            # Approved but no hash baseline established yet — flag for visibility.
+            # This happens when a tool is config-approved before discovery runs.
+            evidence["hash_match"] = "no_baseline"
+            has_baseline = entry.description_hash is not None or action.tool.description_hash is not None
+            if not has_baseline:
+                return ControlResult(
+                    control_id=self.control_id,
+                    control_name=self.control_name,
+                    result="FLAG",
+                    detail=(
+                        f"Tool '{tool_name}' is approved but has no description baseline. "
+                        f"Provenance will be fully verified after first discovery."
+                    ),
+                    evidence_data=evidence,
+                    duration_ms=(time.perf_counter() - start) * 1000,
+                )
 
         return ControlResult(
             control_id=self.control_id,
             control_name=self.control_name,
             result="PASS",
-            detail="Tool provenance verified.",
+            detail="Tool provenance verified — approved and hash-consistent.",
             evidence_data=evidence,
             duration_ms=(time.perf_counter() - start) * 1000,
         )

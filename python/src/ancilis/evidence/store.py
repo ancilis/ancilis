@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
+import os
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +17,26 @@ from ancilis.config import ResolvedConfig
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.chain import GENESIS_SEED, canonical_payload, compute_hash
 from ancilis.evidence.record import EvidenceRecord
+
+logger = logging.getLogger("ancilis.evidence")
+
+DEFAULT_DB_DIR = Path.home() / ".ancilis"
+DEFAULT_DB_NAME = "evidence.duckdb"
+
+
+def _agent_db_path(agent_name: str) -> Path:
+    """Derive a per-agent, per-project evidence DB path.
+
+    Path: ~/.ancilis/{agent_name}-{cwd_hash[:8]}/evidence.duckdb
+
+    The cwd hash disambiguates agents with the same name in different
+    projects or environments (e.g. two repos both using 'my-agent').
+    """
+    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in agent_name)
+    cwd_hash = hashlib.sha256(os.getcwd().encode()).hexdigest()[:8]
+    agent_dir = DEFAULT_DB_DIR / f"{safe_name}-{cwd_hash}"
+    agent_dir.mkdir(parents=True, exist_ok=True)
+    return agent_dir / DEFAULT_DB_NAME
 
 CREATE_TABLE_SQL = """
 CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1;
@@ -53,16 +76,22 @@ class EvidenceStore:
         self,
         config: ResolvedConfig,
         db_path: str | Path | None = None,
+        in_memory: bool = False,
     ) -> None:
         self._config = config
         self._certifications: list[str] = list(
             getattr(config, "active_certifications", []) or []
         )
 
-        if db_path is None:
+        if in_memory:
             self._db_path = ":memory:"
-        else:
+        elif db_path is not None:
             self._db_path = str(db_path)
+        else:
+            # Default to per-agent persistent local storage
+            agent_name = getattr(config, "agent_name", "") or "default"
+            self._db_path = str(_agent_db_path(agent_name))
+            logger.info("Evidence store: %s", self._db_path)
 
         self._conn = duckdb.connect(self._db_path)
         self._conn.execute(CREATE_TABLE_SQL)
@@ -72,7 +101,15 @@ class EvidenceStore:
         return self._db_path
 
     def close(self) -> None:
-        self._conn.close()
+        """Flush and close the DuckDB connection."""
+        if self._conn:
+            self._conn.close()
+
+    def __enter__(self) -> EvidenceStore:
+        return self
+
+    def __exit__(self, *exc: Any) -> None:
+        self.close()
 
     def _get_last_hash(self) -> str:
         """Get the hash of the most recent record, or GENESIS_SEED if empty."""
@@ -236,36 +273,54 @@ class EvidenceStore:
 
         return len(errors) == 0, errors
 
-    def get_summary(self) -> dict[str, Any]:
-        """Generate a summary for posture reports (Unit 6)."""
-        total = self.count()
-        if total == 0:
+    def get_summary(self, since: str | None = None) -> dict[str, Any]:
+        """Generate a summary for posture reports.
+
+        Args:
+            since: Optional ISO timestamp. When provided, only evidence records
+                   with timestamp >= since are included in counts and stats.
+                   Chain verification always runs against the full store.
+        """
+        where = ""
+        params: list[str] = []
+        if since is not None:
+            where = " WHERE timestamp >= ?"
+            params = [since]
+
+        # Total evaluations (period-filtered)
+        count_row = self._conn.execute(
+            f"SELECT COUNT(*) FROM evidence_records{where}", params
+        ).fetchone()
+        total = count_row[0] if count_row else 0
+
+        if total == 0 and since is None:
             return {
                 "total_evaluations": 0,
                 "decisions": {},
                 "tools_evaluated": [],
                 "chain_valid": True,
                 "chain_errors": [],
+                "control_pass_rates": {},
             }
 
-        # Decision counts
+        # Decision counts (period-filtered)
         decision_rows = self._conn.execute(
-            "SELECT decision, COUNT(*) FROM evidence_records GROUP BY decision"
+            f"SELECT decision, COUNT(*) FROM evidence_records{where} GROUP BY decision", params
         ).fetchall()
         decisions = {row[0]: row[1] for row in decision_rows}
 
-        # Unique tools
+        # Unique tools (period-filtered)
         tool_rows = self._conn.execute(
-            "SELECT DISTINCT tool_name FROM evidence_records ORDER BY tool_name"
+            f"SELECT DISTINCT tool_name FROM evidence_records{where} ORDER BY tool_name", params
         ).fetchall()
         tools = [row[0] for row in tool_rows]
 
-        # Chain integrity
+        # Chain integrity (always full store — chain must be verified end-to-end)
         chain_valid, chain_errors = self.verify_chain()
 
-        # Control pass rates
+        # Control pass rates (period-filtered)
         control_rows = self._conn.execute(
-            "SELECT control_results FROM evidence_records"
+            f"SELECT control_results FROM evidence_records{where}", params
         ).fetchall()
         control_stats: dict[str, dict[str, int]] = {}
         for (cr_json,) in control_rows:
@@ -273,7 +328,7 @@ class EvidenceStore:
             for cr in results:
                 cid = cr["control_id"]
                 if cid not in control_stats:
-                    control_stats[cid] = {"PASS": 0, "FAIL": 0, "SKIP": 0, "ERROR": 0}
+                    control_stats[cid] = {"PASS": 0, "FAIL": 0, "FLAG": 0, "SKIP": 0, "ERROR": 0}
                 result = cr.get("result", "SKIP")
                 if result in control_stats[cid]:
                     control_stats[cid][result] += 1
