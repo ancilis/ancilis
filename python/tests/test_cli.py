@@ -39,7 +39,7 @@ def _full_config() -> dict[str, Any]:
     return {
         "agent": {"name": "test-agent"},
         "security": {"mode": "audit"},
-        "data_handling": ["health_records"],
+        "my_agent_handles": ["health_records"],
         "compliance": {"evidence": {"retention_days": 365}},
     }
 
@@ -133,7 +133,7 @@ class TestConfigValidate:
         data = _minimal_config()
         # Invalid cert target is not validated by config parser directly,
         # but unknown data types are.
-        data["data_handling"] = ["nonexistent_type"]
+        data["my_agent_handles"] = ["nonexistent_type"]
         cfg = _make_config_file(data, tmp_path)
         runner = CliRunner()
         result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
@@ -142,7 +142,7 @@ class TestConfigValidate:
 
     def test_invalid_data_type_shows_available(self, tmp_path: Path) -> None:
         data = _minimal_config()
-        data["data_handling"] = ["fake_data"]
+        data["my_agent_handles"] = ["fake_data"]
         cfg = _make_config_file(data, tmp_path)
         runner = CliRunner()
         result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
@@ -650,7 +650,7 @@ class TestProgressiveDisclosure:
         assert len(report.compliance_sections) == 0
         store.close()
 
-    def test_data_handling_adds_overlay_sections(self, tmp_path: Path) -> None:
+    def test_my_agent_handles_adds_overlay_sections(self, tmp_path: Path) -> None:
         """my_agent_handles adds overlay information."""
         config = load_config(raw=_full_config())
         store = EvidenceStore(config, db_path=str(tmp_path / "ev.db"))

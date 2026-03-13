@@ -4,15 +4,20 @@ Runtime security for AI agents. Intercept, evaluate, and enforce security policy
 
 *Compliance should travel with the data, not against the innovation.*
 
-Ancilis is a cross-platform SDK (Python + TypeScript) that sits between your AI agent and its tools via MCP middleware. Every tool call passes through a security evaluation engine that checks identity, permissions, tool provenance, and data exposure in real time. Enforcement actions produce structured evidence records automatically — compliance coverage is a natural byproduct of doing security right.
+Ancilis is an SDK that sits between your AI agent and its tools. Every tool call passes through a security evaluation engine that checks identity, permissions, tool provenance, and data exposure in real time. Enforcement actions produce structured evidence records automatically — compliance coverage is a natural byproduct of doing security right.
 
 **Default mode is audit.** Install it, watch what your agent does, then decide what to lock down.
 
-## Install
+## Language Support
+
+**Python (primary):** Full implementation — three-state trust model, persistent evidence with hash chain, pattern detection, MCP middleware, CLI producer, posture-based readiness reporting.
 
 ```bash
-pip install ancilis[mcp]
+pip install ancilis        # core SDK + CLI producer
+pip install ancilis[mcp]   # with MCP middleware
 ```
+
+**TypeScript (in progress):** Core control engine and MCP middleware functional. Trust model, evidence persistence, and reporting parity with Python is the next development milestone.
 
 ```bash
 npm install ancilis
@@ -49,22 +54,11 @@ AIUC-1 READINESS REPORT
 
 ### 2. Add Middleware
 
-**Python:**
-
 ```python
 from ancilis import AncilisMiddleware
 
 # Wrap your MCP client connection
 client = AncilisMiddleware(mcp_client)
-```
-
-**TypeScript:**
-
-```typescript
-import { AncilisMiddleware } from 'ancilis';
-
-// Wrap your MCP client connection
-const client = new AncilisMiddleware(mcpClient);
 ```
 
 Every tool call now flows through the security evaluation engine. In audit mode (the default), nothing is blocked — Ancilis observes, evaluates, and logs. You'll see a single summary line:
@@ -106,22 +100,36 @@ agent:
   name: my-agent
 certification_targets:
   - aiuc-1
-data_handling:
+my_agent_handles:
   - health_records
   - personal_info
 ```
 
 One line added, compliance posture measurably improved. Ancilis activates HIPAA and GDPR overlays, tightens control thresholds, and adds framework-specific evidence fields — zero compliance knowledge required.
 
-| You Declare | Compliance Coverage You Get |
+### Regulatory Coverage
+
+**Shipping in v0.1:**
+
+| You Declare | Coverage |
 |---|---|
 | `health_records` | HIPAA, GDPR |
 | `patient_data` | HIPAA, GDPR |
 | `personal_info` | GDPR |
-| `credit_cards` | PCI-DSS, SOC 2 |
-| `financial_records` | GLBA, SOC 2 |
-| `government_documents` | FedRAMP, CMMC |
-| `childrens_data` | COPPA, FERPA |
+
+Additional shipping overlays: SOC 2, EU AI Act. AIUC-1 certification readiness.
+
+**On the roadmap:**
+
+PCI-DSS, GLBA, FedRAMP, CMMC, COPPA, FERPA, and additional frameworks. The overlay architecture is extensible — adding a new framework means adding a JSON profile, not changing the engine.
+
+When a data type maps to a roadmap overlay, Ancilis tells you clearly:
+
+```
+? pci-dss would be activated by DC-FIN-01 via credit_cards but is not yet available
+```
+
+Baseline security controls are always active for every data type, regardless of overlay availability.
 
 ### 5. Export Posture Report
 

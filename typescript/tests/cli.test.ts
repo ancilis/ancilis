@@ -38,7 +38,7 @@ function fullConfig(): Record<string, unknown> {
   return {
     agent: { name: "test-agent" },
     security: { mode: "audit" },
-    data_handling: ["health_records"],
+    my_agent_handles: ["health_records"],
     compliance: { evidence: { retention_days: 365 } },
   };
 }
@@ -173,7 +173,7 @@ describe("validateAndFormat", () => {
   });
 
   it("invalid data type shows error", () => {
-    const data = { ...minimalConfig(), data_handling: ["fake_data"] };
+    const data = { ...minimalConfig(), my_agent_handles: ["fake_data"] };
     const path = writeConfig(dir, data);
     const { valid, message } = validateAndFormat(path);
     expect(valid).toBe(false);

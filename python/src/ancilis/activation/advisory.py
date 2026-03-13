@@ -76,7 +76,7 @@ class ClassificationAdvisory:
     def generate(
         self,
         pattern_detections: list[PatternDetection],
-        active_data_handling: list[str] | None = None,
+        active_my_agent_handles: list[str] | None = None,
         active_certifications: list[str] | None = None,
     ) -> tuple[list[ClassificationRecommendation], list[CertificationUpgradeAdvisory]]:
         """Generate recommendations for detected patterns not covered by config.
@@ -84,7 +84,7 @@ class ClassificationAdvisory:
         Returns (recommendations, upgrade_advisories).
         Never auto-activates — returns data only.
         """
-        current = set(active_data_handling or [])
+        current = set(active_my_agent_handles or [])
         recommendations: list[ClassificationRecommendation] = []
         upgrade_advisories: list[CertificationUpgradeAdvisory] = []
 

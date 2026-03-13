@@ -97,7 +97,7 @@
         }
       }
     },
-    "data_handling": {
+    "my_agent_handles": {
       "type": "array",
       "items": {
         "type": "string",
@@ -126,7 +126,7 @@
         "overlays": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Which overlays to activate. Auto-detected from data_handling if omitted."
+          "description": "Which overlays to activate. Auto-detected from my_agent_handles if omitted."
         },
         "evidence": {
           "type": "object",

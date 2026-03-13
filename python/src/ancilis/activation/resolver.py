@@ -46,7 +46,7 @@ class ActivationResolver:
 
     def resolve(
         self,
-        data_handling: list[str] | None = None,
+        my_agent_handles: list[str] | None = None,
         certification_targets: list[str] | None = None,
     ) -> ActivationSpec:
         spec = ActivationSpec()
@@ -58,8 +58,8 @@ class ActivationResolver:
             spec.activation_source[cid] = "baseline"
 
         # 2. Path 1 — data classification
-        if data_handling:
-            self._resolve_data_path(spec, data_handling)
+        if my_agent_handles:
+            self._resolve_data_path(spec, my_agent_handles)
 
         # 3. Path 2 — certification intent
         if certification_targets:
@@ -87,7 +87,7 @@ class ActivationResolver:
 
         return spec
 
-    def _resolve_data_path(self, spec: ActivationSpec, data_handling: list[str]) -> None:
+    def _resolve_data_path(self, spec: ActivationSpec, my_agent_handles: list[str]) -> None:
         """Path 1: Translate data types → DC codes → overlay activations."""
         type_mapping = self._taxonomy.get("developer_type_mapping", {})
 
@@ -97,7 +97,7 @@ class ActivationResolver:
             classification_lookup[entry["code"]] = entry.get("overlays", [])
 
         all_dc_codes: set[str] = set()
-        for data_type in data_handling:
+        for data_type in my_agent_handles:
             dc_codes = type_mapping.get(data_type, [])
             all_dc_codes.update(dc_codes)
 

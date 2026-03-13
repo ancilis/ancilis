@@ -95,7 +95,7 @@ export function scanResponse(toolName: string, responseText: string): ScanResult
       result.recommendations.push(
         `Detected ${match.patternType} patterns (${match.count} found) in responses ` +
         `from tool '${toolName}'. Consider adding '${dataType}' to your ` +
-        `data_handling configuration.`
+        `my_agent_handles configuration.`
       );
     }
   }

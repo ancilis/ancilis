@@ -42,7 +42,7 @@ describe("Full Config", () => {
             blocked_destinations: ["evil.com"],
           },
         },
-        data_handling: ["health_records", "personal_info"],
+        my_agent_handles: ["health_records", "personal_info"],
         compliance: {
           overlays: ["hipaa", "gdpr"],
           evidence: { storage: "local", retention_days: 730 },
@@ -74,7 +74,7 @@ describe("Validation", () => {
 
   it("rejects unknown data type", () => {
     expect(() =>
-      loadConfig({ raw: { agent: { name: "x" }, data_handling: ["not_a_type"] } })
+      loadConfig({ raw: { agent: { name: "x" }, my_agent_handles: ["not_a_type"] } })
     ).toThrow(/Unknown data type/);
   });
 
@@ -93,7 +93,7 @@ describe("Validation", () => {
 describe("Data Type Translation", () => {
   it("maps health_records to DC-PHI and DC-PII", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["health_records"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["health_records"] },
     });
     const codes = resolved.dataClassifications.get("health_records")!;
     expect(codes).toContain("DC-PHI");
@@ -102,7 +102,7 @@ describe("Data Type Translation", () => {
 
   it("maps personal_info to DC-PII", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["personal_info"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["personal_info"] },
     });
     expect(resolved.dataClassifications.get("personal_info")).toEqual(["DC-PII"]);
   });
@@ -111,7 +111,7 @@ describe("Data Type Translation", () => {
 describe("Overlay Activation", () => {
   it("activates HIPAA and GDPR for health_records", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["health_records"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["health_records"] },
     });
     expect(resolved.activeOverlays.has("hipaa")).toBe(true);
     expect(resolved.activeOverlays.has("gdpr")).toBe(true);
@@ -119,7 +119,7 @@ describe("Overlay Activation", () => {
 
   it("stacks overlays from multiple data types", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["health_records", "credit_cards"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["health_records", "credit_cards"] },
     });
     expect(resolved.activeOverlays.has("hipaa")).toBe(true);
     expect(resolved.activeOverlays.has("gdpr")).toBe(true);
@@ -128,7 +128,7 @@ describe("Overlay Activation", () => {
 
   it("reports unavailable overlays for government_documents", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["government_documents"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["government_documents"] },
     });
     const unavailableIds = resolved.unavailableOverlays.map(u => u.overlayId);
     expect(unavailableIds.some(id => id === "fedramp" || id === "cmmc")).toBe(true);
@@ -136,14 +136,14 @@ describe("Overlay Activation", () => {
 
   it("activates EU AI Act for ai_training_data", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["ai_training_data"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["ai_training_data"] },
     });
     expect(resolved.activeOverlays.has("eu-ai-act")).toBe(true);
   });
 
   it("sets strict thresholds for HIPAA controls", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["health_records"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["health_records"] },
     });
     expect(resolved.controls.get("PR-01")?.threshold).toBe("strict");
     expect(resolved.controls.get("PR-04")?.threshold).toBe("strict");
@@ -151,14 +151,14 @@ describe("Overlay Activation", () => {
 
   it("sets HIPAA retention to 2190 days", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["health_records"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["health_records"] },
     });
     expect(resolved.evidenceRetentionDays).toBe(2190);
   });
 
   it("requires human oversight for EU AI Act", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, data_handling: ["ai_training_data"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["ai_training_data"] },
     });
     expect(resolved.humanOversightRequired).toBe(true);
   });
@@ -181,7 +181,7 @@ describe("Control Override", () => {
       raw: {
         agent: { name: "x" },
         security: { controls: { "PR-01": { enabled: false } } },
-        data_handling: ["health_records"],
+        my_agent_handles: ["health_records"],
       },
     });
     expect(resolved.controls.get("PR-01")?.enabled).toBe(false);

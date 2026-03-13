@@ -49,28 +49,28 @@ def make_action(
 class TestPath1DataClassification:
     def test_health_records_activates_hipaa(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["health_records"])
+        spec = resolver.resolve(my_agent_handles=["health_records"])
         assert "hipaa" in spec.active_overlays
         assert "DC-PHI" in spec.data_classifications
 
     def test_health_records_pr04_strict(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["health_records"])
+        spec = resolver.resolve(my_agent_handles=["health_records"])
         assert spec.control_thresholds.get("PR-04") == "strict"
 
     def test_personal_info_activates_gdpr(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["personal_info"])
+        spec = resolver.resolve(my_agent_handles=["personal_info"])
         assert "gdpr" in spec.active_overlays
         assert "DC-PII" in spec.data_classifications
 
     def test_both_data_types_both_overlays(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["health_records", "personal_info"])
+        spec = resolver.resolve(my_agent_handles=["health_records", "personal_info"])
         assert "hipaa" in spec.active_overlays
         assert "gdpr" in spec.active_overlays
 
-    def test_no_data_handling_no_overlays(self):
+    def test_no_my_agent_handles_no_overlays(self):
         resolver = ActivationResolver()
         spec = resolver.resolve()
         assert spec.active_overlays == []
@@ -116,7 +116,7 @@ class TestBothPaths:
     def test_both_declared(self):
         resolver = ActivationResolver()
         spec = resolver.resolve(
-            data_handling=["health_records"],
+            my_agent_handles=["health_records"],
             certification_targets=["aiuc-1"],
         )
         assert "hipaa" in spec.active_overlays
@@ -126,7 +126,7 @@ class TestBothPaths:
     def test_conflict_strictest_wins(self):
         resolver = ActivationResolver()
         spec = resolver.resolve(
-            data_handling=["health_records"],
+            my_agent_handles=["health_records"],
             certification_targets=["aiuc-1"],
         )
         # HIPAA sets PR-04 to strict
@@ -135,7 +135,7 @@ class TestBothPaths:
     def test_activation_source_correct(self):
         resolver = ActivationResolver()
         spec = resolver.resolve(
-            data_handling=["health_records"],
+            my_agent_handles=["health_records"],
             certification_targets=["aiuc-1"],
         )
         assert "hipaa" in spec.activation_source
@@ -160,7 +160,7 @@ class TestBaselineControls:
 
     def test_overlay_activates_extended(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["health_records"])
+        spec = resolver.resolve(my_agent_handles=["health_records"])
         assert "PR-05" in spec.active_controls
         assert "DE-01" in spec.active_controls
 
@@ -366,7 +366,7 @@ class TestPatternAdvisory:
     def test_already_covered_no_duplicate(self):
         advisor = ClassificationAdvisory()
         detections = [PatternDetection(pattern_type="ssn", count=5)]
-        recs, _ = advisor.generate(detections, active_data_handling=["personal_info"])
+        recs, _ = advisor.generate(detections, active_my_agent_handles=["personal_info"])
         assert len(recs) == 0
 
     def test_certification_upgrade_advisory(self):
@@ -414,19 +414,19 @@ class TestPatternAdvisory:
 class TestConflictResolution:
     def test_hipaa_gdpr_pr04_strict(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["health_records", "personal_info"])
+        spec = resolver.resolve(my_agent_handles=["health_records", "personal_info"])
         # Both HIPAA and GDPR set PR-04 strict
         assert spec.control_thresholds["PR-04"] == "strict"
 
     def test_hipaa_soc2_retention_longest(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["health_records"])
+        spec = resolver.resolve(my_agent_handles=["health_records"])
         # HIPAA: 2190 days, SOC2: 365 days → HIPAA wins
         assert spec.evidence_retention_days >= 2190
 
     def test_evidence_requirements_union(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["health_records"])
+        spec = resolver.resolve(my_agent_handles=["health_records"])
         # Should have evidence requirements from both HIPAA and other overlays
         pr04_reqs = spec.evidence_requirements.get("PR-04", [])
         assert len(pr04_reqs) > 0
@@ -485,7 +485,7 @@ class TestOutputDisclosure:
 
     def test_activation_summary_overlay(self):
         resolver = ActivationResolver()
-        spec = resolver.resolve(data_handling=["health_records"])
+        spec = resolver.resolve(my_agent_handles=["health_records"])
         assert len(spec.activation_summary) >= 1
 
     def test_recommendation_severity_set(self):
