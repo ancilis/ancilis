@@ -23,7 +23,7 @@ class ScanResult:
     recommendations: list[str] = field(default_factory=list)
 
 
-# Mapping from pattern type to recommended data_handling type
+# Mapping from pattern type to recommended my_agent_handles type
 PATTERN_TO_DATA_TYPE: dict[str, str] = {
     "ssn": "personal_info",
     "credit_card": "credit_cards",
@@ -100,7 +100,7 @@ def scan_response(tool_name: str, response_text: str) -> ScanResult:
             result.recommendations.append(
                 f"Detected {match.pattern_type} patterns ({match.count} found) in responses "
                 f"from tool '{tool_name}'. Consider adding '{data_type}' to your "
-                f"data_handling configuration."
+                f"my_agent_handles configuration."
             )
 
     # Detect encryption/tokenization (positive finding)

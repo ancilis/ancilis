@@ -35,7 +35,7 @@ class PR02ScopeEvaluator:
         }
 
         # Check blocked list first (takes precedence)
-        if config.tools_blocked and tool_name in config.tools_blocked:
+        if config.tools_blocked and self._matches_tool_list(tool_name, config.tools_blocked):
             evidence["scope_check"] = "out_of_scope"
             evidence["failure_reason"] = "tool is explicitly blocked"
             return ControlResult(
@@ -48,7 +48,7 @@ class PR02ScopeEvaluator:
             )
 
         # Check allowed list
-        if config.tools_allowed and tool_name not in config.tools_allowed:
+        if config.tools_allowed and not self._matches_tool_list(tool_name, config.tools_allowed):
             evidence["scope_check"] = "out_of_scope"
             evidence["failure_reason"] = "tool not in allowlist"
             return ControlResult(
@@ -100,6 +100,22 @@ class PR02ScopeEvaluator:
             evidence_data=evidence,
             duration_ms=(time.perf_counter() - start) * 1000,
         )
+
+    @staticmethod
+    def _matches_tool_list(tool_name: str, tool_list: list[str]) -> bool:
+        """Check if tool matches a list, accounting for producer prefixes.
+
+        Handles: bare 'echo' in config matching 'cli:echo' action,
+        and 'cli:echo' in config matching 'cli:echo' action.
+        """
+        if tool_name in tool_list:
+            return True
+        # Strip prefix and check bare name (cli:echo -> echo)
+        if ":" in tool_name:
+            bare_name = tool_name.split(":", 1)[1]
+            if bare_name in tool_list:
+                return True
+        return False
 
     def _extract_destination(self, action: Action) -> str | None:
         """Extract destination from action parameters if present."""

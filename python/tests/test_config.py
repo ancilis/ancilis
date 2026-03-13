@@ -37,7 +37,7 @@ class TestFullConfig:
                     "blocked_destinations": ["evil.com"],
                 },
             },
-            "data_handling": ["health_records", "personal_info"],
+            "my_agent_handles": ["health_records", "personal_info"],
             "compliance": {
                 "overlays": ["hipaa", "gdpr"],
                 "evidence": {"storage": "local", "retention_days": 730},
@@ -66,7 +66,7 @@ class TestValidation:
 
     def test_unknown_data_type_raises(self):
         with pytest.raises(ValueError, match="Unknown data type"):
-            load_config(raw={"agent": {"name": "x"}, "data_handling": ["not_a_type"]})
+            load_config(raw={"agent": {"name": "x"}, "my_agent_handles": ["not_a_type"]})
 
     def test_unknown_control_id_raises(self):
         with pytest.raises(ValueError, match="Unknown control ID"):
@@ -81,14 +81,14 @@ class TestValidation:
 class TestDataTypeTranslation:
     def test_health_records_maps_to_phi_pii(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "data_handling": ["health_records"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["health_records"]}
         )
         assert "DC-PHI" in resolved.data_classifications["health_records"]
         assert "DC-PII" in resolved.data_classifications["health_records"]
 
     def test_personal_info_maps_to_pii(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "data_handling": ["personal_info"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["personal_info"]}
         )
         assert resolved.data_classifications["personal_info"] == ["DC-PII"]
 
@@ -96,7 +96,7 @@ class TestDataTypeTranslation:
 class TestOverlayActivation:
     def test_health_records_activates_hipaa_and_gdpr(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "data_handling": ["health_records"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["health_records"]}
         )
         assert "hipaa" in resolved.active_overlays
         assert "gdpr" in resolved.active_overlays
@@ -105,7 +105,7 @@ class TestOverlayActivation:
         resolved = load_config(
             raw={
                 "agent": {"name": "x"},
-                "data_handling": ["health_records", "credit_cards"],
+                "my_agent_handles": ["health_records", "credit_cards"],
             }
         )
         assert "hipaa" in resolved.active_overlays
@@ -114,33 +114,33 @@ class TestOverlayActivation:
 
     def test_unavailable_overlay_warning(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "data_handling": ["government_documents"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["government_documents"]}
         )
         unavailable_ids = [uo.overlay_id for uo in resolved.unavailable_overlays]
         assert "fedramp" in unavailable_ids or "cmmc" in unavailable_ids
 
     def test_ai_training_data_activates_eu_ai_act(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "data_handling": ["ai_training_data"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["ai_training_data"]}
         )
         assert "eu-ai-act" in resolved.active_overlays
 
     def test_hipaa_sets_strict_thresholds(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "data_handling": ["health_records"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["health_records"]}
         )
         assert resolved.controls["PR-01"].threshold == "strict"
         assert resolved.controls["PR-04"].threshold == "strict"
 
     def test_hipaa_sets_retention_2190(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "data_handling": ["health_records"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["health_records"]}
         )
         assert resolved.evidence_retention_days == 2190
 
     def test_eu_ai_act_requires_human_oversight(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "data_handling": ["ai_training_data"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["ai_training_data"]}
         )
         assert resolved.human_oversight_required is True
 
@@ -161,7 +161,7 @@ class TestControlOverride:
             raw={
                 "agent": {"name": "x"},
                 "security": {"controls": {"PR-01": {"enabled": False}}},
-                "data_handling": ["health_records"],
+                "my_agent_handles": ["health_records"],
             }
         )
         assert resolved.controls["PR-01"].enabled is False

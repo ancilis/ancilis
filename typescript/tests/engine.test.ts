@@ -368,7 +368,7 @@ describe("Decision Engine", () => {
   });
 
   it("result has metadata", () => {
-    const config = makeConfig({ data_handling: ["health_records"] });
+    const config = makeConfig({ my_agent_handles: ["health_records"] });
     const action = makeAction();
     const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
     const result = engine.evaluate(action);

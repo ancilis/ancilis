@@ -4,10 +4,12 @@ Usage:
     from ancilis import CLIActionProducer
     from ancilis.engine import Engine
     from ancilis.config import load_config
+    from ancilis.evidence import EvidenceStore
 
     config = load_config()
     engine = Engine(config)
-    producer = CLIActionProducer(config=config, engine=engine)
+    evidence_store = EvidenceStore(config)
+    producer = CLIActionProducer(config=config, engine=engine, evidence_store=evidence_store)
 
     # Wrap a subprocess call
     result = producer.execute(
@@ -78,10 +80,12 @@ class CLIActionProducer:
         config: ResolvedConfig,
         engine: Engine,
         registry: ToolRegistry | None = None,
+        evidence_store: Any | None = None,
     ) -> None:
         self._config = config
         self._engine = engine
         self._registry = registry or engine.registry
+        self._evidence_store = evidence_store
 
     @property
     def producer_type(self) -> ProducerType:
@@ -158,16 +162,21 @@ class CLIActionProducer:
         """Register CLI tools from config allowlist.
 
         All tools enter as OBSERVED. Approval is separate.
+        Strips existing cli: prefix to prevent double-prefix.
         """
         registered: list[str] = []
 
         for tool_spec in self._config.tools_allowed:
-            tool_name = tool_spec if isinstance(tool_spec, str) else ""
-            if not tool_name:
+            bare_name = tool_spec if isinstance(tool_spec, str) else ""
+            if not bare_name:
                 continue
 
-            cli_name = f"cli:{tool_name}"
-            tool_hash = self.compute_tool_hash(tool_name)
+            # Strip cli: prefix if developer already included it
+            if bare_name.startswith("cli:"):
+                bare_name = bare_name[4:]
+
+            cli_name = f"cli:{bare_name}"
+            tool_hash = self.compute_tool_hash(bare_name)
             registry.register(
                 ToolEntry(
                     name=cli_name,
@@ -179,6 +188,20 @@ class CLIActionProducer:
 
         return registered
 
+    def _auto_register(self, tool_name: str, command: list[str]) -> None:
+        """Auto-register a tool on first encounter if not in registry."""
+        if self._registry.lookup(tool_name) is not None:
+            return
+        bare_name = command[0] if command else "unknown"
+        tool_hash = self.compute_tool_hash(os.path.basename(bare_name))
+        self._registry.register(
+            ToolEntry(
+                name=tool_name,
+                description_hash=tool_hash,
+                status=ToolStatus.OBSERVED,
+            )
+        )
+
     def execute(
         self,
         command: list[str],
@@ -188,12 +211,18 @@ class CLIActionProducer:
     ) -> CLIExecutionResult:
         """Execute a CLI command through the Ancilis security engine.
 
-        1. Translate command to Action
-        2. Evaluate against controls
-        3. If audit mode or PASS: execute and return result
-        4. If enforce mode and FAIL: block execution, return blocked result
-        5. Scan stdout for sensitive patterns
+        1. Auto-register tool if not in registry
+        2. Translate command to Action
+        3. Evaluate against controls
+        4. Store evidence record
+        5. If audit mode or PASS: execute and return result
+        6. If enforce mode and FAIL: block execution, return blocked result
+        7. Scan stdout for sensitive patterns
         """
+        # Auto-register on first encounter (same as MCP auto-discovery)
+        tool_name = self._resolve_tool_name(command)
+        self._auto_register(tool_name, command)
+
         invocation = CLIInvocation(
             command=command,
             agent_name=agent_name,
@@ -202,6 +231,10 @@ class CLIActionProducer:
 
         action = self.translate(invocation)
         evaluation = self._engine.evaluate(action)
+
+        # Persist evidence record (same as MCP middleware)
+        if self._evidence_store is not None:
+            self._evidence_store.store(evaluation, tool_name=tool_name)
 
         blocked = evaluation.decision == "BLOCK"
 
@@ -229,7 +262,6 @@ class CLIActionProducer:
 
             # Scan stdout only (not stderr) for sensitive patterns
             if stdout:
-                tool_name = self._resolve_tool_name(command)
                 scan = scan_response(tool_name, stdout)
                 if scan.patterns or scan.encryption_findings:
                     scan_result = scan

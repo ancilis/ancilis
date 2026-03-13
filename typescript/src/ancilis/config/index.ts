@@ -59,7 +59,7 @@ const AncilisConfigSchema = z.object({
     owner: z.string().default(""),
   }),
   security: SecurityConfigSchema,
-  data_handling: z.array(z.string()).default([]),
+  my_agent_handles: z.array(z.string()).default([]),
   certification_targets: z.array(z.string()).default([]),
   compliance: ComplianceConfigSchema,
 });
@@ -189,7 +189,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
   const warnings: string[] = [];
 
   // Check for unknown top-level keys
-  const knownKeys = new Set(["agent", "security", "data_handling", "certification_targets", "compliance"]);
+  const knownKeys = new Set(["agent", "security", "my_agent_handles", "certification_targets", "compliance"]);
   for (const key of Object.keys(raw)) {
     if (!knownKeys.has(key)) {
       warnings.push(`Unknown top-level key: '${key}'`);
@@ -210,15 +210,15 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
     }
   }
 
-  // Validate data_handling types
+  // Validate my_agent_handles types
   const taxonomy = loadTaxonomy();
   const validTypes = new Set(Object.keys(taxonomy.developer_type_mapping));
-  const dataHandling = raw.data_handling as string[] | undefined;
+  const dataHandling = raw.my_agent_handles as string[] | undefined;
   if (Array.isArray(dataHandling)) {
     for (const dt of dataHandling) {
       if (!validTypes.has(dt)) {
         throw new Error(
-          `Unknown data type in data_handling: '${dt}'. ` +
+          `Unknown data type in my_agent_handles: '${dt}'. ` +
           `Valid types: ${[...validTypes].sort().join(", ")}`
         );
       }
@@ -285,7 +285,7 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
   }
 
   // Resolve data classifications
-  for (const dataType of config.data_handling) {
+  for (const dataType of config.my_agent_handles) {
     const dcCodes = taxonomy.developer_type_mapping[dataType] ?? [];
     result.dataClassifications.set(dataType, dcCodes);
   }

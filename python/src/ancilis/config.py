@@ -75,7 +75,7 @@ class ComplianceConfig(BaseModel):
 class AncilisConfig(BaseModel):
     agent: AgentConfig
     security: SecurityConfig = Field(default_factory=SecurityConfig)
-    data_handling: list[str] = Field(default_factory=list)
+    my_agent_handles: list[str] = Field(default_factory=list)
     certification_targets: list[str] = Field(default_factory=list)
     compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
 
@@ -83,7 +83,7 @@ class AncilisConfig(BaseModel):
     @classmethod
     def warn_unknown_keys(cls, values: Any) -> Any:
         if isinstance(values, dict):
-            known = {"agent", "security", "data_handling", "certification_targets", "compliance"}
+            known = {"agent", "security", "my_agent_handles", "certification_targets", "compliance"}
             unknown = set(values.keys()) - known
             if unknown:
                 # Store warnings for later reporting
@@ -202,15 +202,15 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
                 if key not in VALID_CONTROL_IDS:
                     raise ValueError(f"Unknown control ID in security.controls: '{key}'")
 
-    # Validate data_handling types
+    # Validate my_agent_handles types
     taxonomy = load_taxonomy()
     valid_types = set(taxonomy["developer_type_mapping"].keys())
-    data_handling = raw.get("data_handling", [])
-    if isinstance(data_handling, list):
-        for dt in data_handling:
+    my_agent_handles = raw.get("my_agent_handles", [])
+    if isinstance(my_agent_handles, list):
+        for dt in my_agent_handles:
             if dt not in valid_types:
                 raise ValueError(
-                    f"Unknown data type in data_handling: '{dt}'. "
+                    f"Unknown data type in my_agent_handles: '{dt}'. "
                     f"Valid types: {', '.join(sorted(valid_types))}"
                 )
 
@@ -256,7 +256,7 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
 
     # Resolve data classifications
     type_mapping = taxonomy["developer_type_mapping"]
-    for data_type in config.data_handling:
+    for data_type in config.my_agent_handles:
         dc_codes = type_mapping.get(data_type, [])
         result.data_classifications[data_type] = dc_codes
 
@@ -345,7 +345,7 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
 
         resolver = ActivationResolver()
         spec = resolver.resolve(
-            data_handling=config.data_handling or None,
+            my_agent_handles=config.my_agent_handles or None,
             certification_targets=result.active_certifications,
         )
 

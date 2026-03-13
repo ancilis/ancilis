@@ -391,7 +391,7 @@ class TestDecisionEngine:
         engine._evaluators["PR-01"] = original
 
     def test_result_has_metadata(self):
-        config = _make_config(data_handling=["health_records"])
+        config = _make_config(my_agent_handles=["health_records"])
         action = _make_action()
         engine = Engine(config, registry=_make_registry(("test-tool",)))
         result = engine.evaluate(action)

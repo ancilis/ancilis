@@ -194,7 +194,7 @@ class TestCLITranslation:
         assert len(action.parameters.parameter_hash) == 64  # SHA-256 hex
 
     def test_context_carries_dc_codes(self):
-        config = _config(data_handling=["personal_info"])
+        config = _config(my_agent_handles=["personal_info"])
         producer = self._make_producer(config)
         invocation = CLIInvocation(command=["echo"], agent_name="test-agent")
         action = producer.translate(invocation)
@@ -499,3 +499,177 @@ class TestBackwardCompatibility:
 
         # This should work via __getattr__
         assert "MCPActionProducer" in ancilis.__all__
+
+
+# --- Fix 2: Double-Prefix Prevention ---
+
+
+class TestCLIDoublePrefix:
+    def test_no_double_prefix_bare_name(self):
+        """Config with 'echo' produces 'cli:echo', not 'cli:cli:echo'."""
+        config = _config(security={"tools": {"allowed": ["echo"]}})
+        engine = _make_engine(config)
+        registry = ToolRegistry()
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        registered = producer.register_tools(registry)
+        assert "cli:echo" in registered
+        assert "cli:cli:echo" not in registered
+
+    def test_no_double_prefix_already_prefixed(self):
+        """Config with 'cli:echo' produces 'cli:echo', not 'cli:cli:echo'."""
+        config = _config(security={"tools": {"allowed": ["cli:echo"]}})
+        engine = _make_engine(config)
+        registry = ToolRegistry()
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        registered = producer.register_tools(registry)
+        assert "cli:echo" in registered
+        assert "cli:cli:echo" not in registered
+
+
+# --- Fix 2: Auto-Registration ---
+
+
+class TestCLIAutoRegistration:
+    def test_execute_auto_registers_tool(self):
+        """execute() registers tool in registry without manual register_tools()."""
+        config = _config()
+        engine = _make_engine(config)
+        registry = engine.registry
+        producer = CLIActionProducer(config=config, engine=engine)
+        # Don't call register_tools()
+        producer.execute(command=["echo", "test"], agent_name="test-agent")
+        entry = registry.lookup("cli:echo")
+        assert entry is not None
+        assert entry.status == ToolStatus.OBSERVED
+
+    def test_auto_register_only_once(self):
+        """Second execute() for same tool doesn't re-register."""
+        config = _config()
+        engine = _make_engine(config)
+        registry = engine.registry
+        producer = CLIActionProducer(config=config, engine=engine)
+        producer.execute(command=["echo", "first"], agent_name="test-agent")
+        first_entry = registry.lookup("cli:echo")
+        first_seen = first_entry.first_seen
+        producer.execute(command=["echo", "second"], agent_name="test-agent")
+        second_entry = registry.lookup("cli:echo")
+        assert second_entry.first_seen == first_seen
+
+
+# --- Fix 2: PR-02 Scope Prefix Awareness ---
+
+
+class TestPR02PrefixAwareness:
+    def test_bare_name_in_config_matches_prefixed_action(self):
+        """tools_allowed: [echo] passes scope check for cli:echo action."""
+        config = _config(security={"tools": {"allowed": ["echo"]}})
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        result = producer.execute(command=["echo", "test"], agent_name="test-agent")
+        # Find PR-02 result
+        pr02 = next(
+            (r for r in result.evaluation.control_results if r.control_id == "PR-02"),
+            None,
+        )
+        assert pr02 is not None
+        assert pr02.result == "PASS"
+
+    def test_prefixed_name_in_config_matches(self):
+        """tools_allowed: [cli:echo] passes scope check for cli:echo action."""
+        config = _config(security={"tools": {"allowed": ["cli:echo"]}})
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        result = producer.execute(command=["echo", "test"], agent_name="test-agent")
+        pr02 = next(
+            (r for r in result.evaluation.control_results if r.control_id == "PR-02"),
+            None,
+        )
+        assert pr02 is not None
+        assert pr02.result == "PASS"
+
+    def test_blocked_tool_with_prefix(self):
+        """tools_blocked: [echo] blocks cli:echo action."""
+        config = _config(security={"tools": {"blocked": ["echo"]}})
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        result = producer.execute(command=["echo", "test"], agent_name="test-agent")
+        pr02 = next(
+            (r for r in result.evaluation.control_results if r.control_id == "PR-02"),
+            None,
+        )
+        assert pr02 is not None
+        assert pr02.result == "FAIL"
+
+
+# --- Fix 3: Evidence Persistence ---
+
+
+class TestCLIEvidencePersistence:
+    def test_execute_creates_evidence_record(self):
+        """Every CLI execution produces a persistent evidence record."""
+        from ancilis.evidence.store import EvidenceStore
+
+        config = _config()
+        engine = _make_engine(config)
+        evidence_store = EvidenceStore(config, in_memory=True)
+        producer = CLIActionProducer(
+            config=config, engine=engine, evidence_store=evidence_store
+        )
+        producer.execute(command=["echo", "test"], agent_name="test-agent")
+        assert evidence_store.count() == 1
+
+    def test_evidence_chain_integrity(self):
+        """CLI evidence records participate in hash chain."""
+        from ancilis.evidence.store import EvidenceStore
+
+        config = _config()
+        engine = _make_engine(config)
+        evidence_store = EvidenceStore(config, in_memory=True)
+        producer = CLIActionProducer(
+            config=config, engine=engine, evidence_store=evidence_store
+        )
+        producer.execute(command=["echo", "first"], agent_name="test-agent")
+        producer.execute(command=["echo", "second"], agent_name="test-agent")
+        assert evidence_store.count() == 2
+        valid, errors = evidence_store.verify_chain()
+        assert valid, f"Chain errors: {errors}"
+
+    def test_evidence_records_tool_name(self):
+        """Evidence record contains the CLI tool name."""
+        from ancilis.evidence.store import EvidenceStore
+
+        config = _config()
+        engine = _make_engine(config)
+        evidence_store = EvidenceStore(config, in_memory=True)
+        producer = CLIActionProducer(
+            config=config, engine=engine, evidence_store=evidence_store
+        )
+        producer.execute(command=["echo", "test"], agent_name="test-agent")
+        records = evidence_store.get_records()
+        assert len(records) == 1
+        assert records[0].tool_name == "cli:echo"
+
+    def test_no_evidence_without_store(self):
+        """Without evidence_store, execute still works (no crash)."""
+        config = _config()
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        result = producer.execute(command=["echo", "test"], agent_name="test-agent")
+        assert not result.blocked
+        assert result.stdout.strip() == "test"
+
+    def test_blocked_execution_still_produces_evidence(self):
+        """Even blocked executions create evidence records."""
+        from ancilis.evidence.store import EvidenceStore
+
+        config = _enforce_config()
+        engine = _make_engine(config)
+        evidence_store = EvidenceStore(config, in_memory=True)
+        producer = CLIActionProducer(
+            config=config, engine=engine, evidence_store=evidence_store
+        )
+        result = producer.execute(command=["echo", "blocked"], agent_name="test-agent")
+        assert result.blocked
+        assert evidence_store.count() == 1
+        records = evidence_store.get_records()
+        assert records[0].decision == "BLOCK"
