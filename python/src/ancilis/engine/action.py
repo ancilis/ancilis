@@ -38,3 +38,5 @@ class Action:
     parameters: ActionParameters
     agent_owner: str | None = None
     context: ActionContext = field(default_factory=ActionContext)
+    producer_type: str = "mcp"  # default preserves backward compat
+    producer_version: str = "0.1.0"
