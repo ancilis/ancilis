@@ -109,11 +109,9 @@ class TestToolCallInterception:
 
     @pytest.mark.asyncio
     async def test_enforce_all_pass_forwards(self):
-        config = _config(security={"mode": "enforce"})
+        config = _config(security={"mode": "enforce", "tools": {"allowed": ["my-tool"]}})
         session = _mock_session()
         mw = AncilisMiddleware(session, config=config)
-        from ancilis.engine.registry import ToolEntry
-        mw.registry.register(ToolEntry(name="my-tool"))
 
         result = await mw.call_tool("my-tool", {"key": "value"})
         session.call_tool.assert_called_once()
@@ -179,7 +177,7 @@ class TestAutoDiscovery:
     async def test_discovered_tool_passes_provenance(self):
         tools = [MockTool(name="tool-a", description="Desc A")]
         session = _mock_session(tools=tools)
-        config = _config(security={"mode": "enforce"})
+        config = _config(security={"mode": "enforce", "tools": {"allowed": ["tool-a"]}})
         mw = AncilisMiddleware(session, config=config)
 
         await mw.list_tools()

@@ -53,4 +53,5 @@ def build_action(
             data_classifications=dc_codes,
             active_overlays=overlay_ids,
         ),
+        producer_type="mcp",
     )
