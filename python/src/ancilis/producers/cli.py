@@ -161,7 +161,9 @@ class CLIActionProducer:
     def register_tools(self, registry: ToolRegistry) -> list[str]:
         """Register CLI tools from config allowlist.
 
-        All tools enter as OBSERVED. Approval is separate.
+        Tools in config.tools_allowed register as APPROVED (mirrors MCP
+        middleware pre-seeding). Other tools discovered at runtime enter
+        as OBSERVED via _auto_register().
         Strips existing cli: prefix to prevent double-prefix.
         """
         registered: list[str] = []
@@ -181,7 +183,8 @@ class CLIActionProducer:
                 ToolEntry(
                     name=cli_name,
                     description_hash=tool_hash,
-                    status=ToolStatus.OBSERVED,
+                    status=ToolStatus.APPROVED,
+                    approved_by="config",
                 )
             )
             registered.append(cli_name)
@@ -189,18 +192,34 @@ class CLIActionProducer:
         return registered
 
     def _auto_register(self, tool_name: str, command: list[str]) -> None:
-        """Auto-register a tool on first encounter if not in registry."""
+        """Auto-register a tool on first encounter if not in registry.
+
+        Tools matching config.tools_allowed register as APPROVED (same
+        as register_tools). Unknown tools enter as OBSERVED.
+        """
         if self._registry.lookup(tool_name) is not None:
             return
         bare_name = command[0] if command else "unknown"
         tool_hash = self.compute_tool_hash(os.path.basename(bare_name))
+        status = self._resolve_initial_status(tool_name)
         self._registry.register(
             ToolEntry(
                 name=tool_name,
                 description_hash=tool_hash,
-                status=ToolStatus.OBSERVED,
+                status=status,
+                approved_by="config" if status == ToolStatus.APPROVED else None,
             )
         )
+
+    def _resolve_initial_status(self, tool_name: str) -> ToolStatus:
+        """Determine initial trust status based on config allowlist."""
+        from ancilis.engine.evaluators.pr02_scope import PR02ScopeEvaluator
+
+        if self._config.tools_allowed and PR02ScopeEvaluator._matches_tool_list(
+            tool_name, self._config.tools_allowed
+        ):
+            return ToolStatus.APPROVED
+        return ToolStatus.OBSERVED
 
     def execute(
         self,
