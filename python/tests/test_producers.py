@@ -254,7 +254,8 @@ class TestCLIToolRegistration:
         assert "cli:echo" in registered
         assert "cli:cat" in registered
 
-    def test_registered_as_observed(self):
+    def test_allowlisted_registered_as_approved(self):
+        """Tools from config allowlist register as APPROVED."""
         config = _config(security={"tools": {"allowed": ["echo"]}})
         engine = _make_engine(config)
         registry = ToolRegistry()
@@ -262,7 +263,8 @@ class TestCLIToolRegistration:
         producer.register_tools(registry)
         entry = registry.lookup("cli:echo")
         assert entry is not None
-        assert entry.status == ToolStatus.OBSERVED
+        assert entry.status == ToolStatus.APPROVED
+        assert entry.approved_by == "config"
 
     def test_registered_with_hash(self):
         config = _config(security={"tools": {"allowed": ["echo"]}})
@@ -530,8 +532,8 @@ class TestCLIDoublePrefix:
 
 
 class TestCLIAutoRegistration:
-    def test_execute_auto_registers_tool(self):
-        """execute() registers tool in registry without manual register_tools()."""
+    def test_execute_auto_registers_unknown_tool_as_observed(self):
+        """execute() registers unknown tool as OBSERVED."""
         config = _config()
         engine = _make_engine(config)
         registry = engine.registry
@@ -673,3 +675,68 @@ class TestCLIEvidencePersistence:
         assert evidence_store.count() == 1
         records = evidence_store.get_records()
         assert records[0].decision == "BLOCK"
+
+
+# --- Fix Pass #2: CLI Trust Lifecycle Parity ---
+
+
+class TestCLITrustLifecycle:
+    def test_allowlisted_tool_auto_registers_as_approved(self):
+        """Auto-register honors config allowlist: echo in allowed -> APPROVED."""
+        config = _config(security={"tools": {"allowed": ["echo"]}})
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        producer.execute(command=["echo", "test"], agent_name="test-agent")
+        entry = engine.registry.lookup("cli:echo")
+        assert entry is not None
+        assert entry.status == ToolStatus.APPROVED
+        assert entry.approved_by == "config"
+
+    def test_unknown_tool_auto_registers_as_observed(self):
+        """Tool not in allowlist auto-registers as OBSERVED."""
+        config = _config(security={"tools": {"allowed": ["cat"]}})
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        producer.execute(command=["echo", "test"], agent_name="test-agent")
+        entry = engine.registry.lookup("cli:echo")
+        assert entry is not None
+        assert entry.status == ToolStatus.OBSERVED
+
+    def test_bare_name_in_allowlist_matches_prefixed(self):
+        """Config 'echo' matches auto-registered 'cli:echo'."""
+        config = _config(security={"tools": {"allowed": ["echo"]}})
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        producer.execute(command=["echo", "test"], agent_name="test-agent")
+        entry = engine.registry.lookup("cli:echo")
+        assert entry.status == ToolStatus.APPROVED
+
+    def test_prefixed_name_in_allowlist_matches(self):
+        """Config 'cli:echo' matches auto-registered 'cli:echo'."""
+        config = _config(security={"tools": {"allowed": ["cli:echo"]}})
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        producer.execute(command=["echo", "test"], agent_name="test-agent")
+        entry = engine.registry.lookup("cli:echo")
+        assert entry.status == ToolStatus.APPROVED
+
+    def test_enforce_mode_allows_allowlisted_cli_tool(self):
+        """Enforce mode + allowlisted CLI tool -> not blocked (APPROVED status)."""
+        config = _enforce_config(security={"mode": "enforce", "tools": {"allowed": ["echo"]}})
+        engine = _make_engine(config)
+        producer = CLIActionProducer(config=config, engine=engine)
+        result = producer.execute(command=["echo", "hello"], agent_name="test-agent")
+        assert not result.blocked
+        assert result.stdout.strip() == "hello"
+
+    def test_register_tools_all_approved(self):
+        """register_tools() marks all allowlisted tools as APPROVED."""
+        config = _config(security={"tools": {"allowed": ["echo", "cat", "ls"]}})
+        engine = _make_engine(config)
+        registry = ToolRegistry()
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer.register_tools(registry)
+        for name in ["cli:echo", "cli:cat", "cli:ls"]:
+            entry = registry.lookup(name)
+            assert entry is not None
+            assert entry.status == ToolStatus.APPROVED

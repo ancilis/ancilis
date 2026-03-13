@@ -73,6 +73,16 @@ def _validate_and_format(config_path: str | None) -> tuple[bool, str]:
         controls_detail += f" ({strict_names})"
     lines.append(controls_detail)
 
+    # Unavailable overlays (roadmap)
+    if resolved.unavailable_overlays:
+        lines.append("  Roadmap overlays:")
+        for uo in resolved.unavailable_overlays:
+            lines.append(
+                f"    ? {uo.overlay_id} would be activated by {uo.triggered_by} "
+                f"via {uo.data_type} but is not yet available"
+            )
+        lines.append("    Baseline security controls are active for all data types.")
+
     if resolved.warnings:
         lines.append("  Warnings:")
         for w in resolved.warnings:
