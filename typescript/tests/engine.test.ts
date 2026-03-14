@@ -6,7 +6,7 @@ import { describe, it, expect } from "vitest";
 import { randomUUID } from "node:crypto";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import { Engine } from "../src/ancilis/engine/engine.js";
-import { ToolRegistry } from "../src/ancilis/engine/registry.js";
+import { ToolRegistry, ToolStatus } from "../src/ancilis/engine/registry.js";
 import type { Action } from "../src/ancilis/engine/action.js";
 import type { ControlResult } from "../src/ancilis/engine/result.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
@@ -51,8 +51,10 @@ function makeRegistry(...tools: Array<[string, string?, string?]>): ToolRegistry
       name,
       version: version ?? null,
       descriptionHash: hash ?? null,
-      approved: true,
-      approvedDate: new Date().toISOString(),
+      status: ToolStatus.APPROVED,
+      approvedBy: "config",
+      firstSeen: new Date().toISOString(),
+      statusChanged: new Date().toISOString(),
     });
   }
   return reg;
@@ -207,14 +209,14 @@ describe("PR-03 Provenance", () => {
     expect(pr03.detail.toLowerCase()).toContain("tampering");
   });
 
-  it("no hash stored passes with note", () => {
+  it("no hash stored flags with note", () => {
     const reg = makeRegistry(["test-tool", "1.0"]);
     const config = makeConfig();
     const action = makeAction({ toolVersion: "1.0" });
     const engine = new Engine(config, { registry: reg });
     const result = engine.evaluate(action);
     const pr03 = getControlResult(result.controlResults, "PR-03");
-    expect(pr03.result).toBe("PASS");
+    expect(pr03.result).toBe("FLAG");
     expect(pr03.evidenceData.hash_match).toBe("no_hash");
   });
 

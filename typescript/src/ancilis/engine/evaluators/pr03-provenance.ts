@@ -4,7 +4,7 @@ import type { Action } from "../action.js";
 import type { ControlResult } from "../result.js";
 import type { ResolvedConfig } from "../../config/index.js";
 import type { ControlEvaluator } from "./base.js";
-import type { ToolRegistry } from "../registry.js";
+import { type ToolRegistry, ToolStatus } from "../registry.js";
 
 export class PR03ProvenanceEvaluator implements ControlEvaluator {
   controlId = "PR-03";
@@ -40,8 +40,19 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
     evidence.registry_entry = {
       name: entry.name,
       version: entry.version ?? null,
-      approved: entry.approved,
+      status: entry.status,
     };
+
+    // FAIL if tool is OBSERVED (not approved by operator)
+    if (entry.status === ToolStatus.OBSERVED) {
+      evidence.hash_match = "no_hash";
+      return {
+        controlId: this.controlId, controlName: this.controlName,
+        result: "FAIL",
+        detail: `Tool '${toolName}' is registered but not approved. Run: ancilis approve-tool ${toolName}`,
+        evidenceData: evidence, durationMs: performance.now() - start,
+      };
+    }
 
     // Check version
     if (action.tool.version && entry.version && action.tool.version !== entry.version) {
@@ -67,6 +78,15 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
       evidence.hash_match = true;
     } else {
       evidence.hash_match = "no_hash";
+      // FLAG if tool is APPROVED but no hash baseline exists
+      if (entry.status === ToolStatus.APPROVED && !entry.descriptionHash) {
+        return {
+          controlId: this.controlId, controlName: this.controlName,
+          result: "FLAG",
+          detail: "Tool approved but no description hash baseline — provenance not fully verifiable.",
+          evidenceData: evidence, durationMs: performance.now() - start,
+        };
+      }
     }
 
     return {

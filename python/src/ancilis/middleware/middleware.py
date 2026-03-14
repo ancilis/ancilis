@@ -53,6 +53,7 @@ class AncilisMiddleware:
         session: ClientSession,
         config_path: str | Path | None = None,
         config: ResolvedConfig | None = None,
+        evidence_store: EvidenceStore | None = None,
     ) -> None:
         if config is not None:
             self._config = config
@@ -77,7 +78,7 @@ class AncilisMiddleware:
         self._evaluation_log: list[EvaluationResult] = []
         self._scan_results: list[ScanResult] = []
         self._drift_events: list[DriftEvent] = []
-        self._evidence_store = EvidenceStore(self._config)
+        self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(self._config)
         self._issue_count: int = 0
         self._closed: bool = False
 

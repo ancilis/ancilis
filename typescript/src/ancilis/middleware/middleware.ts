@@ -3,7 +3,7 @@
 import type { ResolvedConfig } from "../config/index.js";
 import { loadConfig } from "../config/index.js";
 import { Engine } from "../engine/engine.js";
-import { ToolRegistry } from "../engine/registry.js";
+import { ToolRegistry, ToolStatus } from "../engine/registry.js";
 import type { EvaluationResult } from "../engine/result.js";
 import { buildAction } from "./action-builder.js";
 import { registerToolsFromList } from "./discovery.js";
@@ -46,6 +46,7 @@ export class BlockedToolCallError extends Error {
 export interface AncilisMiddlewareOptions {
   configPath?: string;
   config?: ResolvedConfig;
+  evidenceStore?: EvidenceStore;
 }
 
 export class AncilisMiddleware {
@@ -70,8 +71,21 @@ export class AncilisMiddleware {
 
     this._client = client;
     this._registry = new ToolRegistry();
+
+    // Pre-seed registry with config-approved tools (same as Python middleware)
+    const now = new Date().toISOString();
+    for (const toolName of this._config.toolsAllowed) {
+      this._registry.register({
+        name: toolName,
+        status: ToolStatus.APPROVED,
+        approvedBy: "config",
+        firstSeen: now,
+        statusChanged: now,
+      });
+    }
+
     this._engine = new Engine(this._config, { registry: this._registry });
-    this._evidenceStore = new EvidenceStore(this._config);
+    this._evidenceStore = options.evidenceStore ?? new EvidenceStore(this._config);
   }
 
   get config(): ResolvedConfig { return this._config; }
@@ -125,6 +139,7 @@ export class AncilisMiddleware {
     const drift = registerToolsFromList(
       tools.map(t => ({ name: t.name, description: t.description })),
       this._registry,
+      this._config.toolsAllowed,
     );
     this._driftEvents.push(...drift);
 

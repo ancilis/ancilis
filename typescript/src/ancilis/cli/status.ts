@@ -31,14 +31,19 @@ export function formatStatus(config: ResolvedConfig, summary: EvidenceSummary, v
   const enabled = [...config.controls.values()].filter(c => c.enabled);
   const controlStats = summary.control_pass_rates ?? {};
 
-  let allPassing = true;
-  for (const cs of enabled) {
-    const stats = controlStats[cs.controlId] ?? {};
-    if ((stats.FAIL ?? 0) > 0 || (stats.ERROR ?? 0) > 0) allPassing = false;
+  const totalEvals = summary.total_evaluations;
+  let controlSuffix: string;
+  if (totalEvals === 0) {
+    controlSuffix = "not yet evaluated";
+  } else {
+    let allPassing = true;
+    for (const cs of enabled) {
+      const stats = controlStats[cs.controlId] ?? {};
+      if ((stats.FAIL ?? 0) > 0 || (stats.ERROR ?? 0) > 0) allPassing = false;
+    }
+    controlSuffix = allPassing ? "all passing" : "issues detected";
   }
-
-  const passingStr = allPassing ? "all passing" : "issues detected";
-  lines.push(`  Controls: ${enabled.length} active, ${passingStr}`);
+  lines.push(`  Controls: ${enabled.length} active, ${controlSuffix}`);
 
   // Certification one-liners
   for (const certId of config.activeCertifications) {

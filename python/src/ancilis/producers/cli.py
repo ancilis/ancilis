@@ -42,6 +42,7 @@ from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolI
 from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
+from ancilis.evidence.store import EvidenceStore
 from ancilis.middleware.response_scanner import ScanResult, scan_response
 from ancilis.producers.protocol import ProducerType
 
@@ -80,12 +81,14 @@ class CLIActionProducer:
         config: ResolvedConfig,
         engine: Engine,
         registry: ToolRegistry | None = None,
-        evidence_store: Any | None = None,
+        evidence_store: EvidenceStore | None = None,
     ) -> None:
         self._config = config
         self._engine = engine
         self._registry = registry or engine.registry
-        self._evidence_store = evidence_store
+        # Create default evidence store if not provided (same as middleware).
+        # Lazy init means this doesn't touch the filesystem at construction.
+        self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
 
     @property
     def producer_type(self) -> ProducerType:
@@ -252,8 +255,7 @@ class CLIActionProducer:
         evaluation = self._engine.evaluate(action)
 
         # Persist evidence record (same as MCP middleware)
-        if self._evidence_store is not None:
-            self._evidence_store.store(evaluation, tool_name=tool_name)
+        self._evidence_store.store(evaluation, tool_name=tool_name)
 
         blocked = evaluation.decision == "BLOCK"
 

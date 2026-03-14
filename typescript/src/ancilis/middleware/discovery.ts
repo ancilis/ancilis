@@ -1,7 +1,7 @@
 /** Auto-discovery: registers tools from MCP listTools into the ToolRegistry. */
 
 import { createHash } from "node:crypto";
-import type { ToolRegistry } from "../engine/registry.js";
+import { type ToolRegistry, ToolStatus } from "../engine/registry.js";
 
 export interface DriftEvent {
   toolName: string;
@@ -17,8 +17,10 @@ export interface DiscoverableTool {
 export function registerToolsFromList(
   tools: DiscoverableTool[],
   registry: ToolRegistry,
+  preApproved: string[] = [],
 ): DriftEvent[] {
   const driftEvents: DriftEvent[] = [];
+  const approvedSet = new Set(preApproved);
 
   for (const tool of tools) {
     const description = tool.description ?? "";
@@ -33,12 +35,24 @@ export function registerToolsFromList(
       });
     }
 
-    registry.register({
-      name: tool.name,
-      descriptionHash: descHash,
-      approved: true,
-      approvedDate: new Date().toISOString(),
-    });
+    // Don't downgrade an already-approved tool
+    if (existing && existing.status === ToolStatus.APPROVED) {
+      // Update hash only
+      registry.register({
+        ...existing,
+        descriptionHash: descHash,
+      });
+    } else {
+      const now = new Date().toISOString();
+      registry.register({
+        name: tool.name,
+        descriptionHash: descHash,
+        status: approvedSet.has(tool.name) ? ToolStatus.APPROVED : ToolStatus.OBSERVED,
+        approvedBy: approvedSet.has(tool.name) ? "config" : null,
+        firstSeen: existing?.firstSeen ?? now,
+        statusChanged: now,
+      });
+    }
   }
 
   return driftEvents;

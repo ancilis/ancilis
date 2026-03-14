@@ -8,9 +8,16 @@ import { AncilisMiddleware, BlockedToolCallError } from "../src/ancilis/middlewa
 import type { McpClientLike } from "../src/ancilis/middleware/middleware.js";
 import { scanResponse } from "../src/ancilis/middleware/response-scanner.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
+import { ToolStatus } from "../src/ancilis/engine/index.js";
+import { EvidenceStore } from "../src/ancilis/evidence/store.js";
 
 function makeConfig(overrides: Record<string, unknown> = {}): ResolvedConfig {
   return loadConfig({ raw: { agent: { name: "test-agent" }, ...overrides } });
+}
+
+function makeMw(client: McpClientLike, opts: { config?: ResolvedConfig } = {}): AncilisMiddleware {
+  const config = opts.config ?? makeConfig();
+  return new AncilisMiddleware(client, { config, evidenceStore: new EvidenceStore(config, { inMemory: true }) });
 }
 
 function mockClient(options: {
@@ -30,13 +37,13 @@ describe("Middleware Init", () => {
   it("initializes with config object", () => {
     const config = makeConfig();
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config });
+    const mw = makeMw(client, { config });
     expect(mw.config.agentName).toBe("test-agent");
   });
 
   it("initializes with minimal config", () => {
     const config = makeConfig();
-    const mw = new AncilisMiddleware(mockClient(), { config });
+    const mw = makeMw(mockClient(), { config });
     expect(mw.config.mode).toBe("audit");
   });
 });
@@ -47,8 +54,8 @@ describe("Tool Call Interception", () => {
   it("audit mode allows and forwards", async () => {
     const config = makeConfig();
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config });
-    mw.registry.register({ name: "my-tool", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client, { config });
+    mw.registry.register({ name: "my-tool", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     const result = await mw.callTool("my-tool", { key: "value" });
     expect(client.callTool).toHaveBeenCalledWith({ name: "my-tool", arguments: { key: "value" } });
@@ -58,8 +65,8 @@ describe("Tool Call Interception", () => {
   it("enforce mode all pass forwards", async () => {
     const config = makeConfig({ security: { mode: "enforce" } });
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config });
-    mw.registry.register({ name: "my-tool", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client, { config });
+    mw.registry.register({ name: "my-tool", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("my-tool", { key: "value" });
     expect(client.callTool).toHaveBeenCalled();
@@ -68,7 +75,7 @@ describe("Tool Call Interception", () => {
   it("enforce mode control fails blocks", async () => {
     const config = makeConfig({ security: { mode: "enforce" } });
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config });
+    const mw = makeMw(client, { config });
 
     await expect(mw.callTool("unknown-tool", {})).rejects.toThrow(BlockedToolCallError);
     expect(client.callTool).not.toHaveBeenCalled();
@@ -77,7 +84,7 @@ describe("Tool Call Interception", () => {
   it("blocked call has evaluation", async () => {
     const config = makeConfig({ security: { mode: "enforce" } });
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config });
+    const mw = makeMw(client, { config });
 
     try {
       await mw.callTool("unknown-tool", {});
@@ -90,8 +97,8 @@ describe("Tool Call Interception", () => {
   it("action built correctly", async () => {
     const config = makeConfig();
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config });
-    mw.registry.register({ name: "my-tool", version: "1.0", descriptionHash: "abc", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client, { config });
+    mw.registry.register({ name: "my-tool", version: "1.0", descriptionHash: "abc", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("my-tool", { param: "val" });
     const ev = mw.getLastEvaluation();
@@ -110,7 +117,7 @@ describe("Auto-Discovery", () => {
       { name: "tool-b", description: "Description B" },
     ];
     const client = mockClient({ tools });
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
+    const mw = makeMw(client);
 
     await mw.listTools();
     expect(mw.registry.isRegistered("tool-a")).toBe(true);
@@ -120,8 +127,8 @@ describe("Auto-Discovery", () => {
   it("discovered tool passes provenance", async () => {
     const tools = [{ name: "tool-a", description: "Desc A" }];
     const client = mockClient({ tools });
-    const config = makeConfig({ security: { mode: "enforce" } });
-    const mw = new AncilisMiddleware(client, { config });
+    const config = makeConfig({ security: { mode: "enforce", tools: { allowed: ["tool-a"] } } });
+    const mw = makeMw(client, { config });
 
     await mw.listTools();
     await mw.callTool("tool-a", {});
@@ -135,7 +142,7 @@ describe("Auto-Discovery", () => {
         .mockResolvedValueOnce({ tools: [{ name: "tool-a", description: "Version 1" }] })
         .mockResolvedValueOnce({ tools: [{ name: "tool-a", description: "Version 2 changed" }] }),
     };
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
+    const mw = makeMw(client);
 
     await mw.listTools();
     await mw.listTools();
@@ -150,8 +157,8 @@ describe("Auto-Discovery", () => {
 describe("Response Scanning", () => {
   it("SSN in response generates recommendation", async () => {
     const client = mockClient({ callToolReturn: { content: [{ type: "text", text: "Patient SSN: 123-45-6789" }] } });
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "patient-lookup", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "patient-lookup", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("patient-lookup", {});
     const recs = mw.getRecommendations();
@@ -160,8 +167,8 @@ describe("Response Scanning", () => {
 
   it("credit card in response detected", async () => {
     const client = mockClient({ callToolReturn: { content: [{ type: "text", text: "Card: 4111 1111 1111 1111" }] } });
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "payment-tool", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "payment-tool", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("payment-tool", {});
     expect(mw.getRecommendations().some(r => r.includes("credit_cards"))).toBe(true);
@@ -170,8 +177,8 @@ describe("Response Scanning", () => {
   it("high entropy flagged as encrypted", async () => {
     const encrypted = "aK7xP9mQ2rT5wB8nY1cD4fG6hJ0kL3vE".repeat(2);
     const client = mockClient({ callToolReturn: { content: [{ type: "text", text: `Data: ${encrypted}` }] } });
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "secure-tool", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "secure-tool", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("secure-tool", {});
     expect(mw.scanResults.length).toBeGreaterThan(0);
@@ -180,8 +187,8 @@ describe("Response Scanning", () => {
 
   it("clean response no recommendations", async () => {
     const client = mockClient({ callToolReturn: { content: [{ type: "text", text: "Everything is fine. Status: OK" }] } });
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "status-tool", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "status-tool", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("status-tool", {});
     expect(mw.getRecommendations().length).toBe(0);
@@ -194,9 +201,9 @@ describe("Response Scanning", () => {
         .mockResolvedValueOnce({ content: [{ type: "text", text: "Card: 4111 1111 1111 1111" }] }),
       listTools: vi.fn().mockResolvedValue({ tools: [] }),
     };
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "tool-a", approved: true, approvedDate: new Date().toISOString() });
-    mw.registry.register({ name: "tool-b", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "tool-a", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
+    mw.registry.register({ name: "tool-b", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("tool-a", {});
     await mw.callTool("tool-b", {});
@@ -209,7 +216,7 @@ describe("Response Scanning", () => {
 describe("Enforcement", () => {
   it("audit failure allows through", async () => {
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
+    const mw = makeMw(client);
 
     const result = await mw.callTool("unregistered-tool", {});
     expect(client.callTool).toHaveBeenCalled();
@@ -218,7 +225,7 @@ describe("Enforcement", () => {
 
   it("enforce failure blocks", async () => {
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config: makeConfig({ security: { mode: "enforce" } }) });
+    const mw = makeMw(client, { config: makeConfig({ security: { mode: "enforce" } }) });
 
     await expect(mw.callTool("unregistered-tool", {})).rejects.toThrow(BlockedToolCallError);
     expect(client.callTool).not.toHaveBeenCalled();
@@ -230,8 +237,8 @@ describe("Enforcement", () => {
 describe("Engine Integration", () => {
   it("evaluation result accessible", async () => {
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "my-tool", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "my-tool", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("my-tool", { x: 1 });
     const ev = mw.getLastEvaluation();
@@ -241,8 +248,8 @@ describe("Engine Integration", () => {
 
   it("evaluation log grows", async () => {
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "tool-a", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "tool-a", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("tool-a", {});
     await mw.callTool("tool-a", {});
@@ -255,8 +262,8 @@ describe("Engine Integration", () => {
 describe("Edge Cases", () => {
   it("empty parameters", async () => {
     const client = mockClient();
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "my-tool", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "my-tool", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await mw.callTool("my-tool");
     expect(client.callTool).toHaveBeenCalledWith({ name: "my-tool", arguments: undefined });
@@ -267,8 +274,8 @@ describe("Edge Cases", () => {
       callTool: vi.fn().mockRejectedValue(new Error("MCP server down")),
       listTools: vi.fn().mockResolvedValue({ tools: [] }),
     };
-    const mw = new AncilisMiddleware(client, { config: makeConfig() });
-    mw.registry.register({ name: "my-tool", approved: true, approvedDate: new Date().toISOString() });
+    const mw = makeMw(client);
+    mw.registry.register({ name: "my-tool", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
 
     await expect(mw.callTool("my-tool", {})).rejects.toThrow("MCP server down");
     expect(mw.evaluationLog.length).toBe(1);

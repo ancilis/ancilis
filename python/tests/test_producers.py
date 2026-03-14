@@ -15,6 +15,7 @@ from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.producers.protocol import ActionProducer, ProducerType
 from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
 from ancilis.producers.mcp import MCPActionProducer
+from ancilis.evidence.store import EvidenceStore
 
 
 # --- Helpers ---
@@ -37,6 +38,14 @@ def _make_engine(config=None, registry=None):
     return Engine(c, registry=registry)
 
 
+def _make_cli_producer(config=None, engine=None, registry=None, evidence_store=None):
+    """Create a CLIActionProducer with in-memory evidence store for test isolation."""
+    c = config or _config()
+    e = engine or _make_engine(c, registry=registry)
+    store = evidence_store or EvidenceStore(c, in_memory=True)
+    return CLIActionProducer(config=c, engine=e, registry=registry, evidence_store=store)
+
+
 # --- Protocol Compliance ---
 
 
@@ -45,7 +54,7 @@ class TestActionProducerProtocol:
         """CLIActionProducer satisfies ActionProducer protocol."""
         config = _config()
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         assert isinstance(producer, ActionProducer)
 
     def test_mcp_producer_satisfies_protocol(self):
@@ -140,7 +149,7 @@ class TestCLITranslation:
     def _make_producer(self, config=None):
         c = config or _config()
         engine = _make_engine(c)
-        return CLIActionProducer(config=c, engine=engine)
+        return CLIActionProducer(config=c, engine=engine, evidence_store=EvidenceStore(c, in_memory=True))
 
     def test_basic_command(self):
         producer = self._make_producer()
@@ -209,7 +218,7 @@ class TestCLITranslation:
             description_hash="abc123hash",
             status=ToolStatus.APPROVED,
         ))
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         invocation = CLIInvocation(command=["echo", "hi"], agent_name="test-agent")
         action = producer.translate(invocation)
         assert action.tool.description_hash == "abc123hash"
@@ -221,7 +230,7 @@ class TestCLITranslation:
 class TestCLIToolHash:
     def _make_producer(self):
         config = _config()
-        return CLIActionProducer(config=config, engine=_make_engine(config))
+        return CLIActionProducer(config=config, engine=_make_engine(config), evidence_store=EvidenceStore(config, in_memory=True))
 
     def test_deterministic(self):
         producer = self._make_producer()
@@ -249,7 +258,7 @@ class TestCLIToolRegistration:
         config = _config(security={"tools": {"allowed": ["echo", "cat"]}})
         engine = _make_engine(config)
         registry = ToolRegistry()
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         registered = producer.register_tools(registry)
         assert "cli:echo" in registered
         assert "cli:cat" in registered
@@ -259,7 +268,7 @@ class TestCLIToolRegistration:
         config = _config(security={"tools": {"allowed": ["echo"]}})
         engine = _make_engine(config)
         registry = ToolRegistry()
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         producer.register_tools(registry)
         entry = registry.lookup("cli:echo")
         assert entry is not None
@@ -270,7 +279,7 @@ class TestCLIToolRegistration:
         config = _config(security={"tools": {"allowed": ["echo"]}})
         engine = _make_engine(config)
         registry = ToolRegistry()
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         producer.register_tools(registry)
         entry = registry.lookup("cli:echo")
         assert entry is not None
@@ -281,7 +290,7 @@ class TestCLIToolRegistration:
         config = _config()
         engine = _make_engine(config)
         registry = ToolRegistry()
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         registered = producer.register_tools(registry)
         assert registered == []
 
@@ -293,7 +302,7 @@ class TestCLIExecuteAudit:
     def _make_producer(self, config=None):
         c = config or _config()
         engine = _make_engine(c)
-        return CLIActionProducer(config=c, engine=engine)
+        return CLIActionProducer(config=c, engine=engine, evidence_store=EvidenceStore(c, in_memory=True))
 
     def test_execute_allows_in_audit_mode(self):
         producer = self._make_producer()
@@ -348,7 +357,7 @@ class TestCLIExecuteEnforce:
         """Enforce mode blocks execution of unapproved CLI tool."""
         config = _enforce_config()
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         result = producer.execute(
             command=["echo", "should-not-run"], agent_name="test-agent"
         )
@@ -367,7 +376,7 @@ class TestCLIExecuteEnforce:
             status=ToolStatus.APPROVED,
         ))
         engine = Engine(config, registry=registry)
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
 
         # Translate first to get the hash that PR-03 will see
         invocation = CLIInvocation(command=["echo", "hello"], agent_name="test-agent")
@@ -389,7 +398,7 @@ class TestCLIExecuteEnforce:
 class TestCLIPatternDetection:
     def _make_producer(self):
         config = _config()
-        return CLIActionProducer(config=config, engine=_make_engine(config))
+        return CLIActionProducer(config=config, engine=_make_engine(config), evidence_store=EvidenceStore(config, in_memory=True))
 
     def test_stdout_scanned_for_patterns(self):
         """CLI stdout containing sensitive patterns gets flagged."""
@@ -408,7 +417,7 @@ class TestCLIPatternDetection:
         """Blocked execution does not scan (no output to scan)."""
         config = _enforce_config()
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         result = producer.execute(
             command=["echo", "SSN: 123-45-6789"],
             agent_name="test-agent",
@@ -478,7 +487,7 @@ class TestBackwardCompatibility:
         """Engine evaluates CLI-produced actions the same as MCP actions."""
         config = _config()
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         invocation = CLIInvocation(command=["echo", "test"], agent_name="test-agent")
         action = producer.translate(invocation)
         evaluation = engine.evaluate(action)
@@ -512,7 +521,7 @@ class TestCLIDoublePrefix:
         config = _config(security={"tools": {"allowed": ["echo"]}})
         engine = _make_engine(config)
         registry = ToolRegistry()
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         registered = producer.register_tools(registry)
         assert "cli:echo" in registered
         assert "cli:cli:echo" not in registered
@@ -522,7 +531,7 @@ class TestCLIDoublePrefix:
         config = _config(security={"tools": {"allowed": ["cli:echo"]}})
         engine = _make_engine(config)
         registry = ToolRegistry()
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         registered = producer.register_tools(registry)
         assert "cli:echo" in registered
         assert "cli:cli:echo" not in registered
@@ -537,7 +546,7 @@ class TestCLIAutoRegistration:
         config = _config()
         engine = _make_engine(config)
         registry = engine.registry
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         # Don't call register_tools()
         producer.execute(command=["echo", "test"], agent_name="test-agent")
         entry = registry.lookup("cli:echo")
@@ -549,7 +558,7 @@ class TestCLIAutoRegistration:
         config = _config()
         engine = _make_engine(config)
         registry = engine.registry
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         producer.execute(command=["echo", "first"], agent_name="test-agent")
         first_entry = registry.lookup("cli:echo")
         first_seen = first_entry.first_seen
@@ -566,7 +575,7 @@ class TestPR02PrefixAwareness:
         """tools_allowed: [echo] passes scope check for cli:echo action."""
         config = _config(security={"tools": {"allowed": ["echo"]}})
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         result = producer.execute(command=["echo", "test"], agent_name="test-agent")
         # Find PR-02 result
         pr02 = next(
@@ -580,7 +589,7 @@ class TestPR02PrefixAwareness:
         """tools_allowed: [cli:echo] passes scope check for cli:echo action."""
         config = _config(security={"tools": {"allowed": ["cli:echo"]}})
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         result = producer.execute(command=["echo", "test"], agent_name="test-agent")
         pr02 = next(
             (r for r in result.evaluation.control_results if r.control_id == "PR-02"),
@@ -593,7 +602,7 @@ class TestPR02PrefixAwareness:
         """tools_blocked: [echo] blocks cli:echo action."""
         config = _config(security={"tools": {"blocked": ["echo"]}})
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         result = producer.execute(command=["echo", "test"], agent_name="test-agent")
         pr02 = next(
             (r for r in result.evaluation.control_results if r.control_id == "PR-02"),
@@ -651,14 +660,17 @@ class TestCLIEvidencePersistence:
         assert len(records) == 1
         assert records[0].tool_name == "cli:echo"
 
-    def test_no_evidence_without_store(self):
-        """Without evidence_store, execute still works (no crash)."""
+    def test_default_constructor_produces_evidence(self):
+        """CLI producer with default constructor produces evidence records."""
         config = _config()
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         result = producer.execute(command=["echo", "test"], agent_name="test-agent")
         assert not result.blocked
         assert result.stdout.strip() == "test"
+        # Evidence store created by default, evidence recorded
+        assert producer._evidence_store is not None
+        assert producer._evidence_store.count() == 1
 
     def test_blocked_execution_still_produces_evidence(self):
         """Even blocked executions create evidence records."""
@@ -685,7 +697,7 @@ class TestCLITrustLifecycle:
         """Auto-register honors config allowlist: echo in allowed -> APPROVED."""
         config = _config(security={"tools": {"allowed": ["echo"]}})
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         producer.execute(command=["echo", "test"], agent_name="test-agent")
         entry = engine.registry.lookup("cli:echo")
         assert entry is not None
@@ -696,7 +708,7 @@ class TestCLITrustLifecycle:
         """Tool not in allowlist auto-registers as OBSERVED."""
         config = _config(security={"tools": {"allowed": ["cat"]}})
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         producer.execute(command=["echo", "test"], agent_name="test-agent")
         entry = engine.registry.lookup("cli:echo")
         assert entry is not None
@@ -706,7 +718,7 @@ class TestCLITrustLifecycle:
         """Config 'echo' matches auto-registered 'cli:echo'."""
         config = _config(security={"tools": {"allowed": ["echo"]}})
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         producer.execute(command=["echo", "test"], agent_name="test-agent")
         entry = engine.registry.lookup("cli:echo")
         assert entry.status == ToolStatus.APPROVED
@@ -715,7 +727,7 @@ class TestCLITrustLifecycle:
         """Config 'cli:echo' matches auto-registered 'cli:echo'."""
         config = _config(security={"tools": {"allowed": ["cli:echo"]}})
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         producer.execute(command=["echo", "test"], agent_name="test-agent")
         entry = engine.registry.lookup("cli:echo")
         assert entry.status == ToolStatus.APPROVED
@@ -724,7 +736,7 @@ class TestCLITrustLifecycle:
         """Enforce mode + allowlisted CLI tool -> not blocked (APPROVED status)."""
         config = _enforce_config(security={"mode": "enforce", "tools": {"allowed": ["echo"]}})
         engine = _make_engine(config)
-        producer = CLIActionProducer(config=config, engine=engine)
+        producer = CLIActionProducer(config=config, engine=engine, evidence_store=EvidenceStore(config, in_memory=True))
         result = producer.execute(command=["echo", "hello"], agent_name="test-agent")
         assert not result.blocked
         assert result.stdout.strip() == "hello"
@@ -734,7 +746,7 @@ class TestCLITrustLifecycle:
         config = _config(security={"tools": {"allowed": ["echo", "cat", "ls"]}})
         engine = _make_engine(config)
         registry = ToolRegistry()
-        producer = CLIActionProducer(config=config, engine=engine, registry=registry)
+        producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         producer.register_tools(registry)
         for name in ["cli:echo", "cli:cat", "cli:ls"]:
             entry = registry.lookup(name)
