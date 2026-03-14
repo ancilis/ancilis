@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import { stringify as stringifyYaml, parse as parseYaml } from "yaml";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
-import { Engine, ToolRegistry } from "../src/ancilis/engine/index.js";
+import { Engine, ToolRegistry, ToolStatus } from "../src/ancilis/engine/index.js";
 import type { ToolEntry, Action, EvaluationResult } from "../src/ancilis/engine/index.js";
 import { formatStatus } from "../src/ancilis/cli/status.js";
 import { validateAndFormat } from "../src/ancilis/cli/validate.js";
@@ -50,7 +50,7 @@ function makeAction(toolName = "read_file", agentId = "test-agent"): Action {
     agentId,
     agentOwner: "test-owner",
     actionType: "tool_call",
-    tool: { name: toolName, approved: true } as ToolEntry,
+    tool: { name: toolName },
     parameters: { raw: {} } as any,
     context: { sessionId: "sess-1" } as any,
   };
@@ -72,12 +72,12 @@ function populatedSummary(n = 5): EvidenceSummary {
     decisions: { ALLOW: n },
     tools_evaluated: ["read_file"],
     control_pass_rates: {
-      "PR-01": { PASS: n, FAIL: 0, SKIP: 0, ERROR: 0 },
-      "PR-02": { PASS: n, FAIL: 0, SKIP: 0, ERROR: 0 },
-      "PR-03": { PASS: n, FAIL: 0, SKIP: 0, ERROR: 0 },
-      "PR-04": { PASS: n, FAIL: 0, SKIP: 0, ERROR: 0 },
-      "PR-05": { PASS: n, FAIL: 0, SKIP: 0, ERROR: 0 },
-      "DE-01": { PASS: n, FAIL: 0, SKIP: 0, ERROR: 0 },
+      "PR-01": { PASS: n, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 },
+      "PR-02": { PASS: n, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 },
+      "PR-03": { PASS: n, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 },
+      "PR-04": { PASS: n, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 },
+      "PR-05": { PASS: n, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 },
+      "DE-01": { PASS: n, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 },
     },
     chain_valid: true,
     chain_errors: [],
@@ -301,7 +301,7 @@ describe("Report — Compliance", () => {
     const config = loadConfig({ raw: fullConfig() });
     const summary = populatedSummary(2);
     // Add some failures
-    summary.control_pass_rates!["PR-04"] = { PASS: 1, FAIL: 1, SKIP: 0, ERROR: 0 };
+    summary.control_pass_rates!["PR-04"] = { PASS: 1, FAIL: 1, FLAG: 0, SKIP: 0, ERROR: 0 };
     const gen = new ReportGenerator(config, summary);
     const report = gen.generate("30d", "markdown");
     const md = renderMarkdown(report);
@@ -444,7 +444,7 @@ describe("Display Fields", () => {
   it("engine post-processes display fields", () => {
     const config = loadConfig({ raw: minimalConfig() });
     const registry = new ToolRegistry();
-    registry.register({ name: "read_file", approved: true } as ToolEntry);
+    registry.register({ name: "read_file", status: ToolStatus.APPROVED, approvedBy: "config", firstSeen: new Date().toISOString(), statusChanged: new Date().toISOString() });
     const engine = new Engine(config, { registry });
     const action = makeAction();
     const result = engine.evaluate(action);

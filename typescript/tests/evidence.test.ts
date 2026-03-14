@@ -107,7 +107,7 @@ describe("Evidence Store", () => {
 
   it("store creates record", async () => {
     const config = makeConfig();
-    store = new EvidenceStore(config);
+    store = new EvidenceStore(config, { inMemory: true });
     const ev = makeEvaluation();
 
     const record = await store.store(ev, "my-tool");
@@ -118,13 +118,13 @@ describe("Evidence Store", () => {
   });
 
   it("first record uses genesis seed", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
     const record = await store.store(makeEvaluation(), "tool-a");
     expect(record.previousHash).toBe(GENESIS_SEED);
   });
 
   it("hash chain links", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     const r1 = await store.store(makeEvaluation({ evaluationId: "e1" }), "tool-a");
     const r2 = await store.store(makeEvaluation({ evaluationId: "e2" }), "tool-b");
@@ -135,7 +135,7 @@ describe("Evidence Store", () => {
   });
 
   it("count", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     expect(await store.count()).toBe(0);
     await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
@@ -145,7 +145,7 @@ describe("Evidence Store", () => {
   });
 
   it("get records all", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
     await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
@@ -155,7 +155,7 @@ describe("Evidence Store", () => {
   });
 
   it("get records filter tool", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     await store.store(makeEvaluation({ evaluationId: "e1" }), "tool-a");
     await store.store(makeEvaluation({ evaluationId: "e2" }), "tool-b");
@@ -166,7 +166,7 @@ describe("Evidence Store", () => {
   });
 
   it("get records filter decision", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     await store.store(makeEvaluation({ evaluationId: "e1", decision: "ALLOW" }), "t1");
     await store.store(makeEvaluation({ evaluationId: "e2", decision: "BLOCK" }), "t2");
@@ -177,7 +177,7 @@ describe("Evidence Store", () => {
   });
 
   it("verify chain valid", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
     await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
@@ -189,7 +189,7 @@ describe("Evidence Store", () => {
   });
 
   it("verify chain empty", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
     const { valid, errors } = await store.verifyChain();
     expect(valid).toBe(true);
     expect(errors).toEqual([]);
@@ -198,20 +198,20 @@ describe("Evidence Store", () => {
   it("active certifications stored", async () => {
     const config = makeConfig();
     config.activeCertifications = ["SOC2", "HIPAA"];
-    store = new EvidenceStore(config);
+    store = new EvidenceStore(config, { inMemory: true });
 
     const record = await store.store(makeEvaluation(), "t1");
     expect(record.activeCertifications).toEqual(["SOC2", "HIPAA"]);
   });
 
   it("active certifications default empty", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
     const record = await store.store(makeEvaluation(), "t1");
     expect(record.activeCertifications).toEqual([]);
   });
 
   it("blocked evaluation stored", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
     const record = await store.store(makeEvaluation({ decision: "BLOCK" }), "blocked-tool");
     expect(record.decision).toBe("BLOCK");
     expect(await store.count()).toBe(1);
@@ -228,14 +228,14 @@ describe("Summary", () => {
   });
 
   it("get summary empty", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
     const summary = await store.getSummary();
     expect(summary.totalEvaluations).toBe(0);
     expect(summary.chainValid).toBe(true);
   });
 
   it("get summary with records", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     await store.store(makeEvaluation({ evaluationId: "e1", decision: "ALLOW" }), "tool-a");
     await store.store(makeEvaluation({ evaluationId: "e2", decision: "ALLOW" }), "tool-b");
@@ -250,7 +250,7 @@ describe("Summary", () => {
   });
 
   it("get summary control pass rates", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
     await store.store(
@@ -280,7 +280,7 @@ describe("Purge", () => {
   });
 
   it("purge before", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     await store.store(makeEvaluation({ evaluationId: "e1", timestamp: "2024-01-01T00:00:00Z" }), "t1");
     await store.store(makeEvaluation({ evaluationId: "e2", timestamp: "2025-06-01T00:00:00Z" }), "t2");
@@ -292,7 +292,7 @@ describe("Purge", () => {
   });
 
   it("purge none removed", async () => {
-    store = new EvidenceStore(makeConfig());
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     await store.store(makeEvaluation({ evaluationId: "e1", timestamp: "2025-06-01T00:00:00Z" }), "t1");
 

@@ -1,6 +1,9 @@
 /** DuckDB-backed evidence store with hash chain integrity. */
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { mkdirSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { homedir } from "node:os";
 import duckdb from "duckdb";
 import type { EvaluationResult } from "../engine/result.js";
 import type { ResolvedConfig } from "../config/index.js";
@@ -64,40 +67,77 @@ function runAsync(conn: duckdb.Connection, sql: string, params: unknown[] = []):
   });
 }
 
-export class EvidenceStore {
-  private _db: duckdb.Database;
-  private _conn: duckdb.Connection;
-  private _certifications: string[];
-  private _initialized: Promise<void>;
+function agentDbPath(agentName: string): string {
+  const safeName = agentName.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const cwdHash = createHash("sha256").update(process.cwd()).digest("hex").slice(0, 8);
+  return join(homedir(), ".ancilis", `${safeName}-${cwdHash}`, "evidence.duckdb");
+}
 
-  constructor(config: ResolvedConfig, dbPath?: string) {
-    const path = dbPath ?? ":memory:";
+export class EvidenceStore {
+  private _db: duckdb.Database | null = null;
+  private _conn: duckdb.Connection | null = null;
+  private _certifications: string[];
+  private _initialized: Promise<void> | null = null;
+  private _dbPath: string;
+  private _inMemory: boolean;
+
+  constructor(config: ResolvedConfig, options?: { dbPath?: string; inMemory?: boolean }) {
     this._certifications = [...(config.activeCertifications ?? [])];
-    this._db = new duckdb.Database(path);
-    this._conn = this._db.connect();
-    this._initialized = execAsync(this._conn, CREATE_TABLE_SQL);
+    this._inMemory = options?.inMemory ?? false;
+
+    if (this._inMemory) {
+      this._dbPath = ":memory:";
+    } else if (options?.dbPath) {
+      this._dbPath = options.dbPath;
+    } else {
+      const agentName = config.agentName || "default";
+      this._dbPath = agentDbPath(agentName);
+    }
+    // No filesystem access here — lazy init on first use
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    if (this._initialized) return this._initialized;
+
+    this._initialized = (async () => {
+      if (this._inMemory) {
+        this._db = new duckdb.Database(":memory:");
+      } else {
+        mkdirSync(dirname(this._dbPath), { recursive: true });
+        this._db = new duckdb.Database(this._dbPath);
+      }
+      this._conn = this._db.connect();
+      await execAsync(this._conn, CREATE_TABLE_SQL);
+    })();
+
+    return this._initialized;
   }
 
   async close(): Promise<void> {
+    if (!this._initialized) return;
     await this._initialized;
     return new Promise((resolve) => {
-      this._conn.close(() => {
-        this._db.close(() => resolve());
-      });
+      if (this._conn && this._db) {
+        this._conn.close(() => {
+          this._db!.close(() => resolve());
+        });
+      } else {
+        resolve();
+      }
     });
   }
 
   private async getLastHash(): Promise<string> {
-    await this._initialized;
+    await this.ensureInitialized();
     const rows = await allAsync(
-      this._conn,
+      this._conn!,
       "SELECT record_hash FROM evidence_records ORDER BY seq_id DESC LIMIT 1",
     );
     return rows.length > 0 ? (rows[0] as Record<string, unknown>).record_hash as string : GENESIS_SEED;
   }
 
   async store(evaluation: EvaluationResult, toolName: string): Promise<EvidenceRecord> {
-    await this._initialized;
+    await this.ensureInitialized();
     const recordId = randomUUID();
     const previousHash = await this.getLastHash();
 
@@ -143,7 +183,7 @@ export class EvidenceStore {
       totalDurationMs: evaluation.totalDurationMs,
     };
 
-    await runAsync(this._conn, INSERT_SQL, [
+    await runAsync(this._conn!, INSERT_SQL, [
       record.recordId,
       record.evaluationId,
       record.timestamp,
@@ -169,7 +209,7 @@ export class EvidenceStore {
     decision?: string;
     limit?: number;
   }): Promise<EvidenceRecord[]> {
-    await this._initialized;
+    await this.ensureInitialized();
     const conditions: string[] = [];
     const params: unknown[] = [];
 
@@ -191,7 +231,7 @@ export class EvidenceStore {
     params.push(limit);
 
     const rows = await allAsync(
-      this._conn,
+      this._conn!,
       `SELECT * FROM evidence_records${where} ORDER BY seq_id ASC LIMIT ?`,
       params,
     );
@@ -200,15 +240,15 @@ export class EvidenceStore {
   }
 
   async count(): Promise<number> {
-    await this._initialized;
-    const rows = await allAsync(this._conn, "SELECT COUNT(*)::INTEGER as cnt FROM evidence_records");
+    await this.ensureInitialized();
+    const rows = await allAsync(this._conn!, "SELECT COUNT(*)::INTEGER as cnt FROM evidence_records");
     return (rows[0] as Record<string, unknown>).cnt as number;
   }
 
   async verifyChain(): Promise<{ valid: boolean; errors: string[] }> {
-    await this._initialized;
+    await this.ensureInitialized();
     const rows = await allAsync(
-      this._conn,
+      this._conn!,
       "SELECT * FROM evidence_records ORDER BY seq_id ASC",
     );
 
@@ -259,7 +299,7 @@ export class EvidenceStore {
   }
 
   async getSummary(): Promise<Record<string, unknown>> {
-    await this._initialized;
+    await this.ensureInitialized();
     const total = await this.count();
 
     if (total === 0) {
@@ -273,7 +313,7 @@ export class EvidenceStore {
     }
 
     const decisionRows = await allAsync(
-      this._conn,
+      this._conn!,
       "SELECT decision, COUNT(*)::INTEGER as cnt FROM evidence_records GROUP BY decision",
     );
     const decisions: Record<string, number> = {};
@@ -283,7 +323,7 @@ export class EvidenceStore {
     }
 
     const toolRows = await allAsync(
-      this._conn,
+      this._conn!,
       "SELECT DISTINCT tool_name FROM evidence_records ORDER BY tool_name",
     );
     const tools = toolRows.map(r => (r as Record<string, unknown>).tool_name as string);
@@ -291,7 +331,7 @@ export class EvidenceStore {
     const { valid: chainValid, errors: chainErrors } = await this.verifyChain();
 
     const crRows = await allAsync(
-      this._conn,
+      this._conn!,
       "SELECT control_results FROM evidence_records",
     );
     const controlStats: Record<string, Record<string, number>> = {};
@@ -301,7 +341,7 @@ export class EvidenceStore {
       for (const cr of results as Array<Record<string, unknown>>) {
         const cid = cr.control_id as string;
         if (!controlStats[cid]) {
-          controlStats[cid] = { PASS: 0, FAIL: 0, SKIP: 0, ERROR: 0 };
+          controlStats[cid] = { PASS: 0, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 };
         }
         const result = (cr.result as string) ?? "SKIP";
         if (result in controlStats[cid]!) {
@@ -321,9 +361,9 @@ export class EvidenceStore {
   }
 
   async purgeBefore(beforeTimestamp: string): Promise<number> {
-    await this._initialized;
+    await this.ensureInitialized();
     const countRows = await allAsync(
-      this._conn,
+      this._conn!,
       "SELECT COUNT(*)::INTEGER as cnt FROM evidence_records WHERE timestamp < ?",
       [beforeTimestamp],
     );
@@ -331,7 +371,7 @@ export class EvidenceStore {
 
     if (count > 0) {
       await runAsync(
-        this._conn,
+        this._conn!,
         "DELETE FROM evidence_records WHERE timestamp < ?",
         [beforeTimestamp],
       );

@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from ancilis.config import load_config
+from ancilis.evidence.store import EvidenceStore
 from ancilis.middleware import AncilisMiddleware, BlockedToolCallError
 from ancilis.middleware.response_scanner import scan_response
 
@@ -79,14 +80,14 @@ class TestMiddlewareInit:
     async def test_init_with_config_object(self):
         config = _config()
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         assert mw.config.agent_name == "test-agent"
 
     @pytest.mark.asyncio
     async def test_init_with_minimal_config(self):
         session = _mock_session()
         config = _config()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         assert mw.config.mode == "audit"
 
 
@@ -98,7 +99,7 @@ class TestToolCallInterception:
     async def test_audit_mode_allows_and_forwards(self):
         config = _config()
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         # Register the tool so PR-03 passes
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="my-tool"))
@@ -111,7 +112,7 @@ class TestToolCallInterception:
     async def test_enforce_all_pass_forwards(self):
         config = _config(security={"mode": "enforce", "tools": {"allowed": ["my-tool"]}})
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
 
         result = await mw.call_tool("my-tool", {"key": "value"})
         session.call_tool.assert_called_once()
@@ -120,7 +121,7 @@ class TestToolCallInterception:
     async def test_enforce_control_fails_blocks(self):
         config = _config(security={"mode": "enforce"})
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         # Don't register tool — PR-03 will fail
 
         with pytest.raises(BlockedToolCallError) as exc_info:
@@ -133,7 +134,7 @@ class TestToolCallInterception:
     async def test_blocked_call_has_evaluation(self):
         config = _config(security={"mode": "enforce"})
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
 
         with pytest.raises(BlockedToolCallError) as exc_info:
             await mw.call_tool("unknown-tool", {})
@@ -144,7 +145,7 @@ class TestToolCallInterception:
     async def test_action_built_correctly(self):
         config = _config()
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="my-tool", version="1.0", description_hash="abc"))
 
@@ -167,7 +168,7 @@ class TestAutoDiscovery:
             MockTool(name="tool-b", description="Description B"),
         ]
         session = _mock_session(tools=tools)
-        mw = AncilisMiddleware(session, config=_config())
+        mw = AncilisMiddleware(session, config=(c := _config()), evidence_store=EvidenceStore(c, in_memory=True))
 
         await mw.list_tools()
         assert mw.registry.is_registered("tool-a")
@@ -178,7 +179,7 @@ class TestAutoDiscovery:
         tools = [MockTool(name="tool-a", description="Desc A")]
         session = _mock_session(tools=tools)
         config = _config(security={"mode": "enforce", "tools": {"allowed": ["tool-a"]}})
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
 
         await mw.list_tools()
         result = await mw.call_tool("tool-a", {})
@@ -197,7 +198,7 @@ class TestAutoDiscovery:
             content=[MockTextContent(text="OK")]
         )
 
-        mw = AncilisMiddleware(session, config=_config())
+        mw = AncilisMiddleware(session, config=(c := _config()), evidence_store=EvidenceStore(c, in_memory=True))
         await mw.list_tools()
         await mw.list_tools()
 
@@ -215,7 +216,7 @@ class TestResponseScanning:
             content=[MockTextContent(text="Patient SSN: 123-45-6789")]
         )
         session = _mock_session(call_tool_return=response)
-        mw = AncilisMiddleware(session, config=_config())
+        mw = AncilisMiddleware(session, config=(c := _config()), evidence_store=EvidenceStore(c, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="patient-lookup"))
 
@@ -229,7 +230,7 @@ class TestResponseScanning:
             content=[MockTextContent(text="Card: 4111 1111 1111 1111")]
         )
         session = _mock_session(call_tool_return=response)
-        mw = AncilisMiddleware(session, config=_config())
+        mw = AncilisMiddleware(session, config=(c := _config()), evidence_store=EvidenceStore(c, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="payment-tool"))
 
@@ -245,7 +246,7 @@ class TestResponseScanning:
             content=[MockTextContent(text=f"Data: {encrypted}")]
         )
         session = _mock_session(call_tool_return=response)
-        mw = AncilisMiddleware(session, config=_config())
+        mw = AncilisMiddleware(session, config=(c := _config()), evidence_store=EvidenceStore(c, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="secure-tool"))
 
@@ -260,7 +261,7 @@ class TestResponseScanning:
             content=[MockTextContent(text="Everything is fine. Status: OK")]
         )
         session = _mock_session(call_tool_return=response)
-        mw = AncilisMiddleware(session, config=_config())
+        mw = AncilisMiddleware(session, config=(c := _config()), evidence_store=EvidenceStore(c, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="status-tool"))
 
@@ -274,7 +275,7 @@ class TestResponseScanning:
         session = AsyncMock()
         session.call_tool.side_effect = [r1, r2]
 
-        mw = AncilisMiddleware(session, config=_config())
+        mw = AncilisMiddleware(session, config=(c := _config()), evidence_store=EvidenceStore(c, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="tool-a"))
         mw.registry.register(ToolEntry(name="tool-b"))
@@ -293,7 +294,7 @@ class TestEnforcement:
     async def test_audit_failure_allows_through(self):
         config = _config()
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         # Don't register — PR-03 fails, but audit mode allows
 
         result = await mw.call_tool("unregistered-tool", {})
@@ -306,7 +307,7 @@ class TestEnforcement:
     async def test_enforce_failure_blocks(self):
         config = _config(security={"mode": "enforce"})
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
 
         with pytest.raises(BlockedToolCallError):
             await mw.call_tool("unregistered-tool", {})
@@ -321,7 +322,7 @@ class TestEngineIntegration:
     async def test_evaluation_result_accessible(self):
         config = _config()
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="my-tool"))
 
@@ -334,7 +335,7 @@ class TestEngineIntegration:
     async def test_evaluation_log_grows(self):
         config = _config()
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="tool-a"))
 
@@ -351,7 +352,7 @@ class TestEdgeCases:
     async def test_empty_parameters(self):
         config = _config()
         session = _mock_session()
-        mw = AncilisMiddleware(session, config=config)
+        mw = AncilisMiddleware(session, config=config, evidence_store=EvidenceStore(config, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="my-tool"))
 
@@ -362,7 +363,7 @@ class TestEdgeCases:
     async def test_mcp_server_error_handled(self):
         session = AsyncMock()
         session.call_tool.side_effect = RuntimeError("MCP server down")
-        mw = AncilisMiddleware(session, config=_config())
+        mw = AncilisMiddleware(session, config=(c := _config()), evidence_store=EvidenceStore(c, in_memory=True))
         from ancilis.engine.registry import ToolEntry
         mw.registry.register(ToolEntry(name="my-tool"))
 

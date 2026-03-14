@@ -70,7 +70,11 @@ INSERT INTO evidence_records (
 
 
 class EvidenceStore:
-    """Persists evidence records in DuckDB with cryptographic hash chaining."""
+    """Persists evidence records in DuckDB with cryptographic hash chaining.
+
+    Lazy initialization: no filesystem side effects at construction time.
+    The DuckDB file is created on first write (store/query/verify).
+    """
 
     def __init__(
         self,
@@ -82,18 +86,33 @@ class EvidenceStore:
         self._certifications: list[str] = list(
             getattr(config, "active_certifications", []) or []
         )
+        self._in_memory = in_memory
+        self._conn: duckdb.DuckDBPyConnection | None = None
 
         if in_memory:
             self._db_path = ":memory:"
         elif db_path is not None:
             self._db_path = str(db_path)
         else:
-            # Default to per-agent persistent local storage
+            # Derive path but don't create anything yet
             agent_name = getattr(config, "agent_name", "") or "default"
-            self._db_path = str(_agent_db_path(agent_name))
+            safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in agent_name)
+            cwd_hash = hashlib.sha256(os.getcwd().encode()).hexdigest()[:8]
+            self._db_path = str(DEFAULT_DB_DIR / f"{safe_name}-{cwd_hash}" / DEFAULT_DB_NAME)
+
+    def _ensure_initialized(self) -> None:
+        """Lazy init: create DB directory and connection on first use."""
+        if self._conn is not None:
+            return
+
+        if self._in_memory:
+            self._conn = duckdb.connect(":memory:")
+        else:
+            db_dir = os.path.dirname(self._db_path)
+            os.makedirs(db_dir, exist_ok=True)
+            self._conn = duckdb.connect(self._db_path)
             logger.info("Evidence store: %s", self._db_path)
 
-        self._conn = duckdb.connect(self._db_path)
         self._conn.execute(CREATE_TABLE_SQL)
 
     @property
@@ -102,8 +121,9 @@ class EvidenceStore:
 
     def close(self) -> None:
         """Flush and close the DuckDB connection."""
-        if self._conn:
+        if self._conn is not None:
             self._conn.close()
+            self._conn = None
 
     def __enter__(self) -> EvidenceStore:
         return self
@@ -113,6 +133,7 @@ class EvidenceStore:
 
     def _get_last_hash(self) -> str:
         """Get the hash of the most recent record, or GENESIS_SEED if empty."""
+        self._ensure_initialized()
         row = self._conn.execute(
             "SELECT record_hash FROM evidence_records ORDER BY seq_id DESC LIMIT 1"
         ).fetchone()
@@ -124,6 +145,7 @@ class EvidenceStore:
         tool_name: str,
     ) -> EvidenceRecord:
         """Convert an EvaluationResult into an evidence record and persist it."""
+        self._ensure_initialized()
         record_id = str(uuid.uuid4())
         previous_hash = self._get_last_hash()
 
@@ -199,6 +221,7 @@ class EvidenceStore:
         limit: int = 100,
     ) -> list[EvidenceRecord]:
         """Query evidence records with optional filters."""
+        self._ensure_initialized()
         conditions: list[str] = []
         params: list[Any] = []
 
@@ -221,11 +244,13 @@ class EvidenceStore:
 
     def count(self) -> int:
         """Return total number of evidence records."""
+        self._ensure_initialized()
         row = self._conn.execute("SELECT COUNT(*) FROM evidence_records").fetchone()
         return row[0] if row else 0
 
     def verify_chain(self) -> tuple[bool, list[str]]:
         """Verify the hash chain integrity. Returns (valid, errors)."""
+        self._ensure_initialized()
         rows = self._conn.execute(
             "SELECT * FROM evidence_records ORDER BY seq_id ASC"
         ).fetchall()
@@ -280,7 +305,22 @@ class EvidenceStore:
             since: Optional ISO timestamp. When provided, only evidence records
                    with timestamp >= since are included in counts and stats.
                    Chain verification always runs against the full store.
+
+        Returns empty results if no evidence has been recorded yet (without
+        forcing DB creation for persistent stores).
         """
+        if self._conn is None and not self._in_memory:
+            # No evidence recorded yet — return empty without creating DB
+            return {
+                "total_evaluations": 0,
+                "decisions": {},
+                "tools_evaluated": [],
+                "chain_valid": True,
+                "chain_errors": [],
+                "control_pass_rates": {},
+            }
+
+        self._ensure_initialized()
         where = ""
         params: list[str] = []
         if since is not None:
@@ -344,6 +384,7 @@ class EvidenceStore:
 
     def purge_before(self, before_timestamp: str) -> int:
         """Remove records older than the given ISO timestamp. Returns count removed."""
+        self._ensure_initialized()
         row = self._conn.execute(
             "SELECT COUNT(*) FROM evidence_records WHERE timestamp < ?",
             [before_timestamp],
