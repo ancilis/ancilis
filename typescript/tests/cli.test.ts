@@ -38,7 +38,7 @@ function fullConfig(): Record<string, unknown> {
   return {
     agent: { name: "test-agent" },
     security: { mode: "audit" },
-    my_agent_handles: ["health_records"],
+    my_agent_handles: ["credit_cards", "personal_info"],
     compliance: { evidence: { retention_days: 365 } },
   };
 }
@@ -110,7 +110,7 @@ describe("formatStatus", () => {
   it("shows overlay info when active", () => {
     const config = loadConfig({ raw: fullConfig() });
     const output = formatStatus(config, emptySummary());
-    expect(output.toLowerCase()).toContain("hipaa");
+    expect(output.toLowerCase()).toMatch(/soc 2|gdpr/);
   });
 
   it("verbose adds per-control detail", () => {
@@ -267,16 +267,18 @@ describe("Report — Compliance", () => {
     const report = gen.generate();
     expect(report.complianceSections.length).toBeGreaterThan(0);
     const names = report.complianceSections.map(s => s.overlayName as string);
-    expect(names.some(n => n.includes("HIPAA"))).toBe(true);
+    // credit_cards and personal_info activate SOC 2 and GDPR
+    expect(names.some(n => n.includes("SOC 2"))).toBe(true);
   });
 
   it("compliance sections have citations", () => {
     const config = loadConfig({ raw: fullConfig() });
     const gen = new ReportGenerator(config, populatedSummary(2));
     const report = gen.generate();
-    const hipaa = report.complianceSections.find(s => (s.overlayName as string).includes("HIPAA"));
-    expect(hipaa).toBeDefined();
-    const controls = hipaa!.controls as Record<string, unknown>[];
+    // SOC 2 is activated by credit_cards and personal_info
+    const soc2 = report.complianceSections.find(s => (s.overlayName as string).includes("SOC 2"));
+    expect(soc2).toBeDefined();
+    const controls = soc2!.controls as Record<string, unknown>[];
     expect(controls.some(c => (c.citations as string[])?.length > 0)).toBe(true);
   });
 
@@ -284,7 +286,7 @@ describe("Report — Compliance", () => {
     const config = loadConfig({ raw: fullConfig() });
     const gen = new ReportGenerator(config, populatedSummary(2));
     const report = gen.generate();
-    // health_records triggers HIPAA, GDPR, SOC2
+    // credit_cards and personal_info trigger SOC 2 and GDPR
     expect(report.complianceSections.length).toBeGreaterThanOrEqual(2);
   });
 

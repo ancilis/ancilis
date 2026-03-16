@@ -39,7 +39,7 @@ def _full_config() -> dict[str, Any]:
     return {
         "agent": {"name": "test-agent"},
         "security": {"mode": "audit"},
-        "my_agent_handles": ["health_records"],
+        "my_agent_handles": ["credit_cards", "personal_info"],
         "compliance": {"evidence": {"retention_days": 365}},
     }
 
@@ -235,7 +235,7 @@ class TestStatus:
         runner = CliRunner()
         result = runner.invoke(cli, ["status", "--config", str(cfg), "--db", str(db)])
         assert result.exit_code == 0
-        assert "HIPAA" in result.output or "hipaa" in result.output.lower()
+        assert "SOC 2" in result.output or "GDPR" in result.output or "gdpr" in result.output.lower()
 
 
 # ===== Approve Tool Tests =====
@@ -337,9 +337,9 @@ class TestReportCompliance:
         report = gen.generate()
 
         assert len(report.compliance_sections) > 0
-        # HIPAA should be present (health_records activates it)
+        # SOC 2 should be present (credit_cards and personal_info activate it)
         overlay_names = [s["overlay_name"] for s in report.compliance_sections]
-        assert any("HIPAA" in n for n in overlay_names)
+        assert any("SOC 2" in n for n in overlay_names)
         store.close()
 
     def test_compliance_section_has_citations(self, tmp_path: Path) -> None:
@@ -350,10 +350,10 @@ class TestReportCompliance:
         gen = ReportGenerator(config, store)
         report = gen.generate()
 
-        hipaa = [s for s in report.compliance_sections if "HIPAA" in s["overlay_name"]]
-        assert len(hipaa) == 1
-        controls = hipaa[0]["controls"]
-        # HIPAA framework_mapping includes regulatory citations
+        soc2 = [s for s in report.compliance_sections if "SOC 2" in s["overlay_name"]]
+        assert len(soc2) == 1
+        controls = soc2[0]["controls"]
+        # SOC 2 framework_mapping includes regulatory citations
         assert any(c.get("citations") for c in controls)
         store.close()
 
@@ -378,7 +378,7 @@ class TestReportCompliance:
         gen = ReportGenerator(config, store)
         report = gen.generate()
 
-        # health_records should trigger HIPAA and GDPR and SOC2
+        # credit_cards and personal_info should trigger SOC 2 and GDPR
         assert len(report.compliance_sections) >= 2
         store.close()
 

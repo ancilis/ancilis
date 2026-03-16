@@ -1,44 +1,81 @@
 # Ancilis
 
-Runtime security for AI agents. Intercept, evaluate, and enforce security policy on every tool call — then hand your customer a compliance report you didn't have to build separately.
+[![CI](https://github.com/ancilis/ancilis/actions/workflows/ci.yml/badge.svg)](https://github.com/ancilis/ancilis/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-BUSL--1.1-blue.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/ancilis.svg)](https://pypi.org/project/ancilis/)
 
-*Compliance should travel with the data, not against the innovation.*
+Policy-driven runtime security for AI agents.
 
-Ancilis is an SDK that sits between your AI agent and its tools. Every tool call passes through a security evaluation engine that checks identity, permissions, tool provenance, and data exposure in real time. Enforcement actions produce structured evidence records automatically — compliance coverage is a natural byproduct of doing security right.
+---
 
-**Default mode is audit.** Install it, watch what your agent does, then decide what to lock down.
+Your agent reads customer records, moves money, sends emails. Each action is a tool call. Nothing in your stack decides what's authorized, validates the tool hasn't changed, or keeps a tamper-proof record of what happened. Ancilis does — inline, at execution time.
 
-## Language Support
+## What It Does
 
-**Python (primary):** Full implementation — three-state trust model, persistent evidence with hash chain, pattern detection, MCP middleware, CLI producer, posture-based readiness reporting.
-
-```bash
-pip install ancilis        # core SDK + CLI producer
-pip install ancilis[mcp]   # with MCP middleware
-```
-
-**TypeScript (in progress):** Core control engine and MCP middleware functional. Trust model, evidence persistence, and reporting parity with Python is the next development milestone.
-
-```bash
-npm install ancilis
-```
+- **Intercepts every tool call** before it reaches your MCP server
+- **Evaluates against policy** — identity, scope, tool provenance, data exposure
+- **Blocks violations** in enforce mode; logs everything in audit mode
+- **Emits compliance-grade evidence** — SHA-256 chained records, queryable with SQL, export-ready
 
 ## Quick Start
 
-### 1. Get AIUC-1 Certification Coverage
+```bash
+pip install ancilis[mcp]
+```
 
-Your enterprise customer asked for AIUC-1 certification. Here's how to get coverage in under five minutes.
+### Zero config: baseline security immediately
 
-Create `ancilis.yaml` in your project root:
+```python
+from ancilis import AncilisMiddleware
+
+# Wrap your MCP client — that's it
+client = AncilisMiddleware(mcp_client)
+```
+
+Six security controls are now active. Default is audit mode — nothing blocked, everything logged.
+
+```
+Ancilis: 47 tool calls evaluated. 0 issues. Run `ancilis status` for details.
+```
+
+### Add a config file
+
+Create `ancilis.yaml`:
+
+```yaml
+agent:
+  name: my-agent
+my_agent_handles:
+  - credit_cards
+  - personal_info
+```
+
+SOC 2 Type II and GDPR overlays activate automatically. Evidence fields are extended. No other changes needed.
+
+```bash
+ancilis status
+```
+
+```
+Ancilis — my-agent
+  Mode: audit
+  Controls: 6 active, all passing
+  SOC 2 Type II: active (credit_cards, personal_info)
+  GDPR: active (personal_info)
+  Tool calls: 1,247 evaluated, 0 blocked
+```
+
+### Add a certification target
 
 ```yaml
 agent:
   name: my-agent
 certification_targets:
   - aiuc-1
+my_agent_handles:
+  - credit_cards
+  - personal_info
 ```
-
-That's it. Two fields. Ancilis activates all six security controls, starts collecting evidence, and generates a readiness report mapping your agent's behavior to AIUC-1 requirements.
 
 ```bash
 ancilis report --format aiuc1-readiness
@@ -52,96 +89,17 @@ AIUC-1 READINESS REPORT
   Hash chain:       intact (verified)
 ```
 
-### 2. Get SOC 2 Type II Coverage
+## What You Get
 
-The universal B2B SaaS compliance baseline. Activated by declaring any data type your agent handles.
+### Audit mode (default)
 
-```yaml
-agent:
-  name: my-agent
-my_agent_handles:
-  - personal_info
-```
-
-Ancilis maps all six controls to Trust Services Criteria and adds SOC 2-specific evidence fields to every record automatically.
-
-| Control | Trust Services Criteria |
-|---|---|
-| PR-01 Identity | CC6.1, CC6.2 |
-| PR-02 Scope | CC6.1, CC6.3 |
-| PR-03 Provenance | CC8.1 |
-| PR-04 Exposure | CC6.7, CC6.1 |
-| PR-05 Audit Trail | CC7.2, CC7.1 |
-| DE-01 Detection | CC7.2, CC7.3, CC9.2 |
-
-SOC 2 activates on any of the 16 supported data types — if your agent touches any user or business data, declare it and coverage is automatic.
+Nothing is blocked. Every evaluation is logged. Warnings surface what needs attention:
 
 ```
 Ancilis — my-agent
   Mode: audit
   Controls: 6 active, all passing
-  SOC 2 Type II: active (personal_info)
-  Tool calls: 1,247 evaluated, 0 blocked
-```
-
-### 3. Get EU AI Act Coverage
-
-For high-risk AI systems handling AI training data or biometric data. Activates strict thresholds, human oversight requirements, and 10-year evidence retention.
-
-```yaml
-agent:
-  name: my-agent
-my_agent_handles:
-  - ai_training_data
-```
-
-Ancilis maps controls to EU AI Act articles and adds regulation-specific evidence fields (`ai_decision_rationale`, `human_oversight_status`, `risk_level`, `drift_indicators`, `bias_indicators`) to every record.
-
-| Control | EU AI Act Articles |
-|---|---|
-| PR-01 Identity | Art. 16 — Provider obligations |
-| PR-02 Scope | Art. 9 — Risk management |
-| PR-03 Provenance | Art. 15 — Accuracy and robustness |
-| PR-04 Exposure | Art. 10 — Data governance |
-| PR-05 Audit Trail | Art. 12, Art. 19 — Record-keeping |
-| DE-01 Detection | Art. 9(2), Art. 72 — Ongoing monitoring |
-
-```
-Ancilis — my-agent
-  Mode: audit
-  Controls: 6 active, all passing (strict thresholds)
-  EU AI Act: active (ai_training_data)
-  Human oversight: required
-  Evidence retention: 10 years
-  Tool calls: 1,247 evaluated, 0 blocked
-```
-
-### 4. Add Middleware
-
-```python
-from ancilis import AncilisMiddleware
-
-# Wrap your MCP client connection
-client = AncilisMiddleware(mcp_client)
-```
-
-Every tool call now flows through the security evaluation engine. In audit mode (the default), nothing is blocked — Ancilis observes, evaluates, and logs. You'll see a single summary line:
-
-```
-Ancilis: 47 tool calls evaluated. 0 issues. Run `ancilis status` for details.
-```
-
-### 5. Check Status
-
-```bash
-ancilis status
-```
-
-```
-Ancilis — my-agent
-  Mode: audit
-  Controls: 6 active, all passing
-  AIUC-1: active
+  SOC 2 Type II: active
   Tool calls: 1,247 evaluated, 0 blocked
 
   Warnings:
@@ -149,64 +107,103 @@ Ancilis — my-agent
             To approve: ancilis approve-tool send_email
 ```
 
-Every warning includes what to do about it. Approve the tool and the warning resolves:
+Every warning tells you what to do. Approve the tool and it resolves:
 
 ```bash
 ancilis approve-tool send_email
 ```
 
-### 6. Deepen Coverage with Data Declarations
+### Enforce mode
 
-When your agent handles regulated data, declare it for overlay activation:
+Switch `security.mode` to `enforce`. Unauthorized calls are blocked before execution:
+
+```
+Ancilis [blocked]: Tool 'exfil-data' blocked — not in approved tool list.
+  To approve: ancilis approve-tool exfil-data
+  To review: ancilis status
+```
+
+### Evidence records
+
+Every evaluation writes a DuckDB record with SHA-256 hash chain integrity. No external services. No data leaves your environment. Query directly with SQL when you need it.
+
+### Posture reports
+
+```bash
+ancilis report --format pdf --period 90d
+```
+
+Framework-by-framework compliance coverage, evidence counts, hash chain verification. Hand it to your customer's procurement team.
+
+## Configuration
+
+Progressive disclosure — each level adds one concept.
+
+**Baseline** — no config required, six controls active:
+
+```yaml
+agent:
+  name: my-agent
+```
+
+**Certification target** — activates all controls, generates readiness report:
 
 ```yaml
 agent:
   name: my-agent
 certification_targets:
   - aiuc-1
-my_agent_handles:
-  - health_records
-  - personal_info
 ```
 
-One line added, compliance posture measurably improved. Ancilis activates HIPAA and GDPR overlays, tightens control thresholds, and adds framework-specific evidence fields — zero compliance knowledge required.
+**Data classification** — activates framework overlays based on what your agent touches:
 
-### Regulatory Coverage
+```yaml
+agent:
+  name: my-agent
+my_agent_handles:
+  - credit_cards        # SOC 2; PCI-DSS on roadmap
+  - personal_info       # SOC 2, GDPR
+  - ai_training_data    # SOC 2, EU AI Act
+  - health_records      # SOC 2, HIPAA, GDPR
+```
 
-**Shipping in v0.1:**
+**Enforcement** — switch from observe to block:
 
-| You Declare | Coverage |
-|---|---|
-| `health_records` | HIPAA, GDPR |
-| `patient_data` | HIPAA, GDPR |
-| `personal_info` | GDPR |
+```yaml
+agent:
+  name: my-agent
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - get_transactions
+      - customer_lookup
+```
 
-Additional shipping overlays: SOC 2, EU AI Act. AIUC-1 certification readiness.
+## Supported Frameworks
 
-**On the roadmap:**
+| Framework | Activated by | Status |
+|---|---|---|
+| Baseline (6 controls) | Always active | v0.1 |
+| SOC 2 Type II | Any data type declaration | v0.1 |
+| GDPR | `personal_info`, `health_records`, `biometric_data` | v0.1 |
+| EU AI Act | `ai_training_data`, `biometric_data` | v0.1 |
+| HIPAA | `health_records`, `patient_data` | v0.1 |
+| AIUC-1 certification | `certification_targets: [aiuc-1]` | v0.1 |
+| PCI-DSS | `credit_cards` | Roadmap |
+| GLBA, FedRAMP, CMMC, FERPA, COPPA | Various | Roadmap |
 
-PCI-DSS, GLBA, FedRAMP, CMMC, COPPA, FERPA, and additional frameworks. The overlay architecture is extensible — adding a new framework means adding a JSON profile, not changing the engine.
-
-When a data type maps to a roadmap overlay, Ancilis tells you clearly:
+Roadmap frameworks surface a clear message when they would activate:
 
 ```
 ? pci-dss would be activated by DC-FIN-01 via credit_cards but is not yet available
+  Baseline security controls are active for all data types.
 ```
-
-Baseline security controls are always active for every data type, regardless of overlay availability.
-
-### 7. Export Posture Report
-
-```bash
-ancilis report --format pdf --period 90d
-```
-
-Hand this to your customer's procurement team. The report includes framework-by-framework compliance coverage, evidence counts, and hash chain verification — professional enough to attach to a procurement response.
 
 ## CLI
 
 ```bash
-ancilis status                               # Current security posture (plain language)
+ancilis status                               # Current posture (plain language)
 ancilis status --verbose                     # Per-control detail with activation sources
 ancilis config validate                      # Validate configuration
 ancilis approve-tool <name>                  # Add tool to approved list
@@ -216,43 +213,28 @@ ancilis report --format pdf --period 30d     # PDF for procurement/audit
 ancilis report --format aiuc1-readiness      # AIUC-1 certification readiness report
 ```
 
-## Why Ancilis?
-
-**The status quo is broken.** AI agents are making tool calls — reading databases, sending emails, modifying records — with no runtime security layer. Teams bolt on compliance after the fact: manual audits, spreadsheet evidence collection, and retroactive policy checks that can't keep pace with autonomous systems.
-
-**Security should be inline, not after-the-fact.** Ancilis evaluates every tool call at execution time against a structured control set. There's no gap between what your agent does and what your security policy allows.
-
-**Compliance should be a byproduct, not a project.** When every tool call is evaluated and every enforcement decision is recorded with full context, you already have the evidence. You don't need a separate compliance workstream — you need a report export.
-
-**Certification in one config line.** Add `certification_targets: [aiuc-1]` and your agent is being evaluated against the first certifiable standard for AI agents. The readiness report tells you exactly where you stand — what's automated, what your team needs to document.
-
-**Zero-friction entry, progressive disclosure.** Start with one line of config and audit mode. See your agent's security posture. Add certification targets when your customer asks. Declare data types for deeper regulatory coverage. Every step adds value without requiring the previous step to be exhaustive.
-
 ## Architecture
 
-Ancilis is a monorepo with Python and TypeScript implementations sharing a common policy data layer:
+MCP middleware intercepts every tool call before it reaches your server. Each call is evaluated by the control engine — identity (PR-01), scope (PR-02), provenance (PR-03), data exposure (PR-04), audit trail (PR-05), anomaly detection (DE-01) — then forwarded or blocked. Every decision is recorded in a local DuckDB evidence store with SHA-256 hash chain integrity.
+
+Configuration is YAML. Policy data (controls, overlays, data classifications) lives in `shared/` as JSON, consumed by both the Python and TypeScript implementations.
 
 ```
-python/          Python SDK (PyPI: ancilis)
-typescript/      TypeScript SDK (npm: ancilis)
-shared/          Language-agnostic control definitions, overlay profiles,
-                 data classifications, and JSON schemas
+python/          Python SDK  (pip install ancilis)
+typescript/      TypeScript SDK  (npm install ancilis)
+shared/          Controls, overlays, classifications, schemas
 ```
 
-The security controls, regulatory overlays, and data classification taxonomy live in `shared/` as JSON — consumed by both language implementations. The engines are language-specific; the policy data is not.
+## TypeScript
 
-## Evidence Storage
+Core control engine and MCP middleware are functional. Full parity with the Python SDK on trust model, evidence persistence, and reporting is the next milestone.
 
-All evidence records are stored in DuckDB — a local, embedded analytical database. No external services, no data leaving your environment. Query your security evidence with SQL when you need to.
+```bash
+npm install ancilis
+```
 
-## License
+## Contributing / Security / License
 
-Business Source License 1.1 — see [LICENSE](LICENSE) for details.
-
-The Licensed Work is the Ancilis SDK. The Change Date is March 10, 2030. The Change License is Apache License 2.0.
-
-## Links
-
-- [Documentation](docs/) (coming soon)
-- [Contributing](CONTRIBUTING.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)
+- Security disclosures: [SECURITY.md](SECURITY.md) — security@ancilis.ai
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- Business Source License 1.1 — see [LICENSE](LICENSE). Change Date: March 10, 2030. Change License: Apache 2.0.

@@ -64,21 +64,20 @@ class MockMCPSession:
 
     def __init__(self) -> None:
         self._tools = [
-            MockTool(name="patient-lookup", description="Look up patient records by ID"),
-            MockTool(name="send-email", description="Send an email notification"),
+            MockTool(name="get-transactions", description="Retrieve transaction history for a customer"),
+            MockTool(name="send-notification", description="Send a push notification to a customer"),
             MockTool(name="get-status", description="Get system status"),
         ]
         self._responses: dict[str, str] = {
-            "patient-lookup": (
-                "Patient Record Found:\n"
-                "  Name: Jane Doe\n"
-                "  MRN: MRN-00847291\n"
+            "get-transactions": (
+                "Transaction History:\n"
+                "  Customer: J. Smith\n"
+                "  Email: j.smith@example.com\n"
+                "  Card: 4111 1111 1111 1111\n"
                 "  SSN: 000-00-1234\n"
-                "  DOB: 1985-03-15\n"
-                "  Diagnosis: Routine checkup\n"
-                "  Insurance: BlueCross PPO"
+                "  Recent: $42.00 at Merchant A, $128.50 at Merchant B"
             ),
-            "send-email": "Email sent successfully to recipient.",
+            "send-notification": "Notification sent successfully.",
             "get-status": (
                 "System Status: All services operational.\n"
                 "Auth Token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzeXN0ZW0ifQ."
@@ -162,9 +161,9 @@ async def demo_scenario_2(mw_enforce: AncilisMiddleware) -> None:
 async def demo_scenario_3(mw: AncilisMiddleware) -> None:
     """Scenario 3: Response contains sensitive data — patterns detected."""
     console.print(Panel("[bold]Scenario 3:[/bold] Response scanning detects sensitive data", border_style="yellow"))
-    console.print("  Agent calls [bold]patient-lookup[/bold] — response contains SSN and MRN patterns.\n")
+    console.print("  Agent calls [bold]get-transactions[/bold] — response contains card number and SSN patterns.\n")
 
-    await mw.call_tool("patient-lookup", {"patient_id": "P-12345"})
+    await mw.call_tool("get-transactions", {"customer_id": "C-12345"})
     print_evaluation(mw, "patient-lookup")
 
     recs = mw.get_recommendations()
@@ -197,9 +196,9 @@ async def main() -> None:
 
     # --- Setup: Audit mode middleware ---
     config_audit = load_config(raw={
-        "agent": {"name": "claims-processor", "owner": "ops-team"},
+        "agent": {"name": "payment-processor", "owner": "ops-team"},
         "security": {"mode": "audit"},
-        "data_handling": ["health_records", "personal_info"],
+        "my_agent_handles": ["credit_cards", "personal_info"],
     })
     mw_audit = AncilisMiddleware(session, config=config_audit)  # type: ignore[arg-type]
 
@@ -209,7 +208,7 @@ async def main() -> None:
 
     # --- Setup: Enforce mode middleware (separate instance) ---
     config_enforce = load_config(raw={
-        "agent": {"name": "claims-processor", "owner": "ops-team"},
+        "agent": {"name": "payment-processor", "owner": "ops-team"},
         "security": {"mode": "enforce"},
     })
     mw_enforce = AncilisMiddleware(session, config=config_enforce)  # type: ignore[arg-type]
