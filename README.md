@@ -4,17 +4,20 @@
 [![License](https://img.shields.io/badge/license-BUSL--1.1-blue.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/ancilis.svg)](https://pypi.org/project/ancilis/)
 
-Policy-driven runtime security for AI agents.
+Policy-driven runtime security for AI agents. Declare your data. Get your controls. Prove compliance.
 
 ---
 
-Your agent reads customer records, moves money, sends emails. Each action is a tool call. Nothing in your stack decides what's authorized, validates the tool hasn't changed, or keeps a tamper-proof record of what happened. Ancilis does — inline, at execution time.
+Your agent touches credit card numbers, personal information, financial records. Every tool call is a compliance event — but nothing in your stack treats it that way. Ancilis intercepts tool calls at runtime, evaluates them against structured security controls, and emits tamper-proof evidence.
+
+The key thing: tell Ancilis what data your agent handles, and it automatically activates the right compliance controls — PCI-DSS for cardholder data, GDPR for personal info, SOC 2 for everything going to enterprise buyers. Or just declare a certification target like `aiuc-1` and get instant coverage without knowing anything about compliance frameworks.
 
 ## What It Does
 
 - **Intercepts every tool call** before it reaches your MCP server
 - **Evaluates against policy** — identity, scope, tool provenance, data exposure
 - **Blocks violations** in enforce mode; logs everything in audit mode
+- **Auto-scopes compliance** — declare your data types, get the regulatory controls that apply
 - **Emits compliance-grade evidence** — SHA-256 chained records, queryable with SQL, export-ready
 
 ## Quick Start
@@ -23,59 +26,28 @@ Your agent reads customer records, moves money, sends emails. Each action is a t
 pip install ancilis[mcp]
 ```
 
-### Zero config: baseline security immediately
-
 ```python
 from ancilis import AncilisMiddleware
 
-# Wrap your MCP client — that's it
+# Wrap your MCP client — six security controls active immediately
 client = AncilisMiddleware(mcp_client)
 ```
-
-Six security controls are now active. Default is audit mode — nothing blocked, everything logged.
 
 ```
 Ancilis: 47 tool calls evaluated. 0 issues. Run `ancilis status` for details.
 ```
 
-### Add a config file
-
-Create `ancilis.yaml`:
+### Path A — I need a certification
 
 ```yaml
+# ancilis.yaml
 agent:
-  name: my-agent
-my_agent_handles:
-  - credit_cards
-  - personal_info
-```
-
-SOC 2 Type II and GDPR overlays activate automatically. Evidence fields are extended. No other changes needed.
-
-```bash
-ancilis status
-```
-
-```
-Ancilis — my-agent
-  Mode: audit
-  Controls: 6 active, all passing
-  SOC 2 Type II: active (credit_cards, personal_info)
-  GDPR: active (personal_info)
-  Tool calls: 1,247 evaluated, 0 blocked
-```
-
-### Add a certification target
-
-```yaml
-agent:
-  name: my-agent
+  name: payment-agent
 certification_targets:
   - aiuc-1
-my_agent_handles:
-  - credit_cards
-  - personal_info
 ```
+
+One config line. All six controls activate. Ancilis starts collecting the evidence AIUC-1 requires. No compliance knowledge needed.
 
 ```bash
 ancilis report --format aiuc1-readiness
@@ -89,14 +61,42 @@ AIUC-1 READINESS REPORT
   Hash chain:       intact (verified)
 ```
 
+### Path B — I know my data
+
+```yaml
+# ancilis.yaml
+agent:
+  name: payment-agent
+my_agent_handles:
+  - credit_cards
+  - personal_info
+```
+
+Two lines. SOC 2 Type II and GDPR controls activate automatically. Evidence fields are extended. No framework crosswalking, no manual mapping.
+
+```bash
+ancilis status
+```
+
+```
+Ancilis — payment-agent
+  Mode: audit
+  Controls: 6 active, all passing
+  SOC 2 Type II: active (credit_cards, personal_info)
+  GDPR: active (personal_info)
+  Tool calls: 1,247 evaluated, 0 blocked
+```
+
+Both paths compose — combine them for certification coverage plus data-driven regulatory overlays.
+
 ## What You Get
 
 ### Audit mode (default)
 
-Nothing is blocked. Every evaluation is logged. Warnings surface what needs attention:
+Nothing is blocked. Every evaluation is logged. Warnings surface exactly what needs attention:
 
 ```
-Ancilis — my-agent
+Ancilis — payment-agent
   Mode: audit
   Controls: 6 active, all passing
   SOC 2 Type II: active
@@ -107,7 +107,7 @@ Ancilis — my-agent
             To approve: ancilis approve-tool send_email
 ```
 
-Every warning tells you what to do. Approve the tool and it resolves:
+Every warning tells you what to do next:
 
 ```bash
 ancilis approve-tool send_email
@@ -115,7 +115,7 @@ ancilis approve-tool send_email
 
 ### Enforce mode
 
-Switch `security.mode` to `enforce`. Unauthorized calls are blocked before execution:
+Set `security.mode: enforce`. Unauthorized calls are blocked before execution:
 
 ```
 Ancilis [blocked]: Tool 'exfil-data' blocked — not in approved tool list.
@@ -125,7 +125,7 @@ Ancilis [blocked]: Tool 'exfil-data' blocked — not in approved tool list.
 
 ### Evidence records
 
-Every evaluation writes a DuckDB record with SHA-256 hash chain integrity. No external services. No data leaves your environment. Query directly with SQL when you need it.
+Every evaluation writes a DuckDB record with SHA-256 hash chain integrity. Local. No external services. No data leaves your environment. Query directly with SQL.
 
 ### Posture reports
 
@@ -133,20 +133,39 @@ Every evaluation writes a DuckDB record with SHA-256 hash chain integrity. No ex
 ancilis report --format pdf --period 90d
 ```
 
-Framework-by-framework compliance coverage, evidence counts, hash chain verification. Hand it to your customer's procurement team.
+Framework-by-framework compliance coverage, evidence counts, hash chain verification. Ready for procurement responses.
+
+## How It Works
+
+MCP middleware intercepts every tool call before it reaches your server. Each call is evaluated by the control engine — identity, scope, provenance, data exposure, audit trail, anomaly detection — then forwarded or blocked. Every decision is recorded in a local DuckDB evidence store with SHA-256 hash chain integrity. The CLI reads that store to generate status output and compliance reports.
+
+The underlying abstraction (Action Object) decouples producers from the control engine. MCP and CLI producers ship today; the architecture supports additional producers. Policy data — controls, overlay profiles, data classifications — lives in `shared/` as JSON, consumed by both the Python and TypeScript SDKs.
+
+```
+python/       Python SDK  (pip install ancilis)
+typescript/   TypeScript SDK  (npm install ancilis)
+shared/       Controls, overlays, classifications, schemas
+```
 
 ## Configuration
 
-Progressive disclosure — each level adds one concept.
+Each level adds one concept. You don't need level N to get value from level N-1.
 
-**Baseline** — no config required, six controls active:
+| Level | Config addition | What activates |
+|---|---|---|
+| 0 | Just `agent.name` | Baseline: 6 security controls |
+| 1 | `certification_targets: [aiuc-1]` | AIUC-1 controls + readiness reporting |
+| 2 | `my_agent_handles: [credit_cards, ...]` | Regulatory overlays for declared data types |
+| 3 | Both together | Certification coverage + data-driven overlays |
+
+**Level 0 — Baseline:**
 
 ```yaml
 agent:
   name: my-agent
 ```
 
-**Certification target** — activates all controls, generates readiness report:
+**Level 1 — Certification target:**
 
 ```yaml
 agent:
@@ -155,7 +174,7 @@ certification_targets:
   - aiuc-1
 ```
 
-**Data classification** — activates framework overlays based on what your agent touches:
+**Level 2 — Data classification:**
 
 ```yaml
 agent:
@@ -167,7 +186,7 @@ my_agent_handles:
   - health_records      # SOC 2, HIPAA, GDPR
 ```
 
-**Enforcement** — switch from observe to block:
+**Level 3 — Enforcement:**
 
 ```yaml
 agent:
@@ -180,25 +199,35 @@ security:
       - customer_lookup
 ```
 
-## Supported Frameworks
+## Regulatory Coverage
 
-| Framework | Activated by | Status |
-|---|---|---|
-| Baseline (6 controls) | Always active | v0.1 |
-| SOC 2 Type II | Any data type declaration | v0.1 |
-| GDPR | `personal_info`, `health_records`, `biometric_data` | v0.1 |
-| EU AI Act | `ai_training_data`, `biometric_data` | v0.1 |
-| HIPAA | `health_records`, `patient_data` | v0.1 |
-| AIUC-1 certification | `certification_targets: [aiuc-1]` | v0.1 |
-| PCI-DSS | `credit_cards` | Roadmap |
-| GLBA, FedRAMP, CMMC, FERPA, COPPA | Various | Roadmap |
+### Data types → overlays
 
-Roadmap frameworks surface a clear message when they would activate:
+| Data type | Overlays activated |
+|---|---|
+| `credit_cards` | SOC 2 Type II; PCI-DSS (roadmap) |
+| `personal_info` | SOC 2 Type II, GDPR |
+| `ai_training_data` | SOC 2 Type II, EU AI Act |
+| `biometric_data` | SOC 2 Type II, EU AI Act |
+| `health_records` | SOC 2 Type II, HIPAA, GDPR |
+| `patient_data` | SOC 2 Type II, HIPAA, GDPR |
+| `financial_records` | SOC 2 Type II |
+| Any other declared type | SOC 2 Type II |
+
+### Certification targets
+
+| Target | What it covers |
+|---|---|
+| `aiuc-1` | AIUC-1 AI Agent Standard — all six controls, readiness report, evidence packaging |
+
+When a roadmap framework would activate, Ancilis tells you clearly and continues running with baseline controls:
 
 ```
 ? pci-dss would be activated by DC-FIN-01 via credit_cards but is not yet available
   Baseline security controls are active for all data types.
 ```
+
+More overlays and certification targets in development. All 16 data types are supported today.
 
 ## CLI
 
@@ -213,21 +242,9 @@ ancilis report --format pdf --period 30d     # PDF for procurement/audit
 ancilis report --format aiuc1-readiness      # AIUC-1 certification readiness report
 ```
 
-## Architecture
-
-MCP middleware intercepts every tool call before it reaches your server. Each call is evaluated by the control engine — identity (PR-01), scope (PR-02), provenance (PR-03), data exposure (PR-04), audit trail (PR-05), anomaly detection (DE-01) — then forwarded or blocked. Every decision is recorded in a local DuckDB evidence store with SHA-256 hash chain integrity.
-
-Configuration is YAML. Policy data (controls, overlays, data classifications) lives in `shared/` as JSON, consumed by both the Python and TypeScript implementations.
-
-```
-python/          Python SDK  (pip install ancilis)
-typescript/      TypeScript SDK  (npm install ancilis)
-shared/          Controls, overlays, classifications, schemas
-```
-
 ## TypeScript
 
-Core control engine and MCP middleware are functional. Full parity with the Python SDK on trust model, evidence persistence, and reporting is the next milestone.
+Core control engine and MCP middleware functional. Full parity with the Python SDK on trust model, evidence persistence, and reporting is the next milestone.
 
 ```bash
 npm install ancilis
