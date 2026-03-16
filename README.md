@@ -52,7 +52,71 @@ AIUC-1 READINESS REPORT
   Hash chain:       intact (verified)
 ```
 
-### 2. Add Middleware
+### 2. Get SOC 2 Type II Coverage
+
+The universal B2B SaaS compliance baseline. Activated by declaring any data type your agent handles.
+
+```yaml
+agent:
+  name: my-agent
+my_agent_handles:
+  - personal_info
+```
+
+Ancilis maps all six controls to Trust Services Criteria and adds SOC 2-specific evidence fields to every record automatically.
+
+| Control | Trust Services Criteria |
+|---|---|
+| PR-01 Identity | CC6.1, CC6.2 |
+| PR-02 Scope | CC6.1, CC6.3 |
+| PR-03 Provenance | CC8.1 |
+| PR-04 Exposure | CC6.7, CC6.1 |
+| PR-05 Audit Trail | CC7.2, CC7.1 |
+| DE-01 Detection | CC7.2, CC7.3, CC9.2 |
+
+SOC 2 activates on any of the 16 supported data types — if your agent touches any user or business data, declare it and coverage is automatic.
+
+```
+Ancilis — my-agent
+  Mode: audit
+  Controls: 6 active, all passing
+  SOC 2 Type II: active (personal_info)
+  Tool calls: 1,247 evaluated, 0 blocked
+```
+
+### 3. Get EU AI Act Coverage
+
+For high-risk AI systems handling AI training data or biometric data. Activates strict thresholds, human oversight requirements, and 10-year evidence retention.
+
+```yaml
+agent:
+  name: my-agent
+my_agent_handles:
+  - ai_training_data
+```
+
+Ancilis maps controls to EU AI Act articles and adds regulation-specific evidence fields (`ai_decision_rationale`, `human_oversight_status`, `risk_level`, `drift_indicators`, `bias_indicators`) to every record.
+
+| Control | EU AI Act Articles |
+|---|---|
+| PR-01 Identity | Art. 16 — Provider obligations |
+| PR-02 Scope | Art. 9 — Risk management |
+| PR-03 Provenance | Art. 15 — Accuracy and robustness |
+| PR-04 Exposure | Art. 10 — Data governance |
+| PR-05 Audit Trail | Art. 12, Art. 19 — Record-keeping |
+| DE-01 Detection | Art. 9(2), Art. 72 — Ongoing monitoring |
+
+```
+Ancilis — my-agent
+  Mode: audit
+  Controls: 6 active, all passing (strict thresholds)
+  EU AI Act: active (ai_training_data)
+  Human oversight: required
+  Evidence retention: 10 years
+  Tool calls: 1,247 evaluated, 0 blocked
+```
+
+### 4. Add Middleware
 
 ```python
 from ancilis import AncilisMiddleware
@@ -67,7 +131,7 @@ Every tool call now flows through the security evaluation engine. In audit mode 
 Ancilis: 47 tool calls evaluated. 0 issues. Run `ancilis status` for details.
 ```
 
-### 3. Check Status
+### 5. Check Status
 
 ```bash
 ancilis status
@@ -91,7 +155,7 @@ Every warning includes what to do about it. Approve the tool and the warning res
 ancilis approve-tool send_email
 ```
 
-### 4. Deepen Coverage with Data Declarations
+### 6. Deepen Coverage with Data Declarations
 
 When your agent handles regulated data, declare it for overlay activation:
 
@@ -109,102 +173,15 @@ One line added, compliance posture measurably improved. Ancilis activates HIPAA 
 
 ### Regulatory Coverage
 
-#### SOC 2 Type II
+**Shipping in v0.1:**
 
-The universal B2B SaaS compliance baseline. Activated by declaring any data type your agent handles.
-
-```yaml
-agent:
-  name: my-agent
-my_agent_handles:
-  - personal_info
-```
-
-Ancilis maps all six controls to Trust Services Criteria and adds SOC 2-specific evidence fields to every record:
-
-| Control | Trust Services Criteria |
+| You Declare | Coverage |
 |---|---|
-| PR-01 Identity | CC6.1, CC6.2 |
-| PR-02 Scope | CC6.1, CC6.3 |
-| PR-03 Provenance | CC8.1 |
-| PR-04 Exposure | CC6.7, CC6.1 |
-| PR-05 Audit Trail | CC7.2, CC7.1 |
-| DE-01 Detection | CC7.2, CC7.3, CC9.2 |
+| `health_records` | HIPAA, GDPR |
+| `patient_data` | HIPAA, GDPR |
+| `personal_info` | GDPR |
 
-```bash
-ancilis status
-```
-
-```
-Ancilis — my-agent
-  Mode: audit
-  Controls: 6 active, all passing
-  SOC 2 Type II: active (personal_info)
-  Tool calls: 1,247 evaluated, 0 blocked
-```
-
-SOC 2 activates on any of the 16 supported data types — if your agent touches any user or business data, declare it and SOC 2 coverage is automatic.
-
----
-
-#### EU AI Act
-
-For high-risk AI systems handling AI training data or biometric data. Activates strict thresholds, human oversight requirements, and 10-year evidence retention.
-
-```yaml
-agent:
-  name: my-agent
-my_agent_handles:
-  - ai_training_data
-```
-
-Ancilis maps controls to EU AI Act articles and adds regulation-specific evidence fields:
-
-| Control | EU AI Act Articles |
-|---|---|
-| PR-01 Identity | Art. 16 — Provider obligations |
-| PR-02 Scope | Art. 9 — Risk management |
-| PR-03 Provenance | Art. 15 — Accuracy and robustness |
-| PR-04 Exposure | Art. 10 — Data governance |
-| PR-05 Audit Trail | Art. 12, Art. 19 — Record-keeping |
-| DE-01 Detection | Art. 9(2), Art. 72 — Ongoing monitoring |
-
-Evidence records are automatically extended with `ai_decision_rationale`, `human_oversight_status`, `risk_level`, `drift_indicators`, and `bias_indicators`.
-
-```bash
-ancilis status
-```
-
-```
-Ancilis — my-agent
-  Mode: audit
-  Controls: 6 active, all passing (strict thresholds)
-  EU AI Act: active (ai_training_data)
-  Human oversight: required
-  Evidence retention: 10 years
-  Tool calls: 1,247 evaluated, 0 blocked
-```
-
----
-
-#### HIPAA / GDPR
-
-Activated by health or personal data declarations. Tightens control thresholds and adds PHI/PII-specific evidence fields.
-
----
-
-#### All Supported Data Types
-
-| You Declare | Frameworks Activated |
-|---|---|
-| `personal_info` | SOC 2, GDPR |
-| `health_records` | SOC 2, HIPAA, GDPR |
-| `patient_data` | SOC 2, HIPAA, GDPR |
-| `ai_training_data` | SOC 2, EU AI Act |
-| `biometric_data` | SOC 2, EU AI Act |
-| `credit_cards` | SOC 2 |
-| `financial_records` | SOC 2 |
-| Any other data type | SOC 2 |
+Additional shipping overlays: SOC 2, EU AI Act. AIUC-1 certification readiness.
 
 **On the roadmap:**
 
@@ -218,7 +195,7 @@ When a data type maps to a roadmap overlay, Ancilis tells you clearly:
 
 Baseline security controls are always active for every data type, regardless of overlay availability.
 
-### 5. Export Posture Report
+### 7. Export Posture Report
 
 ```bash
 ancilis report --format pdf --period 90d
