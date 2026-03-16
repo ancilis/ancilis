@@ -391,12 +391,12 @@ class TestDecisionEngine:
         engine._evaluators["PR-01"] = original
 
     def test_result_has_metadata(self):
-        config = _make_config(my_agent_handles=["health_records"])
+        config = _make_config(my_agent_handles=["credit_cards"])
         action = _make_action()
         engine = Engine(config, registry=_make_registry(("test-tool",)))
         result = engine.evaluate(action)
         assert result.agent_id == "test-agent"
         assert result.mode == "audit"
-        assert "hipaa" in result.active_overlays
-        assert "DC-PHI" in result.data_classifications
+        assert "soc2" in result.active_overlays
+        assert "DC-CHD" in result.data_classifications
         assert result.total_duration_ms >= 0

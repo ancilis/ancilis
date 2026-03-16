@@ -370,14 +370,14 @@ describe("Decision Engine", () => {
   });
 
   it("result has metadata", () => {
-    const config = makeConfig({ my_agent_handles: ["health_records"] });
+    const config = makeConfig({ my_agent_handles: ["credit_cards"] });
     const action = makeAction();
     const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
     const result = engine.evaluate(action);
     expect(result.agentId).toBe("test-agent");
     expect(result.mode).toBe("audit");
-    expect(result.activeOverlays).toContain("hipaa");
-    expect(result.dataClassifications).toContain("DC-PHI");
+    expect(result.activeOverlays).toContain("soc2");
+    expect(result.dataClassifications).toContain("DC-CHD");
     expect(result.totalDurationMs).toBeGreaterThanOrEqual(0);
   });
 });

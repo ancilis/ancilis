@@ -37,7 +37,7 @@ class TestFullConfig:
                     "blocked_destinations": ["evil.com"],
                 },
             },
-            "my_agent_handles": ["health_records", "personal_info"],
+            "my_agent_handles": ["credit_cards", "personal_info"],
             "compliance": {
                 "overlays": ["hipaa", "gdpr"],
                 "evidence": {"storage": "local", "retention_days": 730},
