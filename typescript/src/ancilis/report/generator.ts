@@ -173,8 +173,8 @@ export class ReportGenerator {
       let trigger = "";
       if (activation.triggeredBy.length > 0) {
         const first = activation.triggeredBy[0];
-        if (first.includes(" via ")) {
-          trigger = first.split(" via ")[1];
+        if (first !== undefined && first.includes(" via ")) {
+          trigger = first.split(" via ")[1] ?? "";
         }
       }
 
