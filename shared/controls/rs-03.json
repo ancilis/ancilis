@@ -4,19 +4,17 @@
   "function": "RESPOND",
   "csf_mapping": "RS.AN",
   "description": "Preserves and protects evidence related to security incidents for post-incident analysis, regulatory reporting, and potential legal proceedings. Ensures incident evidence is collected, integrity-protected, and retained according to applicable requirements.",
-  "threat_addressed": "Evidence lost or corrupted after an incident prevents root cause analysis, regulatory compliance demonstration, and legal defense. Agents operating at machine speed can generate volumes of relevant evidence that must be systematically preserved before routine retention policies delete it.",
-  "enforcement_mechanism": "Upon incident detection, captures and preserves all related evidence records — control evaluations, agent actions, configuration state, and behavioral baselines. Applies legal hold to prevent evidence deletion. Maintains chain of custody documentation.",
+  "threat_addressed": "After a compliance incident, the evidence needed for investigation and regulatory reporting can be overwritten, modified, or lost if not immediately preserved. Incomplete evidence packages undermine both incident response and regulatory defensibility.",
+  "enforcement_mechanism": "On any compliance incident trigger, all relevant evidence is automatically preserved in tamper-evident format: full log chain, AKSI evaluations, agent state, tool call context, and regulatory impact assessment. Accessible within defined retrieval time.",
   "security_outcome": {
-    "pass": "Incident evidence preserved with integrity protection and chain of custody.",
+    "pass": "Preservation triggers on all incident types. Evidence tamper-evident. Accessible within retrieval SLA.",
     "fail": "Evidence preservation failed — records missing, corrupted, or chain of custody broken."
   },
   "evidence_fields": [
-    "incident_id",
-    "evidence_records_preserved",
-    "preservation_timestamp",
-    "chain_of_custody",
-    "legal_hold_applied",
-    "evidence_hash"
+    "evidence_packages",
+    "trigger_configuration_records",
+    "retrieval_test_results",
+    "tamper_verification_records"
   ],
   "default_enabled": true,
   "baseline": true,
@@ -30,7 +28,9 @@
     "fedramp": "KSI-IRR",
     "gdpr": null,
     "dora": "Art.17",
-    "nis2": "Art.23"
+    "nis2": "Art.23",
+    "pci_dss": "Req 12.10",
+    "owasp": null
   },
   "display_name": "Evidence preservation",
   "display_detail": "Preserves incident-related evidence with integrity protection and chain of custody.",

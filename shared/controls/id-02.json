@@ -4,24 +4,22 @@
   "function": "IDENTIFY",
   "csf_mapping": "ID.AM",
   "description": "Maintains a registry of all tools and MCP servers available to agents, including their capabilities, trust levels, and approval status. Every tool endpoint must be cataloged before agent use, enabling supply chain visibility and provenance tracking.",
-  "threat_addressed": "Unregistered tools and MCP servers represent unknown attack surface. Without a tool registry, organizations cannot assess tool trustworthiness, track supply chain dependencies, or detect unauthorized tool additions that could introduce malicious functionality.",
-  "enforcement_mechanism": "Validates that tools invoked by agents are registered in the tool registry with documented capabilities, version information, and approval status. Unregistered tools trigger alerts or blocks based on security mode.",
+  "threat_addressed": "Agents invoking unregistered or unapproved tools expose the organization to semantic supply chain attacks (tool description tampering), unauthorized data access, and unmonitored external service dependencies. Without a description content hash at approval time, post-approval modification of tool behavior is undetectable.",
+  "enforcement_mechanism": "Registry of all MCP servers, tools, APIs, and external services with provenance, version pin, audit date, approval status, and a cryptographic hash of each tool's description content at time of approval. No agent can invoke an unregistered tool (runtime enforced).",
   "security_outcome": {
-    "pass": "Tool registered in organizational registry with documented capabilities and approval status.",
+    "pass": "Registry complete. No agent invokes an unregistered tool (runtime enforced). All entries have current approval status and description content hash.",
     "fail": "Tool not registered or registry record incomplete."
   },
   "evidence_fields": [
-    "tool_name",
-    "tool_version",
-    "mcp_server_id",
-    "registration_status",
-    "approval_status",
-    "capabilities_declared"
+    "tool_registry_export",
+    "blocked_unregistered_call_logs",
+    "approval_workflow_records",
+    "description_hash_records"
   ],
   "default_enabled": true,
   "baseline": true,
   "regulatory_mappings": {
-    "nist_csf": "ID.AM-05, ID.AM-07",
+    "nist_csf": "ID.AM-07, ID.AM-08",
     "iso_42001": null,
     "iso_27001": "A.5.23",
     "soc2": "CC6.6",
@@ -30,7 +28,9 @@
     "fedramp": "KSI-3IR",
     "gdpr": null,
     "dora": "Art.28",
-    "nis2": "Art.21"
+    "nis2": "Art.21",
+    "pci_dss": "Req 6.3",
+    "owasp": "MCP04"
   },
   "display_name": "Tool registry",
   "display_detail": "Validates that tools and MCP servers are registered with documented capabilities and approval status.",

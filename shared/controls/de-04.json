@@ -4,18 +4,16 @@
   "function": "DETECT",
   "csf_mapping": "DE.CM",
   "description": "Verifies the integrity of the evidence chain — the cryptographically linked sequence of evaluation records that proves continuous security control operation. Detects tampering, gaps, or corruption in the evidence store.",
-  "threat_addressed": "Tampered evidence records can conceal security incidents, fabricate compliance, or undermine audit trails. A broken hash chain indicates either corruption or deliberate tampering. Without integrity verification, the entire evidence store is untrustworthy.",
-  "enforcement_mechanism": "Validates SHA-256 hash chain integrity from genesis record to current. Verifies each record's hash against previous_hash linkage. Detects gaps, duplicate IDs, out-of-sequence records, and hash mismatches.",
+  "threat_addressed": "If compliance evidence records can be tampered with after generation, the entire compliance posture becomes untrustworthy. Auditors cannot rely on evidence that lacks integrity guarantees.",
+  "enforcement_mechanism": "Compliance evidence records are integrity-protected through hash chaining (SHA-256). Each record references the hash of the previous record. Periodic verification confirms chain integrity. Breaks in the chain trigger alerts.",
   "security_outcome": {
-    "pass": "Evidence chain intact — all records verified, hash chain unbroken.",
+    "pass": "Integrity mechanism active on all evidence records. 100% chain verification on schedule. No unresolved integrity alerts.",
     "fail": "Evidence chain integrity failure — broken hash chain, missing records, or tampering detected."
   },
   "evidence_fields": [
-    "chain_length",
-    "chain_valid",
-    "last_verified_record",
-    "integrity_failures",
-    "verification_timestamp"
+    "verification_scan_results",
+    "chain_integrity_reports",
+    "alert_logs"
   ],
   "default_enabled": true,
   "baseline": true,
@@ -29,7 +27,9 @@
     "fedramp": "KSI-MLA",
     "gdpr": null,
     "dora": "Art.10",
-    "nis2": null
+    "nis2": null,
+    "pci_dss": "Req 10.5",
+    "owasp": null
   },
   "display_name": "Evidence integrity",
   "display_detail": "Verifies the cryptographic hash chain integrity of the evidence store.",

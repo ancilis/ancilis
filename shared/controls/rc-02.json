@@ -4,19 +4,17 @@
   "function": "RECOVER",
   "csf_mapping": "RC.IM",
   "description": "Conducts structured post-incident reviews to identify root causes, extract lessons learned, and implement improvements to prevent recurrence. Tracks improvement actions from identification through implementation and verification.",
-  "threat_addressed": "Without post-incident review, organizations repeat the same mistakes. Agents may encounter the same failure modes repeatedly without systemic improvement. Regulatory frameworks require evidence of continuous improvement based on operational experience.",
-  "enforcement_mechanism": "Generates post-incident review templates from preserved evidence. Tracks root cause analysis, improvement recommendations, and implementation status. Feeds lessons learned back into governance policy, control thresholds, and behavioral baselines.",
+  "threat_addressed": "Without structured post-incident review, the same compliance failures recur. Root causes go unaddressed, policy gaps persist, and the organization fails to demonstrate the continuous improvement that regulators expect.",
+  "enforcement_mechanism": "Structured post-incident review process: root cause analysis, regulatory reporting assessment, policy/threshold updates, and lessons learned. Completed within defined timeframe after incident closure. Findings tracked to resolution.",
   "security_outcome": {
-    "pass": "Post-incident review completed with improvement actions identified and tracked.",
+    "pass": "Review process exists and is completed for all qualifying incidents. Findings documented. Action items tracked to closure.",
     "fail": "Post-incident review not conducted or improvement actions not tracked."
   },
   "evidence_fields": [
-    "incident_id",
+    "review_records",
     "root_cause_analysis",
-    "lessons_learned",
-    "improvement_actions",
-    "implementation_status",
-    "review_date"
+    "policy_update_records",
+    "action_item_tracking"
   ],
   "default_enabled": true,
   "baseline": true,
@@ -30,7 +28,9 @@
     "fedramp": "KSI-AFR",
     "gdpr": null,
     "dora": "Art.13",
-    "nis2": "Art.21"
+    "nis2": "Art.21",
+    "pci_dss": "Req 12.10.6",
+    "owasp": null
   },
   "display_name": "Post-incident review",
   "display_detail": "Conducts post-incident reviews and tracks improvement actions to prevent recurrence.",

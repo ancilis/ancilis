@@ -4,19 +4,16 @@
   "function": "RESPOND",
   "csf_mapping": "RS.CO",
   "description": "Manages human escalation workflows for agent security events that require human judgment, approval, or intervention. Defines escalation paths, notification channels, and response timeframes for different incident severity levels.",
-  "threat_addressed": "Not all agent incidents can be resolved automatically. High-severity events, ambiguous situations, and novel threats require human judgment. Without defined escalation workflows, critical incidents get lost, delayed, or handled by the wrong person.",
-  "enforcement_mechanism": "Routes high-severity incidents to designated human responders via configured notification channels. Tracks escalation status, response times, and resolution actions. Enforces response timeframe requirements from active regulatory overlays.",
+  "threat_addressed": "Automated responses handle routine failures, but deviations above a severity threshold require human judgment: context that automated systems cannot fully evaluate, regulatory reporting decisions, and risk acceptance determinations.",
+  "enforcement_mechanism": "Escalation rules route deviations above severity threshold to designated reviewers (agent owner, compliance team, or CISO depending on severity) with full context: the action, failed AKSIs, regulatory impact assessment, and recommended response. SLAs defined and tracked.",
   "security_outcome": {
-    "pass": "Human escalation workflow configured and responsive.",
+    "pass": "Routing rules cover all escalation scenarios. Routing functional and tested. SLAs defined and tracked.",
     "fail": "Escalation workflow not configured or escalation acknowledgment overdue."
   },
   "evidence_fields": [
-    "escalation_triggered",
-    "escalation_target",
-    "notification_channel",
-    "acknowledgment_time_ms",
-    "resolution_status",
-    "human_decision"
+    "escalation_configuration",
+    "event_logs_with_response_times",
+    "sla_performance_metrics"
   ],
   "default_enabled": true,
   "baseline": true,
@@ -30,7 +27,9 @@
     "fedramp": "KSI-IRR",
     "gdpr": "Art.22",
     "dora": "Art.17",
-    "nis2": "Art.23"
+    "nis2": "Art.23",
+    "pci_dss": "Req 12.10",
+    "owasp": null
   },
   "display_name": "Human escalation",
   "display_detail": "Manages human escalation workflows for security events requiring human judgment or intervention.",

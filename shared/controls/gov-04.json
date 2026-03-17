@@ -4,18 +4,16 @@
   "function": "GOVERN",
   "csf_mapping": "GV.OV",
   "description": "Configures and validates human oversight mechanisms for agent operations. Defines when human review is required, how escalation works, and ensures humans can intervene in, override, or halt agent actions when necessary.",
-  "threat_addressed": "Fully autonomous agents without human oversight checkpoints can cause cascading harm before humans are aware. Regulatory frameworks increasingly mandate human-in-the-loop or human-on-the-loop for high-risk AI operations. Without configured oversight, organizations cannot demonstrate compliance with human oversight requirements.",
-  "enforcement_mechanism": "Validates human oversight configuration based on active overlays and data classifications. When overlays require human oversight (e.g., EU AI Act for high-risk systems), verifies that escalation workflows and override capabilities are configured.",
+  "threat_addressed": "Agents operating without human oversight can execute high-risk actions autonomously, compounding errors or policy violations before human review occurs. In regulated environments, fully autonomous high-risk decisions may violate requirements for human intervention (GDPR Art. 22, EU AI Act Art. 14).",
+  "enforcement_mechanism": "HITL/HOTL rules define which action categories require human approval. Runtime enforcement routes qualifying actions to designated reviewers. Configurable consensus model: 'all AKSIs must pass' (strict), 'N of M' (flexible), or 'log and continue' (audit mode).",
   "security_outcome": {
-    "pass": "Human oversight configured appropriately for agent risk level and regulatory requirements.",
+    "pass": "HITL policy defines action categories requiring approval. Routing functional and tested. All human decisions logged with identity, timestamp, and rationale.",
     "fail": "Human oversight required but not configured."
   },
   "evidence_fields": [
-    "human_oversight_required",
-    "oversight_configuration",
-    "escalation_workflow",
-    "override_capability",
-    "oversight_trigger_conditions"
+    "hitl_policy_configuration",
+    "approval_workflow_logs",
+    "response_time_metrics"
   ],
   "default_enabled": true,
   "baseline": true,
@@ -29,7 +27,9 @@
     "fedramp": null,
     "gdpr": "Art.22",
     "dora": null,
-    "nis2": null
+    "nis2": null,
+    "pci_dss": null,
+    "owasp": "Agentic AA06"
   },
   "display_name": "Human oversight",
   "display_detail": "Validates that human oversight, escalation, and override mechanisms are configured for agent operations.",

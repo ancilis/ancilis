@@ -4,23 +4,21 @@
   "function": "IDENTIFY",
   "csf_mapping": "ID.RA",
   "description": "Builds and maintains risk profiles for deployed agents based on their data access, tool capabilities, operational scope, and behavioral patterns. Risk profiles inform control selection, threshold adjustments, and oversight requirements.",
-  "threat_addressed": "One-size-fits-all security treats a read-only reporting agent the same as an agent with write access to production databases. Without risk profiling, controls are either too loose for high-risk agents or too restrictive for low-risk ones, wasting security resources and creating friction.",
-  "enforcement_mechanism": "Calculates agent risk profile from declared data classifications, tool access scope, operational constraints, and active overlays. Risk profile determines baseline control thresholds and triggers additional controls when risk exceeds defined tolerance.",
+  "threat_addressed": "Agents with different data access patterns, autonomous action scopes, and external interactions present different risk levels. Without explicit risk profiling, high-risk agents receive the same controls as low-risk agents.",
+  "enforcement_mechanism": "Each agent receives a documented risk profile (Low/Moderate/High/Critical) based on data classifications, tool access scope, autonomous action range, and external interaction surface. Profile determines control stringency.",
   "security_outcome": {
-    "pass": "Agent risk profile calculated and controls calibrated to risk level.",
+    "pass": "All agents profiled. Ratings current and aligned with risk tolerance. High-risk agents have enhanced controls.",
     "fail": "Agent risk profile could not be determined or controls misaligned with risk level."
   },
   "evidence_fields": [
-    "risk_profile_score",
-    "risk_factors",
-    "data_sensitivity_level",
-    "scope_breadth",
-    "control_calibration_result"
+    "risk_profile_records",
+    "rating_methodology_documentation",
+    "profile_review_timestamps"
   ],
   "default_enabled": true,
   "baseline": true,
   "regulatory_mappings": {
-    "nist_csf": "ID.RA-01, ID.RA-02",
+    "nist_csf": "ID.RA-01 to ID.RA-06",
     "iso_42001": "MAP 1.1",
     "iso_27001": null,
     "soc2": "CC3.2",
@@ -29,7 +27,9 @@
     "fedramp": null,
     "gdpr": "Art.35",
     "dora": "Art.6",
-    "nis2": "Art.21"
+    "nis2": "Art.21",
+    "pci_dss": "Req 12.3.1",
+    "owasp": null
   },
   "display_name": "Risk profiling",
   "display_detail": "Calculates agent risk profile based on data access, capabilities, and scope to calibrate control thresholds.",

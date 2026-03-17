@@ -4,19 +4,16 @@
   "function": "IDENTIFY",
   "csf_mapping": "ID.AM",
   "description": "Maintains a comprehensive inventory of all deployed AI agents, their capabilities, data access permissions, and operational status. Every agent must be registered before it can operate, ensuring complete organizational visibility into the agent fleet.",
-  "threat_addressed": "Shadow AI agents — unregistered agents operating without organizational knowledge — create blind spots in security posture. Without inventory, organizations cannot assess aggregate risk, enforce consistent policies, or respond to incidents involving unknown agents.",
-  "enforcement_mechanism": "Validates that the agent is registered with a unique identity, declared capabilities, and documented operational parameters. Agent inventory records are maintained with version history and operational status tracking.",
+  "threat_addressed": "Unregistered agents operate outside organizational visibility. Shadow agent deployments create unmonitored attack surfaces and ungoverned data access points that compliance programs cannot cover.",
+  "enforcement_mechanism": "Complete, current registry of all deployed AI agents with required fields: unique ID, name, owner, purpose, creation date, last-activity, authorized tools, data classification tags, and deployment environment. Discovery scans detect unregistered agents.",
   "security_outcome": {
-    "pass": "Agent registered in organizational inventory with complete capability documentation.",
+    "pass": "Registry is complete (no unregistered agents in production). All required fields populated. Updated within defined cycle.",
     "fail": "Agent not registered or inventory record incomplete."
   },
   "evidence_fields": [
-    "agent_id",
-    "agent_name",
-    "agent_description",
-    "registration_date",
-    "capabilities_declared",
-    "operational_status"
+    "agent_registry_export",
+    "discovery_scan_delta_reports",
+    "last_updated_timestamps"
   ],
   "default_enabled": true,
   "baseline": true,
@@ -30,7 +27,9 @@
     "fedramp": "KSI-PIY",
     "gdpr": null,
     "dora": "Art.8",
-    "nis2": "Art.21"
+    "nis2": "Art.21",
+    "pci_dss": "Req 2.4",
+    "owasp": "Agentic AA09"
   },
   "display_name": "Agent inventory",
   "display_detail": "Validates that the agent is registered in the organizational inventory with complete documentation.",
