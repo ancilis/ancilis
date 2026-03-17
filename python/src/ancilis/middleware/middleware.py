@@ -4,10 +4,22 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from mcp import ClientSession
-from mcp.types import CallToolResult, TextContent
+if TYPE_CHECKING:
+    from mcp import ClientSession
+    from mcp.types import CallToolResult
+else:
+    ClientSession = Any
+    CallToolResult = Any
+
+try:
+    from mcp.types import TextContent
+except ImportError:
+    class TextContent:  # type: ignore[no-redef]
+        """Fallback type when MCP is not installed."""
+
+        pass
 
 from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.engine import Engine
