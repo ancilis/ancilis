@@ -4,18 +4,16 @@
   "function": "DETECT",
   "csf_mapping": "DE.CM",
   "description": "Continuously monitors agent, tool, and MCP server configurations for drift from established baselines. Detects unauthorized changes, misconfigurations, and security degradation over time.",
-  "threat_addressed": "Configuration drift is a leading cause of security incidents — settings change incrementally through updates, manual interventions, or compromise until the actual configuration no longer matches the intended security posture. In agent environments, drift can silently expand agent permissions, weaken encryption, or disable controls.",
-  "enforcement_mechanism": "Compares current configuration state against stored baselines at each evaluation cycle. Detects additions, removals, and modifications to security-relevant settings. Generates drift reports with severity classification.",
+  "threat_addressed": "Tool descriptions, MCP server configurations, and policy files can be modified after approval. Without continuous drift monitoring, post-approval changes go undetected — enabling semantic supply chain attacks.",
+  "enforcement_mechanism": "Tool description hashes checked against audited baselines per invocation or per session (configurable TTL). Configuration files monitored for unauthorized changes. Drift triggers alerts and re-approval workflows.",
   "security_outcome": {
-    "pass": "Configuration stable — no drift from established baseline.",
+    "pass": "Monitoring covers all registered tools. Hash comparison continuous or per-session. Alerts within defined window.",
     "fail": "Configuration drift detected — current state differs from baseline."
   },
   "evidence_fields": [
-    "drift_detected",
-    "drift_severity",
-    "changed_settings",
-    "baseline_timestamp",
-    "current_timestamp"
+    "hash_comparison_logs",
+    "drift_detection_alerts",
+    "re_approval_workflow_records"
   ],
   "default_enabled": true,
   "baseline": true,
@@ -29,7 +27,9 @@
     "fedramp": "KSI-CMT",
     "gdpr": null,
     "dora": "Art.9",
-    "nis2": "Art.21"
+    "nis2": "Art.21",
+    "pci_dss": "Req 11.5",
+    "owasp": "MCP06, Agentic AA05"
   },
   "display_name": "Drift monitoring",
   "display_detail": "Monitors agent and tool configurations for drift from established security baselines.",

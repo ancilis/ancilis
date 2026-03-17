@@ -4,32 +4,34 @@
   "function": "IDENTIFY",
   "csf_mapping": "ID.AM",
   "description": "Classifies and validates data handled by agents using standardized data classification codes (DC codes). Maps declared data types to regulatory requirements, enabling automatic overlay activation and ensuring appropriate controls are applied based on data sensitivity.",
-  "threat_addressed": "Misclassified or unclassified data leads to insufficient controls — agents handling sensitive data without appropriate protections. Incorrect classification causes either over-restriction (business friction) or under-protection (compliance violations and data breaches).",
-  "enforcement_mechanism": "Validates that data handled by the agent is classified using my_agent_handles declarations. Maps plain-language data types to DC codes and activates corresponding regulatory overlays. Pattern detection identifies undeclared sensitive data in agent actions.",
+  "threat_addressed": "Incorrect or missing data classification causes the wrong regulatory overlays to activate (or none at all), resulting in under-protection of sensitive data and false compliance posture.",
+  "enforcement_mechanism": "All data sources classified per the framework taxonomy (16 types). Runtime validation using pattern detection (regex, Luhn, co-occurrence) compares observed data patterns against declared classifications. Discrepancy alerts triggered on mismatch.",
   "security_outcome": {
-    "pass": "Data classified with appropriate DC codes and matching controls activated.",
+    "pass": "All data sources tagged. No unclassified sources in agent ecosystem. Runtime validation active for pattern-detectable data types. No unresolved classification discrepancy alerts.",
     "fail": "Data handling declared but classification validation failed or undeclared sensitive data detected."
   },
   "evidence_fields": [
-    "data_classifications_declared",
-    "dc_codes_active",
-    "overlays_activated",
-    "pattern_detections",
-    "classification_validation_result"
+    "data_classification_registry_export",
+    "overlay_activation_logs",
+    "unclassified_source_reports",
+    "validation_scan_results",
+    "discrepancy_alert_logs"
   ],
   "default_enabled": true,
   "baseline": true,
   "regulatory_mappings": {
-    "nist_csf": "ID.AM-07, ID.AM-08",
+    "nist_csf": "ID.AM-05",
     "iso_42001": "MAP 1.5",
-    "iso_27001": "A.5.12",
+    "iso_27001": "A.5.12, A.5.13",
     "soc2": "CC6.1",
     "cmmc": "MP.L2",
     "eu_ai_act": null,
     "fedramp": null,
     "gdpr": "Art.30",
     "dora": "Art.8",
-    "nis2": null
+    "nis2": null,
+    "pci_dss": "Req 3",
+    "owasp": null
   },
   "display_name": "Data classification",
   "display_detail": "Validates data classification declarations and ensures appropriate controls are activated for declared data sensitivity.",

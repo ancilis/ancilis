@@ -4,33 +4,33 @@
   "function": "PROTECT",
   "csf_mapping": "PR.AA",
   "description": "Enforces machine-readable permission boundaries per agent. Every action evaluated against declared scope.",
-  "threat_addressed": "Agents exceeding authorized scope can access unauthorized data and tools, leading to data breaches and compliance violations.",
-  "enforcement_mechanism": "Machine-readable scope definition per agent. Per-action evaluation against scope using security.tools.allowed, security.tools.blocked, and security.scope configuration. Out-of-scope actions are blocked (enforce) or flagged (audit).",
+  "threat_addressed": "Agents that exceed their authorized scope can access data, invoke tools, or take actions they were never approved for. More critically, agents can construct exfiltration trajectories through sequences of individually authorized actions.",
+  "enforcement_mechanism": "Machine-readable scope definition per agent specifying authorized tools, data sources, and action types. Enforcement operates at two levels: per-action (each call checked against scope) and per-trajectory (cumulative action sequences evaluated against policy). Out-of-scope actions are blocked.",
   "security_outcome": {
-    "pass": "Action within declared permission scope.",
+    "pass": "Scope definitions exist for all agents. Both per-action and per-trajectory enforcement active. No privilege escalation pathways.",
     "fail": "Action outside declared permission scope."
   },
   "evidence_fields": [
-    "agent_id",
-    "action_type",
-    "target_resource",
-    "scope_definition",
-    "evaluation_result",
-    "timestamp"
+    "scope_configuration_per_agent",
+    "per_action_evaluation_logs",
+    "per_trajectory_evaluation_logs",
+    "escalation_test_results"
   ],
   "default_enabled": true,
   "baseline": true,
   "regulatory_mappings": {
-    "nist_csf": "PR.AA-01, PR.AA-05",
+    "nist_csf": "PR.AA-05",
     "iso_42001": null,
     "iso_27001": "A.8.3",
     "soc2": "CC6.3",
     "cmmc": "AC.L2",
-    "eu_ai_act": "Art.9.4",
+    "eu_ai_act": "Art.9(4)",
     "fedramp": "KSI-IAM",
     "gdpr": "Art.25",
     "dora": "Art.9",
-    "nis2": null
+    "nis2": null,
+    "pci_dss": "Req 7",
+    "owasp": "MCP02"
   },
   "display_name": "Scope enforcement",
   "display_detail": "Enforces permission boundaries for each agent action. Checks tool allowlists, rate limits, and destination restrictions.",

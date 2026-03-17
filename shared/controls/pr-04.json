@@ -4,34 +4,34 @@
   "function": "PROTECT",
   "csf_mapping": "PR.DS",
   "description": "Scans outbound tool call parameters for sensitive data patterns and blocks transmission to unauthorized destinations.",
-  "threat_addressed": "Sensitive data leaving agent's control through outbound tool calls can result in data breaches, regulatory violations, and loss of confidential information.",
-  "enforcement_mechanism": "Scan outbound tool call parameters for sensitive data patterns. Block or flag transmission to unauthorized destinations. MVP implements Layer A (outbound action scanning) only.",
+  "threat_addressed": "Sensitive data can leave the agent's control through three vectors: outbound actions (tool calls carrying sensitive payloads), agent-generated output (responses containing sensitive data), and context ingestion (tool responses introducing sensitive data the agent didn't request).",
+  "enforcement_mechanism": "Three enforcement layers operate inline: Layer A (Outbound Action Scanning) evaluates action payloads against classification patterns. Layer B (Output Scanning) evaluates agent-generated output before delivery. Layer C (Context Ingestion Evaluation) evaluates data entering context at point of entry.",
   "security_outcome": {
-    "pass": "No sensitive data detected in outbound parameters, or destination authorized.",
+    "pass": "Layer A scanning per outbound action. Layer B scanning per output. Layer C validation on all ingested data. No unscanned outbound actions.",
     "fail": "Sensitive data detected going to unauthorized destination."
   },
   "evidence_fields": [
-    "agent_id",
-    "tool_name",
-    "destination",
-    "data_patterns_detected",
-    "destination_authorized",
-    "evaluation_result",
-    "timestamp"
+    "layer_a_scan_logs",
+    "layer_b_scan_logs",
+    "layer_c_validation_logs",
+    "blocked_exposure_records",
+    "false_positive_tuning_records"
   ],
   "default_enabled": true,
   "baseline": true,
   "regulatory_mappings": {
     "nist_csf": "PR.DS-01, PR.DS-02",
     "iso_42001": null,
-    "iso_27001": "A.8.10",
+    "iso_27001": "A.8.10, A.8.11, A.8.12",
     "soc2": "CC6.7",
     "cmmc": "MP.L2",
     "eu_ai_act": "Art.10",
     "fedramp": null,
     "gdpr": "Art.32",
     "dora": "Art.9",
-    "nis2": null
+    "nis2": null,
+    "pci_dss": "Req 3, 4",
+    "owasp": "MCP03"
   },
   "display_name": "Data exposure scan",
   "display_detail": "Scans outbound tool call parameters for sensitive data patterns and validates destination authorization.",

@@ -4,18 +4,17 @@
   "function": "PROTECT",
   "csf_mapping": "PR.DS",
   "description": "Ensures all data transmitted by agents uses strong encryption and secure transport protocols. Validates TLS version, cipher strength, and certificate validity for all outbound connections. Enforces encryption requirements for stored sensitive data.",
-  "threat_addressed": "Agent communications traversing untrusted networks without encryption expose sensitive data to interception, tampering, and man-in-the-middle attacks. Weak or deprecated cryptographic protocols provide false sense of security while remaining vulnerable to known attacks.",
-  "enforcement_mechanism": "Validates transport security for outbound agent actions — TLS version, cipher suite, certificate validity. Enforces minimum encryption standards based on data classification. Blocks connections using deprecated protocols (SSL 3.0, TLS 1.0/1.1).",
+  "threat_addressed": "Agent-tool communications traversing networks without encryption are vulnerable to interception, modification, and replay. Sensitive data in transit or at rest without encryption is exposed to unauthorized access.",
+  "enforcement_mechanism": "All agent-tool communications encrypted in transit (TLS 1.2+). Sensitive data at rest encrypted. FIPS 140-2/3 where applicable. Certificate validation enforced.",
   "security_outcome": {
-    "pass": "Data encrypted in transit using approved protocols and cipher suites.",
+    "pass": "TLS verified on all connections. At-rest encryption active. Certificates valid. FIPS compliant where required.",
     "fail": "Insufficient encryption or deprecated transport protocol detected."
   },
   "evidence_fields": [
-    "transport_protocol",
-    "tls_version",
-    "cipher_suite",
-    "certificate_valid",
-    "encryption_standard"
+    "tls_configuration_records",
+    "certificate_chain_validation",
+    "at_rest_encryption_configuration",
+    "fips_certification"
   ],
   "default_enabled": true,
   "baseline": true,
@@ -29,7 +28,9 @@
     "fedramp": "KSI-SVC",
     "gdpr": "Art.32",
     "dora": "Art.9",
-    "nis2": "Art.21"
+    "nis2": "Art.21",
+    "pci_dss": "Req 4",
+    "owasp": null
   },
   "display_name": "Transport security",
   "display_detail": "Validates encryption and transport security for all agent communications and data storage.",

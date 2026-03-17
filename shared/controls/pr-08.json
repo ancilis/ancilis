@@ -4,23 +4,21 @@
   "function": "PROTECT",
   "csf_mapping": "PR.DS",
   "description": "Validates and sanitizes inputs to agents and tools to prevent injection attacks including prompt injection, command injection, and parameter manipulation. Ensures agent inputs conform to expected schemas and do not contain malicious payloads.",
-  "threat_addressed": "Prompt injection and input manipulation attacks can cause agents to execute unintended actions, bypass security controls, exfiltrate data, or escalate privileges. Tool parameters containing injection payloads can compromise downstream systems. Without input validation, every agent interaction is an attack vector.",
-  "enforcement_mechanism": "Validates tool call parameters against expected schemas, scans for injection patterns in agent inputs, and enforces input length and type constraints. Suspicious inputs trigger alerts or blocks based on security mode.",
+  "threat_addressed": "Prompt injection (direct and indirect) can cause agents to execute unauthorized actions. Indirect injection through tool responses is particularly dangerous: a legitimate, approved tool returns a response containing embedded instructions that the agent interprets as directives.",
+  "enforcement_mechanism": "Validation and sanitization at two ingress points: direct input (user/orchestrator prompts) and indirect input (tool responses, memory, retrieved context). Tool responses treated as untrusted data regardless of tool approval status.",
   "security_outcome": {
-    "pass": "Input validated and conforms to expected schema without injection indicators.",
+    "pass": "Validation active on all direct and indirect input channels. Known injection patterns blocked. Tool response validation enforced.",
     "fail": "Input validation failed — potential injection or malformed input detected."
   },
   "evidence_fields": [
-    "input_validation_result",
-    "injection_patterns_detected",
-    "schema_conformance",
-    "input_sanitization_applied",
-    "suspicious_input_indicators"
+    "validation_configuration",
+    "blocked_injection_logs",
+    "tool_response_validation_records"
   ],
   "default_enabled": true,
   "baseline": true,
   "regulatory_mappings": {
-    "nist_csf": "PR.DS-01, PR.DS-02",
+    "nist_csf": "PR.DS-10",
     "iso_42001": null,
     "iso_27001": "A.8.28",
     "soc2": "CC7.1",
@@ -29,7 +27,9 @@
     "fedramp": "KSI-VDR",
     "gdpr": null,
     "dora": "Art.9",
-    "nis2": null
+    "nis2": null,
+    "pci_dss": "Req 6.2",
+    "owasp": "MCP01, MCP05, MCP09, Agentic AA01"
   },
   "display_name": "Input validation",
   "display_detail": "Validates agent and tool inputs to prevent injection attacks and parameter manipulation.",
