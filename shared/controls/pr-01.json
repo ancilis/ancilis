@@ -4,20 +4,33 @@
   "function": "PROTECT",
   "csf_mapping": "PR.AA",
   "description": "Verifies agent presents valid credentials for every action. No anonymous tool calls.",
-  "threat_addressed": "Agents operating without verified identity cannot be held accountable. Unauthorized agents can access tools and data without attribution, making incident investigation and compliance demonstration impossible.",
-  "enforcement_mechanism": "Every agent action must include a verified identity token. Actions without valid identity are blocked (enforce) or flagged (audit). Identity verified against registered agent credentials.",
+  "threat_addressed": "An unauthenticated agent action cannot be attributed to a specific agent, owner, or authorization scope. This breaks the entire enforcement chain: scope checks, behavioral monitoring, and evidence records all depend on verified agent identity.",
+  "enforcement_mechanism": "Every agent action requires a cryptographically verifiable, non-repudiable identity credential. The credential maps to a registered agent and its human owner. Failed authentication blocks the action and generates an alert.",
   "security_outcome": {
-    "pass": "Agent identity verified for this action.",
+    "pass": "Authentication enforced at runtime (no anonymous actions). Credentials short-lived or continuously validated. Failed attempts logged and alerted.",
     "fail": "Agent identity missing or invalid for this action."
   },
   "evidence_fields": [
-    "agent_id",
-    "identity_token_hash",
-    "verification_result",
-    "timestamp"
+    "token_validation_logs",
+    "agent_registry_mapping_records",
+    "failed_authentication_event_logs"
   ],
   "default_enabled": true,
   "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "PR.AA-01 to PR.AA-03",
+    "iso_42001": null,
+    "iso_27001": "A.8.5",
+    "soc2": "CC6.1, CC6.2",
+    "cmmc": "IA.L2",
+    "eu_ai_act": null,
+    "fedramp": "KSI-IAM",
+    "gdpr": null,
+    "dora": "Art.9",
+    "nis2": "Art.21",
+    "pci_dss": "Req 8",
+    "owasp": "MCP07"
+  },
   "display_name": "Identity verification",
   "display_detail": "Verifies the agent presents valid credentials for every tool call. Prevents anonymous or unauthorized actions.",
   "remediation_hint_template": "Agent identity could not be verified. Ensure agent.name in ancilis.yaml matches the agent making tool calls."

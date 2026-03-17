@@ -1,27 +1,38 @@
 {
   "id": "PR-05",
-  "name": "Audit Logging",
+  "name": "Comprehensive Audit Trail",
   "function": "PROTECT",
-  "csf_mapping": "PR.DS",
-  "description": "Every action generates a tamper-evident log entry with full context for incident investigation and compliance demonstration.",
-  "threat_addressed": "Without logging, incidents cannot be investigated and compliance cannot be demonstrated. Missing audit trails make it impossible to reconstruct agent behavior during security events.",
-  "enforcement_mechanism": "Every action generates tamper-evident log entry with: timestamp, agent identity, action type, target, parameters (sensitive data redacted), evaluation results, and decision outcome.",
+  "csf_mapping": "DE.AE",
+  "description": "Every agent action generates a tamper-evident audit log entry with full context for incident investigation and compliance demonstration. 100% action coverage with no gaps.",
+  "threat_addressed": "Without comprehensive action logging, security incidents cannot be investigated, compliance cannot be demonstrated, and behavioral baselines cannot be established. Gaps in the audit trail create blind spots for both security and compliance.",
+  "enforcement_mechanism": "Every agent action generates a tamper-evident audit log entry: timestamp, agent identity, action type, target, parameters (sensitive data redacted), AKSI evaluation results, decision outcome, and applicable regulatory mappings. 100% action coverage with no gaps.",
   "security_outcome": {
-    "pass": "Log entry generated with all required fields.",
+    "pass": "No action without log entry. Schema complete with all required fields. Tamper-evident integrity mechanism active. Retention meets strictest applicable overlay requirement.",
     "fail": "Missing or incomplete log entry."
   },
   "evidence_fields": [
-    "agent_id",
-    "action_type",
-    "target",
-    "parameters_redacted",
-    "evaluation_results",
-    "decision_outcome",
-    "timestamp"
+    "audit_log_entries",
+    "integrity_verification_records",
+    "retention_configuration",
+    "coverage_metrics"
   ],
   "default_enabled": true,
   "baseline": true,
-  "display_name": "Audit logging",
-  "display_detail": "Validates that structured logging is active and producing complete, tamper-evident records for incident investigation.",
+  "regulatory_mappings": {
+    "nist_csf": "DE.AE-02, DE.AE-03",
+    "iso_42001": "MEA 2.1",
+    "iso_27001": "A.8.15",
+    "soc2": "CC7.1, CC7.2",
+    "cmmc": "AU.L2",
+    "eu_ai_act": "Art.12",
+    "fedramp": "KSI-MLA",
+    "gdpr": "Art.30",
+    "dora": "Art.10",
+    "nis2": "Art.23",
+    "pci_dss": "Req 10",
+    "owasp": null
+  },
+  "display_name": "Comprehensive audit trail",
+  "display_detail": "Validates that every agent action generates a tamper-evident audit log entry with full context for incident investigation and compliance demonstration.",
   "remediation_hint_template": "Audit logging is not properly configured. Ensure evidence storage is enabled and log format is structured (JSON). Check compliance.evidence settings in ancilis.yaml."
 }

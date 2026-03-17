@@ -15,11 +15,19 @@ from ancilis.activation.loader import (
 
 logger = logging.getLogger("ancilis.activation")
 
-# Baseline controls — always active regardless of config
-BASELINE_CONTROLS = {"PR-01", "PR-02", "PR-03", "PR-04"}
+# All 26 AKSI controls — always active as baseline
+ALL_AKSI_CONTROLS = {
+    "GOV-01", "GOV-02", "GOV-03", "GOV-04",
+    "ID-01", "ID-02", "ID-03", "ID-04", "ID-05",
+    "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
+    "DE-01", "DE-02", "DE-03", "DE-04",
+    "RS-01", "RS-02", "RS-03",
+    "RC-01", "RC-02",
+}
 
-# Extended controls — activate when any overlay or certification is active
-EXTENDED_CONTROLS = {"PR-05", "DE-01"}
+# Legacy aliases for backward compatibility
+BASELINE_CONTROLS = ALL_AKSI_CONTROLS
+EXTENDED_CONTROLS: set[str] = set()  # All controls are now baseline
 
 
 @dataclass
@@ -51,33 +59,25 @@ class ActivationResolver:
     ) -> ActivationSpec:
         spec = ActivationSpec()
 
-        # 1. Start with baseline controls (always active)
-        for cid in sorted(BASELINE_CONTROLS):
+        # 1. Start with all 26 AKSI controls (all are baseline)
+        for cid in sorted(ALL_AKSI_CONTROLS):
             spec.active_controls.append(cid)
             spec.control_thresholds[cid] = "standard"
             spec.activation_source[cid] = "baseline"
 
-        # 2. Path 1 — data classification
+        # 2. NIST CSF baseline overlay (always active)
+        nist_csf = self._overlay_profiles.get("nist-csf")
+        if nist_csf and nist_csf.get("trigger_type") == "baseline":
+            spec.active_overlays.append("nist-csf")
+            spec.activation_source["nist-csf"] = "baseline"
+
+        # 3. Path 1 — data classification
         if my_agent_handles:
             self._resolve_data_path(spec, my_agent_handles)
 
-        # 3. Path 2 — certification intent
+        # 4. Path 2 — certification intent
         if certification_targets:
             self._resolve_certification_path(spec, certification_targets)
-
-        # 4. Activate extended controls if any overlay or certification is active
-        if spec.active_overlays or spec.active_certifications:
-            for cid in sorted(EXTENDED_CONTROLS):
-                if cid not in spec.active_controls:
-                    spec.active_controls.append(cid)
-                    spec.control_thresholds.setdefault(cid, "standard")
-                    if cid not in spec.activation_source:
-                        sources = []
-                        if spec.active_overlays:
-                            sources.append(f"overlay:{spec.active_overlays[0]}")
-                        if spec.active_certifications:
-                            sources.append(f"certification_targets:{spec.active_certifications[0]}")
-                        spec.activation_source[cid] = sources[0] if sources else "extended"
 
         # Sort controls for consistency
         spec.active_controls = sorted(set(spec.active_controls))
@@ -105,9 +105,21 @@ class ActivationResolver:
             for dc_code in dc_codes:
                 overlay_ids = classification_lookup.get(dc_code, [])
                 for oid in overlay_ids:
-                    if oid in self._overlay_profiles and oid not in spec.active_overlays:
-                        spec.active_overlays.append(oid)
-                        spec.activation_source[oid] = f"my_agent_handles:{data_type}"
+                    # Skip baseline overlays (already activated)
+                    if oid in self._overlay_profiles:
+                        profile = self._overlay_profiles[oid]
+                        if profile.get("trigger_type") == "baseline":
+                            continue
+                        if oid not in spec.active_overlays:
+                            spec.active_overlays.append(oid)
+                            spec.activation_source[oid] = f"my_agent_handles:{data_type}"
+                    else:
+                        # Overlay not available — log informational message for roadmap items
+                        logger.info(
+                            "Data classification %s active. Overlay profile '%s' is on the roadmap. "
+                            "Baseline controls apply.",
+                            dc_code, oid,
+                        )
 
         spec.data_classifications = sorted(all_dc_codes)
 
@@ -191,6 +203,9 @@ class ActivationResolver:
             profile = self._overlay_profiles.get(oid, {})
             name = profile.get("name", oid)
             source_key = spec.activation_source.get(oid, "")
+            # Skip baseline overlays from detailed summary unless it's the only overlay
+            if profile.get("trigger_type") == "baseline":
+                continue
             triggered = ""
             if "my_agent_handles:" in source_key:
                 data_type = source_key.split(":", 1)[1]

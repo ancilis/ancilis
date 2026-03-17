@@ -1,0 +1,37 @@
+{
+  "id": "GOV-04",
+  "name": "Human Oversight Configuration",
+  "function": "GOVERN",
+  "csf_mapping": "GV.OV",
+  "description": "Configures and validates human oversight mechanisms for agent operations. Defines when human review is required, how escalation works, and ensures humans can intervene in, override, or halt agent actions when necessary.",
+  "threat_addressed": "Agents operating without human oversight can execute high-risk actions autonomously, compounding errors or policy violations before human review occurs. In regulated environments, fully autonomous high-risk decisions may violate requirements for human intervention (GDPR Art. 22, EU AI Act Art. 14).",
+  "enforcement_mechanism": "HITL/HOTL rules define which action categories require human approval. Runtime enforcement routes qualifying actions to designated reviewers. Configurable consensus model: 'all AKSIs must pass' (strict), 'N of M' (flexible), or 'log and continue' (audit mode).",
+  "security_outcome": {
+    "pass": "HITL policy defines action categories requiring approval. Routing functional and tested. All human decisions logged with identity, timestamp, and rationale.",
+    "fail": "Human oversight required but not configured."
+  },
+  "evidence_fields": [
+    "hitl_policy_configuration",
+    "approval_workflow_logs",
+    "response_time_metrics"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "GV.OV-01, GV.OV-02",
+    "iso_42001": "GOV 1.3",
+    "iso_27001": null,
+    "soc2": "CC1.4",
+    "cmmc": null,
+    "eu_ai_act": "Art.14",
+    "fedramp": null,
+    "gdpr": "Art.22",
+    "dora": null,
+    "nis2": null,
+    "pci_dss": null,
+    "owasp": "Agentic AA06"
+  },
+  "display_name": "Human oversight",
+  "display_detail": "Validates that human oversight, escalation, and override mechanisms are configured for agent operations.",
+  "remediation_hint_template": "Human oversight required but not configured. Review overlay requirements and configure escalation workflows for this agent."
+}

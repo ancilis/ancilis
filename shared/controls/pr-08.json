@@ -1,0 +1,37 @@
+{
+  "id": "PR-08",
+  "name": "Input Validation & Injection Prevention",
+  "function": "PROTECT",
+  "csf_mapping": "PR.DS",
+  "description": "Validates and sanitizes inputs to agents and tools to prevent injection attacks including prompt injection, command injection, and parameter manipulation. Ensures agent inputs conform to expected schemas and do not contain malicious payloads.",
+  "threat_addressed": "Prompt injection (direct and indirect) can cause agents to execute unauthorized actions. Indirect injection through tool responses is particularly dangerous: a legitimate, approved tool returns a response containing embedded instructions that the agent interprets as directives.",
+  "enforcement_mechanism": "Validation and sanitization at two ingress points: direct input (user/orchestrator prompts) and indirect input (tool responses, memory, retrieved context). Tool responses treated as untrusted data regardless of tool approval status.",
+  "security_outcome": {
+    "pass": "Validation active on all direct and indirect input channels. Known injection patterns blocked. Tool response validation enforced.",
+    "fail": "Input validation failed — potential injection or malformed input detected."
+  },
+  "evidence_fields": [
+    "validation_configuration",
+    "blocked_injection_logs",
+    "tool_response_validation_records"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "PR.DS-10",
+    "iso_42001": null,
+    "iso_27001": "A.8.28",
+    "soc2": "CC7.1",
+    "cmmc": null,
+    "eu_ai_act": "Art.15",
+    "fedramp": "KSI-VDR",
+    "gdpr": null,
+    "dora": "Art.9",
+    "nis2": null,
+    "pci_dss": "Req 6.2",
+    "owasp": "MCP01, MCP05, MCP09, Agentic AA01"
+  },
+  "display_name": "Input validation",
+  "display_detail": "Validates agent and tool inputs to prevent injection attacks and parameter manipulation.",
+  "remediation_hint_template": "Potential injection detected in input. Review the input parameters and ensure they conform to expected schemas."
+}

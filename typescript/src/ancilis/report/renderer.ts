@@ -3,7 +3,7 @@
 import type { ReportData } from "./generator.js";
 
 function shortDate(iso: string): string {
-  return iso.includes("T") ? iso.split("T")[0] : iso.slice(0, 10);
+  return iso.includes("T") ? (iso.split("T")[0] ?? iso.slice(0, 10)) : iso.slice(0, 10);
 }
 
 export function renderTerminal(data: ReportData): string {

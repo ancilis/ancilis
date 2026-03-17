@@ -70,10 +70,11 @@ class TestPath1DataClassification:
         assert "hipaa" in spec.active_overlays
         assert "gdpr" in spec.active_overlays
 
-    def test_no_my_agent_handles_no_overlays(self):
+    def test_no_my_agent_handles_baseline_only(self):
         resolver = ActivationResolver()
         spec = resolver.resolve()
-        assert spec.active_overlays == []
+        # NIST CSF is always active as baseline overlay
+        assert spec.active_overlays == ["nist-csf"]
         assert spec.data_classifications == []
 
 
@@ -121,7 +122,7 @@ class TestBothPaths:
         )
         assert "hipaa" in spec.active_overlays
         assert "aiuc-1" in spec.active_certifications
-        assert len(spec.active_controls) == 6
+        assert len(spec.active_controls) == 26
 
     def test_conflict_strictest_wins(self):
         resolver = ActivationResolver()

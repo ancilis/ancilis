@@ -1,0 +1,38 @@
+{
+  "id": "PR-07",
+  "name": "Encryption & Transport Security",
+  "function": "PROTECT",
+  "csf_mapping": "PR.DS",
+  "description": "Ensures all data transmitted by agents uses strong encryption and secure transport protocols. Validates TLS version, cipher strength, and certificate validity for all outbound connections. Enforces encryption requirements for stored sensitive data.",
+  "threat_addressed": "Agent-tool communications traversing networks without encryption are vulnerable to interception, modification, and replay. Sensitive data in transit or at rest without encryption is exposed to unauthorized access.",
+  "enforcement_mechanism": "All agent-tool communications encrypted in transit (TLS 1.2+). Sensitive data at rest encrypted. FIPS 140-2/3 where applicable. Certificate validation enforced.",
+  "security_outcome": {
+    "pass": "TLS verified on all connections. At-rest encryption active. Certificates valid. FIPS compliant where required.",
+    "fail": "Insufficient encryption or deprecated transport protocol detected."
+  },
+  "evidence_fields": [
+    "tls_configuration_records",
+    "certificate_chain_validation",
+    "at_rest_encryption_configuration",
+    "fips_certification"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "PR.DS-01, PR.DS-02",
+    "iso_42001": null,
+    "iso_27001": "A.8.24",
+    "soc2": "CC6.7",
+    "cmmc": "SC.L2",
+    "eu_ai_act": null,
+    "fedramp": "KSI-SVC",
+    "gdpr": "Art.32",
+    "dora": "Art.9",
+    "nis2": "Art.21",
+    "pci_dss": "Req 4",
+    "owasp": null
+  },
+  "display_name": "Transport security",
+  "display_detail": "Validates encryption and transport security for all agent communications and data storage.",
+  "remediation_hint_template": "Transport security insufficient. Ensure all agent connections use TLS 1.2+ with strong cipher suites."
+}

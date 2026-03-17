@@ -4,23 +4,33 @@
   "function": "PROTECT",
   "csf_mapping": "PR.DS",
   "description": "Verifies tool registration, approval, version, and description integrity before every invocation.",
-  "threat_addressed": "Tool descriptions modified after approval constitute a semantic supply chain attack. Agents following tampered descriptions may execute unintended operations.",
-  "enforcement_mechanism": "Before every tool invocation — verify tool is registered, approved, version-matched, and description hash matches audited baseline. Mismatch triggers block and alert.",
+  "threat_addressed": "A tool whose description has been modified after approval (semantic supply chain attack) can redirect agent behavior without any code-level vulnerability being exploited. The agent follows the tampered description, believing it is still invoking the same approved tool.",
+  "enforcement_mechanism": "Before every tool invocation, provenance is verified: the tool is registered, approved, version-matched, and its description hash matches the audited baseline. Mismatches block invocation and trigger an alert.",
   "security_outcome": {
-    "pass": "Tool provenance verified — registered, explicitly approved, version and hash match.",
+    "pass": "Provenance verified per invocation. Unregistered tools blocked. Hash mismatches trigger block and alert.",
     "fail": "Unregistered tool, unapproved tool (observed only), hash mismatch, or version mismatch detected."
   },
   "evidence_fields": [
-    "agent_id",
-    "tool_name",
-    "tool_version",
-    "description_hash",
-    "registered_hash",
-    "verification_result",
-    "timestamp"
+    "provenance_check_logs",
+    "hash_comparison_records",
+    "drift_alert_records"
   ],
   "default_enabled": true,
   "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "ID.SC-04, PR.DS-06",
+    "iso_42001": null,
+    "iso_27001": "A.5.23",
+    "soc2": "CC8.1",
+    "cmmc": "SI.L2",
+    "eu_ai_act": null,
+    "fedramp": "KSI-3IR, KSI-SVC",
+    "gdpr": null,
+    "dora": "Art.28",
+    "nis2": "Art.21",
+    "pci_dss": "Req 6.3",
+    "owasp": "MCP04, Agentic AA05"
+  },
   "display_name": "Tool provenance check",
   "display_detail": "Verifies tool registration, approval status, version, and description integrity before every invocation.",
   "remediation_hint_template": "Tool provenance verification failed. The tool may be unregistered, unapproved (observed only), or its description may have changed since approval. Approve the tool with: ancilis approve-tool {tool_name}"

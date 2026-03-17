@@ -12,9 +12,9 @@ describe("Minimal Config", () => {
     expect(resolved.mode).toBe("audit");
   });
 
-  it("activates all 6 controls by default", () => {
+  it("activates all 26 controls by default", () => {
     const resolved = loadConfig({ raw: { agent: { name: "my-agent" } } });
-    expect(resolved.controls.size).toBe(6);
+    expect(resolved.controls.size).toBe(26);
     for (const cs of resolved.controls.values()) {
       expect(cs.enabled).toBe(true);
     }
@@ -131,7 +131,7 @@ describe("Overlay Activation", () => {
       raw: { agent: { name: "x" }, my_agent_handles: ["government_documents"] },
     });
     const unavailableIds = resolved.unavailableOverlays.map(u => u.overlayId);
-    expect(unavailableIds.some(id => id === "fedramp" || id === "cmmc")).toBe(true);
+    expect(unavailableIds.some(id => id === "cmmc-l2")).toBe(true);
   });
 
   it("activates EU AI Act for ai_training_data", () => {

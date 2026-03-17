@@ -1,0 +1,38 @@
+{
+  "id": "RS-01",
+  "name": "Automated Incident Response",
+  "function": "RESPOND",
+  "csf_mapping": "RS.MA",
+  "description": "Provides automated incident response capabilities for agent security events. When controls detect violations, anomalies, or breaches, RS-01 orchestrates the response — blocking actions, quarantining agents, preserving evidence, and initiating notification workflows.",
+  "threat_addressed": "When an AKSI evaluation fails, the response must be immediate and predetermined. Manual, ad-hoc response to compliance failures introduces delay, inconsistency, and the risk that violations continue while humans deliberate.",
+  "enforcement_mechanism": "Pre-defined automated response per AKSI per severity level: block the action, flag for human review, log and continue, or quarantine the agent. Responses execute within defined latency threshold.",
+  "security_outcome": {
+    "pass": "Response configuration exists for all AKSIs at all severity levels. Responses tested. Execution latency meets threshold.",
+    "fail": "Incident response not configured or response procedure failed."
+  },
+  "evidence_fields": [
+    "response_configuration_per_aksi",
+    "execution_logs",
+    "latency_measurements",
+    "test_records"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "RS.MA-01, RS.MA-02",
+    "iso_42001": "MAN 4.1",
+    "iso_27001": "A.5.24-A.5.28",
+    "soc2": "CC7.3, CC7.4",
+    "cmmc": "IR.L2",
+    "eu_ai_act": null,
+    "fedramp": "KSI-IRR",
+    "gdpr": null,
+    "dora": "Art.17",
+    "nis2": "Art.23",
+    "pci_dss": "Req 12.10",
+    "owasp": "Agentic AA04"
+  },
+  "display_name": "Incident response",
+  "display_detail": "Orchestrates automated incident response when security controls detect violations or anomalies.",
+  "remediation_hint_template": "Incident response triggered. Review the incident details and verify containment actions are appropriate."
+}
