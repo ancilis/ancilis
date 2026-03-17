@@ -1,0 +1,37 @@
+{
+  "id": "ID-04",
+  "name": "Supply Chain Risk Assessment",
+  "function": "IDENTIFY",
+  "csf_mapping": "ID.SC",
+  "description": "Assesses and tracks supply chain risk for tools, MCP servers, and third-party dependencies used by agents. Evaluates trust relationships, monitors dependency health, and identifies supply chain compromise indicators.",
+  "threat_addressed": "AI agent supply chains — tool providers, MCP servers, model providers — introduce third-party risk. Compromised tools can exfiltrate data, inject malicious behavior, or provide a persistent foothold. Without supply chain assessment, organizations accept unknown third-party risk.",
+  "enforcement_mechanism": "Tracks tool provenance, version history, and third-party trust relationships. Monitors for supply chain indicators including unexpected tool updates, new MCP server registrations, and dependency changes. Generates supply chain risk reports.",
+  "security_outcome": {
+    "pass": "Supply chain dependencies documented and risk assessed within acceptable tolerance.",
+    "fail": "Supply chain risk not assessed or exceeds defined tolerance."
+  },
+  "evidence_fields": [
+    "tool_dependencies",
+    "third_party_providers",
+    "risk_assessment_date",
+    "supply_chain_risk_score",
+    "dependency_changes_detected"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "ID.SC-01, ID.SC-02",
+    "iso_42001": "MAP 5.1",
+    "iso_27001": "A.5.19",
+    "soc2": "CC9.2",
+    "cmmc": "SR.L2",
+    "eu_ai_act": null,
+    "fedramp": "KSI-3IR",
+    "gdpr": null,
+    "dora": "Art.28",
+    "nis2": "Art.21"
+  },
+  "display_name": "Supply chain risk",
+  "display_detail": "Assesses supply chain risk for tools, MCP servers, and third-party dependencies.",
+  "remediation_hint_template": "Supply chain risk assessment incomplete. Register and assess all tool dependencies used by this agent."
+}

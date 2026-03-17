@@ -1,40 +1,292 @@
 {
   "id": "soc2",
   "name": "SOC 2 Type II",
-  "version": "0.1",
-  "description": "SOC 2 Type II overlay. Universal baseline for B2B SaaS. Activated by any data type declaration.",
-  "triggered_by_classifications": ["DC-PHI", "DC-CHD", "DC-CUI", "DC-MNPI", "DC-PII", "DC-FIN", "DC-GOV", "DC-AI", "DC-ITAR", "DC-CRIT", "DC-MINOR", "DC-BIO", "DC-FCI", "DC-GEN", "DC-LEGAL", "DC-IP"],
-  "applicable_data_types": ["health_records", "patient_data", "personal_info", "credit_cards", "financial_records", "government_documents", "childrens_data", "public_data", "biometric_data", "legal_data", "trade_secrets", "export_controlled", "critical_infrastructure", "ai_training_data", "federal_contract_info", "mnpi"],
+  "version": "0.2",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-GEN", "DC-PII"],
+  "description": "SOC 2 Type II overlay — Trust Services Criteria for service organizations. Universal enterprise compliance baseline. Activated by general business data or personal information declarations. Every agent startup selling to enterprises needs SOC 2.",
+  "jurisdiction": "global",
+  "enforcement_date": null,
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information security policy communicated to personnel and third parties (CC1.1)",
+        "Board or management oversight of internal controls demonstrated (CC1.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC1.1, CC1.2"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Organizational structure with defined reporting lines and authorities (CC1.2)",
+        "Responsibility for internal controls assigned and communicated (CC1.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC1.2, CC1.3"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment process identifies and analyzes risks to service commitments (CC3.1)",
+        "Risk mitigation activities defined and monitored (CC3.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC3.1, CC3.2"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Management monitors internal controls effectiveness on an ongoing basis (CC4.1)",
+        "Deficiencies communicated and corrective actions taken (CC4.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC1.4, CC4.1, CC4.2"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information assets inventoried and classified (CC6.1)",
+        "Asset management policies cover full lifecycle from acquisition to disposal"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC6.1"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Software and infrastructure inventories maintained (CC6.6)",
+        "Authorized components tracked with version and configuration state"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC6.6"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data classified based on sensitivity and regulatory requirements (CC6.1)",
+        "Classification scheme applied consistently across systems"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC6.1"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Vendor risk assessment and due diligence processes documented (CC9.2)",
+        "Third-party service provider controls evaluated and monitored (CC9.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC9.2"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment identifies threats and vulnerabilities relevant to service commitments (CC3.2)",
+        "Risk tolerance defined by management and documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC3.2"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Logical access security controls restrict access to authorized users (CC6.1)",
+        "Authentication mechanisms appropriate to the sensitivity of data and systems (CC6.1)",
+        "Evidence of continuous operation of access controls over Type II audit period"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC6.1, CC6.2"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Least privilege access implemented and enforced (CC6.3)",
+        "Access provisioning and de-provisioning procedures documented and followed (CC6.2)",
+        "Periodic access reviews conducted and documented (CC6.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC6.1, CC6.3"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Change management process implemented for system components (CC8.1)",
+        "Changes tested and approved before deployment to production"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC8.1"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data transmission restricted to authorized channels (CC6.7)",
+        "Confidential information protected during transmission and storage (C1.1)",
+        "Processing integrity validated for system outputs (PI1.1)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC6.7, C1.1, PI1.1"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "System activity logged and monitored for security events (CC7.1, CC7.2)",
+        "Logs include sufficient detail for incident investigation",
+        "Log retention meets contractual and regulatory obligations"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC7.1, CC7.2"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configuration management procedures documented and followed (CC8.1)",
+        "Baseline configurations established and deviations detected"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC8.1"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Encryption used for data in transit and at rest per policy (CC6.7)",
+        "Cryptographic controls appropriate to data classification"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC6.7"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Input validation and error handling implemented (CC7.1)",
+        "Systems protected against unauthorized modification"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC7.1"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security event monitoring and anomaly detection active (CC7.2)",
+        "Events analyzed and triaged based on severity (CC7.3)",
+        "Evidence of continuous monitoring operation over Type II audit period"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC7.2, CC7.3"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configuration monitoring detects unauthorized changes (CC7.1)",
+        "Monitoring covers system components relevant to service commitments"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC7.1, CC8.1"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Internal control effectiveness evaluated on an ongoing basis (CC4.1)",
+        "Deficiencies identified and communicated to management"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC4.1"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security event monitoring includes log integrity validation (CC7.3)",
+        "Tamper detection mechanisms in place for audit records"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC7.3"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident response procedures defined, communicated, and tested (CC7.3, CC7.4)",
+        "Incidents identified, reported, and resolved in a timely manner"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC7.3, CC7.4"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Escalation procedures defined for security incidents (CC7.4)",
+        "Communication protocols for internal and external stakeholders documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC7.4"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident investigation procedures include evidence preservation (CC7.5)",
+        "Evidence retained per contractual and regulatory requirements"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC7.5"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "System recovery and business continuity plans documented and tested (A1.2)",
+        "Recovery time and recovery point objectives defined and achievable"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A1.2"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-incident reviews conducted with lessons learned documented (CC4.2)",
+        "Corrective actions tracked to implementation"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CC4.2"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": null,
+    "assessment_type": "SOC 2 Type I (point-in-time design effectiveness) or Type II (operating effectiveness over 6-12 months). Audit performed by licensed CPA firm. Report is restricted-use — NDA typically required to share.",
+    "reporting_entity": "Licensed CPA firm (AICPA-accredited). Report distributed to user entities and their auditors under NDA."
+  },
+  "human_oversight_mandates": {
+    "required": false,
+    "description": "SOC 2 does not explicitly mandate human oversight of AI systems, but CC4.1 requires ongoing monitoring of internal controls and CC1.4 requires management oversight of the control environment."
+  },
   "control_adjustments": {
     "PR-01": {
       "threshold_adjustment": "standard",
       "additional_evidence_fields": ["authentication_method"],
-      "regulatory_citation": "SOC 2 CC6.1 - Logical and physical access controls"
+      "regulatory_citation": "SOC 2 CC6.1 — Logical and physical access controls"
     },
     "PR-02": {
       "threshold_adjustment": "standard",
       "additional_evidence_fields": ["access_review_date"],
-      "regulatory_citation": "SOC 2 CC6.3 - Role-based access and least privilege"
+      "regulatory_citation": "SOC 2 CC6.3 — Role-based access and least privilege"
     },
     "PR-03": {
       "threshold_adjustment": "standard",
       "additional_evidence_fields": ["change_management_ticket"],
-      "regulatory_citation": "SOC 2 CC8.1 - Change management"
+      "regulatory_citation": "SOC 2 CC8.1 — Change management"
     },
     "PR-04": {
       "threshold_adjustment": "standard",
       "additional_evidence_fields": ["data_classification"],
-      "regulatory_citation": "SOC 2 CC6.7 - Restriction of data transmission"
+      "regulatory_citation": "SOC 2 CC6.7 — Restriction of data transmission"
     },
     "PR-05": {
       "threshold_adjustment": "standard",
       "additional_evidence_fields": ["log_integrity_hash"],
-      "regulatory_citation": "SOC 2 CC7.2 - Monitoring of system components"
+      "regulatory_citation": "SOC 2 CC7.2 — Monitoring of system components"
     },
     "DE-01": {
       "threshold_adjustment": "standard",
       "additional_evidence_fields": ["alert_severity", "response_action"],
-      "regulatory_citation": "SOC 2 CC7.3 - Evaluation of security events"
+      "regulatory_citation": "SOC 2 CC7.3 — Evaluation of security events"
     }
   },
   "evidence_requirements": {
@@ -46,14 +298,34 @@
     "DE-01": ["alert_severity", "response_action", "deviation_type"]
   },
   "framework_mapping": {
+    "GOV-01": ["CC1.1", "CC1.2"],
+    "GOV-02": ["CC1.2", "CC1.3"],
+    "GOV-03": ["CC3.1", "CC3.2"],
+    "GOV-04": ["CC1.4", "CC4.1", "CC4.2"],
+    "ID-01": ["CC6.1"],
+    "ID-02": ["CC6.6"],
+    "ID-03": ["CC6.1"],
+    "ID-04": ["CC9.2"],
+    "ID-05": ["CC3.2"],
     "PR-01": ["CC6.1", "CC6.2"],
     "PR-02": ["CC6.1", "CC6.3"],
     "PR-03": ["CC8.1"],
-    "PR-04": ["CC6.7", "CC6.1"],
-    "PR-05": ["CC7.2", "CC7.1"],
-    "DE-01": ["CC7.2", "CC7.3", "CC9.2"]
+    "PR-04": ["CC6.7", "C1.1", "PI1.1"],
+    "PR-05": ["CC7.1", "CC7.2"],
+    "PR-06": ["CC8.1"],
+    "PR-07": ["CC6.7"],
+    "PR-08": ["CC7.1"],
+    "DE-01": ["CC7.2", "CC7.3"],
+    "DE-02": ["CC7.1", "CC8.1"],
+    "DE-03": ["CC4.1"],
+    "DE-04": ["CC7.3"],
+    "RS-01": ["CC7.3", "CC7.4"],
+    "RS-02": ["CC7.4"],
+    "RS-03": ["CC7.5"],
+    "RC-01": ["A1.2"],
+    "RC-02": ["CC4.2"]
   },
   "evidence_retention_minimum_days": 365,
   "human_oversight_required": false,
-  "notes": "SOC 2 Type II is the universal B2B compliance baseline. Covers Trust Services Criteria: CC1 (Control Environment), CC6 (Logical Access), CC7 (System Operations), CC8 (Change Management). All controls at standard threshold with additional evidence fields for audit trail completeness."
+  "notes": "SOC 2 Type II is the universal B2B compliance baseline. Covers all five Trust Services Categories: Security (CC), Availability (A), Processing Integrity (PI), Confidentiality (C), and Privacy (P). All controls at standard threshold — SOC 2 focuses on demonstrating controls are designed AND operating effectively over a period, not specific technical thresholds. When DC-PII is active, Privacy criteria (P1) also apply."
 }

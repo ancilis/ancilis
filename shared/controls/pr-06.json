@@ -1,0 +1,37 @@
+{
+  "id": "PR-06",
+  "name": "Configuration Integrity Baseline",
+  "function": "PROTECT",
+  "csf_mapping": "PR.PS",
+  "description": "Establishes and monitors configuration baselines for agents, tools, and MCP servers. Detects unauthorized configuration changes that could weaken security posture or introduce vulnerabilities.",
+  "threat_addressed": "Configuration drift — whether from unauthorized changes, misconfiguration, or compromise — can silently weaken security controls. An agent whose scope constraints are widened or whose security mode is changed from enforce to audit loses protection without triggering any alert unless configuration integrity is monitored.",
+  "enforcement_mechanism": "Captures configuration state at deployment, hashes configuration files, and compares current state against baseline on each evaluation cycle. Configuration changes trigger alerts and are logged as evidence.",
+  "security_outcome": {
+    "pass": "Configuration matches established baseline or changes are authorized.",
+    "fail": "Unauthorized configuration change detected."
+  },
+  "evidence_fields": [
+    "config_hash_current",
+    "config_hash_baseline",
+    "drift_detected",
+    "changed_fields",
+    "change_authorization"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "PR.PS-01, PR.PS-02",
+    "iso_42001": null,
+    "iso_27001": "A.8.9",
+    "soc2": "CC8.1",
+    "cmmc": "CM.L2",
+    "eu_ai_act": null,
+    "fedramp": "KSI-CMT",
+    "gdpr": null,
+    "dora": "Art.9",
+    "nis2": "Art.21"
+  },
+  "display_name": "Configuration integrity",
+  "display_detail": "Monitors agent and tool configurations against established baselines to detect unauthorized changes.",
+  "remediation_hint_template": "Configuration drift detected. Review recent configuration changes and re-establish baseline if changes are authorized."
+}

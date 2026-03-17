@@ -1,0 +1,38 @@
+{
+  "id": "ID-01",
+  "name": "Agent Inventory & Registry",
+  "function": "IDENTIFY",
+  "csf_mapping": "ID.AM",
+  "description": "Maintains a comprehensive inventory of all deployed AI agents, their capabilities, data access permissions, and operational status. Every agent must be registered before it can operate, ensuring complete organizational visibility into the agent fleet.",
+  "threat_addressed": "Shadow AI agents — unregistered agents operating without organizational knowledge — create blind spots in security posture. Without inventory, organizations cannot assess aggregate risk, enforce consistent policies, or respond to incidents involving unknown agents.",
+  "enforcement_mechanism": "Validates that the agent is registered with a unique identity, declared capabilities, and documented operational parameters. Agent inventory records are maintained with version history and operational status tracking.",
+  "security_outcome": {
+    "pass": "Agent registered in organizational inventory with complete capability documentation.",
+    "fail": "Agent not registered or inventory record incomplete."
+  },
+  "evidence_fields": [
+    "agent_id",
+    "agent_name",
+    "agent_description",
+    "registration_date",
+    "capabilities_declared",
+    "operational_status"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "ID.AM-01, ID.AM-02",
+    "iso_42001": "MAP 1.1",
+    "iso_27001": "A.5.9",
+    "soc2": "CC6.1",
+    "cmmc": "CM.L2",
+    "eu_ai_act": "Art.49",
+    "fedramp": "KSI-PIY",
+    "gdpr": null,
+    "dora": "Art.8",
+    "nis2": "Art.21"
+  },
+  "display_name": "Agent inventory",
+  "display_detail": "Validates that the agent is registered in the organizational inventory with complete documentation.",
+  "remediation_hint_template": "Agent not found in inventory. Register this agent with ancilis by creating an ancilis.yaml configuration."
+}

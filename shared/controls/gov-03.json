@@ -1,0 +1,37 @@
+{
+  "id": "GOV-03",
+  "name": "Risk Tolerance Definition",
+  "function": "GOVERN",
+  "csf_mapping": "GV.RM",
+  "description": "Defines and enforces organizational risk tolerance for agent operations. Establishes thresholds for acceptable risk levels, maps data classifications to risk profiles, and ensures agent operational parameters align with declared risk appetite.",
+  "threat_addressed": "Without defined risk tolerance, agents may operate at risk levels exceeding organizational appetite. Security decisions become ad hoc, inconsistent across agents, and misaligned with business risk acceptance. Compliance frameworks require documented risk tolerance as foundation for control selection.",
+  "enforcement_mechanism": "Validates that risk tolerance is expressed through configuration — security mode selection, data classification declarations, control threshold settings, and scope constraints. Maps declared data handling to required control rigor.",
+  "security_outcome": {
+    "pass": "Risk tolerance defined and agent configuration aligned with declared risk appetite.",
+    "fail": "Risk tolerance undefined or agent configuration inconsistent with declared risk level."
+  },
+  "evidence_fields": [
+    "risk_tolerance_level",
+    "security_mode",
+    "data_classifications_declared",
+    "control_threshold_settings",
+    "risk_assessment_date"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "GV.RM-01, GV.RM-02",
+    "iso_42001": "GOV 1.1",
+    "iso_27001": "A.5.3",
+    "soc2": "CC3.1",
+    "cmmc": null,
+    "eu_ai_act": "Art.9",
+    "fedramp": "KSI-AFR",
+    "gdpr": null,
+    "dora": "Art.6",
+    "nis2": "Art.21"
+  },
+  "display_name": "Risk tolerance",
+  "display_detail": "Validates that risk tolerance is defined and agent configuration aligns with declared risk appetite.",
+  "remediation_hint_template": "Risk tolerance not defined. Configure security.mode, my_agent_handles, and control thresholds in ancilis.yaml to express risk appetite."
+}

@@ -21,6 +21,18 @@
   ],
   "default_enabled": true,
   "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "DE.AE-02, DE.AE-06",
+    "iso_42001": "MEA 2.2",
+    "iso_27001": "A.8.16",
+    "soc2": "CC7.2",
+    "cmmc": null,
+    "eu_ai_act": "Art.9.2",
+    "fedramp": "KSI-MLA",
+    "gdpr": null,
+    "dora": "Art.10",
+    "nis2": "Art.21"
+  },
   "display_name": "Behavioral baseline monitor",
   "display_detail": "Tracks agent behavior patterns and flags deviations from established baselines. Monitors tool call frequency, diversity, and timing.",
   "remediation_hint_template": "Behavioral anomaly detected — agent activity deviates from established baseline. Review recent tool call patterns and verify this activity is expected."

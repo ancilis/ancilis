@@ -1,0 +1,355 @@
+{
+  "id": "pci-dss-v4",
+  "name": "PCI-DSS v4.0",
+  "version": "4.0",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-CHD"],
+  "description": "Payment Card Industry Data Security Standard v4.0 overlay. Activated when agents handle cardholder data. PCI-DSS applies to any system that stores, processes, or transmits cardholder data or sensitive authentication data.",
+  "jurisdiction": "global",
+  "enforcement_date": "2024-03-31",
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information security policy covering all PCI-DSS requirements reviewed annually (Req 12.1)",
+        "Acceptable use policies for end-user technologies handling cardholder data (Req 12.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.1, Req 12.3"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Roles and responsibilities for PCI-DSS compliance formally assigned (Req 12.1.2)",
+        "Executive management establishes responsibility for cardholder data protection (Req 12.4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.1.2, Req 12.4"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Formal risk assessment process identifying threats and vulnerabilities to cardholder data (Req 12.3.1)",
+        "Risk assessment performed at least annually and upon significant changes (Req 12.3.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.3.1, Req 12.3.2"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security awareness program for personnel with access to cardholder data (Req 12.6)",
+        "Management oversight of security operations and incident response (Req 12.4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.4, Req 12.6"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Inventory of system components in scope for PCI-DSS maintained and current (Req 12.5.1)",
+        "Scope validation performed annually and upon significant changes (Req 12.5.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.5.1, Req 12.5.2"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Inventory of authorized software and tools on in-scope systems (Req 6.3.2)",
+        "Only necessary services, protocols, and ports enabled on system components (Req 2.2.4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 6.3.2, Req 2.2.4"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data discovery and classification of cardholder data locations (Req 12.5.2.1)",
+        "Data retention and disposal policy for cardholder data (Req 3.1)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.5.2.1, Req 3.1"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "List of third-party service providers with access to cardholder data maintained (Req 12.8.1)",
+        "Written agreements with service providers acknowledging responsibility for cardholder data (Req 12.8.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.8.1, Req 12.8.2, Req 6.3.2"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment covers threats to cardholder data environment (Req 12.3.1)",
+        "Targeted risk analysis for each customized approach control (Req 12.3.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.3.1, Req 12.3.2"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Unique ID assigned to each person and agent with access to cardholder data (Req 8.2.1)",
+        "Strong authentication for all access to cardholder data environment (Req 8.3.1)",
+        "Multi-factor authentication for administrative access and remote network access (Req 8.4.1, Req 8.4.2)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "PCI Req 8 mandates unique identification and strong authentication for all CDE access"
+      },
+      "framework_reference": "Req 8.2.1, Req 8.3.1, Req 8.4.1, Req 8.4.2"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Access to cardholder data restricted by business need-to-know (Req 7.2.1)",
+        "Access control model defined with least privileges per role (Req 7.2.2)",
+        "Access rights reviewed at least every six months (Req 7.2.5)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "Zero tolerance for scope violations involving CHD — Req 7.2.1 mandates need-to-know enforcement"
+      },
+      "framework_reference": "Req 7.2.1, Req 7.2.2, Req 7.2.5"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Inventory of bespoke and custom software verified for known vulnerabilities (Req 6.3.1)",
+        "Software development processes protect against known vulnerabilities (Req 6.2.1)",
+        "File integrity monitoring on critical system files (Req 11.5.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 6.3.1, Req 6.2.1, Req 11.5.2"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "All outbound actions scanned for PAN, track data, CVV, and PIN data (Req 3.4.1)",
+        "PAN masked when displayed — maximum first six and last four digits (Req 3.4)",
+        "Sensitive authentication data not stored after authorization (Req 3.3.1)",
+        "Data retention limited to business requirement with quarterly deletion process (Req 3.1)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "Must scan ALL outbound actions for PAN, track data, CVV per Req 3 and 4"
+      },
+      "framework_reference": "Req 3.3.1, Req 3.4, Req 3.4.1, Req 4.2.1"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Audit logs record all access to cardholder data (Req 10.2.1)",
+        "Audit logs include user identification, event type, date/time, success/failure, and data accessed (Req 10.2.1.1-10.2.1.7)",
+        "Audit log retention: 12 months total, 3 months immediately available for analysis (Req 10.5.1)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "Req 10.5.1 mandates 12-month retention with 3 months immediately available"
+      },
+      "framework_reference": "Req 10.2.1, Req 10.2.1.1-10.2.1.7, Req 10.5.1"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "System configurations hardened per industry standards (Req 2.2.1)",
+        "Configuration standards address all known security vulnerabilities (Req 2.2.2)",
+        "System configuration standards reviewed at least annually (Req 2.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 2.2, Req 2.2.1, Req 2.2.2"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Strong cryptography used to protect cardholder data during transmission over open networks (Req 4.2.1)",
+        "TLS 1.2 or higher required for all connections transmitting cardholder data (Req 4.2.1.1)",
+        "Strong cryptography for stored cardholder data with documented key management (Req 3.5.1)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "TLS 1.2+ mandatory, strong cryptography for stored CHD per Req 3.5 and 4.2"
+      },
+      "framework_reference": "Req 3.5.1, Req 4.2.1, Req 4.2.1.1"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Input validation on all user-supplied data to prevent injection attacks (Req 6.2.4)",
+        "Protection against common coding vulnerabilities including injection flaws (Req 6.2.4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 6.2.4"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Monitor all access to cardholder data environments for anomalies (Req 10.4.1)",
+        "Automated mechanisms to detect and alert on suspicious activity (Req 10.4.1.1)",
+        "Reviews of security events performed at least daily (Req 10.4.2)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "Req 10.4 mandates monitoring of all access to CDE"
+      },
+      "framework_reference": "Req 10.4.1, Req 10.4.1.1, Req 10.4.2"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "File integrity monitoring deployed on critical system files (Req 11.5.2)",
+        "Change detection mechanism alerts on unauthorized modifications (Req 11.5.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 11.5.2"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Internal vulnerability scans performed at least quarterly (Req 11.3.1)",
+        "External vulnerability scans by ASV at least quarterly (Req 11.3.2)",
+        "Internal and external penetration testing at least annually (Req 11.4.1)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 11.3.1, Req 11.3.2, Req 11.4.1"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Audit log integrity protected — no alteration or deletion (Req 10.3.3)",
+        "Time synchronization for accurate audit log timestamps (Req 10.6.1)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 10.3.3, Req 10.6.1"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident response plan includes specific procedures for cardholder data breaches (Req 12.10.1)",
+        "Incident response plan tested at least annually (Req 12.10.2)",
+        "Personnel trained on incident response procedures (Req 12.10.4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.10.1, Req 12.10.2, Req 12.10.4"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Designated personnel available 24/7 for incident response (Req 12.10.3)",
+        "Incident response includes notification to payment brands (card brand notification rules apply)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.10.3"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident evidence preserved per forensic investigation requirements",
+        "Evidence collection follows PCI Forensic Investigator (PFI) guidelines when applicable"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.10.5"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Business continuity and disaster recovery procedures documented (Req 12.10.1)",
+        "Recovery procedures tested and validated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.10.1"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident response plan updated based on lessons learned (Req 12.10.6)",
+        "Post-incident review conducted and improvements implemented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Req 12.10.6"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": null,
+    "assessment_type": "SAQ (Self-Assessment Questionnaire) for lower transaction volumes or ROC (Report on Compliance) for higher volumes. Assessment type determined by acquirer and payment brand requirements.",
+    "reporting_entity": "Acquiring bank and applicable payment brand (Visa, Mastercard, Amex, etc.). PCI-DSS itself does not mandate specific breach notification timelines — these are governed by card brand operating regulations and applicable state/federal breach notification laws."
+  },
+  "human_oversight_mandates": {
+    "required": false,
+    "description": "PCI-DSS does not explicitly mandate human oversight of AI/agent systems, but Req 12.4 requires executive management responsibility for security and Req 10.4.2 requires daily review of security events."
+  },
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["unique_id_assigned", "authentication_mechanism", "mfa_status"],
+      "regulatory_citation": "PCI-DSS v4.0 Req 8.2.1 — Unique ID assigned for CDE access"
+    },
+    "PR-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["need_to_know_verified", "access_review_date"],
+      "regulatory_citation": "PCI-DSS v4.0 Req 7.2.1 — Access restricted by business need-to-know"
+    },
+    "PR-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["pan_scan_result", "sad_scan_result", "data_retention_validated"],
+      "regulatory_citation": "PCI-DSS v4.0 Req 3.4.1 — PAN rendered unreadable"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["log_retention_days", "log_immediately_available"],
+      "regulatory_citation": "PCI-DSS v4.0 Req 10.5.1 — 12-month log retention"
+    },
+    "PR-07": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["tls_version", "cipher_strength", "key_management_documented"],
+      "regulatory_citation": "PCI-DSS v4.0 Req 4.2.1 — Strong cryptography for CHD in transit"
+    },
+    "DE-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["cde_access_monitored", "daily_review_status"],
+      "regulatory_citation": "PCI-DSS v4.0 Req 10.4.1 — Monitor all CDE access"
+    }
+  },
+  "evidence_requirements": {
+    "PR-01": ["unique_id_assigned", "authentication_mechanism", "mfa_status"],
+    "PR-02": ["need_to_know_verified", "access_review_date"],
+    "PR-04": ["pan_scan_result", "sad_scan_result", "data_retention_validated"],
+    "PR-05": ["log_retention_days", "log_immediately_available"],
+    "PR-07": ["tls_version", "cipher_strength"],
+    "DE-01": ["cde_access_monitored", "daily_review_status"]
+  },
+  "framework_mapping": {
+    "GOV-01": ["Req 12.1", "Req 12.3"],
+    "GOV-02": ["Req 12.1.2", "Req 12.4"],
+    "GOV-03": ["Req 12.3.1", "Req 12.3.2"],
+    "GOV-04": ["Req 12.4", "Req 12.6"],
+    "ID-01": ["Req 12.5.1", "Req 12.5.2"],
+    "ID-02": ["Req 6.3.2", "Req 2.2.4"],
+    "ID-03": ["Req 12.5.2.1", "Req 3.1"],
+    "ID-04": ["Req 12.8.1", "Req 12.8.2"],
+    "ID-05": ["Req 12.3.1", "Req 12.3.2"],
+    "PR-01": ["Req 8.2.1", "Req 8.3.1", "Req 8.4.1"],
+    "PR-02": ["Req 7.2.1", "Req 7.2.2", "Req 7.2.5"],
+    "PR-03": ["Req 6.3.1", "Req 6.2.1"],
+    "PR-04": ["Req 3.3.1", "Req 3.4", "Req 4.2.1"],
+    "PR-05": ["Req 10.2.1", "Req 10.5.1"],
+    "PR-06": ["Req 2.2", "Req 2.2.1"],
+    "PR-07": ["Req 3.5.1", "Req 4.2.1"],
+    "PR-08": ["Req 6.2.4"],
+    "DE-01": ["Req 10.4.1", "Req 10.4.2"],
+    "DE-02": ["Req 11.5.2"],
+    "DE-03": ["Req 11.3.1", "Req 11.3.2", "Req 11.4.1"],
+    "DE-04": ["Req 10.3.3", "Req 10.6.1"],
+    "RS-01": ["Req 12.10.1", "Req 12.10.2"],
+    "RS-02": ["Req 12.10.3"],
+    "RS-03": ["Req 12.10.5"],
+    "RC-01": ["Req 12.10.1"],
+    "RC-02": ["Req 12.10.6"]
+  },
+  "evidence_retention_minimum_days": 365,
+  "human_oversight_required": false,
+  "notes": "PCI-DSS v4.0 is the most concrete regulatory framework for agent developers handling payment data. Version 4.0 became mandatory March 31, 2024, with future-dated requirements effective March 31, 2025. This overlay enforces strict thresholds on identity (Req 8), access control (Req 7), data protection (Req 3-4), logging (Req 10), and monitoring (Req 10.4). Note: Req 9 (physical access) is out of scope for an agent SDK."
+}
