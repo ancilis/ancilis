@@ -376,7 +376,7 @@ describe("Decision Engine", () => {
     const result = engine.evaluate(action);
     expect(result.agentId).toBe("test-agent");
     expect(result.mode).toBe("audit");
-    expect(result.activeOverlays).toContain("soc2");
+    expect(result.activeOverlays).toContain("pci-dss-v4");
     expect(result.dataClassifications).toContain("DC-CHD");
     expect(result.totalDurationMs).toBeGreaterThanOrEqual(0);
   });
