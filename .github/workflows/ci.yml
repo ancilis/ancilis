@@ -69,7 +69,7 @@ jobs:
           pip install -e ".[dev,mcp]"
           pip install pip-audit
       - name: Python audit (pip-audit)
-        run: pip-audit --strict --desc
+        run: pip-audit --strict --desc --skip-editable
       - name: Install Node dependencies
         run: npm ci
       - name: Node audit (npm audit)
