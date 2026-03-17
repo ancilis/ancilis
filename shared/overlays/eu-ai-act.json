@@ -1,41 +1,332 @@
 {
   "id": "eu-ai-act",
   "name": "EU AI Act",
-  "version": "0.1",
-  "description": "EU AI Act overlay for high-risk AI systems. Activated by AI training data or biometric data declarations.",
-  "triggered_by_classifications": ["DC-AI", "DC-BIO"],
-  "applicable_data_types": ["ai_training_data", "biometric_data"],
+  "version": "0.2",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-AI", "DC-BIO"],
+  "description": "EU AI Act overlay for AI systems operating in or serving the EU market. First regulation directly governing AI agent behavior. Applies comprehensive requirements for high-risk AI systems including risk management, data governance, transparency, human oversight, and accuracy.",
+  "jurisdiction": "eu",
+  "enforcement_date": "2025-08-02",
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk management system established and maintained throughout AI system lifecycle (Art.9.1)",
+        "Quality management system ensuring compliance with AI Act requirements (Art.17)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.9, Art.17"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Deployer obligations documented — monitoring, human oversight, and reporting responsibilities assigned (Art.26)",
+        "Provider and deployer responsibilities clearly delineated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.26"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk management system identifies and analyzes known and foreseeable risks (Art.9.2)",
+        "Residual risks communicated to deployers with appropriate mitigation measures (Art.9.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.9.2, Art.9.3"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Human oversight measures enabling overseers to understand AI system capacities and limitations (Art.14.4a)",
+        "Capability for human overseer to interpret AI system output (Art.14.4b)",
+        "Ability to decide not to use, override, or reverse AI system output (Art.14.4d, Art.14.4e)",
+        "Ability to intervene in or halt AI system operation (Art.14.4f)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "Art.14 mandates human oversight for high-risk AI systems — human overseers must be able to understand, interpret, and override"
+      },
+      "framework_reference": "Art.14"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system registered in EU database before placing on market or putting into service (Art.49)",
+        "Registration includes system description, intended purpose, and provider information"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.49"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Components and third-party elements documented in technical documentation (Art.11)",
+        "Third-party pre-trained models and data sources identified"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.11, Annex IV"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Training, validation, and testing datasets documented with data governance measures (Art.10)",
+        "Data quality criteria defined and verified (Art.10.2)",
+        "Bias examination and mitigation measures documented (Art.10.2f)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.10"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Third-party components and their impact on AI system documented",
+        "Supply chain transparency for AI model providers"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.11, Annex IV"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment identifying known and foreseeable risks of AI system (Art.9.2)",
+        "Risk classification determination documented (Art.6, Art.7)",
+        "Note: Risk classification is an operator determination — Ancilis provides evidence but cannot classify risk level for the operator"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.6, Art.7, Art.9.2"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system identifiable as AI to persons interacting with it (Art.50 transparency)",
+        "Provider identity and contact information available"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "Art.50 requires AI system to be identifiable as AI to users"
+      },
+      "framework_reference": "Art.16, Art.50"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system operates within intended purpose boundaries (Art.9.4)",
+        "Measures to prevent misuse outside intended purpose documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.9.4"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system designed to achieve appropriate levels of accuracy, robustness, and cybersecurity (Art.15)",
+        "Technical redundancy and fail-safe measures documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.15"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data governance measures implemented for training and operational data (Art.10)",
+        "Data protection by design and by default applied"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.10"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Automatic logging of AI system events throughout lifecycle (Art.12.1)",
+        "Logs enable traceability of AI system operation at each stage (Art.12.2)",
+        "Log retention for duration set by implementing member state or sector-specific rules (Art.12.3)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "Art.12 requires automatic logging with traceability throughout lifecycle"
+      },
+      "framework_reference": "Art.12"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "System configurations documented in technical documentation (Annex IV)",
+        "Configuration changes tracked and validated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.11, Annex IV"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Appropriate cybersecurity measures against unauthorized access and data poisoning (Art.15.4)",
+        "Security measures proportionate to risk level"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.15.4"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system resilient against errors, faults, and attempts to alter output by unauthorized third parties (Art.15.3)",
+        "Robustness measures including technical redundancy (Art.15.4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.15.3, Art.15.4"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-market monitoring system tracks AI system performance over lifetime (Art.72)",
+        "Monitoring includes detection of potential biases, accuracy degradation, and safety issues (Art.9.2)",
+        "Anomaly detection for deviation from expected behavior"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "Art.9.2 and Art.72 require ongoing risk monitoring and post-market surveillance"
+      },
+      "framework_reference": "Art.9.2, Art.72"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configuration monitoring ensures system operates as documented in technical documentation",
+        "Changes to AI system detected and validated against approved configurations"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.11, Annex IV"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Conformity assessment completed before placing AI system on market (Art.43)",
+        "Post-market monitoring data analyzed for compliance trends (Art.72)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.43, Art.72"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Log integrity verified — automatic logging records not tampered with (Art.12)",
+        "Traceability of AI system operation maintained"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.12"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Corrective actions taken when AI system presents risks (Art.16g)",
+        "Non-compliant AI systems withdrawn or recalled (Art.16g)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.16g"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Human oversight allows intervention in or halt of AI system operation (Art.14.4f)",
+        "Escalation paths to market surveillance authorities defined for serious incidents"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.14, Art.73"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Serious incident evidence preserved and reported to market surveillance authorities (Art.73)",
+        "Technical documentation available for inspection (Art.18)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.18, Art.73"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Corrective actions and recovery procedures documented (Art.16g)",
+        "System can be withdrawn or recalled when presenting risks"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.16g"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-market monitoring feeds back into risk management system (Art.9, Art.72)",
+        "Lessons learned incorporated into system improvements"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art.9, Art.72"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": null,
+    "assessment_type": "Conformity assessment for high-risk AI systems (Art.43). Self-assessment or third-party assessment depending on AI system category. CE marking required. Registration in EU AI database mandatory (Art.49).",
+    "reporting_entity": "Market surveillance authority of the relevant EU member state. Serious incidents reported per Art.73. Providers must cooperate with competent national authorities."
+  },
+  "human_oversight_mandates": {
+    "required": true,
+    "description": "Art.14 mandates human oversight for high-risk AI systems. Human overseers must be able to: understand the AI system's capacities and limitations (14.4a), remain aware of automation bias (14.4b), correctly interpret output (14.4c), decide not to use or override output (14.4d-e), and intervene in or halt operation (14.4f)."
+  },
   "control_adjustments": {
     "PR-01": {
       "threshold_adjustment": "strict",
       "additional_evidence_fields": ["ai_system_id", "risk_classification"],
-      "regulatory_citation": "EU AI Act Art. 16 - Obligations of providers of high-risk AI systems"
+      "regulatory_citation": "EU AI Act Art.16, Art.50 — Provider obligations and transparency"
     },
     "PR-05": {
       "threshold_adjustment": "strict",
       "additional_evidence_fields": ["ai_decision_rationale", "human_oversight_status", "risk_level"],
-      "regulatory_citation": "EU AI Act Art. 12 - Record-keeping"
+      "regulatory_citation": "EU AI Act Art.12 — Automatic record-keeping"
     },
     "DE-01": {
       "threshold_adjustment": "strict",
       "additional_evidence_fields": ["performance_metrics", "drift_indicators", "bias_indicators"],
-      "regulatory_citation": "EU AI Act Art. 9(2) - Risk management, ongoing monitoring"
+      "regulatory_citation": "EU AI Act Art.9.2, Art.72 — Risk management and post-market monitoring"
+    },
+    "GOV-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["human_oversight_mode", "override_capability_verified"],
+      "regulatory_citation": "EU AI Act Art.14 — Human oversight for high-risk AI systems"
     }
   },
   "evidence_requirements": {
     "PR-01": ["ai_system_id", "risk_classification"],
     "PR-05": ["ai_decision_rationale", "human_oversight_status", "risk_level"],
-    "DE-01": ["performance_metrics", "drift_indicators", "bias_indicators"]
+    "DE-01": ["performance_metrics", "drift_indicators", "bias_indicators"],
+    "GOV-04": ["human_oversight_mode", "override_capability_verified"]
   },
   "framework_mapping": {
-    "PR-01": ["Art. 16"],
-    "PR-02": ["Art. 9"],
-    "PR-03": ["Art. 15"],
-    "PR-04": ["Art. 10"],
-    "PR-05": ["Art. 12", "Art. 19"],
-    "DE-01": ["Art. 9(2)", "Art. 72"]
+    "GOV-01": ["Art.9", "Art.17"],
+    "GOV-02": ["Art.26"],
+    "GOV-03": ["Art.9.2", "Art.9.3"],
+    "GOV-04": ["Art.14"],
+    "ID-01": ["Art.49"],
+    "ID-02": ["Art.11", "Annex IV"],
+    "ID-03": ["Art.10"],
+    "ID-04": ["Art.11", "Annex IV"],
+    "ID-05": ["Art.6", "Art.7", "Art.9.2"],
+    "PR-01": ["Art.16", "Art.50"],
+    "PR-02": ["Art.9.4"],
+    "PR-03": ["Art.15"],
+    "PR-04": ["Art.10"],
+    "PR-05": ["Art.12"],
+    "PR-06": ["Art.11", "Annex IV"],
+    "PR-07": ["Art.15.4"],
+    "PR-08": ["Art.15.3", "Art.15.4"],
+    "DE-01": ["Art.9.2", "Art.72"],
+    "DE-02": ["Art.11", "Annex IV"],
+    "DE-03": ["Art.43", "Art.72"],
+    "DE-04": ["Art.12"],
+    "RS-01": ["Art.16g"],
+    "RS-02": ["Art.14", "Art.73"],
+    "RS-03": ["Art.18", "Art.73"],
+    "RC-01": ["Art.16g"],
+    "RC-02": ["Art.9", "Art.72"]
   },
   "evidence_retention_minimum_days": 3650,
   "human_oversight_required": true,
-  "notes": "EU AI Act requires risk classification, human oversight for high-risk systems, transparency, and extensive record-keeping. Biometric identification systems are classified as high-risk. This overlay enforces strict monitoring and human oversight requirements."
+  "notes": "EU AI Act is the first regulation directly governing AI agent behavior. Enforcement phases: prohibited AI practices (Feb 2025), GPAI model obligations (Aug 2025), high-risk AI system obligations (Aug 2026). This overlay enforces strict monitoring, logging, and human oversight. Risk classification is an operator determination — Ancilis provides the evidence package but cannot classify risk level for the operator."
 }

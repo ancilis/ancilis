@@ -169,17 +169,25 @@ class TestConfigValidate:
         result = runner.invoke(cli, ["config", "validate", "--config", "/nonexistent/ancilis.yaml"])
         assert result.exit_code == 1
 
-    def test_roadmap_overlay_surfaced(self, tmp_path: Path) -> None:
-        """Config validate surfaces roadmap overlays with baseline assurance."""
+    def test_pci_overlay_activated(self, tmp_path: Path) -> None:
+        """Config validate loads PCI-DSS v4 overlay when credit_cards declared."""
         data = _minimal_config()
         data["my_agent_handles"] = ["credit_cards"]
         cfg = _make_config_file(data, tmp_path)
         runner = CliRunner()
         result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
         assert result.exit_code == 0
-        assert "pci-dss" in result.output
+        assert "PCI-DSS" in result.output
+
+    def test_roadmap_overlay_surfaced(self, tmp_path: Path) -> None:
+        """Config validate surfaces roadmap overlays with baseline assurance."""
+        data = _minimal_config()
+        data["my_agent_handles"] = ["government_documents"]
+        cfg = _make_config_file(data, tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
+        assert result.exit_code == 0
         assert "not yet available" in result.output
-        assert "Baseline security controls" in result.output
 
 
 # ===== Status Tests =====

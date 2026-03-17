@@ -1,0 +1,38 @@
+{
+  "id": "DE-03",
+  "name": "Compliance Posture Assessment",
+  "function": "DETECT",
+  "csf_mapping": "DE.AE",
+  "description": "Continuously assesses the agent's compliance posture against active regulatory overlays. Generates posture scores, identifies compliance gaps, and tracks remediation progress for each applicable framework.",
+  "threat_addressed": "Security posture degrades over time through configuration drift, policy exceptions, new agent deployments that skip assessment, and changing regulatory requirements. Without continuous tracking, gaps accumulate silently.",
+  "enforcement_mechanism": "Continuous compliance posture calculation per agent and ecosystem-wide. AKSI pass/fail rates tracked over time. Deviations prioritized by severity and regulatory overlay impact. Trend analysis identifies persistent gaps.",
+  "security_outcome": {
+    "pass": "Posture dashboard current. Deviation records include AKSI ID, agent, timestamp, failure reason, and impact. Trends analyzed per defined interval.",
+    "fail": "Compliance gaps identified in one or more active overlay requirements."
+  },
+  "evidence_fields": [
+    "compliance_posture_reports",
+    "deviation_records",
+    "trend_analysis",
+    "remediation_tracking"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "DE.AE-06, DE.AE-07",
+    "iso_42001": "MEA 2.1",
+    "iso_27001": null,
+    "soc2": "CC4.1, CC4.2",
+    "cmmc": "CA.L2",
+    "eu_ai_act": null,
+    "fedramp": "KSI-AFR",
+    "gdpr": null,
+    "dora": "Art.11",
+    "nis2": null,
+    "pci_dss": "Req 11",
+    "owasp": null
+  },
+  "display_name": "Compliance posture",
+  "display_detail": "Assesses compliance posture against active regulatory overlays and identifies gaps.",
+  "remediation_hint_template": "Compliance gaps detected. Review the posture report and address identified gaps for each active overlay."
+}

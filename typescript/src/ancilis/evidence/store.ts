@@ -1,7 +1,7 @@
 /** DuckDB-backed evidence store with hash chain integrity. */
 
 import { createHash, randomUUID } from "node:crypto";
-import { mkdirSync, existsSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import duckdb from "duckdb";

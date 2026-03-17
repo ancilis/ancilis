@@ -1,0 +1,37 @@
+{
+  "id": "GOV-03",
+  "name": "Risk Tolerance Definition",
+  "function": "GOVERN",
+  "csf_mapping": "GV.RM",
+  "description": "Defines and enforces organizational risk tolerance for agent operations. Establishes thresholds for acceptable risk levels, maps data classifications to risk profiles, and ensures agent operational parameters align with declared risk appetite.",
+  "threat_addressed": "Without explicit risk tolerance levels, agents may take actions that exceed the organization's acceptable risk threshold. Risk decisions are made implicitly by default configurations rather than explicitly by authorized personnel.",
+  "enforcement_mechanism": "Machine-readable risk tolerance parameters per agent or agent class. Includes acceptable failure rates, data exposure thresholds, and escalation triggers. Evaluated at runtime against actual behavior.",
+  "security_outcome": {
+    "pass": "Risk tolerance parameters exist in machine-readable format for all agents. Thresholds current and aligned with organizational risk appetite.",
+    "fail": "Risk tolerance undefined or agent configuration inconsistent with declared risk level."
+  },
+  "evidence_fields": [
+    "risk_tolerance_configuration",
+    "threshold_evaluation_logs",
+    "risk_acceptance_records"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "GV.RM-01, GV.RM-02",
+    "iso_42001": "GOV 1.1",
+    "iso_27001": "A.5.3",
+    "soc2": "CC3.1",
+    "cmmc": null,
+    "eu_ai_act": "Art.9",
+    "fedramp": "KSI-AFR",
+    "gdpr": null,
+    "dora": "Art.6",
+    "nis2": "Art.21",
+    "pci_dss": "Req 12.3",
+    "owasp": null
+  },
+  "display_name": "Risk tolerance",
+  "display_detail": "Validates that risk tolerance is defined and agent configuration aligns with declared risk appetite.",
+  "remediation_hint_template": "Risk tolerance not defined. Configure security.mode, my_agent_handles, and control thresholds in ancilis.yaml to express risk appetite."
+}

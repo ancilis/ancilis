@@ -1,0 +1,37 @@
+{
+  "id": "DE-02",
+  "name": "Configuration Drift Monitoring",
+  "function": "DETECT",
+  "csf_mapping": "DE.CM",
+  "description": "Continuously monitors agent, tool, and MCP server configurations for drift from established baselines. Detects unauthorized changes, misconfigurations, and security degradation over time.",
+  "threat_addressed": "Tool descriptions, MCP server configurations, and policy files can be modified after approval. Without continuous drift monitoring, post-approval changes go undetected — enabling semantic supply chain attacks.",
+  "enforcement_mechanism": "Tool description hashes checked against audited baselines per invocation or per session (configurable TTL). Configuration files monitored for unauthorized changes. Drift triggers alerts and re-approval workflows.",
+  "security_outcome": {
+    "pass": "Monitoring covers all registered tools. Hash comparison continuous or per-session. Alerts within defined window.",
+    "fail": "Configuration drift detected — current state differs from baseline."
+  },
+  "evidence_fields": [
+    "hash_comparison_logs",
+    "drift_detection_alerts",
+    "re_approval_workflow_records"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "DE.CM-01, DE.CM-09",
+    "iso_42001": null,
+    "iso_27001": "A.8.9",
+    "soc2": "CC7.1",
+    "cmmc": null,
+    "eu_ai_act": null,
+    "fedramp": "KSI-CMT",
+    "gdpr": null,
+    "dora": "Art.9",
+    "nis2": "Art.21",
+    "pci_dss": "Req 11.5",
+    "owasp": "MCP06, Agentic AA05"
+  },
+  "display_name": "Drift monitoring",
+  "display_detail": "Monitors agent and tool configurations for drift from established security baselines.",
+  "remediation_hint_template": "Configuration drift detected. Compare current configuration against baseline and authorize or revert changes."
+}

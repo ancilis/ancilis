@@ -1,0 +1,302 @@
+{
+  "id": "iso-42001",
+  "name": "ISO/IEC 42001:2023",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-AI"],
+  "_note_future_trigger": "This overlay will also be available as a certification_target in a future release. Currently wired as data_classification triggered by DC-AI.",
+  "description": "ISO/IEC 42001 AI Management System Standard overlay. The ISO 27001 equivalent for AI. Provides requirements for establishing, implementing, maintaining, and continually improving an AI management system (AIMS). Activated by AI training data declarations.",
+  "jurisdiction": "global",
+  "enforcement_date": null,
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI policy established, approved by top management, and communicated (Clause 5.2)",
+        "AI management system scope defined and documented (Clause 4.3)",
+        "Management commitment to responsible AI development evidenced (Clause 5.1)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 5.1, 5.2, Annex A GOV 1.1"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Roles, responsibilities, and authorities for AIMS assigned and communicated (Clause 5.3)",
+        "Competence requirements for AI-related roles defined and evaluated (Clause 7.2)",
+        "Accountability structure documented in organizational chart or responsibility matrix"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 5.3, 7.2, Annex A GOV 1.3"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI risk assessment process established addressing AI-specific risks (Clause 6.1)",
+        "Risk criteria and acceptance thresholds defined by management (Clause 6.1.1)",
+        "Risk treatment plan documented with selected controls and justification (Clause 6.1.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 6.1, Annex A GOV 1.1"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Human oversight mechanisms defined for AI system operation (Clause 8.4)",
+        "Decision points requiring human review identified and documented",
+        "Management review of AIMS conducted at planned intervals (Clause 9.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.4, 9.3, Annex A GOV 1.3"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Inventory of AI systems maintained with documented intended purposes (Annex A MAP 1.1)",
+        "AI system lifecycle stages documented — development, deployment, operation, retirement",
+        "AI system awareness ensured among relevant personnel (Clause 7.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 7.3, Annex A MAP 1.1"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Resources needed for AIMS determined and provided (Clause 7.1)",
+        "Third-party AI components and tools documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 7.1"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data documentation for AI systems — sources, quality, representativeness, known biases (Annex A MAP 1.5)",
+        "Data management procedures established for training, testing, and validation data",
+        "Data lifecycle documented from acquisition through disposal"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Annex A MAP 1.5"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Third-party AI component assessment conducted (Annex A MAP 5.1)",
+        "Supply chain risks specific to AI evaluated — model providers, data sources, tool dependencies",
+        "Due diligence on external AI components documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Annex A MAP 5.1"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI-specific risk assessment including impact on individuals and society (Annex A MAP 1.1)",
+        "Risk assessment considers AI-specific threats — bias, drift, adversarial manipulation, hallucination",
+        "Impact assessment documented for high-risk AI applications"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 6.1, Annex A MAP 1.1"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Access controls for AI systems and data proportionate to risk level",
+        "Authentication mechanisms documented in AIMS procedures"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.1"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system operational boundaries documented and enforced (Clause 8.4)",
+        "Scope constraints aligned with intended purpose documentation"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.4"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system development lifecycle documented with change management (Clause 8.1)",
+        "Version control and traceability for AI components maintained"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.1"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data protection measures documented in AI system design (Annex A MAP 1.5)",
+        "Privacy considerations integrated into AI system lifecycle"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Annex A MAP 1.5"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Monitoring and measurement of AIMS processes documented (Annex A MEA 2.1)",
+        "Records of AI system operation maintained as documented information (Clause 7.5)",
+        "Audit trail enables traceability of AI system decisions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 7.5, Annex A MEA 2.1"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Operational planning and control procedures documented (Clause 8.1)",
+        "Configuration management integrated into AI system lifecycle"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.1"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information security controls applied to AI systems per organizational policy",
+        "Encryption and access controls proportionate to data sensitivity"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.1"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system robustness measures documented (Clause 8.4)",
+        "Input validation and error handling for AI system inputs documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.4"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system performance monitored against defined metrics (Annex A MEA 2.2)",
+        "Anomaly detection for AI system behavior — accuracy degradation, bias emergence, drift",
+        "Monitoring results documented and analyzed at planned intervals"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Annex A MEA 2.2"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI system configuration changes detected and evaluated (Clause 8.1)",
+        "Monitoring covers AI-specific configuration — model parameters, training data, feature sets"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.1"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Internal audit of AIMS conducted at planned intervals (Clause 9.2)",
+        "Performance evaluation against AIMS objectives documented (Clause 9.1)",
+        "Management review includes assessment of AIMS suitability and effectiveness (Clause 9.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 9.1, 9.2, Annex A MEA 2.1"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Documented information integrity controls in place (Clause 7.5.3)",
+        "AI system records protected against unauthorized modification"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 7.5.3"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI incident management procedure established (Annex A MAN 4.1)",
+        "Incident categorization and response procedures specific to AI failures documented",
+        "Response procedures cover AI-specific incidents — model failures, bias incidents, safety events"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Annex A MAN 4.1"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Escalation procedures for AI incidents documented (Annex A MAN 4.1)",
+        "Communication procedures for AI-related incidents defined"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Annex A MAN 4.1"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI incident evidence preserved per AIMS documented information requirements (Clause 7.5)",
+        "Incident records maintained for analysis and improvement"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 7.5"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Recovery procedures for AI system failures documented",
+        "Rollback capability to previous known-good AI system state"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 8.1"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Nonconformities addressed with corrective actions (Clause 10.1)",
+        "Continual improvement of AIMS demonstrated through documented evidence (Clause 10.2)",
+        "Lessons learned from AI incidents integrated into risk assessment and control updates (Annex A MAN 4.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Clause 10.1, 10.2, Annex A MAN 4.2"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": null,
+    "assessment_type": "Certification audit by accredited certification body. Stage 1 (documentation review) and Stage 2 (implementation audit). Surveillance audits annually. Recertification every 3 years.",
+    "reporting_entity": "Accredited certification body. Audit results reported to management for management review (Clause 9.3)."
+  },
+  "human_oversight_mandates": {
+    "required": false,
+    "description": "ISO 42001 does not mandate specific human oversight configurations but requires management review (Clause 9.3), monitoring of AIMS effectiveness (Clause 9.1), and organizational awareness of AI system impacts (Clause 7.3). Human oversight is an outcome of the management system, not a prescriptive requirement."
+  },
+  "control_adjustments": {},
+  "evidence_requirements": {},
+  "framework_mapping": {
+    "GOV-01": ["Clause 5.1", "5.2", "GOV 1.1"],
+    "GOV-02": ["Clause 5.3", "7.2", "GOV 1.3"],
+    "GOV-03": ["Clause 6.1", "GOV 1.1"],
+    "GOV-04": ["Clause 8.4", "9.3", "GOV 1.3"],
+    "ID-01": ["Clause 7.3", "MAP 1.1"],
+    "ID-02": ["Clause 7.1"],
+    "ID-03": ["MAP 1.5"],
+    "ID-04": ["MAP 5.1"],
+    "ID-05": ["Clause 6.1", "MAP 1.1"],
+    "PR-01": ["Clause 8.1"],
+    "PR-02": ["Clause 8.4"],
+    "PR-03": ["Clause 8.1"],
+    "PR-04": ["MAP 1.5"],
+    "PR-05": ["Clause 7.5", "MEA 2.1"],
+    "PR-06": ["Clause 8.1"],
+    "PR-07": ["Clause 8.1"],
+    "PR-08": ["Clause 8.4"],
+    "DE-01": ["MEA 2.2"],
+    "DE-02": ["Clause 8.1"],
+    "DE-03": ["Clause 9.1", "9.2", "MEA 2.1"],
+    "DE-04": ["Clause 7.5.3"],
+    "RS-01": ["MAN 4.1"],
+    "RS-02": ["MAN 4.1"],
+    "RS-03": ["Clause 7.5"],
+    "RC-01": ["Clause 8.1"],
+    "RC-02": ["Clause 10.1", "10.2", "MAN 4.2"]
+  },
+  "evidence_retention_minimum_days": 1095,
+  "human_oversight_required": false,
+  "notes": "ISO/IEC 42001:2023 is the AI management system standard — the ISO 27001 equivalent for AI. It is process-oriented, emphasizing documented procedures, management review records, and continuous improvement evidence. Unlike PCI which is checklist-oriented, ISO 42001 wants to see the management system operating. Certification requires demonstrating the Plan-Do-Check-Act cycle. Published December 2023, with growing adoption among organizations pursuing responsible AI credentials."
+}

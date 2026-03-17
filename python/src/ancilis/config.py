@@ -97,7 +97,14 @@ class AncilisConfig(BaseModel):
 
 # --- Shared JSON Loaders ---
 
-VALID_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"}
+VALID_CONTROL_IDS = {
+    "GOV-01", "GOV-02", "GOV-03", "GOV-04",
+    "ID-01", "ID-02", "ID-03", "ID-04", "ID-05",
+    "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
+    "DE-01", "DE-02", "DE-03", "DE-04",
+    "RS-01", "RS-02", "RS-03",
+    "RC-01", "RC-02",
+}
 CERTIFICATIONS_DIR = SHARED_DIR / "overlays" / "certifications"
 
 VALID_CERTIFICATION_TARGETS: set[str] = set()

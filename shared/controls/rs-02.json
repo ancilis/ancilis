@@ -1,0 +1,37 @@
+{
+  "id": "RS-02",
+  "name": "Human Escalation Workflow",
+  "function": "RESPOND",
+  "csf_mapping": "RS.CO",
+  "description": "Manages human escalation workflows for agent security events that require human judgment, approval, or intervention. Defines escalation paths, notification channels, and response timeframes for different incident severity levels.",
+  "threat_addressed": "Automated responses handle routine failures, but deviations above a severity threshold require human judgment: context that automated systems cannot fully evaluate, regulatory reporting decisions, and risk acceptance determinations.",
+  "enforcement_mechanism": "Escalation rules route deviations above severity threshold to designated reviewers (agent owner, compliance team, or CISO depending on severity) with full context: the action, failed AKSIs, regulatory impact assessment, and recommended response. SLAs defined and tracked.",
+  "security_outcome": {
+    "pass": "Routing rules cover all escalation scenarios. Routing functional and tested. SLAs defined and tracked.",
+    "fail": "Escalation workflow not configured or escalation acknowledgment overdue."
+  },
+  "evidence_fields": [
+    "escalation_configuration",
+    "event_logs_with_response_times",
+    "sla_performance_metrics"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "RS.CO-02, RS.CO-03",
+    "iso_42001": "MAN 4.1",
+    "iso_27001": null,
+    "soc2": "CC7.4",
+    "cmmc": "IR.L2",
+    "eu_ai_act": "Art.14",
+    "fedramp": "KSI-IRR",
+    "gdpr": "Art.22",
+    "dora": "Art.17",
+    "nis2": "Art.23",
+    "pci_dss": "Req 12.10",
+    "owasp": null
+  },
+  "display_name": "Human escalation",
+  "display_detail": "Manages human escalation workflows for security events requiring human judgment or intervention.",
+  "remediation_hint_template": "Human escalation required but workflow not configured. Define escalation targets and notification channels."
+}

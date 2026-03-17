@@ -1,0 +1,37 @@
+{
+  "id": "GOV-01",
+  "name": "Agent Governance Policy",
+  "function": "GOVERN",
+  "csf_mapping": "GV.PO",
+  "description": "Machine-readable governance policy defining agent behavioral boundaries, acceptable use, and operational constraints. Every deployed agent must operate under a declared policy that specifies what it can do, what data it handles, and under what conditions it operates.",
+  "threat_addressed": "Without a machine-readable deployment policy, agents operate without defined boundaries, acceptable use limits, or operational constraints.",
+  "enforcement_mechanism": "A machine-readable agent deployment policy (JSON/YAML) defining behavioral boundaries, acceptable use, and operational constraints for all agents.",
+  "security_outcome": {
+    "pass": "Policy exists in machine-readable format, is current (reviewed within defined cycle), covers all deployed agents.",
+    "fail": "Governance policy missing, invalid, or incomplete."
+  },
+  "evidence_fields": [
+    "governance_policy_export",
+    "policy_version_history",
+    "review_records"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "GV.PO-01, GV.PO-02",
+    "iso_42001": "GOV 1.1",
+    "iso_27001": "A.5.1",
+    "soc2": "CC1.1",
+    "cmmc": "CA.L2",
+    "eu_ai_act": "Art.9",
+    "fedramp": "KSI-PIY",
+    "gdpr": null,
+    "dora": "Art.5",
+    "nis2": "Art.21",
+    "pci_dss": "Req 12.1",
+    "owasp": null
+  },
+  "display_name": "Governance policy",
+  "display_detail": "Validates that a machine-readable governance policy exists, is current, and defines agent behavioral boundaries.",
+  "remediation_hint_template": "No valid governance policy found. Create an ancilis.yaml with agent identity, scope constraints, and data handling declarations."
+}

@@ -1,0 +1,37 @@
+{
+  "id": "DE-04",
+  "name": "Evidence Integrity Verification",
+  "function": "DETECT",
+  "csf_mapping": "DE.CM",
+  "description": "Verifies the integrity of the evidence chain — the cryptographically linked sequence of evaluation records that proves continuous security control operation. Detects tampering, gaps, or corruption in the evidence store.",
+  "threat_addressed": "If compliance evidence records can be tampered with after generation, the entire compliance posture becomes untrustworthy. Auditors cannot rely on evidence that lacks integrity guarantees.",
+  "enforcement_mechanism": "Compliance evidence records are integrity-protected through hash chaining (SHA-256). Each record references the hash of the previous record. Periodic verification confirms chain integrity. Breaks in the chain trigger alerts.",
+  "security_outcome": {
+    "pass": "Integrity mechanism active on all evidence records. 100% chain verification on schedule. No unresolved integrity alerts.",
+    "fail": "Evidence chain integrity failure — broken hash chain, missing records, or tampering detected."
+  },
+  "evidence_fields": [
+    "verification_scan_results",
+    "chain_integrity_reports",
+    "alert_logs"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "DE.CM-09",
+    "iso_42001": null,
+    "iso_27001": "A.8.15",
+    "soc2": "CC7.3",
+    "cmmc": "AU.L2",
+    "eu_ai_act": null,
+    "fedramp": "KSI-MLA",
+    "gdpr": null,
+    "dora": "Art.10",
+    "nis2": null,
+    "pci_dss": "Req 10.5",
+    "owasp": null
+  },
+  "display_name": "Evidence integrity",
+  "display_detail": "Verifies the cryptographic hash chain integrity of the evidence store.",
+  "remediation_hint_template": "Evidence chain integrity failure. Investigate broken hash chain — this may indicate tampering or data corruption."
+}
