@@ -2,7 +2,7 @@
   "id": "PR-05",
   "name": "Audit Logging",
   "function": "PROTECT",
-  "csf_mapping": "PR.DS",
+  "csf_mapping": "DE.AE",
   "description": "Every action generates a tamper-evident log entry with full context for incident investigation and compliance demonstration.",
   "threat_addressed": "Without logging, incidents cannot be investigated and compliance cannot be demonstrated. Missing audit trails make it impossible to reconstruct agent behavior during security events.",
   "enforcement_mechanism": "Every action generates tamper-evident log entry with: timestamp, agent identity, action type, target, parameters (sensitive data redacted), evaluation results, and decision outcome.",
@@ -21,6 +21,18 @@
   ],
   "default_enabled": true,
   "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "DE.AE-02, DE.AE-06",
+    "iso_42001": "MEA 2.1",
+    "iso_27001": "A.8.15",
+    "soc2": "CC7.1",
+    "cmmc": "AU.L2",
+    "eu_ai_act": "Art.12",
+    "fedramp": "KSI-MLA",
+    "gdpr": "Art.30",
+    "dora": "Art.10",
+    "nis2": "Art.23"
+  },
   "display_name": "Audit logging",
   "display_detail": "Validates that structured logging is active and producing complete, tamper-evident records for incident investigation.",
   "remediation_hint_template": "Audit logging is not properly configured. Ensure evidence storage is enabled and log format is structured (JSON). Check compliance.evidence settings in ancilis.yaml."

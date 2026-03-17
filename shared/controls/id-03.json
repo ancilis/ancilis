@@ -1,0 +1,37 @@
+{
+  "id": "ID-03",
+  "name": "Data Classification & Validation",
+  "function": "IDENTIFY",
+  "csf_mapping": "ID.AM",
+  "description": "Classifies and validates data handled by agents using standardized data classification codes (DC codes). Maps declared data types to regulatory requirements, enabling automatic overlay activation and ensuring appropriate controls are applied based on data sensitivity.",
+  "threat_addressed": "Misclassified or unclassified data leads to insufficient controls — agents handling sensitive data without appropriate protections. Incorrect classification causes either over-restriction (business friction) or under-protection (compliance violations and data breaches).",
+  "enforcement_mechanism": "Validates that data handled by the agent is classified using my_agent_handles declarations. Maps plain-language data types to DC codes and activates corresponding regulatory overlays. Pattern detection identifies undeclared sensitive data in agent actions.",
+  "security_outcome": {
+    "pass": "Data classified with appropriate DC codes and matching controls activated.",
+    "fail": "Data handling declared but classification validation failed or undeclared sensitive data detected."
+  },
+  "evidence_fields": [
+    "data_classifications_declared",
+    "dc_codes_active",
+    "overlays_activated",
+    "pattern_detections",
+    "classification_validation_result"
+  ],
+  "default_enabled": true,
+  "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "ID.AM-07, ID.AM-08",
+    "iso_42001": "MAP 1.5",
+    "iso_27001": "A.5.12",
+    "soc2": "CC6.1",
+    "cmmc": "MP.L2",
+    "eu_ai_act": null,
+    "fedramp": null,
+    "gdpr": "Art.30",
+    "dora": "Art.8",
+    "nis2": null
+  },
+  "display_name": "Data classification",
+  "display_detail": "Validates data classification declarations and ensures appropriate controls are activated for declared data sensitivity.",
+  "remediation_hint_template": "Data classification incomplete. Declare all data types your agent handles in my_agent_handles in ancilis.yaml."
+}

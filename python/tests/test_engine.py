@@ -397,6 +397,6 @@ class TestDecisionEngine:
         result = engine.evaluate(action)
         assert result.agent_id == "test-agent"
         assert result.mode == "audit"
-        assert "soc2" in result.active_overlays
+        assert "pci-dss-v4" in result.active_overlays
         assert "DC-CHD" in result.data_classifications
         assert result.total_duration_ms >= 0

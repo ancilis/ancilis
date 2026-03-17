@@ -21,6 +21,18 @@
   ],
   "default_enabled": true,
   "baseline": true,
+  "regulatory_mappings": {
+    "nist_csf": "PR.DS-01, PR.DS-02",
+    "iso_42001": null,
+    "iso_27001": "A.8.10",
+    "soc2": "CC6.7",
+    "cmmc": "MP.L2",
+    "eu_ai_act": "Art.10",
+    "fedramp": null,
+    "gdpr": "Art.32",
+    "dora": "Art.9",
+    "nis2": null
+  },
   "display_name": "Data exposure scan",
   "display_detail": "Scans outbound tool call parameters for sensitive data patterns and validates destination authorization.",
   "remediation_hint_template": "Sensitive data patterns detected in outbound parameters. To approve this tool for sensitive data, run: ancilis approve-tool {tool_name} --classification {classification}"
