@@ -55,7 +55,7 @@ export function formatStatus(config: ResolvedConfig, summary: EvidenceSummary, v
     let trigger = "";
     if (oa.triggeredBy.length > 0) {
       const first = oa.triggeredBy[0];
-      if (first.includes(" via ")) {
+      if (first !== undefined && first.includes(" via ")) {
         trigger = ` — triggered by ${first.split(" via ")[1]} declaration`;
       }
     }
@@ -106,7 +106,7 @@ export function formatStatus(config: ResolvedConfig, summary: EvidenceSummary, v
         let trigger = "";
         if (oa.triggeredBy.length > 0) {
           const first = oa.triggeredBy[0];
-          if (first.includes(" via ")) {
+          if (first !== undefined && first.includes(" via ")) {
             trigger = ` — triggered by ${first.split(" via ")[1]} declaration`;
           }
         }
