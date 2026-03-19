@@ -12,7 +12,7 @@ permissions:
 jobs:
   python:
     name: Python ${{ matrix.python-version }}
-    runs-on: ubuntu-lates
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
@@ -21,10 +21,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencie
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev,mcp]"
+      - name: Packaging smoke test
+        run: |
+          tmp_dir="$(mktemp -d)"
+          cd "$tmp_dir"
+          python -c "from ancilis.config import load_taxonomy, load_control_definitions; assert load_taxonomy()['version']; assert load_control_definitions()['PR-01']['id'] == 'PR-01'"
       - name: Lint (ruff)
         run: ruff check python/src python/tests
       - name: Type check (mypy)
@@ -48,8 +53,13 @@ jobs:
         run: npm ci
       - name: Type check (tsc)
         run: npx tsc --noEmit
+      - name: Build package
+        run: npm run build
       - name: Test (vitest)
         run: npx vitest run
+      - name: Packaging smoke test
+        run: |
+          node --input-type=module -e "import pkg from './package.json' with { type: 'json' }; import('./' + pkg.exports['.'].import).then((m) => { if (!m.loadConfig) process.exit(1); });"
 
   dependency-audit:
     name: Dependency Audit

@@ -7,6 +7,14 @@ from typing import Any
 from ancilis.config import ResolvedConfig
 
 
+def _normalized_decisions(summary: dict[str, Any]) -> dict[str, int]:
+    decisions = summary.get("decisions", {})
+    normalized: dict[str, int] = {}
+    for key, value in decisions.items():
+        normalized[str(key).strip().upper()] = int(value)
+    return normalized
+
+
 def build_baseline_section(
     config: ResolvedConfig,
     summary: dict[str, Any],
@@ -15,7 +23,7 @@ def build_baseline_section(
     """Build the baseline security section of the report."""
     control_stats = summary.get("control_pass_rates", {})
     tools = summary.get("tools_evaluated", [])
-    decisions = summary.get("decisions", {})
+    decisions = _normalized_decisions(summary)
 
     controls: list[dict[str, Any]] = []
     for cs in sorted(config.controls.values(), key=lambda c: c.control_id):

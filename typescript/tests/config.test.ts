@@ -3,9 +3,16 @@
  */
 
 import { describe, it, expect } from "vitest";
+import { existsSync } from "node:fs";
+import { sharedPathFrom } from "../src/ancilis/shared-path.js";
 import { loadConfig } from "../src/ancilis/config/index.js";
 
 describe("Minimal Config", () => {
+  it("finds packaged shared assets from the installed package root", () => {
+    expect(existsSync(sharedPathFrom(import.meta.url, "controls", "pr-01.json"))).toBe(true);
+    expect(existsSync(sharedPathFrom(import.meta.url, "classifications", "taxonomy.json"))).toBe(true);
+  });
+
   it("loads with just agent name", () => {
     const resolved = loadConfig({ raw: { agent: { name: "my-agent" } } });
     expect(resolved.agentName).toBe("my-agent");

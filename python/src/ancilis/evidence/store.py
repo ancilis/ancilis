@@ -24,6 +24,11 @@ DEFAULT_DB_DIR = Path.home() / ".ancilis"
 DEFAULT_DB_NAME = "evidence.duckdb"
 
 
+def _normalize_decision_key(decision: str) -> str:
+    """Normalize persisted decision values for reporting compatibility."""
+    return decision.strip().upper()
+
+
 def _agent_db_path(agent_name: str) -> Path:
     """Derive a per-agent, per-project evidence DB path.
 
@@ -309,7 +314,7 @@ class EvidenceStore:
         Returns empty results if no evidence has been recorded yet (without
         forcing DB creation for persistent stores).
         """
-        if self._conn is None and not self._in_memory:
+        if self._conn is None and not self._in_memory and not Path(self._db_path).exists():
             # No evidence recorded yet — return empty without creating DB
             return {
                 "total_evaluations": 0,
@@ -347,7 +352,10 @@ class EvidenceStore:
         decision_rows = self._conn.execute(
             f"SELECT decision, COUNT(*) FROM evidence_records{where} GROUP BY decision", params
         ).fetchall()
-        decisions = {row[0]: row[1] for row in decision_rows}
+        decisions: dict[str, int] = {}
+        for raw_decision, count in decision_rows:
+            decision = _normalize_decision_key(raw_decision)
+            decisions[decision] = decisions.get(decision, 0) + count
 
         # Unique tools (period-filtered)
         tool_rows = self._conn.execute(
