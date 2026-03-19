@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ancilis"
 version = "0.1.0"
-description = "Runtime evaluation and policy enforcement for AI agent tool calls"
+description = "Python-first runtime evaluation and policy enforcement for AI agent tool calls"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
@@ -76,7 +76,6 @@ ignore = ["E501", "F401", "F841", "I001", "UP012"]
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
-asyncio_mode = "auto"
 
 [tool.mypy]
 python_version = "3.10"

@@ -1,7 +1,7 @@
 {
   "name": "ancilis",
   "version": "0.1.0",
-  "description": "Runtime evaluation and policy enforcement for AI agent tool calls",
+  "description": "Python-first runtime evaluation and policy enforcement for AI agent tool calls",
   "type": "module",
   "main": "./dist/ancilis/index.js",
   "types": "./dist/ancilis/index.d.ts",
@@ -44,7 +44,7 @@
   "license": "BUSL-1.1",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ancilis/ancilis.git"
+    "url": "https://github.com/ancilis/ancilis.git"
   },
   "homepage": "https://github.com/ancilis/ancilis#readme",
   "bugs": {
