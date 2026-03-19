@@ -111,6 +111,7 @@ class TestCLIFramework:
         assert result.exit_code == 0
         assert "status" in result.output
         assert "report" in result.output
+        assert "doctor" in result.output
         assert "config" in result.output
         assert "approve-tool" in result.output
 
@@ -255,6 +256,25 @@ class TestStatus:
         result = runner.invoke(cli, ["status", "--config", str(cfg_path), "--db", str(db)])
         assert result.exit_code == 0
         assert "1 blocked" in result.output
+
+
+class TestDoctor:
+    def test_doctor_reports_core_checks(self, tmp_path: Path) -> None:
+        cfg = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.duckdb"
+        runner = CliRunner()
+        result = runner.invoke(cli, ["doctor", "--config", str(cfg), "--db", str(db)])
+        assert result.exit_code == 0
+        assert "Ancilis doctor" in result.output
+        assert "[OK] config:" in result.output
+        assert "[OK] assets:" in result.output
+        assert "[OK] evidence:" in result.output
+
+    def test_doctor_fails_on_missing_config(self, tmp_path: Path) -> None:
+        runner = CliRunner()
+        result = runner.invoke(cli, ["doctor", "--config", str(tmp_path / "missing.yaml")])
+        assert result.exit_code == 1
+        assert "[FAIL] config:" in result.output
 
     def test_no_control_ids_in_output(self, tmp_path: Path) -> None:
         cfg = _make_config_file(_minimal_config(), tmp_path)
