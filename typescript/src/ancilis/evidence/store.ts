@@ -73,6 +73,10 @@ function agentDbPath(agentName: string): string {
   return join(homedir(), ".ancilis", `${safeName}-${cwdHash}`, "evidence.duckdb");
 }
 
+function normalizeDecisionKey(decision: string): string {
+  return decision.trim().toUpperCase();
+}
+
 export class EvidenceStore {
   private _db: duckdb.Database | null = null;
   private _conn: duckdb.Connection | null = null;
@@ -319,7 +323,8 @@ export class EvidenceStore {
     const decisions: Record<string, number> = {};
     for (const row of decisionRows) {
       const r = row as Record<string, unknown>;
-      decisions[r.decision as string] = r.cnt as number;
+      const decision = normalizeDecisionKey(r.decision as string);
+      decisions[decision] = (decisions[decision] ?? 0) + (r.cnt as number);
     }
 
     const toolRows = await allAsync(

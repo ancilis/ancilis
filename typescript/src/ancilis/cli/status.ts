@@ -3,11 +3,18 @@
 import type { ResolvedConfig } from "../config/index.js";
 import type { EvidenceSummary } from "../report/generator.js";
 import { readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { sharedPathFrom } from "../shared-path.js";
 
-const __statusFilename = fileURLToPath(import.meta.url);
-const CONTROLS_DIR = resolve(__statusFilename, "..", "..", "..", "..", "..", "shared", "controls");
+const CONTROLS_DIR = sharedPathFrom(import.meta.url, "controls");
+
+function normalizedDecisions(summary: EvidenceSummary): Record<string, number> {
+  const normalized: Record<string, number> = {};
+  for (const [key, value] of Object.entries(summary.decisions ?? {})) {
+    normalized[key.trim().toUpperCase()] = value;
+  }
+  return normalized;
+}
 
 function loadControlDefs(): Map<string, Record<string, unknown>> {
   const controls = new Map<string, Record<string, unknown>>();
@@ -64,7 +71,7 @@ export function formatStatus(config: ResolvedConfig, summary: EvidenceSummary, v
 
   // Evaluation counts
   const total = summary.total_evaluations;
-  const blocked = summary.decisions.BLOCK ?? 0;
+  const blocked = normalizedDecisions(summary).BLOCK ?? 0;
   if (total > 0) {
     lines.push(`  Tool calls: ${total.toLocaleString()} evaluated, ${blocked} blocked`);
   } else {

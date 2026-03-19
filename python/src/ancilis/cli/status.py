@@ -11,6 +11,14 @@ from ancilis.config import ResolvedConfig, load_config, load_control_definitions
 from ancilis.evidence.store import EvidenceStore
 
 
+def _normalized_decisions(summary: dict[str, Any]) -> dict[str, int]:
+    decisions = summary.get("decisions", {})
+    normalized: dict[str, int] = {}
+    for key, value in decisions.items():
+        normalized[str(key).strip().upper()] = int(value)
+    return normalized
+
+
 def _load_config_safe(config_path: str | None) -> ResolvedConfig | None:
     try:
         if config_path:
@@ -73,7 +81,7 @@ def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: boo
                     data_type = first.split(" via ")[1]
                     trigger = f" — triggered by {data_type} declaration"
             lines.append(f"  {oa.name}: active{trigger}")
-    decisions = summary.get("decisions", {})
+    decisions = _normalized_decisions(summary)
     blocked = decisions.get("BLOCK", 0)
     if total > 0:
         lines.append(f"  Tool calls: {total:,} evaluated, {blocked} blocked")

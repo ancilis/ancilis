@@ -2,9 +2,9 @@
 
 import { randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
+import { sharedPathFrom } from "../shared-path.js";
 import type { Action } from "./action.js";
 import type { ControlEvaluator } from "./evaluators/base.js";
 import { PR01IdentityEvaluator } from "./evaluators/pr01-identity.js";
@@ -18,8 +18,7 @@ import type { BaselineWindow } from "../controls/de01Baseline.js";
 import { ToolRegistry } from "./registry.js";
 import type { ControlResult, EvaluationResult } from "./result.js";
 
-const __engineFilename = fileURLToPath(import.meta.url);
-const CONTROLS_DIR = resolve(__engineFilename, "..", "..", "..", "..", "..", "shared", "controls");
+const CONTROLS_DIR = sharedPathFrom(import.meta.url, "controls");
 
 function loadControlDefs(): Map<string, Record<string, unknown>> {
   const controls = new Map<string, Record<string, unknown>>();
