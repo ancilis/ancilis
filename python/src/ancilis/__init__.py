@@ -4,6 +4,21 @@ from ancilis.config import load_config
 from ancilis.evidence import EvidenceRecord, EvidenceStore
 from ancilis.producers.protocol import ActionProducer, ProducerType
 from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
+from ancilis.producers.tool import (
+    BlockedActionError,
+    ToolActionProducer,
+    ToolExecutionResult,
+    ToolInvocation,
+    evaluate_and_execute,
+    tool,
+    wrap_tool,
+)
+from ancilis.producers.http import (
+    HTTPActionProducer,
+    HTTPExecutionResult,
+    HTTPObservation,
+    HTTPRequest,
+)
 
 
 def __getattr__(name: str):
@@ -22,12 +37,23 @@ def __getattr__(name: str):
 __all__ = [
     "ActionProducer",
     "AncilisMiddleware",
+    "BlockedActionError",
     "CLIActionProducer",
     "CLIExecutionResult",
     "CLIInvocation",
     "EvidenceRecord",
     "EvidenceStore",
+    "HTTPActionProducer",
+    "HTTPExecutionResult",
+    "HTTPObservation",
+    "HTTPRequest",
     "MCPActionProducer",
     "ProducerType",
+    "ToolActionProducer",
+    "ToolExecutionResult",
+    "ToolInvocation",
+    "evaluate_and_execute",
     "load_config",
+    "tool",
+    "wrap_tool",
 ]

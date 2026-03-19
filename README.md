@@ -12,9 +12,13 @@ Your agent touches credit card numbers, personal information, financial records.
 
 The key thing: tell Ancilis what data your agent handles, and it automatically activates the right compliance controls — PCI-DSS for cardholder data, GDPR for personal info, SOC 2 for everything going to enterprise buyers. Or just declare a certification target like `aiuc-1` and get instant coverage without knowing anything about compliance frameworks.
 
+> Launch status: the Python SDK is the primary supported path for the first public release. The TypeScript package is still preview-only and does not yet have full runtime parity with Python.
+
 ## What It Does
 
 - **Intercepts every tool call** before it reaches your MCP server
+- **Wraps normal Python functions/tools** with pre-execution evaluation and evidence recording
+- **Records outbound HTTP/API actions** through explicit wrappers or observe-only instrumentation
 - **Evaluates against policy** — identity, scope, tool provenance, data exposure
 - **Blocks violations** in enforce mode; logs everything in audit mode
 - **Auto-scopes compliance** — declare your data types, get the regulatory controls that apply
@@ -23,7 +27,17 @@ The key thing: tell Ancilis what data your agent handles, and it automatically a
 ## Quick Start
 
 ```bash
-pip install ancilis[mcp]
+pip install ancilis
+```
+
+Install the MCP extra only if you are using the MCP middleware path:
+
+```bash
+pip install "ancilis[mcp]"
+```
+
+```bash
+ancilis doctor
 ```
 
 ```python
@@ -67,6 +81,61 @@ except BlockedToolCallError as exc:
 ```bash
 ancilis status --config ancilis.yaml
 ```
+
+### Python quickstart: wrap a normal function/tool
+
+```python
+from ancilis import ToolActionProducer, load_config
+from ancilis.engine import Engine
+
+config = load_config(path="ancilis.yaml")
+engine = Engine(config)
+producer = ToolActionProducer(config=config, engine=engine)
+
+@producer.wrap_tool(agent_name="payment-agent")
+def refund_payment(payment_id: str) -> str:
+    return f"refunded:{payment_id}"
+
+print(refund_payment("pay_123"))
+
+# Explicit/direct evaluation is also first-class when a framework owns registration
+action, evaluation = producer.evaluate(
+    refund_payment,
+    agent_name="payment-agent",
+    tool_name="tool:payments.refund",
+    args=("pay_456",),
+)
+print(action.tool.name, evaluation.decision)
+```
+
+### Python quickstart: explicit HTTP/API instrumentation
+
+```python
+from ancilis import HTTPActionProducer, HTTPRequest, load_config
+from ancilis.engine import Engine
+import requests
+
+config = load_config(path="ancilis.yaml")
+engine = Engine(config)
+producer = HTTPActionProducer(config=config, engine=engine)
+
+# Observe/report only
+producer.observe(
+    HTTPRequest(
+        method="POST",
+        url="https://api.stripe.com/v1/payment_intents",
+        agent_name="payment-agent",
+        metadata={"purpose": "create payment intent"},
+    )
+)
+
+# Explicit wrapped execution with pre-request evaluation
+wrapped = producer.wrap_transport(requests.request, agent_name="payment-agent")
+result = wrapped("GET", "https://example.com/healthz", timeout=5)
+print(result.evaluation.decision)
+```
+
+HTTP support in this release is intentionally explicit: Ancilis does not monkey-patch `requests`, `httpx`, or `aiohttp`. Observe/report mode is the primary supported path, and blocking is only available as an opt-in on the explicit wrapper path shown above.
 
 ### Path A — I need a certification
 
@@ -168,13 +237,13 @@ Framework-by-framework compliance coverage, evidence counts, hash chain verifica
 
 ## How It Works
 
-MCP middleware intercepts every tool call before it reaches your server. Each call is evaluated by the control engine — identity, scope, provenance, data exposure, audit trail, anomaly detection — then forwarded or blocked. Every decision is recorded in a local DuckDB evidence store with SHA-256 hash chain integrity. The CLI reads that store to generate status output and compliance reports.
+MCP middleware intercepts every tool call before it reaches your server. The same Action/evidence pipeline also powers the Python function/tool producer, the CLI producer, and the explicit HTTP producer. Each action is evaluated by the control engine — identity, scope, provenance, data exposure, audit trail, anomaly detection — then forwarded or blocked when that integration can reliably block. Every decision is recorded in a local DuckDB evidence store with SHA-256 hash chain integrity. The CLI reads that store to generate status output and compliance reports.
 
 The underlying abstraction (Action Object) decouples producers from the control engine. MCP and CLI producers ship today; the architecture supports additional producers. Policy data — controls, overlay profiles, data classifications — lives in `shared/` as JSON, consumed by both the Python and TypeScript SDKs.
 
 ```
-python/       Python SDK  (pip install ancilis)
-typescript/   TypeScript SDK  (npm install ancilis)
+python/       Python SDK  (primary supported path)
+typescript/   TypeScript SDK  (preview)
 shared/       Controls, overlays, classifications, schemas
 ```
 
