@@ -9,9 +9,10 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from ancilis._shared import shared_path
 
-# Resolve shared/ directory relative to package root
-SHARED_DIR = Path(__file__).resolve().parent.parent.parent.parent / "shared"
+# Resolve shared/ directory from packaged assets
+SHARED_DIR = shared_path()
 CONTROLS_DIR = SHARED_DIR / "controls"
 OVERLAYS_DIR = SHARED_DIR / "overlays"
 CLASSIFICATIONS_FILE = SHARED_DIR / "classifications" / "taxonomy.json"

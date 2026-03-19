@@ -107,6 +107,16 @@ describe("formatStatus", () => {
     expect(output).toContain("No evaluations recorded");
   });
 
+  it("counts blocked decisions case-insensitively", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const output = formatStatus(config, {
+      ...emptySummary(),
+      total_evaluations: 2,
+      decisions: { block: 2 },
+    });
+    expect(output).toContain("2 blocked");
+  });
+
   it("shows overlay info when active", () => {
     const config = loadConfig({ raw: fullConfig() });
     const output = formatStatus(config, emptySummary());

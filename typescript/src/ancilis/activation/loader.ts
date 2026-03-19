@@ -1,11 +1,10 @@
 /** Loads overlay profiles and certification profiles from shared JSON data files. */
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { sharedPathFrom } from "../shared-path.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const SHARED_DIR = resolve(__filename, "..", "..", "..", "..", "..", "shared");
+const SHARED_DIR = sharedPathFrom(import.meta.url);
 const OVERLAYS_DIR = join(SHARED_DIR, "overlays");
 const CERTIFICATIONS_DIR = join(OVERLAYS_DIR, "certifications");
 const CONTROLS_DIR = join(SHARED_DIR, "controls");

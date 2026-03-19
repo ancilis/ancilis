@@ -2,10 +2,14 @@
 
 import pytest
 
-from ancilis.config import load_config, validate_config
+from ancilis.config import SHARED_DIR, load_config, validate_config
 
 
 class TestMinimalConfig:
+    def test_packaged_shared_assets_available(self):
+        assert SHARED_DIR.joinpath("controls", "pr-01.json").exists()
+        assert SHARED_DIR.joinpath("classifications", "taxonomy.json").exists()
+
     def test_minimal_config_loads(self):
         resolved = load_config(raw={"agent": {"name": "my-agent"}})
         assert resolved.agent_name == "my-agent"

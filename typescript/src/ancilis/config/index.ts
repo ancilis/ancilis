@@ -4,13 +4,12 @@
 
 import { z } from "zod";
 import { readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { fileURLToPath } from "node:url";
+import { sharedPathFrom } from "../shared-path.js";
 
-// Resolve shared/ directory relative to package root
-const __filename = fileURLToPath(import.meta.url);
-const SHARED_DIR = resolve(__filename, "..", "..", "..", "..", "..", "shared");
+// Resolve shared/ directory relative to the installed package root
+const SHARED_DIR = sharedPathFrom(import.meta.url);
 const CONTROLS_DIR = join(SHARED_DIR, "controls");
 const OVERLAYS_DIR = join(SHARED_DIR, "overlays");
 const CERTIFICATIONS_DIR = join(OVERLAYS_DIR, "certifications");
