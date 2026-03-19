@@ -188,7 +188,7 @@ class EvidenceStore:
             timestamp=evaluation.timestamp,
             agent_id=evaluation.agent_id,
             tool_name=tool_name,
-            decision=evaluation.decision,
+            decision=_normalize_decision_key(evaluation.decision),
             mode=evaluation.mode,
             control_results=control_results_data,
             active_overlays=evaluation.active_overlays,
@@ -238,7 +238,7 @@ class EvidenceStore:
             params.append(tool_name)
         if decision is not None:
             conditions.append("decision = ?")
-            params.append(decision)
+            params.append(_normalize_decision_key(decision))
 
         where = f" WHERE {' AND '.join(conditions)}" if conditions else ""
         query = f"SELECT * FROM evidence_records{where} ORDER BY seq_id ASC LIMIT ?"
