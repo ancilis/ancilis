@@ -20,6 +20,7 @@ from ancilis.engine.registry import ToolRegistry, ToolEntry, ToolStatus
 from ancilis.evidence.store import EvidenceStore
 from ancilis.report.generator import ReportGenerator, ReportData
 from ancilis.report.renderer import render_terminal, render_markdown
+from ancilis.engine.result import EvaluationResult, ControlResult
 
 
 # --- Helpers ---
@@ -61,6 +62,31 @@ def _make_action(tool_name: str = "read_file", agent_id: str = "test-agent") -> 
         tool=ToolInfo(name=tool_name),
         parameters=ActionParameters(raw={}),
         context=ActionContext(session_id="sess-1"),
+    )
+
+
+def _make_blocked_evaluation(decision: str = "BLOCK") -> EvaluationResult:
+    return EvaluationResult(
+        evaluation_id="blocked-eval",
+        action_id="blocked-action",
+        timestamp="2026-03-18T00:00:00Z",
+        agent_id="test-agent",
+        mode="enforce",
+        control_results=[
+            ControlResult(
+                control_id="PR-02",
+                control_name="Scope",
+                result="FAIL",
+                detail="Tool is not in the allowlist.",
+                evidence_data={},
+                duration_ms=1.0,
+            )
+        ],
+        decision=decision,
+        decision_reason="Blocked by scope",
+        active_overlays=[],
+        data_classifications=[],
+        total_duration_ms=1.0,
     )
 
 
@@ -216,6 +242,19 @@ class TestStatus:
         assert result.exit_code == 0
         # Verbose shows per-control detail with display names
         assert "Controls:" in result.output
+
+    def test_status_counts_lowercase_blocked_decisions(self, tmp_path: Path) -> None:
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+        store.store(_make_blocked_evaluation(decision="block"), tool_name="blocked-tool")
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["status", "--config", str(cfg_path), "--db", str(db)])
+        assert result.exit_code == 0
+        assert "1 blocked" in result.output
 
     def test_no_control_ids_in_output(self, tmp_path: Path) -> None:
         cfg = _make_config_file(_minimal_config(), tmp_path)

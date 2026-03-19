@@ -1,12 +1,11 @@
 /** Core report generation — queries evidence, assembles sections. */
 
 import { readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
+import { sharedPathFrom } from "../shared-path.js";
 
-const __reportFilename = fileURLToPath(import.meta.url);
-const SHARED_DIR = resolve(__reportFilename, "..", "..", "..", "..", "..", "shared");
+const SHARED_DIR = sharedPathFrom(import.meta.url);
 const CONTROLS_DIR = join(SHARED_DIR, "controls");
 const OVERLAYS_DIR = join(SHARED_DIR, "overlays");
 const CERTIFICATIONS_DIR = join(OVERLAYS_DIR, "certifications");
@@ -73,6 +72,14 @@ function parsePeriod(period: string): number {
   if (period.endsWith("d")) return parseInt(period) * 86400000;
   if (period.endsWith("h")) return parseInt(period) * 3600000;
   return 30 * 86400000;
+}
+
+function normalizedDecisions(decisions: Record<string, number>): Record<string, number> {
+  const normalized: Record<string, number> = {};
+  for (const [key, value] of Object.entries(decisions)) {
+    normalized[key.trim().toUpperCase()] = value;
+  }
+  return normalized;
 }
 
 export class ReportGenerator {
@@ -147,7 +154,7 @@ export class ReportGenerator {
       });
     }
 
-    const decisions = this.summary.decisions;
+    const decisions = normalizedDecisions(this.summary.decisions);
     return {
       controls,
       toolsEvaluated: this.summary.tools_evaluated,

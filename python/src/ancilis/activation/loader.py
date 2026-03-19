@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 from typing import Any
+
+from ancilis._shared import shared_path
 
 logger = logging.getLogger("ancilis.activation")
 
-SHARED_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent / "shared"
+SHARED_DIR = shared_path()
 OVERLAYS_DIR = SHARED_DIR / "overlays"
 CERTIFICATIONS_DIR = OVERLAYS_DIR / "certifications"
 CONTROLS_DIR = SHARED_DIR / "controls"
