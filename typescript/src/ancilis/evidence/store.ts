@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     evaluation_id VARCHAR NOT NULL,
     timestamp VARCHAR NOT NULL,
     agent_id VARCHAR NOT NULL,
+    source_type VARCHAR NOT NULL DEFAULT 'agent',
     tool_name VARCHAR NOT NULL,
     decision VARCHAR NOT NULL,
     mode VARCHAR NOT NULL,
@@ -33,11 +34,17 @@ CREATE TABLE IF NOT EXISTS evidence_records (
 
 const INSERT_SQL = `
 INSERT INTO evidence_records (
-    record_id, evaluation_id, timestamp, agent_id, tool_name,
+    record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+`;
+
+const SELECT_COLUMNS = `
+seq_id, record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+decision, mode, control_results, active_overlays, data_classifications,
+active_certifications, record_hash, previous_hash, total_duration_ms
 `;
 
 function execAsync(conn: duckdb.Connection, sql: string): Promise<void> {
@@ -112,6 +119,11 @@ export class EvidenceStore {
       }
       this._conn = this._db.connect();
       await execAsync(this._conn, CREATE_TABLE_SQL);
+      const columns = await allAsync(this._conn, "PRAGMA table_info('evidence_records')");
+      const names = new Set(columns.map((row) => (row as Record<string, unknown>).name as string));
+      if (!names.has("source_type")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'");
+      }
     })();
 
     return this._initialized;
@@ -158,6 +170,7 @@ export class EvidenceStore {
       evaluationId: evaluation.evaluationId,
       timestamp: evaluation.timestamp,
       agentId: evaluation.agentId,
+      sourceType: evaluation.sourceType ?? "agent",
       toolName,
       decision: evaluation.decision,
       mode: evaluation.mode,
@@ -175,6 +188,7 @@ export class EvidenceStore {
       evaluationId: evaluation.evaluationId,
       timestamp: evaluation.timestamp,
       agentId: evaluation.agentId,
+      sourceType: evaluation.sourceType ?? "agent",
       toolName,
       decision: evaluation.decision,
       mode: evaluation.mode,
@@ -192,6 +206,7 @@ export class EvidenceStore {
       record.evaluationId,
       record.timestamp,
       record.agentId,
+      record.sourceType ?? "agent",
       record.toolName,
       record.decision,
       record.mode,
@@ -236,7 +251,7 @@ export class EvidenceStore {
 
     const rows = await allAsync(
       this._conn!,
-      `SELECT * FROM evidence_records${where} ORDER BY seq_id ASC LIMIT ?`,
+      `SELECT ${SELECT_COLUMNS} FROM evidence_records${where} ORDER BY seq_id ASC LIMIT ?`,
       params,
     );
 
@@ -253,7 +268,7 @@ export class EvidenceStore {
     await this.ensureInitialized();
     const rows = await allAsync(
       this._conn!,
-      "SELECT * FROM evidence_records ORDER BY seq_id ASC",
+      `SELECT ${SELECT_COLUMNS} FROM evidence_records ORDER BY seq_id ASC`,
     );
 
     if (rows.length === 0) {
@@ -277,6 +292,7 @@ export class EvidenceStore {
         evaluationId: record.evaluationId,
         timestamp: record.timestamp,
         agentId: record.agentId,
+        sourceType: record.sourceType ?? "agent",
         toolName: record.toolName,
         decision: record.decision,
         mode: record.mode,
@@ -394,6 +410,7 @@ export class EvidenceStore {
       evaluationId: row.evaluation_id as string,
       timestamp: row.timestamp as string,
       agentId: row.agent_id as string,
+      sourceType: (row.source_type as string | undefined) ?? "agent",
       toolName: row.tool_name as string,
       decision: row.decision as string,
       mode: row.mode as string,

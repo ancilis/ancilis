@@ -3,7 +3,7 @@
   "title": "Ancilis Action",
   "description": "Standardized representation of an agent action for control evaluation",
   "type": "object",
-  "required": ["action_id", "timestamp", "agent_id", "action_type", "tool", "parameters"],
+  "required": ["action_id", "timestamp", "agent_id", "source_type", "action_type", "tool", "parameters"],
   "additionalProperties": false,
   "properties": {
     "action_id": {
@@ -20,6 +20,11 @@
       "type": "string",
       "minLength": 1,
       "description": "Identifier of the agent performing the action"
+    },
+    "source_type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Origin of the action record, such as agent, mcp, tool, http, or cli"
     },
     "agent_owner": {
       "type": ["string", "null"],

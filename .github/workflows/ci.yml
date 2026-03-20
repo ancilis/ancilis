@@ -14,35 +14,43 @@ jobs:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - name: Install tooling and package
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,mcp]"
-      - name: Packaging smoke test
-        run: |
-          tmp_dir="$(mktemp -d)"
-          cd "$tmp_dir"
-          python -c "from ancilis.config import load_taxonomy, load_control_definitions; assert load_taxonomy()['version']; assert load_control_definitions()['PR-01']['id'] == 'PR-01'"
-      - name: Lint (ruff)
+          python -m pip install -e '.[dev]'
+      - name: Lint
         run: ruff check python/src python/tests
-      - name: Type check (mypy)
+      - name: Type check
         run: mypy python/src/ancilis --ignore-missing-imports
-      - name: Test (pytest)
-        run: pytest python/tests/ -v --tb=short
+      - name: Test
+        run: pytest python/tests -v --tb=short
+
+  python-packaging:
+    name: Python packaging verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Release check
+        run: python scripts/release_check.py
 
   typescript:
     name: TypeScript (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        node-version: ["18", "20", "22"]
+        node-version: ['18', '20', '22']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,15 +59,12 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Type check (tsc)
-        run: npx tsc --noEmit
-      - name: Build package
-        run: npm run build
-      - name: Test (vitest)
-        run: npx vitest run
-      - name: Packaging smoke test
-        run: |
-          node --input-type=module -e "import pkg from './package.json' with { type: 'json' }; import('./' + pkg.exports['.'].import).then((m) => { if (!m.loadConfig) process.exit(1); });"
+      - name: Type check
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+      - name: Preview package smoke test
+        run: npm run pack:smoke
 
   dependency-audit:
     name: Dependency Audit
@@ -68,19 +73,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: '20'
           cache: npm
-      - name: Install Python dependencies
+      - name: Install Python tooling
         run: |
-          python -mpip install --upgrade pip
-          pip install -e ".[dev,mcp]"
-          pip install pip-audit
-      - name: Python audit (pip-audit)
-        run: pip-audit --desc --skip-editable
+          python -m pip install --upgrade pip
+          python -m pip install .
+          python -m pip install pip-audit
+      - name: Python audit
+        run: pip-audit --desc
       - name: Install Node dependencies
         run: npm ci
-      - name: Node audit (npm audit)
-        run: npm audit --audit-level=critical
+      - name: Node audit
+        run: npm audit --audit-level=high

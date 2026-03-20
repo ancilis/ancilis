@@ -8,6 +8,7 @@
     "evaluation_id",
     "timestamp",
     "agent_id",
+    "source_type",
     "tool_name",
     "decision",
     "mode",
@@ -39,6 +40,10 @@
     "agent_id": {
       "type": "string",
       "description": "Agent that was evaluated"
+    },
+    "source_type": {
+      "type": "string",
+      "description": "Origin of the evaluated action record"
     },
     "tool_name": {
       "type": "string",

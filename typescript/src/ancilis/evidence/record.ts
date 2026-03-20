@@ -5,6 +5,7 @@ export interface EvidenceRecord {
   evaluationId: string;
   timestamp: string;
   agentId: string;
+  sourceType?: string;
   toolName: string;
   decision: string;
   mode: string;

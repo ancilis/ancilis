@@ -41,6 +41,7 @@ def build_action(
         action_id=str(uuid.uuid4()),
         timestamp=datetime.now(timezone.utc).isoformat(),
         agent_id=config.agent_name,
+        source_type="mcp",
         agent_owner=config.agent_owner or None,
         action_type="tool_call",
         tool=ToolInfo(

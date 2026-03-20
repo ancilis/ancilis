@@ -19,6 +19,7 @@ function makeEvaluation(overrides: Partial<EvaluationResult> = {}): EvaluationRe
     actionId: "action-001",
     timestamp: "2025-01-15T10:30:00Z",
     agentId: "test-agent",
+    sourceType: "mcp",
     mode: "audit",
     controlResults: [
       {
@@ -52,6 +53,7 @@ describe("Hash Chain", () => {
       evaluationId: "e1",
       timestamp: "2025-01-01T00:00:00Z",
       agentId: "agent",
+      sourceType: "agent",
       toolName: "tool",
       decision: "ALLOW",
       mode: "audit",
@@ -70,6 +72,7 @@ describe("Hash Chain", () => {
       evaluationId: "e1",
       timestamp: "t1",
       agentId: "a1",
+      sourceType: "agent",
       toolName: "tool",
       decision: "ALLOW",
       mode: "audit",
@@ -112,6 +115,7 @@ describe("Evidence Store", () => {
 
     const record = await store.store(ev, "my-tool");
     expect(record.evaluationId).toBe("eval-001");
+    expect(record.sourceType).toBe("mcp");
     expect(record.toolName).toBe("my-tool");
     expect(record.decision).toBe("ALLOW");
     expect(record.recordHash.length).toBe(64);
