@@ -2,7 +2,6 @@
 
 from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
 from ancilis.producers.http import HTTPActionProducer, HTTPExecutionResult, HTTPObservation, HTTPRequest
-from ancilis.producers.mcp import MCPActionProducer
 from ancilis.producers.protocol import ActionProducer, ProducerType
 from ancilis.producers.tool import (
     BlockedActionError,
@@ -33,3 +32,11 @@ __all__ = [
     "tool",
     "wrap_tool",
 ]
+
+
+def __getattr__(name: str):
+    if name == "MCPActionProducer":
+        from ancilis.producers.mcp import MCPActionProducer
+
+        return MCPActionProducer
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

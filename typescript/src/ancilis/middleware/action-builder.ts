@@ -31,6 +31,7 @@ export function buildAction(
     actionId: randomUUID(),
     timestamp: new Date().toISOString(),
     agentId: config.agentName,
+    sourceType: "mcp",
     agentOwner: config.agentOwner || null,
     actionType: "tool_call",
     tool: {

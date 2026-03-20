@@ -149,6 +149,7 @@ export class Engine {
       actionId: action.actionId,
       timestamp: new Date().toISOString(),
       agentId: action.agentId,
+      sourceType: action.sourceType ?? "agent",
       mode: this.config.mode as "audit" | "enforce",
       controlResults,
       decision,

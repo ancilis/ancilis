@@ -131,6 +131,7 @@ class CLIActionProducer:
             action_id=str(uuid.uuid4()),
             timestamp=datetime.now(timezone.utc).isoformat(),
             agent_id=raw_invocation.agent_name,
+            source_type=self.producer_type.value,
             agent_owner=self._config.agent_owner or None,
             action_type="tool_call",
             tool=ToolInfo(
