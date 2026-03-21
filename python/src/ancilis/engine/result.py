@@ -25,7 +25,8 @@ class EvaluationResult:
     action_id: str
     timestamp: str
     agent_id: str
-    mode: str  # "audit" | "enforce"
+    source_type: str = "agent"
+    mode: str = "audit"  # "audit" | "enforce"
     control_results: list[ControlResult] = field(default_factory=list)
     decision: str = "ALLOW"  # "ALLOW" | "BLOCK" | "FLAG"
     decision_reason: str = ""

@@ -12,6 +12,7 @@ class EvidenceRecord:
     evaluation_id: str
     timestamp: str
     agent_id: str
+    source_type: str
     tool_name: str
     decision: str  # "ALLOW" | "BLOCK" | "FLAG"
     mode: str  # "audit" | "enforce"

@@ -1,7 +1,7 @@
 {
   "name": "ancilis",
   "version": "0.1.0",
-  "description": "Python-first runtime evaluation and policy enforcement for AI agent tool calls",
+  "description": "Preview TypeScript SDK for Ancilis runtime evaluation and policy enforcement",
   "type": "module",
   "main": "./dist/ancilis/index.js",
   "types": "./dist/ancilis/index.d.ts",
@@ -25,11 +25,14 @@
     "test:watch": "vitest",
     "lint": "eslint typescript/src",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist ancilis-*.tgz",
+    "pack:smoke": "npm run build && node scripts/ts_package_smoke.mjs",
+    "prepack": "npm run build"
   },
   "keywords": [
     "ai",
     "agent",
+    "preview",
     "mcp",
     "middleware",
     "policy",
