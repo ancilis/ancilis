@@ -86,7 +86,7 @@ def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: boo
     if total > 0:
         lines.append(f"  Tool calls: {total:,} evaluated, {blocked} blocked")
     else:
-        lines.append("  No evaluations recorded yet. Middleware is collecting data.")
+        lines.append("  No evaluations recorded yet. Run your agent with Ancilis to start collecting evidence.")
 
     # Verbose: per-control detail
     if verbose:
