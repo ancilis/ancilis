@@ -1,0 +1,84 @@
+# Limitations
+
+What Ancilis does and doesn't do. Honesty builds credibility.
+
+## Evaluation scope
+
+Ancilis evaluates actions that flow through its explicit producers and middleware. It does not claim universal interception.
+
+- **MCP middleware** intercepts `call_tool` on a wrapped `ClientSession`. Tool calls not routed through the middleware are not evaluated.
+- **CLI producer** wraps explicit `subprocess.run` calls. Shell commands your agent runs outside the producer are not captured.
+- **HTTP producer** wraps explicit HTTP calls you pass to it. Ancilis does **not** monkey-patch `requests`, `httpx`, `aiohttp`, or any other HTTP library. If you don't pass the call through the producer, it's not evaluated.
+- **Tool producer** wraps Python functions you explicitly wrap. Functions called normally are not evaluated.
+
+## Control evaluator coverage
+
+26 controls are defined in the AKSI taxonomy. 6 have runtime evaluators today:
+
+| Control | Evaluator | What it checks |
+|---------|-----------|---------------|
+| PR-01 | Identity verification | Agent identity present and valid |
+| PR-02 | Scope enforcement | Tool in allowed list, not in blocked list, rate limits |
+| PR-03 | Tool provenance | Tool registered and hash-verified |
+| PR-04 | Data exposure scan | Sensitive data patterns in parameters |
+| PR-05 | Audit trail | Evidence record written for this evaluation |
+| DE-01 | Baseline detection | Behavioral anomaly detection against established baseline |
+
+The remaining 20 controls (GOV-01 through RC-02) are defined in the control taxonomy, appear in reports with regulatory citations, and produce `SKIP` results. Their evaluators are not yet implemented.
+
+This means:
+- Reports show all 26 controls with regulatory mapping
+- Only 6 controls produce PASS/FAIL/FLAG results
+- Compliance posture for controls without evaluators shows "no evaluations" rather than false positives
+
+## TypeScript SDK
+
+The TypeScript package is **preview**. Core control engine, config parsing, and middleware build and test. What's not at parity with Python:
+
+- Report generation and rendering
+- CLI commands (limited to status, validate, approve)
+- Producer coverage (MCP middleware only)
+- Evidence store maturity
+
+Python is the supported path for production use.
+
+## Overlay depth
+
+Overlay profiles vary in how many controls they map:
+
+| Overlay | Controls mapped | Controls with adjustments |
+|---------|----------------|--------------------------|
+| SOC 2 Type II | 26 | 6 |
+| PCI-DSS v4 | 6 | 6 |
+| HIPAA | 6 | 4 |
+| GDPR | 6 | 4 |
+| EU AI Act | 6 | 4 |
+| ISO 42001 | 6 | 4 |
+| NIST CSF 2.0 | 26 | 0 (alignment-based) |
+
+All overlays activate and produce compliance posture reports. SOC 2 and NIST CSF have full 26-control framework mapping. Others currently map the 6 controls with runtime evaluators. Deeper mapping for HIPAA, GDPR, and others is planned.
+
+## Evidence trust boundary
+
+The SHA-256 hash chain provides tamper detection — if someone modifies a record in the DuckDB database, verification will fail. However:
+
+- An attacker with host access could replace the **entire** database with a new one that has a valid chain
+- The hash chain does not prevent deletion, only detects modification
+- Evidence integrity ultimately depends on protecting the underlying host and database file
+
+For stronger guarantees, export evidence to an append-only external store.
+
+## No GUI, no SaaS
+
+Ancilis is an SDK and CLI. There is no web dashboard, no hosted service, no cloud sync. Evidence is local. Reports are generated locally.
+
+## PDF export
+
+PDF report generation requires `pandoc` and `xelatex` installed on the system. Without them, the `--format pdf` flag falls back to writing markdown to the output file.
+
+## What Ancilis is NOT
+
+- **Not a WAF or network proxy.** It doesn't sit in front of your APIs.
+- **Not an anomaly detection service.** DE-01 does baseline behavioral detection, but Ancilis is primarily policy-driven (deterministic evaluation against declared rules).
+- **Not a replacement for Vanta/Drata.** It's the agent module they don't have.
+- **Not a replacement for agent security tools.** It makes those tools auditable with compliance-grade evidence.
