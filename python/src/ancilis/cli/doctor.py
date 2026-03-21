@@ -77,6 +77,20 @@ def doctor(config_path: str | None, db_path: str | None) -> None:
     else:
         lines.append('[WARN] pdf reporting dependency: PDF export falls back to markdown when pandoc/xelatex are unavailable')
 
+    # Next steps for first-run experience
+    if ok and config is not None:
+        lines.append("")
+        lines.append("Ready. Next steps:")
+        lines.append("  ancilis status                  — view current security posture")
+        lines.append("  ancilis config validate         — inspect resolved config details")
+    elif not ok:
+        lines.append("")
+        lines.append("To get started, create ancilis.yaml in your project root:")
+        lines.append("  agent:")
+        lines.append("    name: my-agent")
+        lines.append("")
+        lines.append("Then run: ancilis doctor")
+
     click.echo("\n".join(lines))
     if failures:
         raise SystemExit(1)

@@ -11,7 +11,7 @@ license = { file = "LICENSE" }
 requires-python = ">=3.10"
 keywords = ["ai", "agent", "security", "policy", "compliance", "evidence", "mcp", "runtime"]
 authors = [
-    { name = "Kevin Bauer", email = "kevin.e.bauer@gmail.com" },
+    { name = "Kevin Bauer", email = "kevin@ancilis.ai" },
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

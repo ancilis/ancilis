@@ -1,0 +1,10 @@
+agent:
+  name: mcp-demo-agent
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - get-status
+      - get-transactions
+    blocked:
+      - delete-database

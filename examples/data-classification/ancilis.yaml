@@ -1,0 +1,12 @@
+agent:
+  name: health-agent
+my_agent_handles:
+  - health_records
+  - personal_info
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - lookup_patient
+      - get_diagnosis
+      - schedule_appointment

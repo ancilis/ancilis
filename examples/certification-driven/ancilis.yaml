@@ -1,0 +1,10 @@
+agent:
+  name: demo-agent
+certification_targets:
+  - aiuc-1
+security:
+  tools:
+    allowed:
+      - get_customer
+      - update_preferences
+      - send_notification
