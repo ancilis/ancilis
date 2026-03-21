@@ -9,17 +9,22 @@ description = "Python-first runtime evaluation and policy enforcement for AI age
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
+keywords = ["ai", "agent", "security", "policy", "compliance", "evidence", "mcp", "runtime"]
 authors = [
     { name = "Kevin Bauer", email = "kevin.e.bauer@gmail.com" },
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
@@ -49,12 +54,17 @@ ancilis = "ancilis.cli.main:cli"
 Homepage = "https://github.com/ancilis/ancilis"
 Repository = "https://github.com/ancilis/ancilis"
 Documentation = "https://github.com/ancilis/ancilis/tree/main/docs"
+Issues = "https://github.com/ancilis/ancilis/issues"
+Changelog = "https://github.com/ancilis/ancilis/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["python/src/ancilis"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "shared" = "ancilis/shared"
+
+[tool.hatch.build.targets.wheel.sources]
+"python/src" = ""
 
 [tool.hatch.build.targets.sdist]
 include = [

@@ -10,6 +10,7 @@ export function canonicalPayload(fields: {
   evaluationId: string;
   timestamp: string;
   agentId: string;
+  sourceType?: string;
   toolName: string;
   decision: string;
   mode: string;
@@ -30,6 +31,7 @@ export function canonicalPayload(fields: {
     evaluation_id: fields.evaluationId,
     mode: fields.mode,
     previous_hash: fields.previousHash,
+    source_type: fields.sourceType ?? "agent",
     timestamp: fields.timestamp,
     tool_name: fields.toolName,
     total_duration_ms: fields.totalDurationMs,

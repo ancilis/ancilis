@@ -131,6 +131,7 @@ class Engine:
             action_id=action.action_id,
             timestamp=datetime.now(timezone.utc).isoformat(),
             agent_id=action.agent_id,
+            source_type=action.source_type,
             mode=self.config.mode,
             control_results=control_results,
             decision=decision,

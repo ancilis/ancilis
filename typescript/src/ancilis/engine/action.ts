@@ -23,6 +23,7 @@ export interface Action {
   actionId: string;
   timestamp: string;
   agentId: string;
+  sourceType?: string;
   agentOwner?: string | null;
   actionType: "tool_call" | "api_request" | "data_access";
   tool: ToolInfo;

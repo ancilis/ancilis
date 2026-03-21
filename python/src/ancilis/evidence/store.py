@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     evaluation_id VARCHAR NOT NULL,
     timestamp VARCHAR NOT NULL,
     agent_id VARCHAR NOT NULL,
+    source_type VARCHAR NOT NULL DEFAULT 'agent',
     tool_name VARCHAR NOT NULL,
     decision VARCHAR NOT NULL,
     mode VARCHAR NOT NULL,
@@ -66,11 +67,17 @@ CREATE TABLE IF NOT EXISTS evidence_records (
 
 INSERT_SQL = """
 INSERT INTO evidence_records (
-    record_id, evaluation_id, timestamp, agent_id, tool_name,
+    record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+"""
+
+SELECT_COLUMNS = """
+seq_id, record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+decision, mode, control_results, active_overlays, data_classifications,
+active_certifications, record_hash, previous_hash, total_duration_ms
 """
 
 
@@ -119,6 +126,11 @@ class EvidenceStore:
             logger.info("Evidence store: %s", self._db_path)
 
         self._conn.execute(CREATE_TABLE_SQL)
+        columns = {row[1] for row in self._conn.execute("PRAGMA table_info('evidence_records')").fetchall()}
+        if "source_type" not in columns:
+            self._conn.execute(
+                "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'"
+            )
 
     @property
     def db_path(self) -> str:
@@ -170,6 +182,7 @@ class EvidenceStore:
             evaluation_id=evaluation.evaluation_id,
             timestamp=evaluation.timestamp,
             agent_id=evaluation.agent_id,
+            source_type=evaluation.source_type,
             tool_name=tool_name,
             decision=evaluation.decision,
             mode=evaluation.mode,
@@ -187,6 +200,7 @@ class EvidenceStore:
             evaluation_id=evaluation.evaluation_id,
             timestamp=evaluation.timestamp,
             agent_id=evaluation.agent_id,
+            source_type=evaluation.source_type,
             tool_name=tool_name,
             decision=_normalize_decision_key(evaluation.decision),
             mode=evaluation.mode,
@@ -204,6 +218,7 @@ class EvidenceStore:
             record.evaluation_id,
             record.timestamp,
             record.agent_id,
+            record.source_type,
             record.tool_name,
             record.decision,
             record.mode,
@@ -241,7 +256,7 @@ class EvidenceStore:
             params.append(_normalize_decision_key(decision))
 
         where = f" WHERE {' AND '.join(conditions)}" if conditions else ""
-        query = f"SELECT * FROM evidence_records{where} ORDER BY seq_id ASC LIMIT ?"
+        query = f"SELECT {SELECT_COLUMNS} FROM evidence_records{where} ORDER BY seq_id ASC LIMIT ?"
         params.append(limit)
 
         rows = self._conn.execute(query, params).fetchall()
@@ -257,7 +272,7 @@ class EvidenceStore:
         """Verify the hash chain integrity. Returns (valid, errors)."""
         self._ensure_initialized()
         rows = self._conn.execute(
-            "SELECT * FROM evidence_records ORDER BY seq_id ASC"
+            f"SELECT {SELECT_COLUMNS} FROM evidence_records ORDER BY seq_id ASC"
         ).fetchall()
 
         if not rows:
@@ -281,6 +296,7 @@ class EvidenceStore:
                 evaluation_id=record.evaluation_id,
                 timestamp=record.timestamp,
                 agent_id=record.agent_id,
+                source_type=record.source_type,
                 tool_name=record.tool_name,
                 decision=record.decision,
                 mode=record.mode,
@@ -412,7 +428,7 @@ class EvidenceStore:
         """Convert a DuckDB row tuple to an EvidenceRecord.
 
         Column order: seq_id, record_id, evaluation_id, timestamp, agent_id,
-        tool_name, decision, mode, control_results, active_overlays,
+        source_type, tool_name, decision, mode, control_results, active_overlays,
         data_classifications, active_certifications, record_hash,
         previous_hash, total_duration_ms
         """
@@ -421,14 +437,15 @@ class EvidenceStore:
             evaluation_id=row[2],
             timestamp=row[3],
             agent_id=row[4],
-            tool_name=row[5],
-            decision=row[6],
-            mode=row[7],
-            control_results=json.loads(row[8]) if isinstance(row[8], str) else row[8],
-            active_overlays=json.loads(row[9]) if isinstance(row[9], str) else row[9],
-            data_classifications=json.loads(row[10]) if isinstance(row[10], str) else row[10],
-            active_certifications=json.loads(row[11]) if isinstance(row[11], str) else row[11],
-            record_hash=row[12],
-            previous_hash=row[13],
-            total_duration_ms=row[14],
+            source_type=row[5],
+            tool_name=row[6],
+            decision=row[7],
+            mode=row[8],
+            control_results=json.loads(row[9]) if isinstance(row[9], str) else row[9],
+            active_overlays=json.loads(row[10]) if isinstance(row[10], str) else row[10],
+            data_classifications=json.loads(row[11]) if isinstance(row[11], str) else row[11],
+            active_certifications=json.loads(row[12]) if isinstance(row[12], str) else row[12],
+            record_hash=row[13],
+            previous_hash=row[14],
+            total_duration_ms=row[15],
         )

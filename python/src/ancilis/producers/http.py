@@ -96,6 +96,7 @@ class HTTPActionProducer:
             action_id=str(uuid.uuid4()),
             timestamp=datetime.now(timezone.utc).isoformat(),
             agent_id=raw_invocation.agent_name,
+            source_type=self.producer_type.value,
             agent_owner=self._config.agent_owner or None,
             action_type="api_request",
             tool=ToolInfo(name=tool_name, server=raw_invocation.service_name or urlparse(raw_invocation.url).netloc, description_hash=entry.description_hash if entry else None),
