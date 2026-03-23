@@ -253,15 +253,15 @@ class TestMCPMiddlewareIntegration:
         @dataclass
         class MockCallToolResult:
             content: list[Any] = field(default_factory=list)
-            isError: bool = False
-            structuredContent: Any = None
+            isError: bool = False  # noqa: N815
+            structuredContent: Any = None  # noqa: N815
             meta: Any = None
 
         @dataclass
         class MockTool:
             name: str = ""
             description: str = ""
-            inputSchema: dict[str, Any] = field(default_factory=dict)
+            inputSchema: dict[str, Any] = field(default_factory=dict)  # noqa: N815
 
         @dataclass
         class MockListToolsResult:

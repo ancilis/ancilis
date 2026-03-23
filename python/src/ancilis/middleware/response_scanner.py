@@ -76,12 +76,11 @@ def _detect_encryption(text: str) -> list[EncryptionFinding]:
 
     # Check for base64 blocks
     b64_pattern = re.compile(r"[A-Za-z0-9+/]{40,}={0,2}")
-    if b64_pattern.search(text):
-        if not jwt_pattern.search(text):  # Don't double-count JWTs
-            findings.append(EncryptionFinding(
-                "base64_block",
-                "Base64-encoded block detected — possible encrypted payload.",
-            ))
+    if b64_pattern.search(text) and not jwt_pattern.search(text):  # Don't double-count JWTs
+        findings.append(EncryptionFinding(
+            "base64_block",
+            "Base64-encoded block detected — possible encrypted payload.",
+        ))
 
     return findings
 

@@ -29,8 +29,8 @@ class MockTextContent:
 @dataclass
 class MockCallToolResult:
     content: list[Any] = field(default_factory=list)
-    isError: bool = False
-    structuredContent: Any = None
+    isError: bool = False  # noqa: N815
+    structuredContent: Any = None  # noqa: N815
     meta: Any = None
 
 
@@ -38,9 +38,9 @@ class MockCallToolResult:
 class MockTool:
     name: str = ""
     description: str = ""
-    inputSchema: dict[str, Any] = field(default_factory=dict)
+    inputSchema: dict[str, Any] = field(default_factory=dict)  # noqa: N815
     title: str | None = None
-    outputSchema: Any = None
+    outputSchema: Any = None  # noqa: N815
     icons: Any = None
     annotations: Any = None
     meta: Any = None

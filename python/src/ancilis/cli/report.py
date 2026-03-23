@@ -22,7 +22,7 @@ def report(period: str, fmt: str, config_path: str | None, db_path: str | None, 
         config = load_config(path=config_path) if config_path else load_config()
     except (FileNotFoundError, ValueError) as e:
         click.echo(f"Error: {e}", err=True)
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
     store = EvidenceStore(config, db_path=db_path)
     try:

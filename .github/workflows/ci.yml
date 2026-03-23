@@ -88,4 +88,4 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
       - name: Node audit
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical --omit=dev

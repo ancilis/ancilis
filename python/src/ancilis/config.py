@@ -316,7 +316,7 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
 
     # Apply overlay adjustments
     max_retention = config.compliance.evidence.retention_days
-    for oid, activation in result.active_overlays.items():
+    for oid, _activation in result.active_overlays.items():
         odef = overlay_defs[oid]
         adjustments = odef.get("control_adjustments", {})
         for cid, adj in adjustments.items():
@@ -419,7 +419,7 @@ def format_resolved_config(resolved: ResolvedConfig) -> str:
     active = sum(1 for c in resolved.controls.values() if c.enabled)
     total = len(resolved.controls)
     lines.append(f"Baseline Controls ({active}/{total} active):")
-    for cid, cs in sorted(resolved.controls.items()):
+    for _cid, cs in sorted(resolved.controls.items()):
         mark = "+" if cs.enabled else "-"
         lines.append(f"  {mark} {cs.control_id}  {cs.name}")
     lines.append("")
@@ -435,7 +435,7 @@ def format_resolved_config(resolved: ResolvedConfig) -> str:
     # Active overlays
     if resolved.active_overlays:
         lines.append("Active Overlays:")
-        for oid, oa in sorted(resolved.active_overlays.items()):
+        for _oid, oa in sorted(resolved.active_overlays.items()):
             triggers = ", ".join(oa.triggered_by) if oa.triggered_by else "explicit"
             lines.append(f"  + {oa.name} (triggered by {triggers})")
         lines.append("")

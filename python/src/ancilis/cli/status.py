@@ -73,7 +73,7 @@ def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: boo
 
     # Overlay one-liners
     if config.active_overlays:
-        for oid, oa in sorted(config.active_overlays.items()):
+        for _oid, oa in sorted(config.active_overlays.items()):
             trigger = ""
             if oa.triggered_by:
                 first = oa.triggered_by[0]
@@ -121,7 +121,7 @@ def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: boo
             for cert_id in config.active_certifications:
                 count = len(enabled)
                 lines.append(f"    {cert_id.upper()} certification active — {count} controls enforcing")
-            for oid, oa in sorted(config.active_overlays.items()):
+            for _oid, oa in sorted(config.active_overlays.items()):
                 trigger = ""
                 if oa.triggered_by:
                     first = oa.triggered_by[0]
