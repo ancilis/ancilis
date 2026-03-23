@@ -9,7 +9,7 @@ import json
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar, cast
 from collections.abc import Callable
 
 from ancilis.config import ResolvedConfig
@@ -154,7 +154,7 @@ class ToolActionProducer:
         def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
             resolved_agent = agent_name or self._config.agent_name
             result = self.execute(func, agent_name=resolved_agent, args=tuple(args), kwargs=dict(kwargs), tool_name=tool_name)
-            return result.return_value
+            return cast(R, result.return_value)
         return wrapped
 
 

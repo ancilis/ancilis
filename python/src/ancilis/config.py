@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ancilis._shared import shared_path
@@ -144,7 +144,8 @@ def load_overlay_definitions() -> dict[str, dict[str, Any]]:
 
 def load_taxonomy() -> dict[str, Any]:
     """Load the classification taxonomy from shared/classifications/."""
-    return json.loads(CLASSIFICATIONS_FILE.read_text())
+    data = json.loads(CLASSIFICATIONS_FILE.read_text())
+    return cast(dict[str, Any], data)
 
 
 # --- Resolution Result ---

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import click
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from ancilis.config import load_config, load_taxonomy
 

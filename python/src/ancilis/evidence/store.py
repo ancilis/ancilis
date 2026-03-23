@@ -125,16 +125,23 @@ class EvidenceStore:
             self._conn = duckdb.connect(self._db_path)
             logger.info("Evidence store: %s", self._db_path)
 
-        self._conn.execute(CREATE_TABLE_SQL)
-        columns = {row[1] for row in self._conn.execute("PRAGMA table_info('evidence_records')").fetchall()}
+        self._connection.execute(CREATE_TABLE_SQL)
+        columns = {row[1] for row in self._connection.execute("PRAGMA table_info('evidence_records')").fetchall()}
         if "source_type" not in columns:
-            self._conn.execute(
+            self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'"
             )
 
     @property
     def db_path(self) -> str:
         return self._db_path
+
+    @property
+    def _connection(self) -> duckdb.DuckDBPyConnection:
+        """Get the DuckDB connection, ensuring it's initialized."""
+        self._ensure_initialized()
+        assert self._conn is not None
+        return self._conn
 
     def close(self) -> None:
         """Flush and close the DuckDB connection."""
@@ -151,7 +158,7 @@ class EvidenceStore:
     def _get_last_hash(self) -> str:
         """Get the hash of the most recent record, or GENESIS_SEED if empty."""
         self._ensure_initialized()
-        row = self._conn.execute(
+        row = self._connection.execute(
             "SELECT record_hash FROM evidence_records ORDER BY seq_id DESC LIMIT 1"
         ).fetchone()
         return row[0] if row else GENESIS_SEED
@@ -213,7 +220,7 @@ class EvidenceStore:
             total_duration_ms=evaluation.total_duration_ms,
         )
 
-        self._conn.execute(INSERT_SQL, [
+        self._connection.execute(INSERT_SQL, [
             record.record_id,
             record.evaluation_id,
             record.timestamp,
@@ -265,13 +272,13 @@ class EvidenceStore:
         params.append(limit)
 
         # nosemgrep: all parameters properly bound, where_clause from internal conditions only
-        rows = self._conn.execute(query, params).fetchall()
+        rows = self._connection.execute(query, params).fetchall()
         return [self._row_to_record(row) for row in rows]
 
     def count(self) -> int:
         """Return total number of evidence records."""
         self._ensure_initialized()
-        row = self._conn.execute("SELECT COUNT(*) FROM evidence_records").fetchone()
+        row = self._connection.execute("SELECT COUNT(*) FROM evidence_records").fetchone()
         return row[0] if row else 0
 
     def verify_chain(self) -> tuple[bool, list[str]]:
@@ -279,7 +286,7 @@ class EvidenceStore:
         self._ensure_initialized()
         # SELECT_COLUMNS is a constant defined at module level, safe to concatenate
         query = "SELECT " + SELECT_COLUMNS + " FROM evidence_records ORDER BY seq_id ASC"  # nosemgrep
-        rows = self._conn.execute(query).fetchall()  # nosemgrep
+        rows = self._connection.execute(query).fetchall()  # nosemgrep
 
         if not rows:
             return True, []
@@ -357,7 +364,7 @@ class EvidenceStore:
         # Total evaluations (period-filtered)
         # where_clause is built from internal logic (constant or " WHERE timestamp >= ?"), safe to concatenate
         count_query = "SELECT COUNT(*) FROM evidence_records" + where_clause  # nosemgrep
-        count_row = self._conn.execute(count_query, params).fetchone()  # nosemgrep
+        count_row = self._connection.execute(count_query, params).fetchone()  # nosemgrep
         total = count_row[0] if count_row else 0
 
         if total == 0 and since is None:
@@ -373,7 +380,7 @@ class EvidenceStore:
         # Decision counts (period-filtered)
         # where_clause is built from internal logic, safe to concatenate
         decision_query = "SELECT decision, COUNT(*) FROM evidence_records" + where_clause + " GROUP BY decision"  # nosemgrep
-        decision_rows = self._conn.execute(decision_query, params).fetchall()  # nosemgrep
+        decision_rows = self._connection.execute(decision_query, params).fetchall()  # nosemgrep
         decisions: dict[str, int] = {}
         for raw_decision, count in decision_rows:
             decision = _normalize_decision_key(raw_decision)
@@ -382,7 +389,7 @@ class EvidenceStore:
         # Unique tools (period-filtered)
         # where_clause is built from internal logic, safe to concatenate
         tool_query = "SELECT DISTINCT tool_name FROM evidence_records" + where_clause + " ORDER BY tool_name"  # nosemgrep
-        tool_rows = self._conn.execute(tool_query, params).fetchall()  # nosemgrep
+        tool_rows = self._connection.execute(tool_query, params).fetchall()  # nosemgrep
         tools = [row[0] for row in tool_rows]
 
         # Chain integrity (always full store — chain must be verified end-to-end)
@@ -391,7 +398,7 @@ class EvidenceStore:
         # Control pass rates (period-filtered)
         # where_clause is built from internal logic, safe to concatenate
         control_query = "SELECT control_results FROM evidence_records" + where_clause  # nosemgrep
-        control_rows = self._conn.execute(control_query, params).fetchall()  # nosemgrep
+        control_rows = self._connection.execute(control_query, params).fetchall()  # nosemgrep
         control_stats: dict[str, dict[str, int]] = {}
         for (cr_json,) in control_rows:
             results = json.loads(cr_json) if isinstance(cr_json, str) else cr_json
@@ -415,14 +422,14 @@ class EvidenceStore:
     def purge_before(self, before_timestamp: str) -> int:
         """Remove records older than the given ISO timestamp. Returns count removed."""
         self._ensure_initialized()
-        row = self._conn.execute(
+        row = self._connection.execute(
             "SELECT COUNT(*) FROM evidence_records WHERE timestamp < ?",
             [before_timestamp],
         ).fetchone()
         count = row[0] if row else 0
 
         if count > 0:
-            self._conn.execute(
+            self._connection.execute(
                 "DELETE FROM evidence_records WHERE timestamp < ?",
                 [before_timestamp],
             )
@@ -430,7 +437,7 @@ class EvidenceStore:
         return count
 
     @staticmethod
-    def _row_to_record(row: tuple) -> EvidenceRecord:
+    def _row_to_record(row: tuple[Any, ...]) -> EvidenceRecord:
         """Convert a DuckDB row tuple to an EvidenceRecord.
 
         Column order: seq_id, record_id, evaluation_id, timestamp, agent_id,
