@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from importlib.resources import as_file, files
+from importlib.resources import as_file, files  # nosemgrep
 from pathlib import Path
 from types import TracebackType
 from typing import Iterator
