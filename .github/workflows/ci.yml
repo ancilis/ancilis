@@ -30,8 +30,8 @@ jobs:
         run: ruff check python/src python/tests
       - name: Type check
         run: mypy python/src/ancilis --ignore-missing-imports
-      - name: Test
-        run: pytest python/tests -v --tb=short
+      - name: Test with coverage
+        run: pytest python/tests -v --tb=short --cov=ancilis --cov-report=term-missing --cov-fail-under=80
 
   python-packaging:
     name: Python packaging verification
