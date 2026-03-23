@@ -96,7 +96,7 @@ def _populate_evidence(config: ResolvedConfig, store: EvidenceStore, n: int = 5)
     registry.register(ToolEntry(name="read_file", status=ToolStatus.APPROVED))
     engine = Engine(config, registry=registry)
 
-    for i in range(n):
+    for _i in range(n):
         action = _make_action(tool_name="read_file", agent_id=config.agent_name)
         evaluation = engine.evaluate(action)
         store.store(evaluation, tool_name="read_file")
@@ -687,7 +687,7 @@ class TestDisplayFields:
         # These patterns should never appear as standalone labels
         for pattern in ["PR-01:", "PR-02:", "PR-03:", "PR-04:", "PR-05:", "DE-01:"]:
             # Allow in non-display contexts (like activation source strings)
-            lines = [l for l in output.split("\n") if pattern in l]
+            lines = [line for line in output.split("\n") if pattern in line]
             for line in lines:
                 assert "certification_targets" in line or "overlay:" in line, \
                     f"Raw control ID found in status output: {line}"

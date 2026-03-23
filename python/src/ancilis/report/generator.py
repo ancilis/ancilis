@@ -100,12 +100,11 @@ class ReportGenerator:
             )
 
         # 3. Certification section
-        if self._config.active_certifications:
-            if report_format == "aiuc1-readiness" or "aiuc-1" in self._config.active_certifications:
-                cert_profiles = load_certification_profiles(self._config.active_certifications)
-                data.certification = build_certification_section(
-                    self._config, summary, cert_profiles
-                )
+        if self._config.active_certifications and (report_format == "aiuc1-readiness" or "aiuc-1" in self._config.active_certifications):
+            cert_profiles = load_certification_profiles(self._config.active_certifications)
+            data.certification = build_certification_section(
+                self._config, summary, cert_profiles
+            )
 
         # 4. Advisory section
         data.advisory = build_advisory_section(self._config, summary)

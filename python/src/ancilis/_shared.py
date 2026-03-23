@@ -5,7 +5,7 @@ from __future__ import annotations
 from importlib.resources import as_file, files  # nosemgrep
 from pathlib import Path
 from types import TracebackType
-from typing import Iterator
+from collections.abc import Iterator
 
 
 def _source_tree_shared_root() -> Path:
@@ -29,7 +29,7 @@ def shared_path(*parts: str) -> Path:
     return shared_root().joinpath(*parts)
 
 
-class shared_path_context:
+class shared_path_context:  # noqa: N801
     """Context manager for callers that require an on-disk path."""
 
     def __init__(self, *parts: str) -> None:

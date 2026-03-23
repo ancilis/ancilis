@@ -21,7 +21,7 @@ def _validate_and_format(config_path: str | None) -> tuple[bool, str]:
         return False, "\u2717 Config not found\n  No ancilis.yaml found in current directory.\n  Create one with: agent.name set to your agent's name."
     except ValueError as e:
         msg = str(e)
-        lines.append(f"\u2717 Config invalid")
+        lines.append("\u2717 Config invalid")
         lines.append(f"  {msg}")
 
         # Add actionable hints
@@ -51,7 +51,7 @@ def _validate_and_format(config_path: str | None) -> tuple[bool, str]:
                 f"    certification_targets: [{cert_id}] \u2192 {cert_id.upper()} active, {enabled_count} controls"
             )
     if resolved.active_overlays:
-        for oid, oa in sorted(resolved.active_overlays.items()):
+        for _oid, oa in sorted(resolved.active_overlays.items()):
             trigger = ", ".join(oa.triggered_by) if oa.triggered_by else "explicit"
             activation_lines.append(f"    {oa.name} overlay active (triggered by {trigger})")
 

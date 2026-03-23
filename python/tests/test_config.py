@@ -1,6 +1,7 @@
 """Tests for ancilis.config — Unit 1: Policy Schema & Configuration."""
 
 import pytest
+from pydantic import ValidationError
 
 from ancilis.config import SHARED_DIR, load_config, validate_config
 
@@ -57,15 +58,15 @@ class TestFullConfig:
 
 class TestValidation:
     def test_missing_agent_name_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             load_config(raw={})
 
     def test_empty_agent_name_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             load_config(raw={"agent": {"name": ""}})
 
     def test_invalid_mode_raises(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             load_config(raw={"agent": {"name": "x"}, "security": {"mode": "invalid"}})
 
     def test_unknown_data_type_raises(self):

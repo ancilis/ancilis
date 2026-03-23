@@ -54,4 +54,4 @@ def approve_tool(tool_name: str, config_path: str) -> None:
 
     click.echo(f"  Scope: '{tool_name}' is in security.tools.allowed")
     click.echo(f"  Provenance: '{tool_name}' will be recognized on next middleware init")
-    click.echo(f"  To review posture: ancilis status")
+    click.echo("  To review posture: ancilis status")

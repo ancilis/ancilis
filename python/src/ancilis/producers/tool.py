@@ -9,7 +9,8 @@ import json
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Callable, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
+from collections.abc import Callable
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo

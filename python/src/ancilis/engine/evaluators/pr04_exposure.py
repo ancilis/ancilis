@@ -53,31 +53,29 @@ class PR04ExposureEvaluator:
         destination = self._extract_destination(action)
         evidence["destination"] = destination
 
-        if destination and config.scope_blocked_destinations:
-            if destination in config.scope_blocked_destinations:
-                evidence["destination_authorized"] = False
-                evidence["scan_result"] = "blocked"
-                return ControlResult(
-                    control_id=self.control_id,
-                    control_name=self.control_name,
-                    result="FAIL",
-                    detail=f"Sensitive data detected going to blocked destination '{destination}'.",
-                    evidence_data=evidence,
-                    duration_ms=(time.perf_counter() - start) * 1000,
-                )
+        if destination and config.scope_blocked_destinations and destination in config.scope_blocked_destinations:
+            evidence["destination_authorized"] = False
+            evidence["scan_result"] = "blocked"
+            return ControlResult(
+                control_id=self.control_id,
+                control_name=self.control_name,
+                result="FAIL",
+                detail=f"Sensitive data detected going to blocked destination '{destination}'.",
+                evidence_data=evidence,
+                duration_ms=(time.perf_counter() - start) * 1000,
+            )
 
-        if destination and config.scope_allowed_destinations:
-            if destination not in config.scope_allowed_destinations:
-                evidence["destination_authorized"] = False
-                evidence["scan_result"] = "blocked"
-                return ControlResult(
-                    control_id=self.control_id,
-                    control_name=self.control_name,
-                    result="FAIL",
-                    detail=f"Sensitive data detected going to unauthorized destination '{destination}'.",
-                    evidence_data=evidence,
-                    duration_ms=(time.perf_counter() - start) * 1000,
-                )
+        if destination and config.scope_allowed_destinations and destination not in config.scope_allowed_destinations:
+            evidence["destination_authorized"] = False
+            evidence["scan_result"] = "blocked"
+            return ControlResult(
+                control_id=self.control_id,
+                control_name=self.control_name,
+                result="FAIL",
+                detail=f"Sensitive data detected going to unauthorized destination '{destination}'.",
+                evidence_data=evidence,
+                duration_ms=(time.perf_counter() - start) * 1000,
+            )
 
         # Patterns found but no destination restrictions — PASS with evidence
         pattern_types = ", ".join(m.pattern_type for m in matches)

@@ -215,7 +215,7 @@ class AncilisMiddleware:
             self._evidence_store.close()
             self._closed = True
 
-    async def __aenter__(self) -> "AncilisMiddleware":
+    async def __aenter__(self) -> AncilisMiddleware:
         return self
 
     async def __aexit__(self, *exc: Any) -> None:
