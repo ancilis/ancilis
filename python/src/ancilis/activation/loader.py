@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from ancilis._shared import shared_path
 
@@ -36,7 +36,7 @@ def load_certification_profile(cert_id: str) -> dict[str, Any] | None:
     if "version" not in data:
         logger.warning("Certification profile '%s' missing required 'version' field", cert_id)
         return None
-    return data
+    return cast(dict[str, Any], data)
 
 
 def load_certification_profiles(cert_ids: list[str]) -> dict[str, dict[str, Any]]:
@@ -60,4 +60,5 @@ def load_control_definitions() -> dict[str, dict[str, Any]]:
 
 def load_taxonomy() -> dict[str, Any]:
     """Load the classification taxonomy."""
-    return json.loads(CLASSIFICATIONS_FILE.read_text())
+    data = json.loads(CLASSIFICATIONS_FILE.read_text())
+    return cast(dict[str, Any], data)

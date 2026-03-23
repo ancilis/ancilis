@@ -10,11 +10,11 @@ import shutil
 import click
 
 from ancilis._shared import shared_path
-from ancilis.config import load_config, load_control_definitions, load_taxonomy
+from ancilis.config import load_config, load_control_definitions, load_taxonomy, ResolvedConfig
 from ancilis.evidence.store import EvidenceStore
 
 
-def _check_config(config_path: str | None) -> tuple[bool, str, object | None]:
+def _check_config(config_path: str | None) -> tuple[bool, str, ResolvedConfig | None]:
     try:
         config = load_config(path=config_path) if config_path else load_config()
         return True, f"loaded for agent '{config.agent_name}' in {config.mode} mode", config

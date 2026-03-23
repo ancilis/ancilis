@@ -21,7 +21,7 @@ from ancilis.producers.http import (
 )
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     """Lazy import for MCP-dependent types to avoid hard mcp dependency at import time."""
     if name == "AncilisMiddleware":
         from ancilis.middleware.middleware import AncilisMiddleware

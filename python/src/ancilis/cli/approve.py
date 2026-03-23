@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
+from typing import Any
 from pathlib import Path
 
 import click
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
-def _read_config(config_path: str) -> dict:
+def _read_config(config_path: str) -> dict[str, Any]:
     """Read YAML config from file."""
     return yaml.safe_load(Path(config_path).read_text()) or {}
 
 
-def _write_config(config_path: str, data: dict) -> None:
+def _write_config(config_path: str, data: dict[str, Any]) -> None:
     """Write YAML config to file."""
     Path(config_path).write_text(yaml.dump(data, default_flow_style=False, sort_keys=False))
 
