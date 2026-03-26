@@ -59,7 +59,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "duckdb": "^1.0.0",
-    "yaml": "^2.4.0",
+    "yaml": "^2.8.3",
     "zod": "^3.23.0"
   },
   "devDependencies": {
