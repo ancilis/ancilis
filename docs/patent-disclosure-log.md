@@ -4,10 +4,10 @@ This file records public disclosures of Ancilis technology for patent prosecutio
 
 ## Provisional Patent
 
-- **Filing date:** [INSERT PROVISIONAL FILING DATE]
-- **Application number:** [INSERT APPLICATION NUMBER]
-- **Title:** [INSERT TITLE]
-- **Non-provisional deadline:** [INSERT DATE — 12 months from filing]
+- **Filing date:** 03/26/2026
+- **Application number:** 64/017,930
+- **Title:** Systems and Methods for Data-Classification-Driven Compliance Assessment of Autonomous AI Agent Deployments with Manifest-Driven Platform Evidence Auto-Configuration
+- **Non-provisional deadline:** 03/25/2027
 
 ## Public Disclosures
 
