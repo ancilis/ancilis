@@ -13,7 +13,7 @@ This file records public disclosures of Ancilis technology for patent prosecutio
 
 | Date | Event | URL / Reference |
 |------|-------|-----------------|
-| [INSERT DATE] | GitHub repository set to public | https://github.com/ancilis/ancilis |
+| 03/26/2026 | GitHub repository set to public | https://github.com/ancilis/ancilis |
 | | PyPI package first published | https://pypi.org/project/ancilis/ |
 | | npm package first published | https://www.npmjs.com/package/ancilis |
 
