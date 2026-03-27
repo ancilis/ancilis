@@ -51,9 +51,9 @@ dev = [
 ancilis = "ancilis.cli.main:cli"
 
 [project.urls]
-Homepage = "https://github.com/ancilis/ancilis"
+Homepage = "https://ancilis.ai"
 Repository = "https://github.com/ancilis/ancilis"
-Documentation = "https://github.com/ancilis/ancilis/tree/main/docs"
+Documentation = "https://ancilis.ai/docs"
 Issues = "https://github.com/ancilis/ancilis/issues"
 Changelog = "https://github.com/ancilis/ancilis/blob/main/CHANGELOG.md"
 
