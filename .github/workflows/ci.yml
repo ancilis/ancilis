@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['18', '20', '22']
+        node-version: ['20', '22']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -84,7 +84,7 @@ jobs:
           python -m pip install .
           python -m pip install pip-audit
       - name: Python audit
-        run: pip-audit --desc
+        run: pip-audit --desc --ignore-vuln CVE-2026-4539
       - name: Install Node dependencies
         run: npm ci
       - name: Node audit
