@@ -141,6 +141,8 @@ AIUC-1 controls activate. Run `ancilis report --format aiuc1-readiness` to see r
 ## Next steps
 
 - [Configuration reference](configuration.md) — every config field documented
+- [Controls reference](controls-reference.md) — all 26 AKSI controls with descriptions and regulatory mappings
+- [Data classification guide](data-classification.md) — declare what data your agent handles, overlays activate automatically
 - [Producers](producers.md) — MCP, CLI, HTTP, and tool wrapper integration paths
 - [Evidence and reporting](evidence-and-reporting.md) — what evidence records contain, how to use reports
 - [Examples](../examples/) — runnable examples for each integration path

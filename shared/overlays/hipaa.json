@@ -1,10 +1,288 @@
 {
   "id": "hipaa",
   "name": "HIPAA Security Rule",
-  "version": "0.1",
-  "description": "Healthcare data protection overlay. Activated by health_records or patient_data declarations.",
+  "version": "0.2",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-PHI"],
+  "description": "Healthcare data protection overlay. Activated by health_records or patient_data declarations. Covers the HIPAA Security Rule (45 CFR Part 164) requirements for electronic protected health information (ePHI).",
+  "jurisdiction": "us",
+  "enforcement_date": "2003-04-20",
   "triggered_by_classifications": ["DC-PHI"],
   "applicable_data_types": ["health_records", "patient_data"],
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Formal security management process implemented — policies and procedures to prevent, detect, contain, and correct security violations (164.308(a)(1))",
+        "Privacy and Security Officer assigned with defined responsibilities (164.308(a)(2))",
+        "Security policies reviewed and updated periodically"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(1), 164.308(a)(2)"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Workforce security procedures implemented — authorization, supervision, termination (164.308(a)(3))",
+        "Security awareness and training program for all workforce members (164.308(a)(5))",
+        "Sanctions policy for workforce members who fail to comply with security policies (164.308(a)(1)(ii)(C))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(3), 164.308(a)(5)"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk analysis conducted — accurate and thorough assessment of potential risks and vulnerabilities to ePHI (164.308(a)(1)(ii)(A))",
+        "Risk management process implemented to reduce risks to a reasonable and appropriate level (164.308(a)(1)(ii)(B))",
+        "Risk analysis updated when environment or operations changes"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(1)(ii)(A), 164.308(a)(1)(ii)(B)"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Periodic technical and non-technical evaluation of security measures in response to environmental or operational changes (164.308(a)(8))",
+        "Contingency plan with defined roles and responsibilities for ePHI access during emergency (164.308(a)(7))",
+        "Management oversight of security program effectiveness"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(7), 164.308(a)(8)"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Inventory of information systems that create, receive, maintain, or transmit ePHI (164.308(a)(1)(ii)(A) scope)",
+        "Asset management process covering all hardware and software handling ePHI",
+        "Documentation of ePHI data flows across systems"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(1), 164.310(d)"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Business Associate Agreements (BAA) in place with all business associates who create, receive, maintain, or transmit ePHI (164.308(b))",
+        "BAAs include required provisions specifying permitted and required uses and disclosures (164.504(e))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(b), 164.504(e)"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ePHI identified and classified within systems — data classification maintained (164.308(a)(1)(ii)(A))",
+        "Retention policy for ePHI documentation (state laws may require longer than 6 years from creation or last effective date)",
+        "Media disposal and re-use procedures ensure ePHI not accessible after disposal (164.310(d)(2))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.310(d)(2), 164.316(b)(2)"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Business associate inventory maintained with contact information and BAA status",
+        "Monitoring of business associate compliance with BAA terms",
+        "Chain of trust documented for downstream subcontractors handling ePHI"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(b)(1), 164.504(e)"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Workforce clearance procedure — authorization process for access to ePHI based on job function (164.308(a)(3)(ii)(B))",
+        "Termination procedures include immediate revocation of ePHI access (164.308(a)(3)(ii)(C))",
+        "Access rights reviewed when workforce members change roles"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(3)"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Unique user identification assigned to each workforce member and system with ePHI access (164.312(a)(2)(i))",
+        "Emergency access procedure for obtaining necessary ePHI during emergency (164.312(a)(2)(ii))",
+        "Automatic logoff after period of inactivity (164.312(a)(2)(iii))",
+        "Encryption and decryption of ePHI (addressable) (164.312(a)(2)(iv))"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "HIPAA 164.312(d) mandates person or entity authentication — all access to ePHI must be authenticated"
+      },
+      "framework_reference": "164.312(a), 164.312(d)"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Minimum necessary standard applied — access limited to what is reasonably necessary to accomplish intended purpose (164.502(b))",
+        "Policies identifying persons or classes of persons who need ePHI access and minimum necessary amount (164.514(d)(2))",
+        "Role-based access controls enforce minimum necessary in automated systems"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "HIPAA 164.502(b) minimum necessary standard — scope violations involving ePHI require strict enforcement"
+      },
+      "framework_reference": "164.502(b), 164.514(d)"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized manner (164.312(c)(1))",
+        "Error correction mechanism for ePHI integrity (addressable) (164.312(c)(2))",
+        "Data provenance tracked — source and handling history of ePHI documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.312(c)"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Technical security measures to guard against unauthorized access to ePHI transmitted over electronic communications networks (164.312(e)(1))",
+        "Encryption of ePHI in transit (addressable) — must encrypt whenever deemed reasonable and appropriate (164.312(e)(2)(ii))",
+        "Integrity controls to ensure ePHI is not improperly modified during transmission (164.312(e)(2)(i))"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "HIPAA 164.312(e) transmission security — ePHI transmitted over networks must be protected from interception"
+      },
+      "framework_reference": "164.312(e)(1), 164.312(e)(2)"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Hardware, software, and procedural mechanisms that record and examine activity in information systems containing ePHI (164.312(b))",
+        "Audit logs include user activity, access events, and security-relevant actions on ePHI",
+        "Audit log retention: documentation retained for 6 years from date of creation or last effective date (164.316(b)(2)(i))"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "HIPAA 164.312(b) audit controls — activity in ePHI systems must be recorded and reviewable"
+      },
+      "framework_reference": "164.312(b), 164.316(b)(2)"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Facility access controls to limit physical access to electronic information systems containing ePHI (164.310(a))",
+        "Physical access policies — facility security plan, access control and validation, maintenance records (164.310(a)(2))",
+        "Physical safeguards for workstations used to access ePHI (164.310(c))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.310(a), 164.310(b)"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Workstation use policies specify proper functions, manner of use, and physical surroundings (164.310(b))",
+        "Workstation security measures to restrict access to authorized users and deter casual unauthorized viewing (164.310(c))",
+        "Remote access to ePHI systems requires appropriate safeguards"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.310(b), 164.310(c)"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Hardware and electronic media disposal procedure — ePHI removed before disposal (164.310(d)(2)(i))",
+        "Media re-use procedure — ePHI removed from media before it is available for re-use (164.310(d)(2)(ii))",
+        "Accountability for hardware and electronic media containing ePHI — movement records maintained (164.310(d)(2)(iii))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.310(d)"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security incident procedures to address suspected or known security incidents (164.308(a)(6))",
+        "Identification and response capability for security incidents affecting ePHI",
+        "Malicious software protection — protection from and reporting procedures for malicious software (164.308(a)(5)(ii)(B))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(5)(ii)(B), 164.308(a)(6)"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information system activity review — regular review of audit logs, access reports, and security incident tracking (164.308(a)(1)(ii)(D))",
+        "Log-in monitoring — procedures to monitor log-in attempts and report discrepancies (164.308(a)(5)(ii)(C))",
+        "Evaluation to determine extent to which current security policies and procedures meet requirements (164.308(a)(8))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(1)(ii)(D), 164.308(a)(5)(ii)(C)"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Anomalous access pattern detection — unusual ePHI access volumes, after-hours access, access from unexpected locations",
+        "Malicious software protection including detection and containment procedures (164.308(a)(5)(ii)(B))",
+        "Password management procedures — creation, change, and safeguarding of passwords (164.308(a)(5)(ii)(D))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(5)"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Audit log integrity maintained — logs cannot be altered or deleted by unauthorized persons",
+        "Vulnerability management for systems containing ePHI — patches applied in timely manner",
+        "Penetration testing and security assessments performed as part of risk analysis (164.308(a)(1)(ii)(A))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(1)(ii)"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security incident response procedures — response and reporting procedures for suspected and known security incidents (164.308(a)(6)(ii))",
+        "Incident documentation — actions taken, outcomes, and lessons learned",
+        "Workforce trained on incident identification and reporting procedures"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(6)"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Mitigation procedures to document and mitigate harmful effects of security incidents (164.308(a)(6)(ii))",
+        "Corrective action process to address root cause of security incidents",
+        "Post-incident review to update policies and procedures based on lessons learned"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(6)(ii)"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Breach notification rule compliance — breach of unsecured ePHI reported to affected individuals within 60 days of discovery (164.404)",
+        "Breach notification to HHS Secretary — breaches affecting 500+ individuals reported to HHS (164.408)",
+        "Breach risk assessment — four-factor test to determine if PHI compromise has occurred (164.402)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.402, 164.404, 164.408, 164.414"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Contingency plan — data backup, disaster recovery, emergency mode, and testing/revision procedures (164.308(a)(7))",
+        "Applications and data criticality analysis — prioritization of ePHI systems for recovery (164.308(a)(7)(ii)(E))",
+        "Emergency mode operation plan — procedures for continued ePHI access during emergencies (164.308(a)(7)(ii)(C))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(7)"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data backup plan — exact retrievable copy of ePHI created before movement of equipment (164.308(a)(7)(ii)(A))",
+        "Disaster recovery plan — procedures to restore lost data and resume operations (164.308(a)(7)(ii)(B))",
+        "Backup and recovery procedures tested at defined intervals"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "164.308(a)(7)(ii)(A), 164.308(a)(7)(ii)(B)"
+    }
+  },
   "control_adjustments": {
     "PR-01": {
       "threshold_adjustment": "strict",
@@ -32,14 +310,39 @@
     "PR-05": ["log_completeness", "retention_compliance"]
   },
   "framework_mapping": {
-    "PR-01": ["164.312(d)"],
-    "PR-02": ["164.312(a)(1)", "164.308(a)(3)"],
-    "PR-03": ["164.312(a)(2)(iv)"],
+    "GOV-01": ["164.308(a)(1)", "164.308(a)(2)"],
+    "GOV-02": ["164.308(a)(3)", "164.308(a)(5)"],
+    "GOV-03": ["164.308(a)(1)(ii)(A)", "164.308(a)(1)(ii)(B)"],
+    "GOV-04": ["164.308(a)(7)", "164.308(a)(8)"],
+    "ID-01": ["164.308(a)(1)", "164.310(d)"],
+    "ID-02": ["164.308(b)", "164.504(e)"],
+    "ID-03": ["164.310(d)(2)", "164.316(b)(2)"],
+    "ID-04": ["164.308(b)(1)", "164.504(e)"],
+    "ID-05": ["164.308(a)(3)"],
+    "PR-01": ["164.312(a)", "164.312(d)"],
+    "PR-02": ["164.312(a)(1)", "164.308(a)(3)", "164.502(b)"],
+    "PR-03": ["164.312(c)"],
     "PR-04": ["164.312(e)(1)", "164.312(e)(2)"],
-    "PR-05": ["164.312(b)", "164.308(a)(1)(ii)(D)"],
-    "DE-01": ["164.308(a)(1)(ii)(D)", "164.308(a)(5)(ii)(C)"]
+    "PR-05": ["164.312(b)", "164.316(b)(2)"],
+    "PR-06": ["164.310(a)", "164.310(b)"],
+    "PR-07": ["164.310(b)", "164.310(c)"],
+    "PR-08": ["164.310(d)"],
+    "DE-01": ["164.308(a)(5)(ii)(B)", "164.308(a)(6)"],
+    "DE-02": ["164.308(a)(1)(ii)(D)", "164.308(a)(5)(ii)(C)"],
+    "DE-03": ["164.308(a)(5)"],
+    "DE-04": ["164.308(a)(1)(ii)"],
+    "RS-01": ["164.308(a)(6)"],
+    "RS-02": ["164.308(a)(6)(ii)"],
+    "RS-03": ["164.402", "164.404", "164.408", "164.414"],
+    "RC-01": ["164.308(a)(7)"],
+    "RC-02": ["164.308(a)(7)(ii)(A)", "164.308(a)(7)(ii)(B)"]
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": 1440,
+    "assessment_type": "HIPAA Security Risk Analysis required annually or upon significant environmental changes. No third-party audit required but documentation must be available to HHS on request.",
+    "reporting_entity": "HHS Office for Civil Rights (OCR). Breaches affecting 500+ individuals in a state require prominent media notice in addition to individual notification. Annual summary of breaches affecting <500 individuals submitted to HHS."
   },
   "evidence_retention_minimum_days": 2190,
   "human_oversight_required": false,
-  "notes": "HIPAA Security Rule requires audit controls, access controls, transmission security, and integrity controls. This overlay tightens baseline thresholds and adds healthcare-specific evidence fields."
+  "notes": "HIPAA Security Rule requires audit controls, access controls, transmission security, and integrity controls. This overlay tightens baseline thresholds and adds healthcare-specific evidence fields. All 26 AKSI controls mapped to HIPAA Security Rule provisions."
 }
