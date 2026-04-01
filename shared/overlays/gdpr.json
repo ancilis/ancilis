@@ -1,10 +1,285 @@
 {
   "id": "gdpr",
   "name": "GDPR",
-  "version": "0.1",
-  "description": "EU General Data Protection Regulation overlay. Activated by personal data, health data, children's data, or biometric data declarations.",
+  "version": "0.2",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-PII", "DC-PHI", "DC-MINOR", "DC-BIO"],
+  "description": "EU General Data Protection Regulation overlay. Activated by personal data, health data, children's data, or biometric data declarations. Covers GDPR requirements including lawful basis, data subject rights, security of processing, breach notification, and data protection by design.",
+  "jurisdiction": "eu",
+  "enforcement_date": "2018-05-25",
   "triggered_by_classifications": ["DC-PII", "DC-PHI", "DC-MINOR", "DC-BIO"],
   "applicable_data_types": ["personal_info", "health_records", "patient_data", "childrens_data", "biometric_data"],
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data protection policies implemented demonstrating compliance with GDPR principles (Art. 24)",
+        "Data protection by design and by default integrated into processing operations (Art. 25)",
+        "Codes of conduct or certification schemes adopted where applicable (Art. 40, 42)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 24, Art. 25"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data Protection Officer (DPO) appointed where required and contact details published (Art. 37, Art. 38)",
+        "Accountability principle demonstrated — controller responsible for and able to demonstrate GDPR compliance (Art. 5(2))",
+        "Supervisory authority cooperation procedures in place (Art. 31)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 5(2), Art. 37, Art. 38"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data Protection Impact Assessment (DPIA) conducted for high-risk processing (Art. 35)",
+        "Prior consultation with supervisory authority where DPIA indicates high residual risk (Art. 36)",
+        "DPIA reviewed when nature, scope, context, or purposes of processing change"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 35, Art. 36"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data subject rights management process — procedures for handling access, rectification, erasure, portability, objection requests (Arts. 15-22)",
+        "Response to data subject requests within one month (Art. 12(3))",
+        "Privacy notices provided to data subjects at time of collection (Arts. 13, 14)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 12, Art. 13, Art. 14, Arts. 15-22"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Records of processing activities maintained — controller and processor records per Art. 30",
+        "Records include categories of data subjects, categories of personal data, purposes, and recipients (Art. 30(1))",
+        "Records available to supervisory authority on request (Art. 30(4))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 30"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data Processing Agreements (DPA) in place with all processors (Art. 28(3))",
+        "Processor agreements specify subject-matter, duration, nature, purpose, and type of personal data (Art. 28(3))",
+        "Sub-processor authorization process with same data protection obligations (Art. 28(2), Art. 28(4))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 28"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data minimization principle applied — only personal data adequate, relevant, and limited to what is necessary (Art. 5(1)(c))",
+        "Storage limitation principle applied — personal data not kept longer than necessary for its purpose (Art. 5(1)(e))",
+        "Data retention schedule documented and enforced"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 5(1)(c), Art. 5(1)(e)"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Processor inventory maintained — list of all processors and sub-processors with processing descriptions (Art. 28)",
+        "Due diligence performed on processor selection — processors provide sufficient guarantees (Art. 28(1))",
+        "Processor monitoring — ongoing verification of processor compliance"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 28(1), Art. 28(2)"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "International data transfer mapping — all transfers of personal data to third countries identified (Arts. 44-49)",
+        "Transfer mechanism documented for each cross-border transfer — adequacy decision, SCCs, BCRs, or derogation (Art. 44)",
+        "Standard Contractual Clauses (SCCs) implemented for transfers to non-adequate third countries"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 44, Art. 45, Art. 46, Art. 49"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Appropriate technical and organisational measures to ensure appropriate level of security for personal data (Art. 32)",
+        "Access controls implemented — access to personal data restricted to authorised persons on need-to-know basis (Art. 5(1)(f))",
+        "Authentication and authorisation mechanisms protect personal data from unauthorised access"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 5(1)(f), Art. 32"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Lawful basis documented for each processing activity — one of six lawful bases under Art. 6 applied",
+        "Purpose limitation principle applied — personal data collected for specified, explicit, and legitimate purposes only (Art. 5(1)(b))",
+        "Special category data (Art. 9) and criminal conviction data (Art. 10) processed only under explicit grounds"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "GDPR Art. 6 lawfulness of processing — every processing operation must have a documented lawful basis; scope violations are Art. 5 violations"
+      },
+      "framework_reference": "Art. 5(1)(b), Art. 6, Art. 9"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data protection by design — appropriate technical measures integrated into processing at design stage (Art. 25(1))",
+        "Data protection by default — only personal data necessary for each specific purpose processed by default (Art. 25(2))",
+        "Accuracy principle — personal data is accurate and kept up to date (Art. 5(1)(d))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 5(1)(d), Art. 25"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Pseudonymisation and encryption of personal data implemented where appropriate (Art. 32(1)(a))",
+        "Appropriate technical measures ensuring ongoing confidentiality, integrity, availability, and resilience (Art. 32(1)(b))",
+        "Cross-border transfer safeguards applied for personal data leaving the EEA (Arts. 44-49)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "GDPR Art. 32 security of processing — controllers must implement appropriate measures to ensure security level appropriate to the risk, including encryption"
+      },
+      "framework_reference": "Art. 25, Art. 32(1)(a)"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Records of processing activities include data categories, purposes, recipients, and retention periods (Art. 30)",
+        "Processing records serve as audit trail — demonstrate compliance with GDPR principles (Art. 5(2))",
+        "Logs of automated processing activities available for supervisory authority (Art. 30(4))"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "GDPR Art. 30 records of processing and Art. 5(2) accountability — processing must be documented to demonstrate compliance"
+      },
+      "framework_reference": "Art. 5(2), Art. 30"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Physical security measures protect personal data from unauthorised physical access (Art. 32(1)(b))",
+        "Organisational measures ensure only authorised persons have access to processing areas",
+        "Hardware and media containing personal data secured against theft or unauthorised access"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 32(1)(b)"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Endpoint security measures protect personal data on devices (Art. 32(1)(b))",
+        "Remote access to personal data secured with appropriate technical safeguards",
+        "Mobile device management for devices processing personal data"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 32(1)(b)"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Right to erasure (right to be forgotten) process implemented — personal data erased without undue delay upon valid request (Art. 17)",
+        "Erasure cascaded to processors and third parties who have received personal data (Art. 17(2))",
+        "Data retention enforcement — personal data deleted or anonymised at end of retention period"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 17"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Personal data breach detection capability — ability to identify and confirm breaches affecting personal data (Art. 33)",
+        "Breach assessment process — determine whether breach likely results in risk to data subjects (Art. 33(1))",
+        "Breach register maintained — documentation of all personal data breaches regardless of notification obligation (Art. 33(5))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 33, Art. 34"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Ongoing monitoring of processing systems for security and compliance with GDPR obligations (Art. 32(1)(d))",
+        "Regular testing, assessing, and evaluating effectiveness of technical and organisational measures (Art. 32(1)(d))",
+        "DPO monitoring of GDPR compliance and advising on data protection obligations (Art. 39)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 32(1)(d), Art. 39"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Anomalous processing detection — identify unusual access patterns, bulk downloads, or exfiltration indicators",
+        "Security monitoring appropriate to risk level of processing (Art. 32(2))",
+        "Vulnerability scanning and penetration testing as part of security assessment program"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 32(2)"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Process for regularly testing, assessing, and evaluating effectiveness of security measures (Art. 32(1)(d))",
+        "Vulnerability management — known vulnerabilities in systems processing personal data addressed promptly",
+        "Audit of compliance with GDPR processing requirements, including lawful basis verification"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 32(1)(d)"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Personal data breach notification to supervisory authority without undue delay and within 72 hours of becoming aware (Art. 33(1))",
+        "Breach notification includes nature, categories and numbers of data subjects and records concerned, likely consequences, and measures taken (Art. 33(3))",
+        "Incident response plan covers personal data breach scenarios"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 33"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Supervisory authority collaboration during breach response — provide further information requested (Art. 33(4))",
+        "Remediation measures documented and implemented to address breach cause",
+        "Updated risk assessment following breach — reassess likelihood and severity of impact"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 33(4)"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data subject notification where breach likely results in high risk to rights and freedoms — notification without undue delay (Art. 34(1))",
+        "Data subject notification in clear and plain language describing nature, consequences, and measures taken (Art. 34(2))",
+        "Notification exemptions documented when applied — data encrypted, measures mitigate risk, disproportionate effort (Art. 34(3))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 34"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Ability to restore availability and access to personal data in timely manner in event of physical or technical incident (Art. 32(1)(c))",
+        "Business continuity and disaster recovery procedures cover personal data systems",
+        "Recovery procedures tested to validate personal data can be restored without loss or corruption"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 32(1)(c)"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-incident review to update data protection impact assessments where needed",
+        "Lessons learned documented and controls updated to prevent recurrence",
+        "Recovery procedures updated based on incident findings"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Art. 32(1)(c), Art. 35"
+    }
+  },
   "control_adjustments": {
     "PR-02": {
       "threshold_adjustment": "strict",
@@ -33,14 +308,39 @@
     "PR-05": ["processing_purpose", "data_subject_category"]
   },
   "framework_mapping": {
-    "PR-01": ["Art. 5(1)(f)"],
-    "PR-02": ["Art. 6", "Art. 5(1)(b)"],
-    "PR-03": ["Art. 25"],
-    "PR-04": ["Art. 25", "Art. 32"],
-    "PR-05": ["Art. 30"],
-    "DE-01": ["Art. 33", "Art. 34"]
+    "GOV-01": ["Art. 24", "Art. 25"],
+    "GOV-02": ["Art. 5(2)", "Art. 37", "Art. 38"],
+    "GOV-03": ["Art. 35", "Art. 36"],
+    "GOV-04": ["Art. 12", "Art. 13", "Art. 14"],
+    "ID-01": ["Art. 30"],
+    "ID-02": ["Art. 28"],
+    "ID-03": ["Art. 5(1)(c)", "Art. 5(1)(e)"],
+    "ID-04": ["Art. 28(1)", "Art. 28(2)"],
+    "ID-05": ["Art. 44", "Art. 45", "Art. 46"],
+    "PR-01": ["Art. 5(1)(f)", "Art. 32"],
+    "PR-02": ["Art. 5(1)(b)", "Art. 6", "Art. 9"],
+    "PR-03": ["Art. 5(1)(d)", "Art. 25"],
+    "PR-04": ["Art. 25", "Art. 32(1)(a)"],
+    "PR-05": ["Art. 5(2)", "Art. 30"],
+    "PR-06": ["Art. 32(1)(b)"],
+    "PR-07": ["Art. 32(1)(b)"],
+    "PR-08": ["Art. 17"],
+    "DE-01": ["Art. 33", "Art. 34"],
+    "DE-02": ["Art. 32(1)(d)", "Art. 39"],
+    "DE-03": ["Art. 32(2)"],
+    "DE-04": ["Art. 32(1)(d)"],
+    "RS-01": ["Art. 33"],
+    "RS-02": ["Art. 33(4)"],
+    "RS-03": ["Art. 34"],
+    "RC-01": ["Art. 32(1)(c)"],
+    "RC-02": ["Art. 32(1)(c)", "Art. 35"]
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": 72,
+    "assessment_type": "No mandatory external audit under GDPR. DPAs (Data Protection Authorities) may conduct investigations. Certification schemes under Art. 42 are voluntary.",
+    "reporting_entity": "Lead Supervisory Authority (LSA) under one-stop-shop mechanism for cross-border processing, or local DPA for purely national processing. Data subjects notified directly when breach poses high risk."
   },
   "evidence_retention_minimum_days": 365,
   "human_oversight_required": false,
-  "notes": "GDPR requires data protection by design and by default (Art. 25), security of processing (Art. 32), and records of processing activities (Art. 30). This overlay adds data protection evidence fields and tightens controls handling personal data."
+  "notes": "GDPR requires data protection by design and by default (Art. 25), security of processing (Art. 32), and records of processing activities (Art. 30). This overlay adds data protection evidence fields and tightens controls handling personal data. All 26 AKSI controls mapped to GDPR provisions."
 }

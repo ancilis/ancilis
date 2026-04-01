@@ -193,6 +193,8 @@ class ResolvedConfig:
         self.scope_allowed_destinations: list[str] = []
         self.scope_blocked_destinations: list[str] = []
         self.active_certifications: list[str] = []
+        # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
+        self.overlay_requirements: dict[str, dict[str, Any]] = {}
 
 
 # --- Config Parser ---
@@ -341,6 +343,22 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
             result.human_oversight_required = True
 
     result.evidence_retention_days = max_retention
+
+    # Build per-control overlay requirements from the controls sections of active overlays.
+    # This populates overlay_requirements[control_id][overlay_id] = {evidence_requirements, framework_reference}
+    # so the engine can surface meaningful metadata for controls that have no evaluator yet (SKIP).
+    for oid, _activation in result.active_overlays.items():
+        odef = overlay_defs[oid]
+        controls_section = odef.get("controls", {})
+        for cid, ctrl_data in controls_section.items():
+            if not ctrl_data.get("applicable", True):
+                continue
+            if cid not in result.overlay_requirements:
+                result.overlay_requirements[cid] = {}
+            result.overlay_requirements[cid][oid] = {
+                "evidence_requirements": ctrl_data.get("evidence_requirements", []),
+                "framework_reference": ctrl_data.get("framework_reference", ""),
+            }
 
     # Resolve certification targets — use activation resolver for richer logic
     valid_certs = _load_valid_certification_targets()
