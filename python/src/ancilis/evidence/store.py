@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     active_certifications JSON NOT NULL,
     record_hash VARCHAR NOT NULL,
     previous_hash VARCHAR NOT NULL,
-    total_duration_ms DOUBLE NOT NULL
+    total_duration_ms DOUBLE NOT NULL,
+    output_summary VARCHAR
 );
 """
 
@@ -70,14 +71,14 @@ INSERT INTO evidence_records (
     record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
-    record_hash, previous_hash, total_duration_ms
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    record_hash, previous_hash, total_duration_ms, output_summary
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_COLUMNS = """
 seq_id, record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
-active_certifications, record_hash, previous_hash, total_duration_ms
+active_certifications, record_hash, previous_hash, total_duration_ms, output_summary
 """
 
 
@@ -131,6 +132,10 @@ class EvidenceStore:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'"
             )
+        if "output_summary" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN output_summary VARCHAR"
+            )
 
     @property
     def db_path(self) -> str:
@@ -167,6 +172,7 @@ class EvidenceStore:
         self,
         evaluation: EvaluationResult,
         tool_name: str,
+        output_summary: str | None = None,
     ) -> EvidenceRecord:
         """Convert an EvaluationResult into an evidence record and persist it."""
         self._ensure_initialized()
@@ -199,6 +205,7 @@ class EvidenceStore:
             active_certifications=self._certifications,
             total_duration_ms=evaluation.total_duration_ms,
             previous_hash=previous_hash,
+            output_summary=output_summary,
         )
         record_hash = compute_hash(canon)
 
@@ -218,6 +225,7 @@ class EvidenceStore:
             record_hash=record_hash,
             previous_hash=previous_hash,
             total_duration_ms=evaluation.total_duration_ms,
+            output_summary=output_summary,
         )
 
         self._connection.execute(INSERT_SQL, [
@@ -236,6 +244,7 @@ class EvidenceStore:
             record.record_hash,
             record.previous_hash,
             record.total_duration_ms,
+            record.output_summary,
         ])
 
         return record
@@ -319,6 +328,7 @@ class EvidenceStore:
                 active_certifications=record.active_certifications,
                 total_duration_ms=record.total_duration_ms,
                 previous_hash=record.previous_hash,
+                output_summary=record.output_summary,
             )
             expected_hash = compute_hash(canon)
 
@@ -352,6 +362,7 @@ class EvidenceStore:
                 "chain_valid": True,
                 "chain_errors": [],
                 "control_pass_rates": {},
+                "pattern_detections": {},
             }
 
         self._ensure_initialized()
@@ -375,6 +386,7 @@ class EvidenceStore:
                 "chain_valid": True,
                 "chain_errors": [],
                 "control_pass_rates": {},
+                "pattern_detections": {},
             }
 
         # Decision counts (period-filtered)
@@ -400,6 +412,7 @@ class EvidenceStore:
         control_query = "SELECT control_results FROM evidence_records" + where_clause  # nosemgrep
         control_rows = self._connection.execute(control_query, params).fetchall()  # nosemgrep
         control_stats: dict[str, dict[str, int]] = {}
+        pattern_detections: dict[str, int] = {}
         for (cr_json,) in control_rows:
             results = json.loads(cr_json) if isinstance(cr_json, str) else cr_json
             for cr in results:
@@ -409,12 +422,18 @@ class EvidenceStore:
                 result = cr.get("result", "SKIP")
                 if result in control_stats[cid]:
                     control_stats[cid][result] += 1
+                for pattern in cr.get("evidence_data", {}).get("patterns_detected", []):
+                    pattern_type = pattern.get("type")
+                    count = pattern.get("count", 0)
+                    if isinstance(pattern_type, str) and isinstance(count, int):
+                        pattern_detections[pattern_type] = pattern_detections.get(pattern_type, 0) + count
 
         return {
             "total_evaluations": total,
             "decisions": decisions,
             "tools_evaluated": tools,
             "control_pass_rates": control_stats,
+            "pattern_detections": pattern_detections,
             "chain_valid": chain_valid,
             "chain_errors": chain_errors,
         }
@@ -443,7 +462,7 @@ class EvidenceStore:
         Column order: seq_id, record_id, evaluation_id, timestamp, agent_id,
         source_type, tool_name, decision, mode, control_results, active_overlays,
         data_classifications, active_certifications, record_hash,
-        previous_hash, total_duration_ms
+        previous_hash, total_duration_ms, output_summary
         """
         return EvidenceRecord(
             record_id=row[1],
@@ -461,4 +480,5 @@ class EvidenceStore:
             record_hash=row[13],
             previous_hash=row[14],
             total_duration_ms=row[15],
+            output_summary=row[16] if len(row) > 16 else None,
         )

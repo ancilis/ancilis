@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import unittest.mock
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,7 @@ from ancilis.engine.action import Action, ActionParameters, ActionContext, ToolI
 from ancilis.engine.registry import ToolRegistry, ToolEntry, ToolStatus
 from ancilis.evidence.store import EvidenceStore
 from ancilis.report.generator import ReportGenerator, ReportData
-from ancilis.report.renderer import render_terminal, render_markdown
+from ancilis.report.renderer import render_terminal, render_markdown, render_pdf
 from ancilis.engine.result import EvaluationResult, ControlResult
 
 
@@ -391,6 +392,55 @@ class TestReportBaseline:
         assert result.exit_code == 0
         assert "test-agent" in result.output
 
+    def test_pdf_renderer_writes_markdown_fallback_next_to_pdf(self, tmp_path: Path) -> None:
+        output_path = tmp_path / "report.pdf"
+        fallback_path = tmp_path / "report.md"
+        markdown = "# Example Report\n"
+
+        with unittest.mock.patch("ancilis.report.renderer.subprocess.run", side_effect=FileNotFoundError):
+            result = render_pdf(markdown, str(output_path))
+
+        assert result.format == "markdown"
+        assert result.output_path == str(fallback_path)
+        assert result.fallback_reason == "pandoc/xelatex unavailable"
+        assert not output_path.exists()
+        assert fallback_path.read_text() == markdown
+
+    def test_pdf_report_cli_reports_markdown_fallback(self, tmp_path: Path) -> None:
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        output_path = tmp_path / "report.pdf"
+        fallback_path = tmp_path / "report.md"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+        _populate_evidence(config, store, n=2)
+        store.close()
+
+        runner = CliRunner()
+        with unittest.mock.patch("ancilis.report.renderer.subprocess.run", side_effect=FileNotFoundError):
+            result = runner.invoke(
+                cli,
+                [
+                    "report",
+                    "--config",
+                    str(cfg_path),
+                    "--db",
+                    str(db),
+                    "--format",
+                    "pdf",
+                    "--output",
+                    str(output_path),
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert (
+            result.output.strip()
+            == f"PDF export unavailable (pandoc/xelatex unavailable); wrote Markdown fallback to {fallback_path}"
+        )
+        assert not output_path.exists()
+        assert fallback_path.read_text().startswith("# Ancilis Posture Report")
+
 
 # ===== Report — Compliance Mode Tests =====
 
@@ -610,6 +660,51 @@ class TestReportCombined:
         assert "Baseline Security" in md
         assert "Compliance Posture" in md
         assert "AIUC-1" in md
+        store.close()
+
+
+class TestAdvisoryReports:
+    def test_advisory_section_generated_from_pattern_detections(self, tmp_path: Path) -> None:
+        config = load_config(raw=_minimal_config())
+        store = EvidenceStore(config, db_path=str(tmp_path / "ev.db"))
+
+        advisory_eval = EvaluationResult(
+            evaluation_id="advisory-eval",
+            action_id="action-1",
+            timestamp="2026-03-20T00:00:00Z",
+            agent_id=config.agent_name,
+            mode=config.mode,
+            control_results=[
+                ControlResult(
+                    control_id="PR-04",
+                    control_name="Data Exposure Prevention",
+                    result="PASS",
+                    detail="Sensitive data patterns detected.",
+                    evidence_data={
+                        "scan_result": "patterns_found",
+                        "patterns_detected": [
+                            {"type": "credit_card", "count": 2, "redacted_sample": "****1111"},
+                        ],
+                    },
+                    duration_ms=1.0,
+                )
+            ],
+            decision="ALLOW",
+            decision_reason="Advisory test",
+            active_overlays=[],
+            data_classifications=[],
+            total_duration_ms=1.0,
+        )
+        store.store(advisory_eval, tool_name="read_file")
+
+        gen = ReportGenerator(config, store)
+        report = gen.generate(report_format="markdown")
+        md = render_markdown(report)
+
+        assert report.advisory is not None
+        assert "Classification Advisory" in md
+        assert "credit_cards" in md
+        assert "my_agent_handles" in md
         store.close()
 
 

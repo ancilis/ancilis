@@ -42,13 +42,15 @@ def report(period: str, fmt: str, config_path: str | None, db_path: str | None, 
                 click.echo(md)
         elif fmt == "pdf":
             md = render_markdown(report_data)
-            if output_path:
-                render_pdf(md, output_path)
-                click.echo(f"PDF report written to {output_path}")
+            requested_path = output_path or "ancilis-report.pdf"
+            pdf_result = render_pdf(md, requested_path)
+            if pdf_result.format == "pdf":
+                click.echo(f"PDF report written to {pdf_result.output_path}")
             else:
-                # Default PDF output
-                default_path = "ancilis-report.pdf"
-                render_pdf(md, default_path)
-                click.echo(f"PDF report written to {default_path}")
+                click.echo(
+                    "PDF export unavailable "
+                    f"({pdf_result.fallback_reason}); "
+                    f"wrote Markdown fallback to {pdf_result.output_path}"
+                )
     finally:
         store.close()

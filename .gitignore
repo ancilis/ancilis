@@ -51,3 +51,6 @@ htmlcov/
 # Ancilis
 ancilis-reports/
 .ancilis-cache/
+
+# Agent workspace — non-code outputs (PRDs, marketing, design, etc.)
+workspace/
