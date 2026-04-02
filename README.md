@@ -7,7 +7,7 @@
 [![npm](https://img.shields.io/npm/v/ancilis.svg)](https://www.npmjs.com/package/ancilis)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 
-Policy-driven runtime security for AI agents. Structured controls. Compliance-ready evidence. Start with security — unlock compliance when your market demands it.
+Policy-driven runtime security for AI agents. Automated data type or certification security control selection based on what your agent needs. Audit-ready evidence. Start with security — unlock compliance when your market demands it. Never map or crosswalk control frameworks again.
 
 ---
 
