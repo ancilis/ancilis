@@ -5,15 +5,18 @@ import { writeFileSync, mkdirSync, rmSync, existsSync, readFileSync } from "node
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { stringify as stringifyYaml, parse as parseYaml } from "yaml";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
 import { Engine, ToolRegistry, ToolStatus } from "../src/ancilis/engine/index.js";
 import type { ToolEntry, Action, EvaluationResult } from "../src/ancilis/engine/index.js";
+import { EvidenceStore } from "../src/ancilis/evidence/store.js";
 import { formatStatus } from "../src/ancilis/cli/status.js";
 import { validateAndFormat } from "../src/ancilis/cli/validate.js";
 import { approveTool } from "../src/ancilis/cli/approve.js";
-import { ReportGenerator, renderTerminal, renderMarkdown } from "../src/ancilis/report/index.js";
+import { runDoctor, runReport } from "../src/ancilis/cli/index.js";
+import { ReportGenerator, renderTerminal, renderMarkdown, renderPdf } from "../src/ancilis/report/index.js";
 import type { EvidenceSummary } from "../src/ancilis/report/index.js";
 
 // --- Helpers ---
@@ -82,6 +85,33 @@ function populatedSummary(n = 5): EvidenceSummary {
     chain_valid: true,
     chain_errors: [],
   };
+}
+
+async function populateEvidence(
+  config: ResolvedConfig,
+  store: EvidenceStore,
+  entries: Array<{ timestamp?: string; toolName?: string }> = [{}],
+): Promise<void> {
+  const registry = new ToolRegistry();
+  registry.register({
+    name: "read_file",
+    status: ToolStatus.APPROVED,
+    approvedBy: "config",
+    firstSeen: new Date().toISOString(),
+    statusChanged: new Date().toISOString(),
+  });
+
+  const engine = new Engine(config, { registry });
+  for (const entry of entries) {
+    const toolName = entry.toolName ?? "read_file";
+    const action: Action = {
+      ...makeAction(toolName, config.agentName),
+      timestamp: entry.timestamp ?? new Date().toISOString(),
+    };
+    const evaluation = engine.evaluate(action);
+    evaluation.timestamp = entry.timestamp ?? evaluation.timestamp;
+    await store.store(evaluation, toolName);
+  }
 }
 
 // ===== Status Tests =====
@@ -235,6 +265,203 @@ describe("approveTool", () => {
   });
 });
 
+// ===== Doctor Tests =====
+
+describe("runDoctor", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = tmpDir();
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("reports core checks and current evidence count", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+    const dbPath = join(dir, "evidence.duckdb");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await populateEvidence(config, store);
+    await store.close();
+
+    const result = await runDoctor(configPath, dbPath);
+
+    expect(result.ok).toBe(true);
+    expect(result.output).toContain("Ancilis doctor");
+    expect(result.output).toContain("[OK] config:");
+    expect(result.output).toContain("[OK] assets:");
+    expect(result.output).toContain("[OK] evidence:");
+    expect(result.output).toContain("1 records present");
+  });
+
+  it("fails on missing config", async () => {
+    const result = await runDoctor(join(dir, "missing.yaml"));
+
+    expect(result.ok).toBe(false);
+    expect(result.output).toContain("[FAIL] config:");
+  });
+
+  it("reports the packaged taxonomy version and optional mcp diagnostic", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+    const taxonomyPath = join(process.cwd(), "shared", "classifications", "taxonomy.json");
+    const taxonomy = JSON.parse(readFileSync(taxonomyPath, "utf-8")) as { version: string };
+
+    const result = await runDoctor(configPath, join(dir, "doctor.duckdb"));
+
+    expect(result.output).toContain(`taxonomy ${taxonomy.version}`);
+    expect(result.output).toContain("optional mcp extra:");
+  });
+
+  it("reports the optional mcp extra as installed when the package is present", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+
+    const result = await runDoctor(configPath, join(dir, "doctor.duckdb"));
+
+    expect(result.output).toContain("[OK] optional mcp extra: installed");
+  });
+});
+
+// ===== Report Command Tests =====
+
+describe("runReport", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = tmpDir();
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("filters evidence to the requested reporting period", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+    const dbPath = join(dir, "report.duckdb");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    const now = Date.now();
+
+    await populateEvidence(config, store, [
+      { timestamp: new Date(now - 45 * 86400000).toISOString() },
+      { timestamp: new Date(now - 2 * 86400000).toISOString() },
+    ]);
+    await store.close();
+
+    const result = await runReport({
+      configPath,
+      dbPath,
+      period: "30d",
+      format: "markdown",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.output).toContain("- Evaluations: 1");
+    expect(result.output).not.toContain("- Evaluations: 2");
+  });
+
+  it("writes markdown output to a file", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+    const dbPath = join(dir, "report.duckdb");
+    const outputPath = join(dir, "report.md");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await populateEvidence(config, store);
+    await store.close();
+
+    const result = await runReport({
+      configPath,
+      dbPath,
+      period: "30d",
+      format: "markdown",
+      outputPath,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(existsSync(outputPath)).toBe(true);
+    expect(readFileSync(outputPath, "utf-8")).toContain("# Ancilis Posture Report");
+  });
+
+  it("reports a markdown fallback when pdf tooling is unavailable", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+    const dbPath = join(dir, "report.duckdb");
+    const outputPath = join(dir, "report.pdf");
+    const fallbackPath = join(dir, "report.md");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await populateEvidence(config, store);
+    await store.close();
+
+    const originalPath = process.env.PATH;
+    process.env.PATH = "";
+
+    try {
+      const result = await runReport({
+        configPath,
+        dbPath,
+        period: "30d",
+        format: "pdf",
+        outputPath,
+      });
+
+      expect(result.ok).toBe(true);
+      expect(result.output).toBe(
+        `PDF export unavailable (pandoc/xelatex unavailable); wrote Markdown fallback to ${fallbackPath}`,
+      );
+      expect(result.outputPath).toBe(fallbackPath);
+      expect(existsSync(outputPath)).toBe(false);
+      expect(readFileSync(fallbackPath, "utf-8")).toContain("# Ancilis Posture Report");
+    } finally {
+      process.env.PATH = originalPath;
+    }
+  });
+});
+
+describe("package metadata", () => {
+  it("ships a CLI executable for npm consumers", () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as {
+      bin?: Record<string, string>;
+    };
+
+    expect(pkg.bin).toEqual({ ancilis: "./dist/cli.js" });
+
+    const packed = JSON.parse(
+      execFileSync("npm", ["pack", "--dry-run", "--json"], {
+        cwd: process.cwd(),
+        encoding: "utf-8",
+      }),
+    ) as Array<{ files: Array<{ path: string }> }>;
+
+    expect(packed[0]?.files.some((file) => file.path === "dist/cli.js")).toBe(true);
+  });
+
+  it("does not ship Python build artifacts in the npm tarball", () => {
+    const packed = JSON.parse(
+      execFileSync("npm", ["pack", "--dry-run", "--json"], {
+        cwd: process.cwd(),
+        encoding: "utf-8",
+      }),
+    ) as Array<{ files: Array<{ path: string }> }>;
+
+    const paths = packed[0]?.files.map((file) => file.path) ?? [];
+
+    expect(paths).not.toContain("dist/ancilis-0.1.0-py3-none-any.whl");
+    expect(paths).not.toContain("dist/ancilis-0.1.0.tar.gz");
+  });
+
+  it("provides an ESLint 9 config for TypeScript source", () => {
+    const eslintPath = join(process.cwd(), "node_modules", ".bin", "eslint");
+    expect(() =>
+      execFileSync(eslintPath, ["typescript/src/cli.ts"], {
+        cwd: process.cwd(),
+        encoding: "utf-8",
+        stdio: "pipe",
+      }),
+    ).not.toThrow();
+  });
+});
+
 // ===== Report — Baseline Tests =====
 
 describe("Report — Baseline", () => {
@@ -257,6 +484,14 @@ describe("Report — Baseline", () => {
     expect(output).toContain("Controls:");
   });
 
+  it("terminal output includes evaluated tools", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const gen = new ReportGenerator(config, populatedSummary(3));
+    const report = gen.generate();
+    const output = renderTerminal(report);
+    expect(output).toContain("Tools evaluated: read_file");
+  });
+
   it("markdown output", () => {
     const config = loadConfig({ raw: minimalConfig() });
     const gen = new ReportGenerator(config, populatedSummary(3));
@@ -265,6 +500,23 @@ describe("Report — Baseline", () => {
     expect(md).toContain("# Ancilis Posture Report");
     expect(md).toContain("Baseline Security");
     expect(md).toContain("Pass Rate");
+  });
+
+  it("renders baseline pass rates with one decimal place", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const summary: EvidenceSummary = {
+      ...emptySummary(),
+      total_evaluations: 1,
+      control_pass_rates: {
+        "PR-01": { PASS: 1, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 },
+      },
+    };
+
+    const gen = new ReportGenerator(config, summary);
+    const report = gen.generate("30d", "markdown");
+    const md = renderMarkdown(report);
+
+    expect(md).toContain("| Identity verification | 100.0% | 1 | Pass |");
   });
 });
 
@@ -309,6 +561,29 @@ describe("Report — Compliance", () => {
     expect(md).toContain("Citation");
   });
 
+  it("renders compliance pass rates with one decimal place", () => {
+    const config = loadConfig({ raw: fullConfig() });
+    const summary = populatedSummary(2);
+    summary.control_pass_rates = {
+      ...summary.control_pass_rates,
+      "PR-01": { PASS: 2, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 },
+    };
+
+    const gen = new ReportGenerator(config, summary);
+    const report = gen.generate("30d", "markdown");
+    const md = renderMarkdown(report);
+
+    expect(md).toContain("| Art. 5(1)(f), Art. 32 | PR-01 | 2 | 100.0% |");
+  });
+
+  it("compliance output includes evidence retention guidance", () => {
+    const config = loadConfig({ raw: fullConfig() });
+    const gen = new ReportGenerator(config, populatedSummary(2));
+    const report = gen.generate("30d", "markdown");
+    const md = renderMarkdown(report);
+    expect(md).toContain("Evidence retention:");
+  });
+
   it("gaps framed as improvements", () => {
     const config = loadConfig({ raw: fullConfig() });
     const summary = populatedSummary(2);
@@ -333,6 +608,17 @@ describe("Report — AIUC-1 Readiness", () => {
     config.activeCertifications = ["aiuc-1"];
     return config;
   }
+
+  it("aiuc1 readiness falls back to the standard posture report without active certifications", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const gen = new ReportGenerator(config, populatedSummary(5));
+    const report = gen.generate("30d", "aiuc1-readiness");
+    const md = renderMarkdown(report);
+
+    expect(report.certification).toBeNull();
+    expect(md).toContain("# Ancilis Posture Report");
+    expect(md).not.toContain("AIUC-1 READINESS REPORT");
+  });
 
   it("aiuc1 report generated", () => {
     const config = certConfig();
@@ -397,7 +683,9 @@ describe("Report — AIUC-1 Readiness", () => {
     const report = gen.generate("30d", "aiuc1-readiness");
     const md = renderMarkdown(report);
     expect(md).toContain("AIUC-1 READINESS REPORT");
-    expect(md).toContain("Automated");
+    expect(md).toContain("Readiness Summary");
+    expect(md).toContain("Readiness:");
+    expect(md).toContain("Coverage:");
     expect(md).toContain("Operator Action Required");
   });
 });
@@ -427,6 +715,25 @@ describe("Report — Combined Mode", () => {
   });
 });
 
+describe("Report — Advisory", () => {
+  it("renders advisory recommendations from pattern detections", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const gen = new ReportGenerator(config, {
+      ...populatedSummary(1),
+      pattern_detections: {
+        credit_card: 2,
+      },
+    });
+    const report = gen.generate("30d", "markdown");
+    const md = renderMarkdown(report);
+
+    expect(report.advisory).not.toBeNull();
+    expect(md).toContain("Classification Advisory");
+    expect(md).toContain("credit_cards");
+    expect(md).toContain("my_agent_handles");
+  });
+});
+
 // ===== Output Format Tests =====
 
 describe("Output Formats", () => {
@@ -447,6 +754,30 @@ describe("Output Formats", () => {
     const md = renderMarkdown(report);
     expect(md).toContain("# ");
     expect(md).toContain("|");
+  });
+
+  it("pdf renderer writes a markdown fallback next to the requested pdf when pandoc is unavailable", () => {
+    const dir = tmpDir();
+    const outputPath = join(dir, "report.pdf");
+    const fallbackPath = join(dir, "report.md");
+    const markdown = "# Example Report\n";
+
+    const result = renderPdf(markdown, outputPath, {
+      execFile: () => {
+        const err = new Error("pandoc missing") as NodeJS.ErrnoException;
+        err.code = "ENOENT";
+        throw err;
+      },
+    });
+
+    expect(result).toEqual({
+      format: "markdown",
+      outputPath: fallbackPath,
+      fallbackReason: "pandoc/xelatex unavailable",
+    });
+    expect(existsSync(outputPath)).toBe(false);
+    expect(readFileSync(fallbackPath, "utf-8")).toBe(markdown);
+    rmSync(fallbackPath, { force: true });
   });
 });
 

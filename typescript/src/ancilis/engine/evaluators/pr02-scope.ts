@@ -4,6 +4,7 @@ import type { Action } from "../action.js";
 import type { ControlResult } from "../result.js";
 import type { ResolvedConfig } from "../../config/index.js";
 import type { ControlEvaluator } from "./base.js";
+import { matchesToolList } from "../tool-matching.js";
 
 export interface RateTracker {
   getActionCount(agentId: string): number;
@@ -29,7 +30,7 @@ export class PR02ScopeEvaluator implements ControlEvaluator {
     };
 
     // Blocked takes precedence
-    if (config.toolsBlocked.length > 0 && config.toolsBlocked.includes(toolName)) {
+    if (config.toolsBlocked.length > 0 && matchesToolList(toolName, config.toolsBlocked)) {
       evidence.scope_check = "out_of_scope";
       evidence.failure_reason = "tool is explicitly blocked";
       return {
@@ -40,7 +41,7 @@ export class PR02ScopeEvaluator implements ControlEvaluator {
     }
 
     // Check allowed list
-    if (config.toolsAllowed.length > 0 && !config.toolsAllowed.includes(toolName)) {
+    if (config.toolsAllowed.length > 0 && !matchesToolList(toolName, config.toolsAllowed)) {
       evidence.scope_check = "out_of_scope";
       evidence.failure_reason = "tool not in allowlist";
       return {

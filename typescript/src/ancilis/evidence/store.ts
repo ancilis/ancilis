@@ -1,13 +1,13 @@
 /** DuckDB-backed evidence store with hash chain integrity. */
 
 import { createHash, randomUUID } from "node:crypto";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import duckdb from "duckdb";
 import type { EvaluationResult } from "../engine/result.js";
 import type { ResolvedConfig } from "../config/index.js";
-import { GENESIS_SEED, canonicalPayload, computeHash } from "./chain.js";
+import { GENESIS_SEED, canonicalJsonStringify, canonicalPayload, computeHash } from "./chain.js";
 import type { EvidenceRecord } from "./record.js";
 
 const CREATE_TABLE_SQL = `
@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     active_certifications JSON NOT NULL,
     record_hash VARCHAR NOT NULL,
     previous_hash VARCHAR NOT NULL,
-    total_duration_ms DOUBLE NOT NULL
+    total_duration_ms DOUBLE NOT NULL,
+    output_summary VARCHAR
 );
 `;
 
@@ -37,14 +38,14 @@ INSERT INTO evidence_records (
     record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
-    record_hash, previous_hash, total_duration_ms
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    record_hash, previous_hash, total_duration_ms, output_summary
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 `;
 
 const SELECT_COLUMNS = `
 seq_id, record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
-active_certifications, record_hash, previous_hash, total_duration_ms
+active_certifications, record_hash, previous_hash, total_duration_ms, output_summary
 `;
 
 function execAsync(conn: duckdb.Connection, sql: string): Promise<void> {
@@ -107,6 +108,10 @@ export class EvidenceStore {
     // No filesystem access here — lazy init on first use
   }
 
+  get dbPath(): string {
+    return this._dbPath;
+  }
+
   private async ensureInitialized(): Promise<void> {
     if (this._initialized) return this._initialized;
 
@@ -123,6 +128,9 @@ export class EvidenceStore {
       const names = new Set(columns.map((row) => (row as Record<string, unknown>).name as string));
       if (!names.has("source_type")) {
         await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'");
+      }
+      if (!names.has("output_summary")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN output_summary VARCHAR");
       }
     })();
 
@@ -152,7 +160,11 @@ export class EvidenceStore {
     return rows.length > 0 ? (rows[0] as Record<string, unknown>).record_hash as string : GENESIS_SEED;
   }
 
-  async store(evaluation: EvaluationResult, toolName: string): Promise<EvidenceRecord> {
+  async store(
+    evaluation: EvaluationResult,
+    toolName: string,
+    outputSummary?: string | null,
+  ): Promise<EvidenceRecord> {
     await this.ensureInitialized();
     const recordId = randomUUID();
     const previousHash = await this.getLastHash();
@@ -180,6 +192,7 @@ export class EvidenceStore {
       activeCertifications: this._certifications,
       totalDurationMs: evaluation.totalDurationMs,
       previousHash,
+      outputSummary,
     });
     const recordHash = computeHash(canon);
 
@@ -199,6 +212,7 @@ export class EvidenceStore {
       recordHash,
       previousHash,
       totalDurationMs: evaluation.totalDurationMs,
+      outputSummary: outputSummary ?? null,
     };
 
     await runAsync(this._conn!, INSERT_SQL, [
@@ -210,13 +224,14 @@ export class EvidenceStore {
       record.toolName,
       record.decision,
       record.mode,
-      JSON.stringify(record.controlResults),
+      canonicalJsonStringify(record.controlResults),
       JSON.stringify(record.activeOverlays),
       JSON.stringify(record.dataClassifications),
       JSON.stringify(record.activeCertifications),
       record.recordHash,
       record.previousHash,
       record.totalDurationMs,
+      record.outputSummary,
     ]);
 
     return record;
@@ -302,6 +317,7 @@ export class EvidenceStore {
         activeCertifications: record.activeCertifications,
         totalDurationMs: record.totalDurationMs,
         previousHash: record.previousHash,
+        outputSummary: record.outputSummary,
       });
       const expectedHash = computeHash(canon);
 
@@ -318,23 +334,46 @@ export class EvidenceStore {
     return { valid: errors.length === 0, errors };
   }
 
-  async getSummary(): Promise<Record<string, unknown>> {
-    await this.ensureInitialized();
-    const total = await this.count();
-
-    if (total === 0) {
+  async getSummary(options?: { since?: string }): Promise<Record<string, unknown>> {
+    if (!this._initialized && !this._inMemory && !existsSync(this._dbPath)) {
       return {
         totalEvaluations: 0,
         decisions: {},
         toolsEvaluated: [],
         chainValid: true,
         chainErrors: [],
+        controlPassRates: {},
+        patternDetections: {},
+      };
+    }
+
+    await this.ensureInitialized();
+    const whereClause = options?.since ? " WHERE timestamp >= ?" : "";
+    const params = options?.since ? [options.since] : [];
+
+    const totalRows = await allAsync(
+      this._conn!,
+      `SELECT COUNT(*)::INTEGER as cnt FROM evidence_records${whereClause}`,
+      params,
+    );
+    const total = ((totalRows[0] as Record<string, unknown> | undefined)?.cnt as number | undefined) ?? 0;
+
+    if (total === 0 && !options?.since) {
+      return {
+        totalEvaluations: 0,
+        decisions: {},
+        toolsEvaluated: [],
+        chainValid: true,
+        chainErrors: [],
+        controlPassRates: {},
+        patternDetections: {},
       };
     }
 
     const decisionRows = await allAsync(
       this._conn!,
-      "SELECT decision, COUNT(*)::INTEGER as cnt FROM evidence_records GROUP BY decision",
+      `SELECT decision, COUNT(*)::INTEGER as cnt FROM evidence_records${whereClause} GROUP BY decision`,
+      params,
     );
     const decisions: Record<string, number> = {};
     for (const row of decisionRows) {
@@ -345,7 +384,8 @@ export class EvidenceStore {
 
     const toolRows = await allAsync(
       this._conn!,
-      "SELECT DISTINCT tool_name FROM evidence_records ORDER BY tool_name",
+      `SELECT DISTINCT tool_name FROM evidence_records${whereClause} ORDER BY tool_name`,
+      params,
     );
     const tools = toolRows.map(r => (r as Record<string, unknown>).tool_name as string);
 
@@ -353,9 +393,11 @@ export class EvidenceStore {
 
     const crRows = await allAsync(
       this._conn!,
-      "SELECT control_results FROM evidence_records",
+      `SELECT control_results FROM evidence_records${whereClause}`,
+      params,
     );
     const controlStats: Record<string, Record<string, number>> = {};
+    const patternDetections: Record<string, number> = {};
     for (const row of crRows) {
       const crJson = (row as Record<string, unknown>).control_results;
       const results = typeof crJson === "string" ? JSON.parse(crJson) : crJson;
@@ -368,6 +410,15 @@ export class EvidenceStore {
         if (result in controlStats[cid]!) {
           controlStats[cid]![result]!++;
         }
+        const evidenceData = (cr.evidence_data as Record<string, unknown> | undefined) ?? {};
+        const patterns = (evidenceData.patterns_detected as Array<Record<string, unknown>> | undefined) ?? [];
+        for (const pattern of patterns) {
+          const patternType = pattern.type;
+          const count = pattern.count;
+          if (typeof patternType === "string" && typeof count === "number") {
+            patternDetections[patternType] = (patternDetections[patternType] ?? 0) + count;
+          }
+        }
       }
     }
 
@@ -376,6 +427,7 @@ export class EvidenceStore {
       decisions,
       toolsEvaluated: tools,
       controlPassRates: controlStats,
+      patternDetections,
       chainValid,
       chainErrors,
     };
@@ -421,6 +473,7 @@ export class EvidenceStore {
       recordHash: row.record_hash as string,
       previousHash: row.previous_hash as string,
       totalDurationMs: row.total_duration_ms as number,
+      outputSummary: (row.output_summary as string | null | undefined) ?? null,
     };
   }
 }

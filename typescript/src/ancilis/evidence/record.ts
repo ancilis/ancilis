@@ -16,4 +16,5 @@ export interface EvidenceRecord {
   recordHash: string;
   previousHash: string;
   totalDurationMs: number;
+  outputSummary?: string | null;
 }

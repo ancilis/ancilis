@@ -29,6 +29,7 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
     if (!entry) {
       evidence.registered = false;
       evidence.hash_match = "no_hash";
+      evidence.approved = false;
       return {
         controlId: this.controlId, controlName: this.controlName,
         result: "FAIL", detail: `Tool '${toolName}' is not registered.`,
@@ -36,7 +37,11 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
       };
     }
 
+    const approved = entry.status === ToolStatus.APPROVED;
+
     evidence.registered = true;
+    evidence.approved = approved;
+    evidence.tool_status = entry.status;
     evidence.registry_entry = {
       name: entry.name,
       version: entry.version ?? null,
@@ -44,12 +49,12 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
     };
 
     // FAIL if tool is OBSERVED (not approved by operator)
-    if (entry.status === ToolStatus.OBSERVED) {
+    if (!approved) {
       evidence.hash_match = "no_hash";
       return {
         controlId: this.controlId, controlName: this.controlName,
         result: "FAIL",
-        detail: `Tool '${toolName}' is registered but not approved. Run: ancilis approve-tool ${toolName}`,
+        detail: `Tool '${toolName}' is registered but not approved (status: ${entry.status}). Run: ancilis approve-tool ${toolName}`,
         evidenceData: evidence, durationMs: performance.now() - start,
       };
     }
@@ -77,13 +82,13 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
       }
       evidence.hash_match = true;
     } else {
-      evidence.hash_match = "no_hash";
-      // FLAG if tool is APPROVED but no hash baseline exists
-      if (entry.status === ToolStatus.APPROVED && !entry.descriptionHash) {
+      evidence.hash_match = "no_baseline";
+      const hasBaseline = entry.descriptionHash != null || action.tool.descriptionHash != null;
+      if (!hasBaseline) {
         return {
           controlId: this.controlId, controlName: this.controlName,
           result: "FLAG",
-          detail: "Tool approved but no description hash baseline — provenance not fully verifiable.",
+          detail: `Tool '${toolName}' is approved but has no description baseline. Provenance will be fully verified after first discovery.`,
           evidenceData: evidence, durationMs: performance.now() - start,
         };
       }
@@ -91,7 +96,7 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
 
     return {
       controlId: this.controlId, controlName: this.controlName,
-      result: "PASS", detail: "Tool provenance verified.",
+      result: "PASS", detail: "Tool provenance verified — approved and hash-consistent.",
       evidenceData: evidence, durationMs: performance.now() - start,
     };
   }

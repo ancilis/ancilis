@@ -6,8 +6,16 @@ import {
   loadTaxonomy,
 } from "./loader.js";
 
-export const BASELINE_CONTROLS = new Set(["PR-01", "PR-02", "PR-03", "PR-04"]);
-export const EXTENDED_CONTROLS = new Set(["PR-05", "DE-01"]);
+export const ALL_AKSI_CONTROLS = new Set([
+  "GOV-01", "GOV-02", "GOV-03", "GOV-04",
+  "ID-01", "ID-02", "ID-03", "ID-04", "ID-05",
+  "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
+  "DE-01", "DE-02", "DE-03", "DE-04",
+  "RS-01", "RS-02", "RS-03",
+  "RC-01", "RC-02",
+]);
+export const BASELINE_CONTROLS = ALL_AKSI_CONTROLS;
+export const EXTENDED_CONTROLS = new Set<string>();
 
 export interface ActivationSpec {
   activeControls: string[];
@@ -48,37 +56,28 @@ export class ActivationResolver {
       humanOversightRequired: false,
     };
 
-    // 1. Baseline controls
-    for (const cid of [...BASELINE_CONTROLS].sort()) {
+    // 1. All 26 AKSI controls are baseline
+    for (const cid of [...ALL_AKSI_CONTROLS].sort()) {
       spec.activeControls.push(cid);
       spec.controlThresholds[cid] = "standard";
       spec.activationSource[cid] = "baseline";
     }
 
-    // 2. Path 1 — data classification
+    // 2. NIST CSF baseline overlay is always active
+    const nistCsf = this.overlayProfiles.get("nist-csf");
+    if (nistCsf?.trigger_type === "baseline") {
+      spec.activeOverlays.push("nist-csf");
+      spec.activationSource["nist-csf"] = "baseline";
+    }
+
+    // 3. Path 1 — data classification
     if (options?.dataHandling && options.dataHandling.length > 0) {
       this.resolveDataPath(spec, options.dataHandling);
     }
 
-    // 3. Path 2 — certification intent
+    // 4. Path 2 — certification intent
     if (options?.certificationTargets && options.certificationTargets.length > 0) {
       this.resolveCertificationPath(spec, options.certificationTargets);
-    }
-
-    // 4. Activate extended controls if overlay or certification active
-    if (spec.activeOverlays.length > 0 || spec.activeCertifications.length > 0) {
-      for (const cid of [...EXTENDED_CONTROLS].sort()) {
-        if (!spec.activeControls.includes(cid)) {
-          spec.activeControls.push(cid);
-          spec.controlThresholds[cid] ??= "standard";
-          if (!spec.activationSource[cid]) {
-            const sources: string[] = [];
-            if (spec.activeOverlays.length > 0) sources.push(`overlay:${spec.activeOverlays[0]}`);
-            if (spec.activeCertifications.length > 0) sources.push(`certification_targets:${spec.activeCertifications[0]}`);
-            spec.activationSource[cid] = sources[0] ?? "extended";
-          }
-        }
-      }
     }
 
     spec.activeControls = [...new Set(spec.activeControls)].sort();
@@ -102,7 +101,12 @@ export class ActivationResolver {
       for (const dcCode of dcCodes) {
         const overlayIds = classificationLookup.get(dcCode) ?? [];
         for (const oid of overlayIds) {
-          if (this.overlayProfiles.has(oid) && !spec.activeOverlays.includes(oid)) {
+          const profile = this.overlayProfiles.get(oid);
+          if (profile?.trigger_type === "baseline") {
+            continue;
+          }
+
+          if (profile && !spec.activeOverlays.includes(oid)) {
             spec.activeOverlays.push(oid);
             spec.activationSource[oid] = `my_agent_handles:${dataType}`;
           }
@@ -192,6 +196,9 @@ export class ActivationResolver {
       const profile = this.overlayProfiles.get(oid);
       const name = (profile?.name as string) ?? oid;
       const sourceKey = spec.activationSource[oid] ?? "";
+      if (profile?.trigger_type === "baseline") {
+        continue;
+      }
       let triggered = "";
       if (sourceKey.includes("my_agent_handles:")) {
         const dataType = sourceKey.split(":")[1];
