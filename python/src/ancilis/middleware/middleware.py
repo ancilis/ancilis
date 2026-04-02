@@ -131,29 +131,33 @@ class AncilisMiddleware:
         evaluation = self._engine.evaluate(action)
         self._evaluation_log.append(evaluation)
 
-        # 3. Store evidence
-        self._evidence_store.store(evaluation, tool_name=name)
-
         # Track issues for summary line
         has_issues = any(r.result in ("FAIL", "ERROR") for r in evaluation.control_results)
         if has_issues:
             self._issue_count += 1
 
-        # 4. Enforce decision
+        # 3. Enforce decision — store evidence then raise for blocked calls
         if evaluation.decision == "BLOCK":
+            self._evidence_store.store(evaluation, tool_name=name)
             error = BlockedToolCallError(name, evaluation)
             logger.warning("%s", error.display_message)
             raise error
 
-        # 5. Forward to MCP server
+        # 4. Forward to MCP server
         try:
             result = await self._session.call_tool(name, arguments)
         except Exception:
             logger.exception("MCP server error calling tool '%s'", name)
             raise
 
-        # 6. Scan response
+        # 5. Extract response text for output disclosure and response scanning
         response_text = self._extract_response_text(result)
+
+        # 6. Store evidence with output_summary (output disclosure)
+        output_summary = response_text[:500] if response_text else None
+        self._evidence_store.store(evaluation, tool_name=name, output_summary=output_summary)
+
+        # 7. Scan response
         if response_text:
             scan = scan_response(name, response_text)
             if scan.patterns or scan.encryption_findings:
@@ -171,7 +175,7 @@ class AncilisMiddleware:
                 for finding in scan.encryption_findings:
                     logger.info("Positive finding: %s", finding.detail)
 
-        # 7. Return result to agent
+        # 8. Return result to agent
         return result
 
     async def list_tools(self) -> Any:
