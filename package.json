@@ -1,10 +1,13 @@
 {
   "name": "ancilis",
   "version": "0.1.0",
-  "description": "Preview TypeScript SDK for Ancilis runtime evaluation and policy enforcement",
+  "description": "TypeScript SDK for Ancilis runtime evaluation and policy enforcement",
   "type": "module",
   "main": "./dist/ancilis/index.js",
   "types": "./dist/ancilis/index.d.ts",
+  "bin": {
+    "ancilis": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "import": "./dist/ancilis/index.js",
@@ -13,7 +16,10 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist",
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts.map",
     "shared",
     "README.md",
     "LICENSE"
@@ -32,7 +38,6 @@
   "keywords": [
     "ai",
     "agent",
-    "preview",
     "mcp",
     "middleware",
     "policy",
@@ -64,6 +69,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@typescript-eslint/parser": "^8.58.0",
     "eslint": "^9.0.0",
     "typescript": "^5.5.0",
     "vitest": "^4.1.2"

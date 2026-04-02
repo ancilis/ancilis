@@ -3,6 +3,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
+import { ClassificationAdvisory } from "../activation/advisory.js";
 import { sharedPathFrom } from "../shared-path.js";
 
 const SHARED_DIR = sharedPathFrom(import.meta.url);
@@ -64,14 +65,42 @@ export interface EvidenceSummary {
   decisions: Record<string, number>;
   tools_evaluated: string[];
   control_pass_rates?: Record<string, Record<string, number>>;
+  pattern_detections?: Record<string, number>;
   chain_valid: boolean;
   chain_errors: string[];
 }
 
-function parsePeriod(period: string): number {
+type EvidenceSummaryLike = EvidenceSummary | Record<string, unknown>;
+
+export function parsePeriod(period: string): number {
   if (period.endsWith("d")) return parseInt(period) * 86400000;
   if (period.endsWith("h")) return parseInt(period) * 3600000;
   return 30 * 86400000;
+}
+
+function normalizeSummary(summary: EvidenceSummaryLike): EvidenceSummary {
+  const raw = summary as Record<string, unknown>;
+  return {
+    total_evaluations: (raw.total_evaluations as number | undefined)
+      ?? (raw.totalEvaluations as number | undefined)
+      ?? 0,
+    decisions: (raw.decisions as Record<string, number> | undefined) ?? {},
+    tools_evaluated: (raw.tools_evaluated as string[] | undefined)
+      ?? (raw.toolsEvaluated as string[] | undefined)
+      ?? [],
+    control_pass_rates: (raw.control_pass_rates as Record<string, Record<string, number>> | undefined)
+      ?? (raw.controlPassRates as Record<string, Record<string, number>> | undefined)
+      ?? {},
+    pattern_detections: (raw.pattern_detections as Record<string, number> | undefined)
+      ?? (raw.patternDetections as Record<string, number> | undefined)
+      ?? {},
+    chain_valid: (raw.chain_valid as boolean | undefined)
+      ?? (raw.chainValid as boolean | undefined)
+      ?? true,
+    chain_errors: (raw.chain_errors as string[] | undefined)
+      ?? (raw.chainErrors as string[] | undefined)
+      ?? [],
+  };
 }
 
 function normalizedDecisions(decisions: Record<string, number>): Record<string, number> {
@@ -88,15 +117,15 @@ export class ReportGenerator {
   private controlDefs: Map<string, Record<string, unknown>>;
   private overlayProfiles: Map<string, Record<string, unknown>>;
 
-  constructor(config: ResolvedConfig, summary: EvidenceSummary) {
+  constructor(config: ResolvedConfig, summary: EvidenceSummaryLike) {
     this.config = config;
-    this.summary = summary;
+    this.summary = normalizeSummary(summary);
     this.controlDefs = loadControlDefs();
     this.overlayProfiles = loadOverlayProfiles();
   }
 
-  generate(period = "30d", reportFormat = "terminal"): ReportData {
-    const now = new Date();
+  generate(period = "30d", reportFormat = "terminal", options?: { now?: Date }): ReportData {
+    const now = options?.now ?? new Date();
     const delta = parsePeriod(period);
     const periodStart = new Date(now.getTime() - delta);
 
@@ -122,11 +151,16 @@ export class ReportGenerator {
     }
 
     // Certification
-    if (this.config.activeCertifications.length > 0 || reportFormat === "aiuc1-readiness") {
-      if (this.config.activeCertifications.includes("aiuc-1") || reportFormat === "aiuc1-readiness") {
+    if (
+      this.config.activeCertifications.length > 0 &&
+      (reportFormat === "aiuc1-readiness" || this.config.activeCertifications.includes("aiuc-1"))
+    ) {
+      if (this.config.activeCertifications.includes("aiuc-1")) {
         data.certification = this.buildCertificationSection();
       }
     }
+
+    data.advisory = this.buildAdvisorySection();
 
     return data;
   }
@@ -233,20 +267,27 @@ export class ReportGenerator {
 
     const automated: Record<string, unknown>[] = [];
     let totalAutomated = 0;
+    let readyCount = 0;
     for (const [aksiId, reqIds] of Object.entries(reqMap).sort((a, b) => a[0].localeCompare(b[0]))) {
       const stats = controlStats[aksiId] ?? {};
       const total = Object.values(stats).reduce((a, b) => a + b, 0);
       const passed = stats.PASS ?? 0;
       const failed = stats.FAIL ?? 0;
       const flagged = stats.FLAG ?? 0;
+      const errored = stats.ERROR ?? 0;
+      const ready = passed > 0 && failed === 0 && errored === 0;
 
       for (const reqId of reqIds) {
         totalAutomated++;
+        if (ready) readyCount++;
         automated.push({
           requirementId: reqId,
           aksiControl: aksiId,
           evidenceCount: total,
-          passed, failed, flagged,
+          passed,
+          failed,
+          flagged,
+          ready,
         });
       }
     }
@@ -258,7 +299,8 @@ export class ReportGenerator {
     }));
 
     const totalRequirements = totalAutomated + operator.length;
-    const automatedPct = totalRequirements > 0 ? Math.round(totalAutomated / totalRequirements * 100) : 0;
+    const readinessPct = totalRequirements > 0 ? Math.round(readyCount / totalRequirements * 100) : 0;
+    const coveragePct = totalRequirements > 0 ? Math.round(totalAutomated / totalRequirements * 100) : 0;
 
     return {
       certificationId: "aiuc-1",
@@ -267,10 +309,39 @@ export class ReportGenerator {
       operatorActionRequired: operator,
       totalRequirements,
       automatedCount: totalAutomated,
+      readyCount,
       operatorCount: operator.length,
-      automatedPercentage: automatedPct,
+      readinessPercentage: readinessPct,
+      coveragePercentage: coveragePct,
+      automatedPercentage: coveragePct,
       evidenceCount: this.summary.total_evaluations,
       chainValid: this.summary.chain_valid,
+    };
+  }
+
+  private buildAdvisorySection(): Record<string, unknown> | null {
+    const patternDetections = this.summary.pattern_detections ?? {};
+    const detections = Object.entries(patternDetections)
+      .filter(([, count]) => typeof count === "number" && count > 0)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([patternType, count]) => ({ patternType, count }));
+    if (detections.length === 0) {
+      return null;
+    }
+
+    const advisor = new ClassificationAdvisory();
+    const { recommendations, upgradeAdvisories } = advisor.generate(detections, {
+      activeDataHandling: [...this.config.dataClassifications.keys()].sort(),
+      activeCertifications: this.config.activeCertifications,
+    });
+    if (recommendations.length === 0 && upgradeAdvisories.length === 0) {
+      return null;
+    }
+
+    return {
+      patternDetections: detections,
+      recommendations,
+      upgradeAdvisories,
     };
   }
 }

@@ -187,7 +187,22 @@ describe("PR-03 Provenance", () => {
     const action = makeAction({ toolVersion: "1.0", descriptionHash: "hash123" });
     const engine = new Engine(config, { registry: reg });
     const result = engine.evaluate(action);
-    expect(getControlResult(result.controlResults, "PR-03").result).toBe("PASS");
+    const pr03 = getControlResult(result.controlResults, "PR-03");
+    expect(pr03.result).toBe("PASS");
+    expect(pr03.detail).toBe("Tool provenance verified — approved and hash-consistent.");
+    expect(pr03.evidenceData).toMatchObject({
+      tool_name: "test-tool",
+      tool_version: "1.0",
+      registered: true,
+      approved: true,
+      tool_status: "approved",
+      hash_match: true,
+      registry_entry: {
+        name: "test-tool",
+        version: "1.0",
+        status: "approved",
+      },
+    });
   });
 
   it("unregistered tool fails", () => {
@@ -195,7 +210,16 @@ describe("PR-03 Provenance", () => {
     const action = makeAction({ toolName: "unknown-tool" });
     const engine = new Engine(config, { registry: new ToolRegistry() });
     const result = engine.evaluate(action);
-    expect(getControlResult(result.controlResults, "PR-03").result).toBe("FAIL");
+    const pr03 = getControlResult(result.controlResults, "PR-03");
+    expect(pr03.result).toBe("FAIL");
+    expect(pr03.detail).toBe("Tool 'unknown-tool' is not registered.");
+    expect(pr03.evidenceData).toMatchObject({
+      tool_name: "unknown-tool",
+      tool_version: null,
+      registered: false,
+      approved: false,
+      hash_match: "no_hash",
+    });
   });
 
   it("hash mismatch fails", () => {
@@ -209,7 +233,7 @@ describe("PR-03 Provenance", () => {
     expect(pr03.detail.toLowerCase()).toContain("tampering");
   });
 
-  it("no hash stored flags with note", () => {
+  it("no hash baseline flags with python-equivalent detail", () => {
     const reg = makeRegistry(["test-tool", "1.0"]);
     const config = makeConfig();
     const action = makeAction({ toolVersion: "1.0" });
@@ -217,7 +241,22 @@ describe("PR-03 Provenance", () => {
     const result = engine.evaluate(action);
     const pr03 = getControlResult(result.controlResults, "PR-03");
     expect(pr03.result).toBe("FLAG");
-    expect(pr03.evidenceData.hash_match).toBe("no_hash");
+    expect(pr03.detail).toBe(
+      "Tool 'test-tool' is approved but has no description baseline. Provenance will be fully verified after first discovery.",
+    );
+    expect(pr03.evidenceData).toMatchObject({
+      tool_name: "test-tool",
+      tool_version: "1.0",
+      registered: true,
+      approved: true,
+      tool_status: "approved",
+      hash_match: "no_baseline",
+      registry_entry: {
+        name: "test-tool",
+        version: "1.0",
+        status: "approved",
+      },
+    });
   });
 
   it("version mismatch fails", () => {

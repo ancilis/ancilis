@@ -70,10 +70,11 @@ describe("Path 1 — Data Classification", () => {
     expect(spec.activeOverlays).toContain("gdpr");
   });
 
-  it("no data handling no overlays", () => {
+  it("no data handling keeps baseline overlay and full control set", () => {
     const resolver = new ActivationResolver();
     const spec = resolver.resolve();
-    expect(spec.activeOverlays).toEqual([]);
+    expect(spec.activeOverlays).toEqual(["nist-csf"]);
+    expect(spec.activeControls.length).toBe(26);
     expect(spec.dataClassifications).toEqual([]);
   });
 });
@@ -120,7 +121,7 @@ describe("Both Paths Composing", () => {
     });
     expect(spec.activeOverlays).toContain("hipaa");
     expect(spec.activeCertifications).toContain("aiuc-1");
-    expect(spec.activeControls.length).toBe(6);
+    expect(spec.activeControls.length).toBe(26);
   });
 
   it("conflict strictest wins", () => {
@@ -393,6 +394,33 @@ describe("Conflict Resolution", () => {
     const resolver = new ActivationResolver();
     const spec = resolver.resolve({ dataHandling: ["health_records"] });
     expect((spec.evidenceRequirements["PR-04"] ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("certification still works with baseline controls", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ certificationTargets: ["aiuc-1"] });
+    expect(spec.activeCertifications).toContain("aiuc-1");
+    expect(spec.activeControls.length).toBe(26);
+  });
+
+  it("combined certification and data keeps nist-csf baseline active", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({
+      certificationTargets: ["aiuc-1"],
+      dataHandling: ["credit_cards"],
+    });
+    expect(spec.activeCertifications).toContain("aiuc-1");
+    expect(spec.activeOverlays).toContain("pci-dss-v4");
+    expect(spec.activeOverlays).toContain("nist-csf");
+  });
+
+  it("roadmap overlays degrade gracefully without dropping baseline coverage", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["controlled_unclassified"] });
+    expect(spec.dataClassifications).toContain("DC-CUI");
+    expect(spec.activeOverlays).not.toContain("cmmc-l2");
+    expect(spec.activeOverlays).toContain("nist-csf");
+    expect(spec.activeControls.length).toBe(26);
   });
 });
 

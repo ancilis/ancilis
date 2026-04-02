@@ -18,7 +18,19 @@ export type { ActivationSpec, ClassificationRecommendation, CertificationUpgrade
 export { PR05AuditEvaluator, DE01BaselineEvaluator } from "./controls/index.js";
 export type { BaselineWindow, DeviationFlag } from "./controls/index.js";
 
-export { ReportGenerator, renderTerminal, renderMarkdown } from "./report/index.js";
-export type { ReportData, EvidenceSummary } from "./report/index.js";
+export { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderPdf } from "./report/index.js";
+export type { ReportData, EvidenceSummary, RenderPdfOptions } from "./report/index.js";
 
-export { formatStatus, validateAndFormat, approveTool } from "./cli/index.js";
+export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport } from "./cli/index.js";
+export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
+export { CLIActionProducer, HTTPActionProducer, ToolActionProducer, BlockedActionError } from "./producers/index.js";
+export type {
+  AnyFn,
+  CLIExecutionResult,
+  CLIInvocation,
+  HTTPExecutionResult,
+  HTTPObservation,
+  HTTPRequest,
+  ToolExecutionResult,
+  ToolInvocation,
+} from "./producers/index.js";

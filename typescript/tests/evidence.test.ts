@@ -3,6 +3,11 @@
  */
 
 import { describe, it, expect, afterEach } from "vitest";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { randomUUID } from "node:crypto";
+import duckdb from "duckdb";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
 import type { EvaluationResult } from "../src/ancilis/engine/result.js";
@@ -38,6 +43,21 @@ function makeEvaluation(overrides: Partial<EvaluationResult> = {}): EvaluationRe
     totalDurationMs: 5.0,
     ...overrides,
   };
+}
+
+function queryOneString(dbPath: string, sql: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const db = new duckdb.Database(dbPath);
+    const conn = db.connect();
+    conn.all(sql, (err: duckdb.DuckDbError | null, rows: duckdb.TableData) => {
+      if (err) {
+        conn.close(() => db.close(() => reject(err)));
+        return;
+      }
+      const value = ((rows[0] as Record<string, unknown> | undefined)?.control_results ?? "") as string;
+      conn.close(() => db.close(() => resolve(value)));
+    });
+  });
 }
 
 // --- Hash Chain ---
@@ -86,6 +106,74 @@ describe("Hash Chain", () => {
     const parsed = JSON.parse(payload);
     const keys = Object.keys(parsed);
     expect(keys).toEqual([...keys].sort());
+  });
+
+  it("canonical payload matches Python-style recursive JSON canonicalization", () => {
+    const payload = canonicalPayload({
+      evaluationId: "e1",
+      timestamp: "2025-01-01T00:00:00Z",
+      agentId: "agent",
+      sourceType: "agent",
+      toolName: "tool",
+      decision: "ALLOW",
+      mode: "audit",
+      controlResults: [
+        {
+          result: "PASS",
+          detail: "Agent identity verified",
+          control_name: "Agent Identity",
+          control_id: "PR-01",
+          evidence_data: {
+            z_last: "z",
+            a_first: "a",
+          },
+          duration_ms: 1,
+        },
+      ],
+      activeOverlays: [],
+      dataClassifications: [],
+      activeCertifications: [],
+      totalDurationMs: 5,
+      previousHash: GENESIS_SEED,
+    });
+
+    expect(payload).toBe(
+      `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","control_results":[{"control_id":"PR-01","control_name":"Agent Identity","detail":"Agent identity verified","duration_ms":1.0,"evidence_data":{"a_first":"a","z_last":"z"},"result":"PASS"}],"data_classifications":[],"decision":"ALLOW","evaluation_id":"e1","mode":"audit","previous_hash":"${GENESIS_SEED}","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":5.0}`,
+    );
+  });
+
+  it("canonical payload escapes unicode strings and preserves nested float literals like Python json.dumps", () => {
+    const payload = canonicalPayload({
+      evaluationId: "e1",
+      timestamp: "2025-01-01T00:00:00Z",
+      agentId: "agent",
+      sourceType: "agent",
+      toolName: "tool",
+      decision: "ALLOW",
+      mode: "audit",
+      controlResults: [
+        {
+          control_id: "DE-01",
+          control_name: "Behavioral Anomaly Detection",
+          detail: "Baseline not yet established — monitoring started.",
+          duration_ms: 1.0,
+          evidence_data: {
+            current_rate_vs_baseline: 0.0,
+            display_message: "Tool call frequency is 1.0x above baseline average — normal",
+          },
+          result: "PASS",
+        },
+      ],
+      activeOverlays: [],
+      dataClassifications: [],
+      activeCertifications: [],
+      totalDurationMs: 5.0,
+      previousHash: GENESIS_SEED,
+    });
+
+    expect(payload).toBe(
+      `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","control_results":[{"control_id":"DE-01","control_name":"Behavioral Anomaly Detection","detail":"Baseline not yet established \\u2014 monitoring started.","duration_ms":1.0,"evidence_data":{"current_rate_vs_baseline":0.0,"display_message":"Tool call frequency is 1.0x above baseline average \\u2014 normal"},"result":"PASS"}],"data_classifications":[],"decision":"ALLOW","evaluation_id":"e1","mode":"audit","previous_hash":"${GENESIS_SEED}","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":5.0}`,
+    );
   });
 
   it("compute hash produces SHA-256", () => {
@@ -192,6 +280,67 @@ describe("Evidence Store", () => {
     expect(errors).toEqual([]);
   });
 
+  it("verify chain detects output summary tampering", async () => {
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
+
+    const record = await store.store(makeEvaluation({ evaluationId: "e1" }), "t1", "safe summary");
+    await new Promise<void>((resolve, reject) => {
+      (store as unknown as { _conn: duckdb.Connection })._conn.run(
+        "UPDATE evidence_records SET output_summary = ? WHERE record_id = ?",
+        "tampered summary",
+        record.recordId,
+        (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
+      );
+    });
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(false);
+    expect(errors.some(error => error.includes("hash mismatch"))).toBe(true);
+  });
+
+  it("verify chain accepts Python-style unicode escapes and nested float literals from the shared store", async () => {
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.count();
+
+    const recordId = randomUUID();
+    const controlResultsJson =
+      "[{\"control_id\":\"DE-01\",\"control_name\":\"Behavioral Anomaly Detection\",\"detail\":\"Baseline not yet established \\u2014 monitoring started.\",\"duration_ms\":1.0,\"evidence_data\":{\"current_rate_vs_baseline\":0.0,\"display_message\":\"Tool call frequency is 1.0x above baseline average \\u2014 normal\"},\"result\":\"PASS\"}]";
+    const canonical =
+      `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","control_results":${controlResultsJson},"data_classifications":[],"decision":"ALLOW","evaluation_id":"e1","mode":"audit","previous_hash":"${GENESIS_SEED}","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":5.0}`;
+
+    await new Promise<void>((resolve, reject) => {
+      (store as unknown as { _conn: duckdb.Connection })._conn.run(
+        `INSERT INTO evidence_records (
+          record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+          decision, mode, control_results, active_overlays,
+          data_classifications, active_certifications,
+          record_hash, previous_hash, total_duration_ms, output_summary
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        recordId,
+        "e1",
+        "2025-01-01T00:00:00Z",
+        "agent",
+        "agent",
+        "tool",
+        "ALLOW",
+        "audit",
+        controlResultsJson,
+        "[]",
+        "[]",
+        "[]",
+        computeHash(canonical),
+        GENESIS_SEED,
+        5.0,
+        null,
+        (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
+      );
+    });
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
   it("verify chain empty", async () => {
     store = new EvidenceStore(makeConfig(), { inMemory: true });
     const { valid, errors } = await store.verifyChain();
@@ -219,6 +368,32 @@ describe("Evidence Store", () => {
     const record = await store.store(makeEvaluation({ decision: "BLOCK" }), "blocked-tool");
     expect(record.decision).toBe("BLOCK");
     expect(await store.count()).toBe(1);
+  });
+
+  it("persists control result durations as float literals for Python-compatible verification", async () => {
+    const dbPath = join(tmpdir(), `ancilis-evidence-${randomUUID()}.duckdb`);
+    store = new EvidenceStore(makeConfig(), { dbPath });
+
+    await store.store(makeEvaluation({
+      totalDurationMs: 5.0,
+      controlResults: [
+        {
+          controlId: "PR-01",
+          controlName: "Agent Identity",
+          result: "PASS",
+          detail: "Agent identity verified",
+          evidenceData: { agent_id: "test-agent" },
+          durationMs: 1.0,
+        },
+      ],
+    }), "tool-a");
+
+    const controlResultsJson = await queryOneString(
+      dbPath,
+      "SELECT control_results::VARCHAR as control_results FROM evidence_records LIMIT 1",
+    );
+
+    expect(controlResultsJson).toContain("\"duration_ms\":1.0");
   });
 });
 
@@ -271,6 +446,57 @@ describe("Summary", () => {
     const rates = summary.controlPassRates as Record<string, Record<string, number>>;
     expect(rates["PR-01"]!.PASS).toBe(1);
     expect(rates["PR-01"]!.FAIL).toBe(1);
+  });
+
+  it("get summary aggregates pattern detections", async () => {
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
+
+    await store.store(
+      makeEvaluation({
+        evaluationId: "e1",
+        controlResults: [
+          {
+            controlId: "PR-04",
+            controlName: "Data Exposure Prevention",
+            result: "PASS",
+            detail: "Patterns detected",
+            evidenceData: {
+              scan_result: "patterns_found",
+              patterns_detected: [
+                { type: "credit_card", count: 2, redacted_sample: "****1111" },
+                { type: "ssn", count: 1, redacted_sample: "***-**-6789" },
+              ],
+            },
+            durationMs: 1.0,
+          },
+        ],
+      }),
+      "t1",
+    );
+
+    const summary = await store.getSummary();
+    expect(summary.patternDetections).toEqual({ credit_card: 2, ssn: 1 });
+  });
+
+  it("get summary supports since filtering", async () => {
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
+
+    await store.store(makeEvaluation({ evaluationId: "old", timestamp: "2024-01-01T00:00:00Z" }), "tool-a");
+    await store.store(makeEvaluation({ evaluationId: "new", timestamp: "2025-06-01T00:00:00Z" }), "tool-b");
+
+    const summary = await store.getSummary({ since: "2025-01-01T00:00:00Z" });
+    expect(summary.totalEvaluations).toBe(1);
+    expect(summary.toolsEvaluated).toEqual(["tool-b"]);
+  });
+
+  it("get summary stays read-only when the persistent store does not exist yet", async () => {
+    const dbPath = join(tmpdir(), `ancilis-empty-summary-${randomUUID()}.duckdb`);
+    store = new EvidenceStore(makeConfig(), { dbPath });
+
+    const summary = await store.getSummary();
+
+    expect(summary.totalEvaluations).toBe(0);
+    expect(existsSync(dbPath)).toBe(false);
   });
 });
 
