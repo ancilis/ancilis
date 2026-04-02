@@ -24,6 +24,7 @@ def canonical_payload(
     active_certifications: list[str],
     total_duration_ms: float,
     previous_hash: str,
+    output_summary: str | None = None,
 ) -> str:
     """Build the canonical JSON string used as hash input.
 
@@ -44,6 +45,8 @@ def canonical_payload(
         "tool_name": tool_name,
         "total_duration_ms": total_duration_ms,
     }
+    if output_summary is not None:
+        payload["output_summary"] = output_summary
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
 
 

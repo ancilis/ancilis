@@ -4,10 +4,18 @@ from __future__ import annotations
 
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from ancilis.report.generator import ReportData
+
+
+@dataclass(frozen=True)
+class RenderPdfResult:
+    format: str
+    output_path: str
+    fallback_reason: str | None = None
 
 
 def render_terminal(data: ReportData) -> str:
@@ -32,6 +40,11 @@ def render_terminal(data: ReportData) -> str:
     if data.certification:
         lines.append("")
         _render_certification_terminal(lines, data.certification)
+
+    # Advisory section
+    if data.advisory:
+        lines.append("")
+        _render_advisory_terminal(lines, data.advisory)
 
     # Evidence integrity
     lines.append("")
@@ -72,6 +85,11 @@ def render_markdown(data: ReportData) -> str:
         lines.append("")
         _render_certification_markdown(lines, data.certification)
 
+    # Advisory
+    if data.advisory:
+        lines.append("")
+        _render_advisory_markdown(lines, data.advisory)
+
     # Evidence
     lines.append("")
     lines.append("## Evidence Integrity")
@@ -86,8 +104,8 @@ def render_markdown(data: ReportData) -> str:
     return "\n".join(lines)
 
 
-def render_pdf(markdown: str, output_path: str) -> None:
-    """Convert markdown to PDF using pandoc."""
+def render_pdf(markdown: str, output_path: str) -> RenderPdfResult:
+    """Convert markdown to PDF using pandoc with an explicit markdown fallback."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
         f.write(markdown)
         md_path = f.name
@@ -98,14 +116,38 @@ def render_pdf(markdown: str, output_path: str) -> None:
             check=True,
             capture_output=True,
         )
+        return RenderPdfResult(format="pdf", output_path=output_path)
     except FileNotFoundError:
-        # pandoc not installed — write markdown instead
-        Path(output_path).write_text(markdown)
+        fallback_path = _markdown_fallback_path(output_path)
+        if fallback_path != output_path:
+            Path(output_path).unlink(missing_ok=True)
+        Path(fallback_path).write_text(markdown)
+        return RenderPdfResult(
+            format="markdown",
+            output_path=fallback_path,
+            fallback_reason="pandoc/xelatex unavailable",
+        )
     except subprocess.CalledProcessError:
-        # pandoc failed — write markdown as fallback
-        Path(output_path).write_text(markdown)
+        fallback_path = _markdown_fallback_path(output_path)
+        if fallback_path != output_path:
+            Path(output_path).unlink(missing_ok=True)
+        Path(fallback_path).write_text(markdown)
+        return RenderPdfResult(
+            format="markdown",
+            output_path=fallback_path,
+            fallback_reason="pandoc/xelatex unavailable",
+        )
     finally:
         Path(md_path).unlink(missing_ok=True)
+
+
+def _markdown_fallback_path(output_path: str) -> str:
+    path = Path(output_path)
+    if path.suffix.lower() == ".pdf":
+        return str(path.with_suffix(".md"))
+    if path.suffix.lower() == ".md":
+        return str(path)
+    return f"{output_path}.md"
 
 
 # --- Terminal section renderers ---
@@ -170,6 +212,32 @@ def _render_certification_terminal(lines: list[str], cert: dict[str, Any]) -> No
     lines.append(f"  Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
     chain = "intact" if cert.get("chain_valid", True) else "BROKEN"
     lines.append(f"  Evidence records: {cert.get('evidence_count', 0):,}, hash chain {chain}")
+
+
+def _render_advisory_terminal(lines: list[str], advisory: dict[str, Any]) -> None:
+    lines.append("Classification Advisory")
+    for pattern in advisory.get("pattern_detections", []):
+        lines.append(
+            f"  Detected {pattern['pattern_type']}: {pattern['count']} occurrence(s) in the reporting period"
+        )
+
+    recommendations = advisory.get("recommendations", [])
+    if recommendations:
+        lines.append("  Recommended config updates:")
+        for recommendation in recommendations:
+            lines.append(
+                "    - Add "
+                f"{recommendation['suggested_value']} to "
+                f"{recommendation['suggested_config_field']} "
+                f"({recommendation['detection_count']} detections, "
+                f"severity: {recommendation['severity']})"
+            )
+
+    upgrade_advisories = advisory.get("upgrade_advisories", [])
+    if upgrade_advisories:
+        lines.append("  Certification upgrade advisories:")
+        for upgrade in upgrade_advisories:
+            lines.append(f"    - {upgrade['message']}")
 
 
 # --- Markdown section renderers ---
@@ -269,6 +337,43 @@ def _render_certification_markdown(lines: list[str], cert: dict[str, Any]) -> No
             lines.append(f"- **{item['requirement_id']}**: {item['description']}")
 
 
+def _render_advisory_markdown(lines: list[str], advisory: dict[str, Any]) -> None:
+    lines.append("## Classification Advisory")
+    lines.append("")
+
+    detections = advisory.get("pattern_detections", [])
+    if detections:
+        lines.append("### Detected Patterns")
+        lines.append("")
+        for pattern in detections:
+            lines.append(
+                f"- `{pattern['pattern_type']}`: {pattern['count']} occurrence(s) in the reporting period"
+            )
+
+    recommendations = advisory.get("recommendations", [])
+    if recommendations:
+        lines.append("")
+        lines.append("### Recommended Config Updates")
+        lines.append("")
+        for recommendation in recommendations:
+            lines.append(
+                "- Add "
+                f"`{recommendation['suggested_value']}` to "
+                f"`{recommendation['suggested_config_field']}` "
+                f"({recommendation['detection_count']} detections, "
+                f"severity: `{recommendation['severity']}`)"
+            )
+            lines.append(f"  Example config: `{recommendation['example_config']}`")
+
+    upgrade_advisories = advisory.get("upgrade_advisories", [])
+    if upgrade_advisories:
+        lines.append("")
+        lines.append("### Certification Upgrade Advisories")
+        lines.append("")
+        for upgrade in upgrade_advisories:
+            lines.append(f"- {upgrade['message']}")
+
+
 def _render_aiuc1_readiness_markdown(lines: list[str], data: ReportData) -> None:
     """Render the AIUC-1 specific readiness report."""
     cert = data.certification
@@ -337,9 +442,7 @@ def _render_aiuc1_readiness_markdown(lines: list[str], data: ReportData) -> None
     # Advisory
     if data.advisory:
         lines.append("")
-        lines.append("## Classification Advisory")
-        lines.append("")
-        # advisory rendering would go here
+        _render_advisory_markdown(lines, data.advisory)
 
     lines.append("")
     lines.append("---")

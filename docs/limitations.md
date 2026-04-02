@@ -74,7 +74,7 @@ Ancilis is an SDK and CLI. There is no web dashboard, no hosted service, no clou
 
 ## PDF export
 
-PDF report generation requires `pandoc` and `xelatex` installed on the system. Without them, the `--format pdf` flag falls back to writing markdown to the output file.
+PDF report generation requires `pandoc` and `xelatex` installed on the system. Without them, the `--format pdf` flag writes a Markdown fallback alongside the requested PDF path and reports the fallback path explicitly.
 
 ## What Ancilis is NOT
 

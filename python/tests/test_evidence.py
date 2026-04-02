@@ -235,6 +235,25 @@ class TestEvidenceStore:
         assert errors == []
         store.close()
 
+    def test_verify_chain_detects_output_summary_tampering(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        record = store.store(
+            make_evaluation(evaluation_id="e1"),
+            tool_name="t1",
+            output_summary="safe summary",
+        )
+        store._connection.execute(
+            "UPDATE evidence_records SET output_summary = ? WHERE record_id = ?",
+            ["tampered summary", record.record_id],
+        )
+
+        valid, errors = store.verify_chain()
+        assert valid is False
+        assert any("hash mismatch" in error for error in errors)
+        store.close()
+
     def test_verify_chain_empty(self):
         config = make_config()
         store = EvidenceStore(config, in_memory=True)
@@ -320,6 +339,37 @@ class TestSummary:
         assert "control_pass_rates" in summary
         assert summary["control_pass_rates"]["PR-01"]["PASS"] == 1
         assert summary["control_pass_rates"]["PR-01"]["FAIL"] == 1
+        store.close()
+
+    def test_get_summary_aggregates_pattern_detections(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        store.store(
+            make_evaluation(
+                evaluation_id="e1",
+                control_results=[
+                    ControlResult(
+                        "PR-04",
+                        "Data Exposure Prevention",
+                        "PASS",
+                        "Patterns detected",
+                        {
+                            "scan_result": "patterns_found",
+                            "patterns_detected": [
+                                {"type": "credit_card", "count": 2, "redacted_sample": "****1111"},
+                                {"type": "ssn", "count": 1, "redacted_sample": "***-**-6789"},
+                            ],
+                        },
+                        1.0,
+                    ),
+                ],
+            ),
+            tool_name="t1",
+        )
+
+        summary = store.get_summary()
+        assert summary["pattern_detections"] == {"credit_card": 2, "ssn": 1}
         store.close()
 
 

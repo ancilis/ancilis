@@ -23,3 +23,4 @@ class EvidenceRecord:
     record_hash: str
     previous_hash: str
     total_duration_ms: float = 0.0
+    output_summary: str | None = None
