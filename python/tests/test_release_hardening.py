@@ -3,10 +3,17 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import sys
-import tomllib
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    try:
+        import tomli as tomllib
+    except ImportError:
+        tomllib = None
 from pathlib import Path
 
 from click.testing import CliRunner
+import pytest
 import yaml
 
 from ancilis.cli.main import cli
@@ -116,6 +123,7 @@ def test_evidence_store_repeated_writes_are_stable():
         store.close()
 
 
+@pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")
 def test_pyproject_has_required_pypi_metadata():
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
     project = pyproject["project"]
