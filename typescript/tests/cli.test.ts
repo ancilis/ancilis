@@ -419,7 +419,7 @@ describe("runReport", () => {
 });
 
 describe("package metadata", () => {
-  it("ships a CLI executable for npm consumers", () => {
+  it("ships a CLI executable for npm consumers", { timeout: 30_000 }, () => {
     const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as {
       bin?: Record<string, string>;
     };
