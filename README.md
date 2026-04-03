@@ -220,6 +220,8 @@ See [docs/limitations.md](docs/limitations.md) for detailed scope boundaries.
 
 ```bash
 npm install ancilis
+npx ancilis --help
+npx ancilis doctor
 ```
 
 ## Contributing / Security / License

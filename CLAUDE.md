@@ -49,6 +49,24 @@ Prefer grounded observations over speculation, and say explicitly when something
 - **Controls:** PR-01 (Identity), PR-02 (Scope), PR-03 (Provenance), PR-04 (Exposure), PR-05 (Audit Trail), DE-01 (Baseline Detection)
 - **Modes:** `audit` (evaluate + log, allow all) and `enforce` (evaluate + block violations)
 
+## Tool Preferences — Desktop Commander vs Computer Use
+
+**Default rule: Always use Desktop Commander (`mcp__Desktop_Commander__*`) for local actions.** Do NOT use computer-use (`mcp__computer-use__*`) tools unless the user explicitly requests screen control, visual interaction, or teach-mode walkthroughs.
+
+Desktop Commander is faster, more precise, and lower-overhead for:
+- Running shell commands (`start_process`, `interact_with_process`)
+- Reading/writing files (`read_file`, `write_file`, `edit_block`)
+- Listing directories (`list_directory`)
+- Managing processes (`list_processes`, `kill_process`)
+- Any filesystem or CLI operation on the local Mac
+
+Only fall back to computer-use when:
+- The user explicitly says "use computer use", "click on", "show me on screen", or similar
+- The task requires GUI interaction with a native app (e.g., Finder, System Settings, Photos)
+- The user requests a teach-mode walkthrough
+
+This preference applies to all Cowork sessions for this project.
+
 ## Non-Negotiable Principles
 
 - Compliance is a byproduct of doing security right, not the goal itself

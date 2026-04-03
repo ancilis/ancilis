@@ -36,7 +36,7 @@ ALL_16_DC_CODES = {
     "DC-MINOR", "DC-BIO", "DC-LEGAL", "DC-IP",
 }
 
-FIVE_OVERLAY_IDS = {"pci-dss-v4", "soc2", "eu-ai-act", "iso-42001", "nist-csf"}
+OVERLAY_IDS = {"glba", "pci-dss-v4", "soc2", "eu-ai-act", "iso-42001", "nist-csf"}
 
 
 # --- Part 1: AKSI Control Registry ---
@@ -247,9 +247,9 @@ class TestDataClassificationRegistry:
 
 
 class TestOverlayProfiles:
-    def test_five_overlays_present(self):
+    def test_core_overlays_present(self):
         profiles = load_overlay_profiles()
-        for oid in FIVE_OVERLAY_IDS:
+        for oid in OVERLAY_IDS:
             assert oid in profiles, f"Overlay '{oid}' not found"
 
     def test_overlay_schema_complete(self):
@@ -257,7 +257,7 @@ class TestOverlayProfiles:
         profiles = load_overlay_profiles()
         required_fields = {"id", "name", "version", "framework_mapping",
                           "evidence_retention_minimum_days", "human_oversight_required"}
-        for oid in FIVE_OVERLAY_IDS:
+        for oid in OVERLAY_IDS:
             profile = profiles[oid]
             for field in required_fields:
                 assert field in profile, f"{oid} missing required field '{field}'"
@@ -265,7 +265,7 @@ class TestOverlayProfiles:
     def test_all_overlays_map_26_controls_in_framework_mapping(self):
         """Each overlay should map all 26 AKSI controls in framework_mapping."""
         profiles = load_overlay_profiles()
-        for oid in FIVE_OVERLAY_IDS:
+        for oid in OVERLAY_IDS:
             profile = profiles[oid]
             fm = profile.get("framework_mapping", {})
             for cid in ALL_26_CONTROL_IDS:
@@ -274,7 +274,7 @@ class TestOverlayProfiles:
     def test_no_orphan_control_ids_in_overlays(self):
         """Overlay profiles should not reference non-existent control IDs."""
         profiles = load_overlay_profiles()
-        for oid in FIVE_OVERLAY_IDS:
+        for oid in OVERLAY_IDS:
             profile = profiles[oid]
             # Check framework_mapping
             for cid in profile.get("framework_mapping", {}):
@@ -374,7 +374,7 @@ class TestOverlayProfiles:
     def test_overlay_has_controls_section(self):
         """New overlays should have the detailed controls section with evidence requirements."""
         profiles = load_overlay_profiles()
-        for oid in FIVE_OVERLAY_IDS:
+        for oid in OVERLAY_IDS:
             profile = profiles[oid]
             assert "controls" in profile, f"{oid} missing controls section"
             controls = profile["controls"]
@@ -387,14 +387,14 @@ class TestOverlayProfiles:
     def test_reporting_obligations(self):
         """Overlays should document reporting obligations."""
         profiles = load_overlay_profiles()
-        for oid in FIVE_OVERLAY_IDS:
+        for oid in OVERLAY_IDS:
             profile = profiles[oid]
             assert "reporting_obligations" in profile, f"{oid} missing reporting_obligations"
 
     def test_human_oversight_mandates(self):
         """Overlays should document human oversight mandates."""
         profiles = load_overlay_profiles()
-        for oid in FIVE_OVERLAY_IDS:
+        for oid in OVERLAY_IDS:
             profile = profiles[oid]
             assert "human_oversight_mandates" in profile, f"{oid} missing human_oversight_mandates"
 
@@ -480,12 +480,12 @@ class TestActivationPaths:
         # All 26 controls should still be active
         assert len(spec.active_controls) == 26
 
-    def test_financial_data_roadmap(self):
-        """Financial data overlay (glba) is roadmap — should degrade gracefully."""
+    def test_financial_data_activates_glba_and_soc2(self):
+        """Financial data should activate the financial services overlay and SOC 2."""
         resolver = ActivationResolver()
         spec = resolver.resolve(my_agent_handles=["financial_data"])
         assert "DC-FIN" in spec.data_classifications
-        # glba is roadmap, but soc2 should activate via DC-FIN
+        assert "glba" in spec.active_overlays
         assert "soc2" in spec.active_overlays
 
     def test_general_data_activates_soc2(self):

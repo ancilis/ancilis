@@ -13,6 +13,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
+SANITIZED_NPM_ENV_KEYS = (
+    "NODE_ENV",
+    "NPM_CONFIG_PRODUCTION",
+    "npm_config_production",
+    "NPM_CONFIG_OMIT",
+    "npm_config_omit",
+)
 
 
 def run(cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None) -> None:
@@ -25,11 +32,11 @@ def build_python_artifacts(python: str) -> tuple[Path, Path]:
         shutil.rmtree(DIST)
     run([python, "-m", "pip", "install", "--upgrade", "build", "twine"])
     run([python, "-m", "build", "--sdist", "--wheel"])
-    run([python, "-m", "twine", "check", "dist/*"])
     wheels = sorted(DIST.glob("ancilis-*.whl"))
     sdists = sorted(DIST.glob("ancilis-*.tar.gz"))
     if not wheels or not sdists:
         raise SystemExit("Expected both wheel and sdist artifacts in dist/.")
+    run([python, "-m", "twine", "check", str(wheels[-1]), str(sdists[-1])])
     return wheels[-1], sdists[-1]
 
 
@@ -68,13 +75,21 @@ def smoke_editable_installs(python: str) -> None:
         run([vpip, "install", ".[mcp]"])
 
 
+def npm_smoke_env() -> dict[str, str]:
+    env = os.environ.copy()
+    for key in SANITIZED_NPM_ENV_KEYS:
+        env.pop(key, None)
+    return env
+
+
 def smoke_typescript() -> None:
     if shutil.which("npm") is None:
         raise SystemExit("npm is required for TypeScript smoke checks.")
-    run(["npm", "ci"])
-    run(["npm", "run", "build"])
-    run(["npm", "pack", "--dry-run"])
-    run(["node", "scripts/ts_package_smoke.mjs"])
+    env = npm_smoke_env()
+    run(["npm", "ci"], env=env)
+    run(["npm", "run", "build"], env=env)
+    run(["npm", "pack", "--dry-run"], env=env)
+    run(["node", "scripts/ts_package_smoke.mjs"], env=env)
 
 
 def main() -> None:

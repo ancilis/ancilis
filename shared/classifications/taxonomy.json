@@ -41,7 +41,7 @@
       "name": "Financial Services Data",
       "description": "Financial data subject to GLBA, BSA/AML, SOX, DORA. Includes account numbers, transaction records, and financial instruments data.",
       "overlays": ["glba", "soc2"],
-      "overlay_status": "roadmap",
+      "overlay_status": "active",
       "pattern_detection": {
         "enabled": true,
         "patterns": [
