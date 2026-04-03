@@ -1,0 +1,147 @@
+{
+  "id": "glba",
+  "name": "Financial Services (GLBA, SOX, DORA)",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-FIN"],
+  "description": "Financial services overlay for agents handling customer financial data, transaction records, or financial reporting information. Packages evidence for GLBA Safeguards Rule controls, SOX internal-control obligations, and DORA operational resilience requirements.",
+  "jurisdiction": "us-eu",
+  "enforcement_date": "2025-01-17",
+  "applicable_data_types": ["financial_data", "financial_records"],
+  "controls": {
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Access controls and multi-factor authentication enforced for systems handling customer financial information",
+        "Quarterly user access review with management sign-off for financially relevant systems",
+        "Identity and authentication controls documented in the ICT risk management program"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "GLBA 16 CFR 314.4(c)(1), 314.4(c)(5); SOX §302, §404; DORA Art.9"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Least-privilege entitlements and segregation-of-duties matrix maintained for finance-sensitive workflows",
+        "Provisioning and de-provisioning approvals tied to financial reporting responsibilities",
+        "Periodic scope and entitlement recertification recorded for audit review"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "GLBA 16 CFR 314.4(c)(1); SOX §302, §404; DORA Art.9"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Change management records demonstrate secure development and testing for systems processing financial data",
+        "Third-party and externally developed tool risk reviews completed before production use",
+        "Release approvals link provenance checks to control-owner accountability"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "GLBA 16 CFR 314.4(c)(4), 314.4(c)(7); SOX §404; DORA Art.28"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Encryption protects customer financial information in transit and at rest, with compensating-control approval documented when needed",
+        "Data exposure scans cover outbound payloads, generated output, and ingested context for financial information",
+        "Cryptographic key management and transport security settings are reviewed as part of financial-system control testing"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "GLBA 16 CFR 314.4(c)(3); SOX §404; DORA Art.9"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Tamper-evident audit logs capture every financially relevant agent action with enough detail for ICFR review",
+        "Audit-retention schedule preserves evidence for seven years in support of SOX recordkeeping obligations",
+        "Logging and monitoring controls detect unauthorized access to customer financial information"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "GLBA 16 CFR 314.4(c)(8); SOX §404, §802; DORA Art.10"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Behavioral monitoring and anomaly detection cover privileged access, transaction spikes, and exfiltration indicators",
+        "Incident response plan defines triage, escalation, remediation, and reporting workflows for security events affecting financial data",
+        "Major ICT incident assessment and regulator-reporting runbooks are maintained for financial-entity use cases"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "GLBA 16 CFR 314.4(c)(8), 314.4(h); SOX §404; DORA Art.10, Art.17, Art.19"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": null,
+    "assessment_type": "Combined financial-services control package: GLBA Safeguards oversight, SOX internal-control evidence, and DORA operational resilience / ICT incident reporting support.",
+    "reporting_entity": "Board or equivalent governing body, audit committee and external auditor, plus applicable financial regulators or competent authorities."
+  },
+  "human_oversight_mandates": {
+    "required": false,
+    "description": "No explicit AI-specific oversight mandate is imposed by this combined profile, but GLBA requires a qualified individual and board reporting, SOX requires management and audit committee oversight of internal controls, and DORA assigns accountability to the management body."
+  },
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["mfa_enforced", "access_review_completed", "privileged_access_inventory"],
+      "regulatory_citation": "GLBA 16 CFR 314.4(c)(1), 314.4(c)(5); SOX §404; DORA Art.9"
+    },
+    "PR-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["least_privilege_matrix", "segregation_of_duties_review", "scope_recertification_date"],
+      "regulatory_citation": "GLBA 16 CFR 314.4(c)(1); SOX §302, §404; DORA Art.9"
+    },
+    "PR-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["encryption_status", "compensating_controls_approval", "financial_data_flow_review"],
+      "regulatory_citation": "GLBA 16 CFR 314.4(c)(3); SOX §404; DORA Art.9"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["log_retention_years", "audit_chain_verified", "financial_event_logging_coverage"],
+      "regulatory_citation": "GLBA 16 CFR 314.4(c)(8); SOX §404, §802; DORA Art.10"
+    },
+    "DE-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["anomaly_triage_records", "incident_reporting_runbook", "major_ict_incident_decision_log"],
+      "regulatory_citation": "GLBA 16 CFR 314.4(h); SOX §404; DORA Art.17, Art.19"
+    }
+  },
+  "evidence_requirements": {
+    "PR-01": ["mfa_enforced", "access_review_completed", "privileged_access_inventory"],
+    "PR-02": ["least_privilege_matrix", "segregation_of_duties_review", "scope_recertification_date"],
+    "PR-04": ["encryption_status", "compensating_controls_approval", "financial_data_flow_review"],
+    "PR-05": ["log_retention_years", "audit_chain_verified", "financial_event_logging_coverage"],
+    "DE-01": ["anomaly_triage_records", "incident_reporting_runbook", "major_ict_incident_decision_log"]
+  },
+  "framework_mapping": {
+    "GOV-01": ["GLBA 16 CFR 314.4(a), 314.4(i)", "SOX §302, §406", "DORA Art.5"],
+    "GOV-02": ["GLBA 16 CFR 314.4(a), 314.4(i)", "SOX §301, §404", "DORA Art.5(2)"],
+    "GOV-03": ["GLBA 16 CFR 314.4(b)", "SOX §404", "DORA Art.6"],
+    "GOV-04": ["GLBA 16 CFR 314.4(g), 314.4(i)", "SOX §302, §404", "DORA Art.15"],
+    "ID-01": ["GLBA 16 CFR 314.4(c)(2)", "SOX §404", "DORA Art.8"],
+    "ID-02": ["GLBA 16 CFR 314.4(f)", "SOX §404", "DORA Art.28"],
+    "ID-03": ["GLBA 16 CFR 314.4(c)(2)", "SOX §404", "DORA Art.8"],
+    "ID-04": ["GLBA 16 CFR 314.4(f)", "SOX §404", "DORA Art.28-30"],
+    "ID-05": ["GLBA 16 CFR 314.4(b)", "SOX §404", "DORA Art.6"],
+    "PR-01": ["GLBA 16 CFR 314.4(c)(1), 314.4(c)(5)", "SOX §302, §404", "DORA Art.9"],
+    "PR-02": ["GLBA 16 CFR 314.4(c)(1)", "SOX §302, §404", "DORA Art.9"],
+    "PR-03": ["GLBA 16 CFR 314.4(c)(4), 314.4(c)(7)", "SOX §404", "DORA Art.28"],
+    "PR-04": ["GLBA 16 CFR 314.4(c)(3)", "SOX §404", "DORA Art.9"],
+    "PR-05": ["GLBA 16 CFR 314.4(c)(8)", "SOX §404, §802", "DORA Art.10"],
+    "PR-06": ["GLBA 16 CFR 314.4(c)(7)", "SOX §404", "DORA Art.9"],
+    "PR-07": ["GLBA 16 CFR 314.4(c)(3)", "SOX §404", "DORA Art.9"],
+    "PR-08": ["GLBA 16 CFR 314.4(c)(6)", "SOX §802", "DORA Art.9"],
+    "DE-01": ["GLBA 16 CFR 314.4(c)(8), 314.4(h)", "SOX §404", "DORA Art.10, Art.17, Art.19"],
+    "DE-02": ["GLBA 16 CFR 314.4(d)", "SOX §404", "DORA Art.9, Art.15"],
+    "DE-03": ["GLBA 16 CFR 314.4(d)", "SOX §404", "DORA Art.11, Art.15"],
+    "DE-04": ["GLBA 16 CFR 314.4(c)(8), 314.4(d)", "SOX §404, §802", "DORA Art.10"],
+    "RS-01": ["GLBA 16 CFR 314.4(h)", "SOX §404", "DORA Art.17"],
+    "RS-02": ["GLBA 16 CFR 314.4(h)(3), 314.4(h)(4)", "SOX §302, §404", "DORA Art.17, Art.19"],
+    "RS-03": ["GLBA 16 CFR 314.4(h)(5), 314.4(h)(6)", "SOX §802", "DORA Art.17"],
+    "RC-01": ["GLBA 16 CFR 314.4(h), 314.4(g)", "SOX §404", "DORA Art.12"],
+    "RC-02": ["GLBA 16 CFR 314.4(g), 314.4(h)(7)", "SOX §404", "DORA Art.13"]
+  },
+  "evidence_retention_minimum_days": 2555,
+  "human_oversight_required": false,
+  "notes": "This overlay treats financial-services handling as a combined control package rather than a single-regulation attestation. GLBA Safeguards Rule drives customer-information security controls, SOX drives internal-control and record-retention rigor for financially relevant systems, and DORA adds ICT resilience and incident-management expectations for regulated financial entities."
+}

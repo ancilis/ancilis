@@ -56,7 +56,8 @@
       "Bash(source .venv/bin/activate && pytest python/tests/ -v --tb=short 2>&1)",
       "Bash(ls /Users/hellohelloalbus/projects/ancilis/python/src/ancilis/reports/ 2>/dev/null || find /Users/hellohelloalbus/projects/ancilis/python/src/ancilis -name \"*.py\" | xargs grep -l \"report\\\\|compliance\" 2>/dev/null | head -10)",
       "Bash(grep -rn \"health_records\" --include=\"*.py\" --include=\"*.ts\" --include=\"*.md\" --include=\"*.yaml\" --include=\"*.yml\" --include=\"*.json\" . 2>/dev/null | grep -v \"node_modules\\\\|\\\\.venv\\\\|dist/\" | sort)",
-      "Bash(grep -rn \"DC-PHI\\\\|HIPAA\\\\|hipaa\" --include=\"*.py\" --include=\"*.ts\" --include=\"*.md\" --include=\"*.yaml\" --include=\"*.yml\" --include=\"*.json\" . 2>/dev/null | grep -v \"node_modules\\\\|\\\\.venv\\\\|dist/\" | sort)"
+      "Bash(grep -rn \"DC-PHI\\\\|HIPAA\\\\|hipaa\" --include=\"*.py\" --include=\"*.ts\" --include=\"*.md\" --include=\"*.yaml\" --include=\"*.yml\" --include=\"*.json\" . 2>/dev/null | grep -v \"node_modules\\\\|\\\\.venv\\\\|dist/\" | sort)",
+      "Bash(source .venv/bin/activate && pytest python/tests/ -q 2>&1 | tail -5 && npx vitest run 2>&1 | tail -8)"
     ]
   }
 }

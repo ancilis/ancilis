@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import sys
+import tomllib
 from pathlib import Path
 
 from click.testing import CliRunner
+import yaml
 
 from ancilis.cli.main import cli
 from ancilis.config import load_config, load_control_definitions, load_taxonomy
@@ -12,6 +15,14 @@ from ancilis.engine.action import Action, ActionParameters, ToolInfo
 from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.evidence.store import EvidenceStore
+
+
+ROOT = Path(__file__).resolve().parents[2]
+RELEASE_CHECK_PATH = ROOT / "scripts" / "release_check.py"
+RELEASE_CHECK_SPEC = importlib.util.spec_from_file_location("ancilis_release_check", RELEASE_CHECK_PATH)
+assert RELEASE_CHECK_SPEC is not None and RELEASE_CHECK_SPEC.loader is not None
+release_check = importlib.util.module_from_spec(RELEASE_CHECK_SPEC)
+RELEASE_CHECK_SPEC.loader.exec_module(release_check)
 
 
 def _config(**overrides):
@@ -103,3 +114,98 @@ def test_evidence_store_repeated_writes_are_stable():
         assert store.count() == 10
     finally:
         store.close()
+
+
+def test_pyproject_has_required_pypi_metadata():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    project = pyproject["project"]
+
+    assert project["name"] == "ancilis"
+    assert project["version"] == "0.1.0"
+    assert project["readme"] == "README.md"
+    assert project["requires-python"] == ">=3.10"
+    assert project["authors"] == [{"name": "Kevin Bauer", "email": "kevin@ancilis.ai"}]
+    assert project["urls"]["Repository"] == "https://github.com/ancilis/ancilis"
+    assert "Programming Language :: Python :: 3.13" in project["classifiers"]
+
+
+def test_publish_script_cleans_dist_and_uploads_selected_artifacts():
+    script = ROOT / "scripts" / "publish.sh"
+
+    assert script.exists()
+
+    contents = script.read_text()
+    assert contents.startswith("#!/usr/bin/env bash")
+    assert "set -euo pipefail" in contents
+    assert "rm -rf dist" in contents
+    assert "python -m build" in contents
+    assert 'twine check "${artifacts[@]}"' in contents
+    assert 'twine upload "${artifacts[@]}"' in contents
+    assert "dist/*" not in contents
+
+
+def test_release_python_workflow_uses_release_check_and_trusted_publishing():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "release-python.yml").read_text())
+    workflow_on = workflow.get("on", workflow.get(True))
+
+    assert workflow["name"] == "Release Python"
+    assert "v*" in workflow_on["push"]["tags"]
+    assert workflow["permissions"] == {"contents": "read", "id-token": "write"}
+
+    verify_job = workflow["jobs"]["verify_python_release"]
+    verify_runs = [step["run"] for step in verify_job["steps"] if "run" in step]
+    assert "python scripts/release_check.py" in verify_runs
+
+    publish_job = workflow["jobs"]["publish_python"]
+    assert publish_job["needs"] == "verify_python_release"
+    publish_uses = [step["uses"] for step in publish_job["steps"] if "uses" in step]
+    assert "pypa/gh-action-pypi-publish@release/v1" in publish_uses
+
+
+def test_release_check_expands_twine_artifact_paths(monkeypatch, tmp_path: Path):
+    dist = tmp_path / "dist"
+    commands: list[list[str]] = []
+
+    def fake_run(cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None) -> None:
+        commands.append(cmd)
+        if cmd == ["python", "-m", "build", "--sdist", "--wheel"]:
+            dist.mkdir(parents=True, exist_ok=True)
+            (dist / "ancilis-0.1.0-py3-none-any.whl").write_text("wheel")
+            (dist / "ancilis-0.1.0.tar.gz").write_text("sdist")
+
+    monkeypatch.setattr(release_check, "DIST", dist)
+    monkeypatch.setattr(release_check, "run", fake_run)
+
+    wheel, sdist = release_check.build_python_artifacts("python")
+    twine_check = next(cmd for cmd in commands if cmd[:3] == ["python", "-m", "twine"])
+
+    assert "dist/*" not in twine_check
+    assert str(wheel) in twine_check
+    assert str(sdist) in twine_check
+
+
+def test_release_check_sanitizes_node_env_for_typescript_smoke(monkeypatch):
+    commands: list[tuple[list[str], dict[str, str] | None]] = []
+
+    def fake_run(cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None) -> None:
+        commands.append((cmd, env))
+
+    monkeypatch.setattr(release_check.shutil, "which", lambda _: "/usr/bin/npm")
+    monkeypatch.setattr(release_check, "run", fake_run)
+    monkeypatch.setenv("NODE_ENV", "production")
+    monkeypatch.setenv("NPM_CONFIG_PRODUCTION", "true")
+    monkeypatch.setenv("npm_config_omit", "dev")
+
+    release_check.smoke_typescript()
+
+    assert [cmd for cmd, _env in commands] == [
+        ["npm", "ci"],
+        ["npm", "run", "build"],
+        ["npm", "pack", "--dry-run"],
+        ["node", "scripts/ts_package_smoke.mjs"],
+    ]
+    for _cmd, env in commands:
+        assert env is not None
+        assert "NODE_ENV" not in env
+        assert "NPM_CONFIG_PRODUCTION" not in env
+        assert "npm_config_omit" not in env

@@ -1,0 +1,18 @@
+agent:
+  name: finance-demo-agent
+my_agent_handles:
+  - financial_records
+  - personal_info
+  - credit_cards
+certification_targets:
+  - aiuc-1
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - check_balance
+      - get_transactions
+      - transfer_funds
+      - lookup_credit_score
+    blocked:
+      - drop_audit_log

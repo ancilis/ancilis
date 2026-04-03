@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { approveTool, formatStatus, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
@@ -253,7 +253,21 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
   }
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+function isDirectCliExecution(): boolean {
+  const invokedPath = process.argv[1];
+  if (!invokedPath) {
+    return false;
+  }
+
+  const entrypointPath = fileURLToPath(import.meta.url);
+  try {
+    return realpathSync(invokedPath) === entrypointPath;
+  } catch {
+    return invokedPath === entrypointPath;
+  }
+}
+
+if (isDirectCliExecution()) {
   const exitCode = await runCli(process.argv.slice(2));
   process.exitCode = exitCode;
 }

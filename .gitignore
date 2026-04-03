@@ -54,3 +54,5 @@ ancilis-reports/
 
 # Agent workspace — non-code outputs (PRDs, marketing, design, etc.)
 workspace/
+# CocoIndex Code (ccc)
+/.cocoindex_code/
