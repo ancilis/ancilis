@@ -92,9 +92,11 @@ def _validate_and_format(config_path: str | None) -> tuple[bool, str]:
 
 
 @click.command()
-@click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
-def validate(config_path: str | None) -> None:
+@click.argument("config_path_arg", required=False)
+@click.option("--config", "config_path_option", default=None, help="Path to ancilis.yaml")
+def validate(config_path_arg: str | None, config_path_option: str | None) -> None:
     """Validate ancilis.yaml configuration."""
+    config_path = config_path_option if config_path_option is not None else config_path_arg
     valid, message = _validate_and_format(config_path)
     click.echo(message)
     if not valid:

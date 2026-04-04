@@ -26,6 +26,7 @@ DEMO_PATH = ROOT / "examples" / "demo" / "run.py"
 DEMO_CONFIG_PATH = ROOT / "examples" / "demo" / "ancilis.yaml"
 DEMO_SETUP_PATH = ROOT / "examples" / "demo" / "setup.sh"
 DEMO_RUN_ALL_PATH = ROOT / "examples" / "demo" / "run-all.sh"
+DEMO_README_PATH = ROOT / "examples" / "demo" / "README.md"
 
 
 def _load_demo_module():
@@ -157,7 +158,7 @@ def test_demo_setup_script_is_present_and_executable() -> None:
     assert DEMO_SETUP_PATH.stat().st_mode & 0o111
 
 
-def test_demo_main_preserves_evidence_on_programmatic_rerun(tmp_path: Path, monkeypatch) -> None:
+def test_demo_main_resets_evidence_on_programmatic_rerun_by_default(tmp_path: Path, monkeypatch) -> None:
     module = _load_demo_module()
     monkeypatch.setattr(evidence_store_module, "DEFAULT_DB_DIR", tmp_path / ".ancilis")
     monkeypatch.chdir(tmp_path)
@@ -165,6 +166,26 @@ def test_demo_main_preserves_evidence_on_programmatic_rerun(tmp_path: Path, monk
 
     first_result = module.main(stream=stream)
     second_result = module.main(stream=stream)
+
+    assert first_result.db_path == second_result.db_path
+
+    config = load_config(path=DEMO_CONFIG_PATH)
+    store = EvidenceStore(config, db_path=second_result.db_path)
+
+    try:
+        assert store.count() == 6
+    finally:
+        store.close()
+
+
+def test_demo_main_can_preserve_evidence_when_requested(tmp_path: Path, monkeypatch) -> None:
+    module = _load_demo_module()
+    monkeypatch.setattr(evidence_store_module, "DEFAULT_DB_DIR", tmp_path / ".ancilis")
+    monkeypatch.chdir(tmp_path)
+    stream = io.StringIO()
+
+    first_result = module.main(stream=stream, fresh=False)
+    second_result = module.main(stream=stream, fresh=False)
 
     assert first_result.db_path == second_result.db_path
 
@@ -241,8 +262,40 @@ def test_demo_integration_payload_points_to_current_db_path() -> None:
     assert payload["config"]["sync"]["mode"] == "incremental"
 
 
+def test_demo_integration_helpers_canonicalize_equivalent_paths() -> None:
+    canonical_path = Path("/tmp/ancilis/demo-a/evidence.duckdb")
+    equivalent_path = Path("/tmp/ancilis/demo-a/../demo-a/evidence.duckdb")
+
+    canonical_name = build_demo_integration_name(canonical_path)
+    equivalent_name = build_demo_integration_name(equivalent_path)
+    canonical_payload = build_demo_integration_payload(canonical_path)
+    equivalent_payload = build_demo_integration_payload(equivalent_path)
+
+    assert canonical_name == equivalent_name
+    assert (
+        canonical_payload["config"]["transport"]["paths"][0]
+        == equivalent_payload["config"]["transport"]["paths"][0]
+    )
+    assert canonical_payload["config"]["transport"]["paths"][0] == str(canonical_path)
+
+
 def test_run_all_uses_workspace_scoped_demo_name_helper() -> None:
     script = DEMO_RUN_ALL_PATH.read_text(encoding="utf-8")
 
     assert 'DEMO_NAME="Finance Demo SDK"' not in script
     assert "build_demo_integration_name" in script
+
+
+def test_demo_readme_surfaces_end_to_end_walkthrough() -> None:
+    readme = DEMO_README_PATH.read_text(encoding="utf-8")
+
+    assert "bash examples/demo/run-all.sh" in readme
+    assert "ANCILIS_PLATFORM_DIR" in readme
+    assert "ANCILIS_DEMO_BACKEND_URL" in readme
+    assert "ANCILIS_DEMO_DASHBOARD_URL" in readme
+    assert "Docker" in readme
+    assert "curl" in readme
+    assert "admin@ancilis.demo" in readme
+    assert "ancilis-one-shot" in readme
+    assert "ALLOW/BLOCK counts" not in readme
+    assert "middleware summary line" in readme

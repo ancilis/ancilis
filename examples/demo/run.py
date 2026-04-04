@@ -159,7 +159,7 @@ async def _run_demo(
     config_path: Path,
     db_path: str | Path | None,
     stream: TextIO,
-    fresh: bool = False,
+    fresh: bool = True,
 ) -> DemoRunResult:
     config = load_config(path=config_path)
     resolved_db_path = _resolve_demo_db_path(config, db_path, fresh=fresh)
@@ -240,7 +240,7 @@ def main(
     config_path: str | Path | None = None,
     db_path: str | Path | None = None,
     stream: TextIO | None = None,
-    fresh: bool = False,
+    fresh: bool = True,
 ) -> DemoRunResult:
     """Run the financial middleware demo and return its generated artifacts."""
     target_stream = stream or sys.stdout
