@@ -5,7 +5,28 @@ import { createHash } from "node:crypto";
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { canonicalJsonStringify } from "../evidence/chain.js";
+import type { EvidenceRecord } from "../evidence/record.js";
 import type { ReportData } from "./generator.js";
+
+const EXPORT_FIELDNAMES = [
+  "record_id",
+  "evaluation_id",
+  "timestamp",
+  "agent_id",
+  "source_type",
+  "tool_name",
+  "decision",
+  "mode",
+  "control_results",
+  "active_overlays",
+  "data_classifications",
+  "active_certifications",
+  "record_hash",
+  "previous_hash",
+  "total_duration_ms",
+  "output_summary",
+] as const;
 
 function shortDate(iso: string): string {
   return iso.includes("T") ? (iso.split("T")[0] ?? iso.slice(0, 10)) : iso.slice(0, 10);
@@ -259,8 +280,29 @@ function reportRows(data: ReportData): Record<string, unknown>[] {
   return rows;
 }
 
-export function renderNdjson(data: ReportData): string {
-  return reportRows(data).map((row) => JSON.stringify(row)).join("\n");
+function exportRecord(record: EvidenceRecord): Record<(typeof EXPORT_FIELDNAMES)[number], unknown> {
+  return {
+    record_id: record.recordId,
+    evaluation_id: record.evaluationId,
+    timestamp: record.timestamp,
+    agent_id: record.agentId,
+    source_type: record.sourceType,
+    tool_name: record.toolName,
+    decision: record.decision,
+    mode: record.mode,
+    control_results: record.controlResults,
+    active_overlays: record.activeOverlays,
+    data_classifications: record.dataClassifications,
+    active_certifications: record.activeCertifications,
+    record_hash: record.recordHash,
+    previous_hash: record.previousHash,
+    total_duration_ms: record.totalDurationMs,
+    output_summary: record.outputSummary ?? null,
+  };
+}
+
+export function renderNdjson(records: EvidenceRecord[]): string {
+  return records.map((record) => canonicalJsonStringify(exportRecord(record))).join("\n");
 }
 
 function toSnakeCase(key: string): string {
@@ -271,7 +313,7 @@ function csvCell(value: unknown): string {
   if (value === null || value === undefined) return "";
   const raw =
     Array.isArray(value) || typeof value === "object"
-      ? JSON.stringify(value)
+      ? canonicalJsonStringify(value)
       : String(value);
   if (/[",\n]/.test(raw)) {
     return `"${raw.replace(/"/g, "\"\"")}"`;
@@ -279,22 +321,11 @@ function csvCell(value: unknown): string {
   return raw;
 }
 
-export function renderCsv(data: ReportData): string {
-  const rows = reportRows(data);
-  const headerKeys: string[] = [];
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      const snakeKey = toSnakeCase(key);
-      if (!headerKeys.includes(snakeKey)) headerKeys.push(snakeKey);
-    }
-  }
-
-  const lines = [headerKeys.join(",")];
-  for (const row of rows) {
-    const values = headerKeys.map((header) => {
-      const sourceKey = Object.keys(row).find((key) => toSnakeCase(key) === header);
-      return csvCell(sourceKey ? row[sourceKey] : "");
-    });
+export function renderCsv(records: EvidenceRecord[]): string {
+  const lines = [EXPORT_FIELDNAMES.join(",")];
+  for (const record of records) {
+    const row = exportRecord(record);
+    const values = EXPORT_FIELDNAMES.map((header) => csvCell(row[header]));
     lines.push(values.join(","));
   }
   return lines.join("\n");

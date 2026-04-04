@@ -30,16 +30,9 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
     try {
       const now = new Date();
       const since = new Date(now.getTime() - parsePeriod(period)).toISOString();
-      const summary = await store.getSummary({ since });
-      const generator = new ReportGenerator(config, summary);
-      const reportData = generator.generate(period, format, { now });
-
-      if (format === "terminal") {
-        return { ok: true, output: renderTerminal(reportData) };
-      }
 
       if (format === "ndjson") {
-        const ndjson = renderNdjson(reportData);
+        const ndjson = renderNdjson(await store.getRecords({ since, limit: null }));
         if (options.outputPath) {
           writeFileSync(options.outputPath, ndjson);
           return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
@@ -48,12 +41,20 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
       }
 
       if (format === "csv") {
-        const csv = renderCsv(reportData);
+        const csv = renderCsv(await store.getRecords({ since, limit: null }));
         if (options.outputPath) {
           writeFileSync(options.outputPath, csv);
           return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
         }
         return { ok: true, output: csv };
+      }
+
+      const summary = await store.getSummary({ since });
+      const generator = new ReportGenerator(config, summary);
+      const reportData = generator.generate(period, format, { now });
+
+      if (format === "terminal") {
+        return { ok: true, output: renderTerminal(reportData) };
       }
 
       if (format === "oscal-json") {

@@ -12,6 +12,7 @@ import type { ResolvedConfig } from "../src/ancilis/config/index.js";
 import { Engine, ToolRegistry, ToolStatus } from "../src/ancilis/engine/index.js";
 import type { ToolEntry, Action, EvaluationResult } from "../src/ancilis/engine/index.js";
 import { EvidenceStore } from "../src/ancilis/evidence/store.js";
+import type { EvidenceRecord } from "../src/ancilis/evidence/index.js";
 import { formatStatus } from "../src/ancilis/cli/status.js";
 import { validateAndFormat } from "../src/ancilis/cli/validate.js";
 import { approveTool } from "../src/ancilis/cli/approve.js";
@@ -112,7 +113,7 @@ function populatedSummary(n = 5): EvidenceSummary {
 async function populateEvidence(
   config: ResolvedConfig,
   store: EvidenceStore,
-  entries: Array<{ timestamp?: string; toolName?: string }> = [{}],
+  entries: Array<{ timestamp?: string; toolName?: string; outputSummary?: string }> = [{}],
 ): Promise<void> {
   const registry = new ToolRegistry();
   registry.register({
@@ -132,8 +133,30 @@ async function populateEvidence(
     };
     const evaluation = engine.evaluate(action);
     evaluation.timestamp = entry.timestamp ?? evaluation.timestamp;
-    await store.store(evaluation, toolName);
+    await store.store(evaluation, toolName, entry.outputSummary);
   }
+}
+
+function sampleEvidenceRecord(overrides: Partial<EvidenceRecord> = {}): EvidenceRecord {
+  return {
+    recordId: "record-1",
+    evaluationId: "evaluation-1",
+    timestamp: "2026-04-04T00:00:00Z",
+    agentId: "test-agent",
+    sourceType: "agent",
+    toolName: "read_file",
+    decision: "ALLOW",
+    mode: "audit",
+    controlResults: [{ control_id: "PR-01", result: "PASS" }],
+    activeOverlays: [],
+    dataClassifications: [],
+    activeCertifications: [],
+    recordHash: "hash-1",
+    previousHash: "prev-1",
+    totalDurationMs: 5,
+    outputSummary: "sample-output",
+    ...overrides,
+  };
 }
 
 // ===== Status Tests =====
@@ -411,13 +434,17 @@ describe("runReport", () => {
     const outputPath = join(dir, "report.ndjson");
     const config = loadConfig({ path: configPath });
     const store = new EvidenceStore(config, { dbPath });
-    await populateEvidence(config, store);
+    const now = Date.now();
+    await populateEvidence(config, store, [
+      { timestamp: new Date(now - 2 * 86400000).toISOString(), outputSummary: "recent" },
+      { timestamp: new Date(now - 45 * 86400000).toISOString(), outputSummary: "older" },
+    ]);
     await store.close();
 
     const result = await runReport({
       configPath,
       dbPath,
-      period: "30d",
+      period: "7d",
       format: "ndjson",
       outputPath,
     });
@@ -428,8 +455,13 @@ describe("runReport", () => {
       .trim()
       .split("\n")
       .map((line) => JSON.parse(line));
-    expect(rows[0]?.recordType).toBe("report");
-    expect(rows.some((row) => row.recordType === "baseline_control")).toBe(true);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.tool_name).toBe("read_file");
+    expect(rows[0]?.output_summary).toBe("recent");
+    expect(rows[0]?.decision).toBe("ALLOW");
+    expect(rows[0]?.source_type).toBe("agent");
+    expect(rows[0]?.record_hash).toBeTruthy();
+    expect(rows[0]?.previous_hash).toBeTruthy();
   });
 
   it("writes csv output to a file", async () => {
@@ -438,7 +470,7 @@ describe("runReport", () => {
     const outputPath = join(dir, "report.csv");
     const config = loadConfig({ path: configPath });
     const store = new EvidenceStore(config, { dbPath });
-    await populateEvidence(config, store);
+    await populateEvidence(config, store, [{ outputSummary: "csv-export" }]);
     await store.close();
 
     const result = await runReport({
@@ -452,8 +484,12 @@ describe("runReport", () => {
     expect(result.ok).toBe(true);
     expect(existsSync(outputPath)).toBe(true);
     const rows = readFileSync(outputPath, "utf-8").trim().split("\n");
-    expect(rows[0]).toContain("record_type,agent_name");
-    expect(rows.some((row) => row.includes("baseline_control"))).toBe(true);
+    expect(rows[0]).toContain("record_id,evaluation_id,timestamp,agent_id,source_type,tool_name,decision,mode");
+    expect(rows).toHaveLength(2);
+    expect(rows[1]).toContain("read_file");
+    expect(rows[1]).toContain("ALLOW");
+    expect(rows[1]).toContain("csv-export");
+    expect(rows[1]).toContain(",[],[],[],");
   });
 
   it("writes oscal json output to a file", async () => {
@@ -862,29 +898,35 @@ describe("Output Formats", () => {
     expect(md).toContain("|");
   });
 
-  it("ndjson emits report and baseline control records", () => {
-    const config = loadConfig({ raw: minimalConfig() });
-    const gen = new ReportGenerator(config, populatedSummary(2));
-    const report = gen.generate("30d", "ndjson");
-    const rows = renderNdjson(report)
+  it("ndjson emits evidence records", () => {
+    const rows = renderNdjson([
+      sampleEvidenceRecord(),
+      sampleEvidenceRecord({
+        recordId: "record-2",
+        evaluationId: "evaluation-2",
+        outputSummary: "second-output",
+      }),
+    ])
       .trim()
       .split("\n")
       .map((line) => JSON.parse(line));
 
-    expect(rows[0]?.recordType).toBe("report");
-    expect(rows.some((row) => row.recordType === "baseline_control")).toBe(true);
-    expect(rows[0]?.agentName).toBe("test-agent");
+    expect(rows[0]?.record_id).toBe("record-1");
+    expect(rows[0]?.agent_id).toBe("test-agent");
+    expect(rows[0]?.tool_name).toBe("read_file");
+    expect(rows[1]?.output_summary).toBe("second-output");
   });
 
-  it("csv emits a header and baseline control rows", () => {
-    const config = loadConfig({ raw: minimalConfig() });
-    const gen = new ReportGenerator(config, populatedSummary(2));
-    const report = gen.generate("30d", "csv");
-    const rows = renderCsv(report).trim().split("\n");
+  it("csv emits a stable evidence export schema", () => {
+    const rows = renderCsv([sampleEvidenceRecord()]).trim().split("\n");
 
-    expect(rows[0]).toContain("record_type,agent_name");
-    expect(rows[1]).toContain("report,test-agent");
-    expect(rows.some((row) => row.includes("baseline_control"))).toBe(true);
+    expect(rows[0]).toContain("record_id,evaluation_id,timestamp,agent_id,source_type,tool_name,decision,mode");
+    expect(rows[0]).toContain("control_results,active_overlays,data_classifications,active_certifications");
+    expect(rows[0]).toContain("record_hash,previous_hash,total_duration_ms,output_summary");
+    expect(rows[1]).toContain("record-1");
+    expect(rows[1]).toContain("test-agent");
+    expect(rows[1]).toContain("read_file");
+    expect(rows[1]).toContain("sample-output");
   });
 
   it("oscal json emits assessment results with control findings", () => {

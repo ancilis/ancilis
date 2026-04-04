@@ -241,7 +241,8 @@ export class EvidenceStore {
     agentId?: string;
     toolName?: string;
     decision?: string;
-    limit?: number;
+    since?: string;
+    limit?: number | null;
   }): Promise<EvidenceRecord[]> {
     await this.ensureInitialized();
     const conditions: string[] = [];
@@ -259,14 +260,21 @@ export class EvidenceStore {
       conditions.push("decision = ?");
       params.push(filters.decision);
     }
+    if (filters?.since) {
+      conditions.push("timestamp >= ?");
+      params.push(filters.since);
+    }
 
     const where = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
     const limit = filters?.limit ?? 100;
-    params.push(limit);
+    const limitClause = limit === null ? "" : " LIMIT ?";
+    if (limit !== null) {
+      params.push(limit);
+    }
 
     const rows = await allAsync(
       this._conn!,
-      `SELECT ${SELECT_COLUMNS} FROM evidence_records${where} ORDER BY seq_id ASC LIMIT ?`,
+      `SELECT ${SELECT_COLUMNS} FROM evidence_records${where} ORDER BY seq_id ASC${limitClause}`,
       params,
     );
 
