@@ -24,6 +24,8 @@ export interface Action {
   timestamp: string;
   agentId: string;
   sourceType?: string;
+  producerType?: string;
+  producerVersion?: string;
   agentOwner?: string | null;
   actionType: "tool_call" | "api_request" | "data_access";
   tool: ToolInfo;

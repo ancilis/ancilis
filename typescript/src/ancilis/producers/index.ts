@@ -1,7 +1,19 @@
 /** Producers — protocol-agnostic action producers for security evaluation. */
 
-export { ToolActionProducer, BlockedActionError } from "./tool.js";
-export type { ToolInvocation, ToolExecutionResult, AnyFn } from "./tool.js";
+export { ProducerType } from "./protocol.js";
+export type { ActionProducer } from "./protocol.js";
+
+export { MCPActionProducer } from "./mcp.js";
+export type { MCPInvocation } from "./mcp.js";
+
+export { ToolActionProducer, BlockedActionError, wrapTool, tool, evaluateAndExecute } from "./tool.js";
+export type {
+  ToolInvocation,
+  ToolExecutionResult,
+  AnyFn,
+  ToolWrapOptions,
+  EvaluateAndExecuteOptions,
+} from "./tool.js";
 
 export { CLIActionProducer } from "./cli.js";
 export type { CLIInvocation, CLIExecutionResult } from "./cli.js";

@@ -10,6 +10,7 @@ import type { EvaluationResult } from "../engine/result.js";
 import { EvidenceStore } from "../evidence/store.js";
 import { matchesToolList } from "../engine/tool-matching.js";
 import { BlockedActionError } from "./tool.js";
+import { ProducerType } from "./protocol.js";
 
 export interface HTTPRequest {
   method: string;
@@ -51,7 +52,7 @@ export class HTTPActionProducer {
     this._evidenceStore = evidenceStore ?? new EvidenceStore(config);
   }
 
-  get producerType(): string { return "http"; }
+  get producerType(): ProducerType { return ProducerType.HTTP; }
   get producerVersion(): string { return "0.1.0"; }
 
   private _toolName(request: HTTPRequest): string {
@@ -101,6 +102,8 @@ export class HTTPActionProducer {
       timestamp: new Date().toISOString(),
       agentId: request.agentName,
       sourceType: this.producerType,
+      producerType: this.producerType,
+      producerVersion: this.producerVersion,
       agentOwner: this._config.agentOwner ?? null,
       actionType: "api_request",
       tool: {
@@ -118,6 +121,10 @@ export class HTTPActionProducer {
 
   computeToolHash(toolIdentifier: string): string {
     return createHash("sha256").update(toolIdentifier).digest("hex");
+  }
+
+  registerTools(registry: ToolRegistry): string[] {
+    return registry.getAll().map((entry) => entry.name);
   }
 
   private _ensureRegistered(request: HTTPRequest): string {

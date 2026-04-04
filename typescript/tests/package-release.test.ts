@@ -69,6 +69,16 @@ describe("packaged CLI release readiness", () => {
     expect(output).toContain("[OK] assets:");
   }, 30_000);
 
+  it("package smoke script exercises installed oscal report export", () => {
+    const output = execFileSync("node", ["scripts/ts_package_smoke.mjs"], {
+      cwd: process.cwd(),
+      encoding: "utf-8",
+    });
+
+    expect(output).toContain("ts-cli-formats-ok");
+    expect(output).toContain("ts-report-oscal-ok");
+  }, 30_000);
+
 });
 
 describe("publish configuration", () => {
@@ -108,11 +118,37 @@ describe("publish configuration", () => {
     const verifyRuns = verifyJob?.steps?.flatMap((step) => (step.run ? [step.run] : [])) ?? [];
     expect(verifyRuns).toContain("npm ci");
     expect(verifyRuns).toContain("npx vitest run");
-    expect(verifyRuns).toContain("npm run pack:smoke");
+    expect(verifyRuns.some((run) => run.includes("npm run pack:smoke"))).toBe(true);
 
     const publishJob = workflow.jobs?.publish_typescript;
     expect(publishJob?.needs).toBe("verify_typescript_release");
     const publishRuns = publishJob?.steps?.flatMap((step) => (step.run ? [step.run] : [])) ?? [];
-    expect(publishRuns).toContain("npm publish --provenance");
+    expect(publishRuns.some((run) => run.includes("npm publish") && run.includes("--provenance"))).toBe(true);
+  });
+
+  it("publishes the exact tarball verified by the release job", () => {
+    const workflow = parseYaml(
+      readFileSync(join(process.cwd(), ".github", "workflows", "release-typescript.yml"), "utf-8"),
+    ) as {
+      jobs?: Record<
+        string,
+        {
+          steps?: Array<{ uses?: string; run?: string }>;
+        }
+      >;
+    };
+
+    const verifyJob = workflow.jobs?.verify_typescript_release;
+    const verifyUses = verifyJob?.steps?.flatMap((step) => (step.uses ? [step.uses] : [])) ?? [];
+    expect(verifyUses).toContain("actions/upload-artifact@v4");
+
+    const publishJob = workflow.jobs?.publish_typescript;
+    const publishUses = publishJob?.steps?.flatMap((step) => (step.uses ? [step.uses] : [])) ?? [];
+    expect(publishUses).toContain("actions/download-artifact@v4");
+
+    const publishRuns = publishJob?.steps?.flatMap((step) => (step.run ? [step.run] : [])) ?? [];
+    expect(publishRuns).not.toContain("npm ci");
+    expect(publishRuns).not.toContain("npm run build");
+    expect(publishRuns.some((run) => /npm publish .*\.tgz --provenance/.test(run))).toBe(true);
   });
 });

@@ -32,6 +32,8 @@ export function buildAction(
     timestamp: new Date().toISOString(),
     agentId: config.agentName,
     sourceType: "mcp",
+    producerType: "mcp",
+    producerVersion: "0.1.0",
     agentOwner: config.agentOwner || null,
     actionType: "tool_call",
     tool: {

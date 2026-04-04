@@ -27,7 +27,7 @@ function usage(): string {
   return [
     "Usage:",
     "  ancilis doctor [--config <path>] [--db <path>]",
-    "  ancilis report [--period <window>] [--format <terminal|markdown|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
+    "  ancilis report [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
     "  ancilis status [--verbose] [--config <path>] [--db <path>]",
     "  ancilis config validate [--config <path>]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
@@ -91,7 +91,7 @@ async function handleDoctor(args: string[], io: CliIo): Promise<number> {
 
 async function handleReport(args: string[], io: CliIo): Promise<number> {
   let period: string | undefined;
-  let format: "terminal" | "markdown" | "pdf" | "aiuc1-readiness" | undefined;
+  let format: "terminal" | "markdown" | "ndjson" | "csv" | "oscal-json" | "pdf" | "aiuc1-readiness" | undefined;
   let configPath: string | undefined;
   let dbPath: string | undefined;
   let outputPath: string | undefined;
@@ -105,10 +105,10 @@ async function handleReport(args: string[], io: CliIo): Promise<number> {
     }
     if (arg === "--format") {
       const value = readOption(args, index, arg);
-      if (!["terminal", "markdown", "pdf", "aiuc1-readiness"].includes(value)) {
+      if (!["terminal", "markdown", "ndjson", "csv", "oscal-json", "pdf", "aiuc1-readiness"].includes(value)) {
         throw new Error(`Unsupported report format: ${value}`);
       }
-      format = value as "terminal" | "markdown" | "pdf" | "aiuc1-readiness";
+      format = value as "terminal" | "markdown" | "ndjson" | "csv" | "oscal-json" | "pdf" | "aiuc1-readiness";
       index += 1;
       continue;
     }
