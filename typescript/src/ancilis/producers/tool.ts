@@ -9,6 +9,7 @@ import type { ToolEntry } from "../engine/registry.js";
 import type { EvaluationResult } from "../engine/result.js";
 import { EvidenceStore } from "../evidence/store.js";
 import { matchesToolList } from "../engine/tool-matching.js";
+import { ProducerType } from "./protocol.js";
 
 export type AnyFn = (...args: unknown[]) => unknown;
 
@@ -25,6 +26,20 @@ export interface ToolExecutionResult<R = unknown> {
   evaluation: EvaluationResult;
   blocked: boolean;
   returnValue: R;
+}
+
+export interface ToolWrapOptions {
+  producer: ToolActionProducer;
+  agentName?: string;
+  toolName?: string;
+}
+
+export interface EvaluateAndExecuteOptions {
+  producer: ToolActionProducer;
+  agentName: string;
+  args?: unknown[];
+  kwargs?: Record<string, unknown>;
+  toolName?: string;
 }
 
 export class BlockedActionError extends Error {
@@ -67,7 +82,7 @@ export class ToolActionProducer {
     this._evidenceStore = evidenceStore ?? new EvidenceStore(config);
   }
 
-  get producerType(): string { return "framework"; }
+  get producerType(): ProducerType { return ProducerType.FRAMEWORK; }
   get producerVersion(): string { return "0.1.0"; }
 
   private _qualifiedName(fn: AnyFn, toolName?: string): string {
@@ -102,6 +117,8 @@ export class ToolActionProducer {
       timestamp: new Date().toISOString(),
       agentId: invocation.agentName,
       sourceType: this.producerType,
+      producerType: this.producerType,
+      producerVersion: this.producerVersion,
       agentOwner: this._config.agentOwner ?? null,
       actionType: "tool_call",
       tool: {
@@ -117,8 +134,15 @@ export class ToolActionProducer {
   }
 
   computeToolHash(fn: AnyFn | string): string {
-    const ident = typeof fn === "string" ? fn : `tool:${(fn as { name?: string }).name ?? "unknown"}`;
+    const ident =
+      typeof fn === "string"
+        ? fn
+        : `tool:${(fn as { name?: string }).name ?? "unknown"}:${fn.toString()}`;
     return createHash("sha256").update(ident).digest("hex");
+  }
+
+  registerTools(registry: ToolRegistry): string[] {
+    return registry.getAll().map((entry) => entry.name);
   }
 
   private _ensureRegistered(fn: AnyFn, toolName: string): void {
@@ -183,4 +207,24 @@ export class ToolActionProducer {
       return result.returnValue;
     };
   }
+}
+
+export function wrapTool<R>(
+  fn: (...args: unknown[]) => R,
+  options: ToolWrapOptions,
+): (...args: unknown[]) => Promise<R> {
+  return options.producer.wrapTool(fn, options.agentName, options.toolName);
+}
+
+export function tool<R>(
+  options: ToolWrapOptions,
+): (fn: (...args: unknown[]) => R) => (...args: unknown[]) => Promise<R> {
+  return (fn) => options.producer.wrapTool(fn, options.agentName, options.toolName);
+}
+
+export function evaluateAndExecute<R>(
+  fn: (...args: unknown[]) => R,
+  options: EvaluateAndExecuteOptions,
+): Promise<ToolExecutionResult<R>> {
+  return options.producer.execute(fn, options.agentName, options.args, options.kwargs, options.toolName);
 }

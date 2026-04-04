@@ -2,7 +2,8 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { basename } from "node:path";
+import { accessSync, constants as fsConstants } from "node:fs";
+import { basename, delimiter, isAbsolute, join, resolve } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
 import type { Action } from "../engine/action.js";
 import { Engine } from "../engine/engine.js";
@@ -13,6 +14,7 @@ import { EvidenceStore } from "../evidence/store.js";
 import { scanResponse } from "../middleware/response-scanner.js";
 import type { ScanResult } from "../middleware/response-scanner.js";
 import { matchesToolList } from "../engine/tool-matching.js";
+import { ProducerType } from "./protocol.js";
 
 export interface CLIInvocation {
   command: string[];
@@ -49,7 +51,7 @@ export class CLIActionProducer {
     this._evidenceStore = evidenceStore ?? new EvidenceStore(config);
   }
 
-  get producerType(): string { return "cli"; }
+  get producerType(): ProducerType { return ProducerType.CLI; }
   get producerVersion(): string { return "0.1.0"; }
 
   private _resolveToolName(command: string[]): string {
@@ -87,6 +89,8 @@ export class CLIActionProducer {
       timestamp: new Date().toISOString(),
       agentId: invocation.agentName,
       sourceType: this.producerType,
+      producerType: this.producerType,
+      producerVersion: this.producerVersion,
       agentOwner: this._config.agentOwner ?? null,
       actionType: "tool_call",
       tool: {
@@ -102,8 +106,9 @@ export class CLIActionProducer {
   }
 
   computeToolHash(toolIdentifier: string): string {
+    const toolPath = this._resolveToolPath(toolIdentifier);
     const versionOutput = this._getVersionOutput(toolIdentifier);
-    const input = `${toolIdentifier}:${versionOutput ?? "no-version"}`;
+    const input = `${toolPath ?? toolIdentifier}:${versionOutput ?? "no-version"}`;
     return createHash("sha256").update(input).digest("hex");
   }
 
@@ -206,8 +211,31 @@ export class CLIActionProducer {
         const output = execFileSync(toolName, [flag], {
           timeout: 5000,
           encoding: "utf-8",
+          stdio: ["ignore", "pipe", "pipe"],
         });
         if (output.trim()) return output.trim();
+      } catch {
+        // continue
+      }
+    }
+    return null;
+  }
+
+  private _resolveToolPath(toolName: string): string | null {
+    const candidates: string[] = [];
+    if (toolName.includes("/") || toolName.includes("\\")) {
+      candidates.push(isAbsolute(toolName) ? toolName : resolve(toolName));
+    } else {
+      const pathValue = process.env.PATH ?? "";
+      for (const dir of pathValue.split(delimiter)) {
+        if (dir) candidates.push(join(dir, toolName));
+      }
+    }
+
+    for (const candidate of candidates) {
+      try {
+        accessSync(candidate, fsConstants.X_OK);
+        return candidate;
       } catch {
         // continue
       }

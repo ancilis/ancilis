@@ -3,11 +3,11 @@
 import { writeFileSync } from "node:fs";
 import { loadConfig } from "../config/index.js";
 import { EvidenceStore } from "../evidence/store.js";
-import { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderPdf } from "../report/index.js";
+import { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderNdjson, renderCsv, renderOscalJson, renderPdf } from "../report/index.js";
 
 export interface ReportCommandOptions {
   period?: string;
-  format?: "terminal" | "markdown" | "pdf" | "aiuc1-readiness";
+  format?: "terminal" | "markdown" | "ndjson" | "csv" | "oscal-json" | "pdf" | "aiuc1-readiness";
   configPath?: string;
   dbPath?: string;
   outputPath?: string;
@@ -36,6 +36,33 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
 
       if (format === "terminal") {
         return { ok: true, output: renderTerminal(reportData) };
+      }
+
+      if (format === "ndjson") {
+        const ndjson = renderNdjson(reportData);
+        if (options.outputPath) {
+          writeFileSync(options.outputPath, ndjson);
+          return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
+        }
+        return { ok: true, output: ndjson };
+      }
+
+      if (format === "csv") {
+        const csv = renderCsv(reportData);
+        if (options.outputPath) {
+          writeFileSync(options.outputPath, csv);
+          return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
+        }
+        return { ok: true, output: csv };
+      }
+
+      if (format === "oscal-json") {
+        const oscal = renderOscalJson(reportData);
+        if (options.outputPath) {
+          writeFileSync(options.outputPath, oscal);
+          return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
+        }
+        return { ok: true, output: oscal };
       }
 
       const markdown = renderMarkdown(reportData);

@@ -16,7 +16,8 @@ import { formatStatus } from "../src/ancilis/cli/status.js";
 import { validateAndFormat } from "../src/ancilis/cli/validate.js";
 import { approveTool } from "../src/ancilis/cli/approve.js";
 import { runDoctor, runReport } from "../src/ancilis/cli/index.js";
-import { ReportGenerator, renderTerminal, renderMarkdown, renderPdf } from "../src/ancilis/report/index.js";
+import { runCli } from "../src/cli.js";
+import { ReportGenerator, renderTerminal, renderMarkdown, renderPdf, renderNdjson, renderCsv, renderOscalJson } from "../src/ancilis/report/index.js";
 import type { EvidenceSummary } from "../src/ancilis/report/index.js";
 
 // --- Helpers ---
@@ -31,6 +32,27 @@ function writeConfig(dir: string, data: Record<string, unknown>): string {
   const path = join(dir, "ancilis.yaml");
   writeFileSync(path, stringifyYaml(data));
   return path;
+}
+
+function captureIo(): {
+  io: { stdout(message: string): void; stderr(message: string): void };
+  stdout(): string;
+  stderr(): string;
+} {
+  const out: string[] = [];
+  const err: string[] = [];
+  return {
+    io: {
+      stdout(message: string) {
+        out.push(message);
+      },
+      stderr(message: string) {
+        err.push(message);
+      },
+    },
+    stdout: () => out.join(""),
+    stderr: () => err.join(""),
+  };
 }
 
 function minimalConfig(): Record<string, unknown> {
@@ -381,6 +403,90 @@ describe("runReport", () => {
     expect(result.ok).toBe(true);
     expect(existsSync(outputPath)).toBe(true);
     expect(readFileSync(outputPath, "utf-8")).toContain("# Ancilis Posture Report");
+  });
+
+  it("writes ndjson output to a file", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+    const dbPath = join(dir, "report.duckdb");
+    const outputPath = join(dir, "report.ndjson");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await populateEvidence(config, store);
+    await store.close();
+
+    const result = await runReport({
+      configPath,
+      dbPath,
+      period: "30d",
+      format: "ndjson",
+      outputPath,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(existsSync(outputPath)).toBe(true);
+    const rows = readFileSync(outputPath, "utf-8")
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(rows[0]?.recordType).toBe("report");
+    expect(rows.some((row) => row.recordType === "baseline_control")).toBe(true);
+  });
+
+  it("writes csv output to a file", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+    const dbPath = join(dir, "report.duckdb");
+    const outputPath = join(dir, "report.csv");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await populateEvidence(config, store);
+    await store.close();
+
+    const result = await runReport({
+      configPath,
+      dbPath,
+      period: "30d",
+      format: "csv",
+      outputPath,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(existsSync(outputPath)).toBe(true);
+    const rows = readFileSync(outputPath, "utf-8").trim().split("\n");
+    expect(rows[0]).toContain("record_type,agent_name");
+    expect(rows.some((row) => row.includes("baseline_control"))).toBe(true);
+  });
+
+  it("writes oscal json output to a file", async () => {
+    const configPath = writeConfig(dir, fullConfig());
+    const dbPath = join(dir, "report.duckdb");
+    const outputPath = join(dir, "report-oscal.json");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await populateEvidence(config, store);
+    await store.close();
+
+    const result = await runReport({
+      configPath,
+      dbPath,
+      period: "30d",
+      format: "oscal-json",
+      outputPath,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(existsSync(outputPath)).toBe(true);
+    const document = JSON.parse(readFileSync(outputPath, "utf-8")) as {
+      "assessment-results"?: {
+        metadata?: { title?: string };
+        results?: Array<{ findings?: Array<{ target?: { type?: string } }> }>;
+      };
+    };
+    expect(document["assessment-results"]?.metadata?.title).toContain("test-agent");
+    expect(
+      document["assessment-results"]?.results?.[0]?.findings?.some(
+        (finding) => finding.target?.type === "baseline_control",
+      ),
+    ).toBe(true);
   });
 
   it("reports a markdown fallback when pdf tooling is unavailable", async () => {
@@ -756,6 +862,55 @@ describe("Output Formats", () => {
     expect(md).toContain("|");
   });
 
+  it("ndjson emits report and baseline control records", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const gen = new ReportGenerator(config, populatedSummary(2));
+    const report = gen.generate("30d", "ndjson");
+    const rows = renderNdjson(report)
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+
+    expect(rows[0]?.recordType).toBe("report");
+    expect(rows.some((row) => row.recordType === "baseline_control")).toBe(true);
+    expect(rows[0]?.agentName).toBe("test-agent");
+  });
+
+  it("csv emits a header and baseline control rows", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const gen = new ReportGenerator(config, populatedSummary(2));
+    const report = gen.generate("30d", "csv");
+    const rows = renderCsv(report).trim().split("\n");
+
+    expect(rows[0]).toContain("record_type,agent_name");
+    expect(rows[1]).toContain("report,test-agent");
+    expect(rows.some((row) => row.includes("baseline_control"))).toBe(true);
+  });
+
+  it("oscal json emits assessment results with control findings", () => {
+    const config = loadConfig({ raw: fullConfig() });
+    const gen = new ReportGenerator(config, populatedSummary(2));
+    const report = gen.generate("30d", "oscal-json");
+    const document = JSON.parse(renderOscalJson(report)) as {
+      "assessment-results"?: {
+        metadata?: { title?: string };
+        results?: Array<{ findings?: Array<{ target?: { type?: string; controlId?: string } }> }>;
+      };
+    };
+
+    expect(document["assessment-results"]?.metadata?.title).toContain("test-agent");
+    expect(
+      document["assessment-results"]?.results?.[0]?.findings?.some(
+        (finding) => finding.target?.type === "baseline_control" && finding.target?.controlId === "PR-01",
+      ),
+    ).toBe(true);
+    expect(
+      document["assessment-results"]?.results?.[0]?.findings?.some(
+        (finding) => finding.target?.type === "compliance_control",
+      ),
+    ).toBe(true);
+  });
+
   it("pdf renderer writes a markdown fallback next to the requested pdf when pandoc is unavailable", () => {
     const dir = tmpDir();
     const outputPath = join(dir, "report.pdf");
@@ -778,6 +933,30 @@ describe("Output Formats", () => {
     expect(existsSync(outputPath)).toBe(false);
     expect(readFileSync(fallbackPath, "utf-8")).toBe(markdown);
     rmSync(fallbackPath, { force: true });
+  });
+});
+
+describe("runCli", () => {
+  it("accepts oscal-json as a report format", async () => {
+    const dir = tmpDir();
+    const configPath = writeConfig(dir, fullConfig());
+    const dbPath = join(dir, "report.duckdb");
+    const outputPath = join(dir, "report-oscal.json");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await populateEvidence(config, store);
+    await store.close();
+
+    const { io, stdout, stderr } = captureIo();
+    const exitCode = await runCli(
+      ["report", "--config", configPath, "--db", dbPath, "--format", "oscal-json", "--output", outputPath],
+      io,
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stderr()).toBe("");
+    expect(stdout()).toContain(`Report written to ${outputPath}`);
+    expect(existsSync(outputPath)).toBe(true);
   });
 });
 
