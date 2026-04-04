@@ -9,6 +9,9 @@ A self-contained demo that shows Ancilis intercepting AI agent tool calls, evalu
 ## Prerequisites
 
 - Python 3.10+
+- Docker Desktop (or another reachable local Docker daemon) for the full SDK -> Platform walkthrough
+- `curl` for the Platform login, integration registration, and sync steps in `run-all.sh`
+- A Platform checkout at either `./platform`, `../ancilis-one-shot/platform`, or a custom path passed via `ANCILIS_PLATFORM_DIR`
 
 ## Quick Start
 
@@ -19,7 +22,32 @@ bash examples/demo/setup.sh
 # Or run manually
 pip install -e ".[dev]"
 python examples/demo/run.py
+
+# Full SDK -> Platform walkthrough
+bash examples/demo/run-all.sh
 ```
+
+`run-all.sh` auto-detects the Platform checkout from either:
+- `./platform`
+- `../ancilis-one-shot/platform`
+
+If your Platform repo lives somewhere else, point the walkthrough at it explicitly:
+
+```bash
+ANCILIS_PLATFORM_DIR=/path/to/platform-or-repo-root bash examples/demo/run-all.sh
+```
+
+`run-all.sh` also honors a few environment overrides when your local stack differs from the defaults:
+
+```bash
+ANCILIS_DEMO_BACKEND_URL=http://localhost:8000
+ANCILIS_DEMO_DASHBOARD_URL=http://localhost:3000
+ANCILIS_DEMO_OPEN_BROWSER=0
+```
+
+When the walkthrough finishes, sign in to the dashboard with:
+- `admin@ancilis.demo`
+- `AncilisDemo123!`
 
 ## What to Look For
 
@@ -35,7 +63,7 @@ The demo simulates a financial AI agent making 6 MCP tool calls:
 | `lookup_credit_score` | ALLOW | In allowed list, triggers GLBA overlay (SSN in response) |
 
 After the tool calls, the demo prints:
-- A summary line with ALLOW/BLOCK counts
+- A middleware summary line showing the evaluated tool-call total and detected issues
 - Full `ancilis status --verbose` output showing active overlays and certifications
 - The DuckDB evidence file path
 
@@ -48,4 +76,4 @@ See `ancilis.yaml` for the agent security policy:
 
 ## Next Step
 
-Start the Platform dashboard to visualize the evidence this demo produces.
+Run `bash examples/demo/run-all.sh` to push the generated evidence into the Platform and open the dashboard flow end to end.

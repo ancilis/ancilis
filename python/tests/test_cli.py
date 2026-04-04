@@ -157,6 +157,14 @@ class TestConfigValidate:
         assert "\u2713" in result.output or "Config valid" in result.output
         assert "test-agent" in result.output
 
+    def test_valid_config_accepts_positional_path(self, tmp_path: Path) -> None:
+        cfg = _make_config_file(_minimal_config(), tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(cli, ["config", "validate", str(cfg)])
+        assert result.exit_code == 0
+        assert "\u2713" in result.output or "Config valid" in result.output
+        assert "test-agent" in result.output
+
     def test_invalid_certification_target(self, tmp_path: Path) -> None:
         data = _minimal_config()
         # Invalid cert target is not validated by config parser directly,
