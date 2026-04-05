@@ -251,6 +251,71 @@ describe("CLIActionProducer", () => {
     expect(result.stdout).toBeUndefined();
     expect(result.returnCode).toBeUndefined();
   });
+
+  it("flags sensitive stdout patterns for Python parity", async () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    const result = await producer.execute(["echo", "SSN: 123-45-6789"], "runtime-agent");
+
+    expect(result.blocked).toBe(false);
+    expect(result.scanResult?.patterns.map((pattern) => pattern.patternType)).toContain("ssn");
+  });
+
+  it("does not scan blocked CLI output for Python parity", async () => {
+    const config = makeConfig({ mode: "enforce" });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    const result = await producer.execute(["echo", "SSN: 123-45-6789"], "runtime-agent");
+
+    expect(result.blocked).toBe(true);
+    expect(result.scanResult).toBeUndefined();
+  });
+
+  it("persists CLI evidence records and preserves chain integrity for Python parity", async () => {
+    const config = makeConfig({ mode: "audit" });
+    const store = new EvidenceStore(config, { inMemory: true });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      store,
+    );
+
+    await producer.execute(["echo", "first"], "runtime-agent");
+    await producer.execute(["echo", "second"], "runtime-agent");
+
+    expect(await store.count()).toBe(2);
+    expect((await store.getRecords())[0]?.toolName).toBe("cli:echo");
+    expect(await store.verifyChain()).toEqual({ valid: true, errors: [] });
+  });
+
+  it("stores blocked CLI evaluations in evidence for Python parity", async () => {
+    const config = makeConfig({ mode: "enforce", toolsBlocked: ["echo"] });
+    const store = new EvidenceStore(config, { inMemory: true });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      store,
+    );
+
+    const result = await producer.execute(["echo", "blocked"], "runtime-agent");
+
+    expect(result.blocked).toBe(true);
+    expect(await store.count()).toBe(1);
+    expect((await store.getRecords())[0]?.decision).toBe("BLOCK");
+  });
 });
 
 describe("ToolActionProducer", () => {
