@@ -133,7 +133,7 @@ describe("publish configuration", () => {
       jobs?: Record<
         string,
         {
-          steps?: Array<{ uses?: string; run?: string }>;
+          steps?: Array<{ uses?: string; run?: string; env?: Record<string, string> }>;
         }
       >;
     };
@@ -150,5 +150,10 @@ describe("publish configuration", () => {
     expect(publishRuns).not.toContain("npm ci");
     expect(publishRuns).not.toContain("npm run build");
     expect(publishRuns.some((run) => /npm publish .*\.tgz --provenance/.test(run))).toBe(true);
+
+    const publishStep = publishJob?.steps?.find((step) => step.run?.includes("npm publish"));
+    expect(publishStep?.env).toMatchObject({
+      NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}",
+    });
   });
 });

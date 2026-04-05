@@ -57,3 +57,5 @@ jobs:
           name: ancilis-typescript-package
           path: release-artifacts
       - run: npm publish release-artifacts/*.tgz --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
