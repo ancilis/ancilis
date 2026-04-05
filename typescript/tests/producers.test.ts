@@ -204,6 +204,25 @@ describe("CLIActionProducer", () => {
     expect(writes).toEqual([]);
   });
 
+  it("captures stderr for successful commands to match Python producer behavior", async () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    const result = await producer.execute(
+      ["node", "-e", "process.stderr.write('warn\\\\n')"],
+      "runtime-agent",
+    );
+
+    expect(result.blocked).toBe(false);
+    expect(result.returnCode).toBe(0);
+    expect(result.stderr).toContain("warn");
+  });
+
   it("does not register anything when the CLI allowlist is empty", () => {
     const config = makeConfig({ mode: "audit" });
     const registry = new ToolRegistry();
