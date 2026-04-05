@@ -18,8 +18,10 @@ import { validateAndFormat } from "../src/ancilis/cli/validate.js";
 import { approveTool } from "../src/ancilis/cli/approve.js";
 import { runDoctor, runReport } from "../src/ancilis/cli/index.js";
 import { runCli } from "../src/cli.js";
+import * as ancilis from "../src/ancilis/index.js";
 import { ReportGenerator, renderTerminal, renderMarkdown, renderPdf, renderNdjson, renderCsv, renderOscalJson } from "../src/ancilis/report/index.js";
 import type { EvidenceSummary, ReportData } from "../src/ancilis/report/index.js";
+import type { RenderPdfResult } from "../src/ancilis/index.js";
 
 // --- Helpers ---
 
@@ -656,6 +658,27 @@ describe("runReport", () => {
 });
 
 describe("package metadata", () => {
+  it("exports public runtime helpers from the package root", () => {
+    const root = ancilis as Record<string, unknown>;
+
+    expect(root.ToolStatus).toBeDefined();
+    expect(root.scanResponse).toBeDefined();
+    expect(root.loadCertificationProfile).toBeDefined();
+    expect(root.loadCertificationProfiles).toBeDefined();
+    expect(root.loadControlDefinitions).toBeDefined();
+    expect(root.loadOverlayProfiles).toBeDefined();
+  });
+
+  it("exports PDF renderer result types from the package root", () => {
+    const result: RenderPdfResult = {
+      format: "markdown",
+      outputPath: "ancilis-report.md",
+    };
+
+    expect(result.format).toBe("markdown");
+    expect(result.outputPath).toBe("ancilis-report.md");
+  });
+
   it("ships a CLI executable for npm consumers", { timeout: 30_000 }, () => {
     const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as {
       bin?: Record<string, string>;
