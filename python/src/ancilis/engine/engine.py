@@ -139,4 +139,5 @@ class Engine:
             active_overlays=active_overlays,
             data_classifications=data_classifications,
             total_duration_ms=total_ms,
+            session_id=action.context.session_id,
         )

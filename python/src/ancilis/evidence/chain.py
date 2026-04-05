@@ -25,6 +25,7 @@ def canonical_payload(
     total_duration_ms: float,
     previous_hash: str,
     output_summary: str | None = None,
+    session_id: str | None = None,
 ) -> str:
     """Build the canonical JSON string used as hash input.
 
@@ -47,6 +48,8 @@ def canonical_payload(
     }
     if output_summary is not None:
         payload["output_summary"] = output_summary
+    if session_id is not None:
+        payload["session_id"] = session_id
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
 
 

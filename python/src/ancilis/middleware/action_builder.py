@@ -18,6 +18,7 @@ def build_action(
     arguments: dict[str, Any] | None,
     config: ResolvedConfig,
     registry: ToolRegistry,
+    session_id: str | None = None,
 ) -> Action:
     """Build an Action object from an MCP tool call."""
     args = arguments or {}
@@ -51,6 +52,7 @@ def build_action(
         ),
         parameters=ActionParameters(raw=args, parameter_hash=param_hash),
         context=ActionContext(
+            session_id=session_id,
             data_classifications=dc_codes,
             active_overlays=overlay_ids,
         ),

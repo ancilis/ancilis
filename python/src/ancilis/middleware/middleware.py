@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -93,6 +94,7 @@ class AncilisMiddleware:
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(self._config)
         self._issue_count: int = 0
         self._closed: bool = False
+        self._session_id = str(uuid.uuid4())
 
     @property
     def evidence_store(self) -> EvidenceStore:
@@ -101,6 +103,10 @@ class AncilisMiddleware:
     @property
     def config(self) -> ResolvedConfig:
         return self._config
+
+    @property
+    def session_id(self) -> str:
+        return self._session_id
 
     @property
     def registry(self) -> ToolRegistry:
@@ -125,7 +131,13 @@ class AncilisMiddleware:
     ) -> CallToolResult:
         """Intercept a tool call, evaluate, enforce, forward or block."""
         # 1. Build Action object
-        action = build_action(name, arguments, self._config, self._registry)
+        action = build_action(
+            name,
+            arguments,
+            self._config,
+            self._registry,
+            session_id=self._session_id,
+        )
 
         # 2. Evaluate via engine
         evaluation = self._engine.evaluate(action)

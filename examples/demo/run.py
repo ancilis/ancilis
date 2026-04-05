@@ -206,7 +206,12 @@ async def _run_demo(
         summary_line = middleware.get_summary_line()
         _print(stream, summary_line)
 
-        status_output = _format_status(config, middleware.evidence_store, verbose=True)
+        status_output = _format_status(
+            config,
+            middleware.evidence_store,
+            verbose=True,
+            session_id=middleware.session_id,
+        )
         _print(stream)
         _print(stream, "=== ancilis status --verbose ===")
         _print(stream, status_output)
@@ -215,10 +220,13 @@ async def _run_demo(
             ReportGenerator(config, middleware.evidence_store).generate(
                 period="30d",
                 report_format="markdown",
+                session_id=middleware.session_id,
             )
         )
 
-        decisions = middleware.evidence_store.get_summary()["decisions"]
+        decisions = middleware.evidence_store.get_summary(
+            session_id=middleware.session_id
+        )["decisions"]
         _print(stream)
         _print(stream, f"Evidence stored at: {middleware.evidence_store.db_path}")
         _print(

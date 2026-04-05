@@ -24,3 +24,4 @@ class EvidenceRecord:
     previous_hash: str
     total_duration_ms: float = 0.0
     output_summary: str | None = None
+    session_id: str | None = None

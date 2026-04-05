@@ -29,7 +29,12 @@ def _load_config_safe(config_path: str | None) -> ResolvedConfig | None:
         return None
 
 
-def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: bool) -> str:
+def _format_status(
+    config: ResolvedConfig,
+    evidence: EvidenceStore,
+    verbose: bool,
+    session_id: str | None = None,
+) -> str:
     lines: list[str] = []
     control_defs = load_control_definitions()
 
@@ -38,7 +43,7 @@ def _format_status(config: ResolvedConfig, evidence: EvidenceStore, verbose: boo
 
     # Control summary
     enabled = [c for c in config.controls.values() if c.enabled]
-    summary = evidence.get_summary()
+    summary = evidence.get_summary(session_id=session_id)
     control_stats = summary.get("control_pass_rates", {})
 
     all_passing = True

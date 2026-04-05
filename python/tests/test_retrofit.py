@@ -276,6 +276,7 @@ class TestOutputDisclosure:
             total_duration_ms=rec.total_duration_ms,
             previous_hash=rec.previous_hash,
             output_summary="important output",
+            session_id=rec.session_id,
         )
         payload_without_output = canonical_payload(
             evaluation_id=rec.evaluation_id,
@@ -292,6 +293,7 @@ class TestOutputDisclosure:
             total_duration_ms=rec.total_duration_ms,
             previous_hash=rec.previous_hash,
             output_summary=None,
+            session_id=rec.session_id,
         )
         assert compute_hash(payload_with_output) != compute_hash(payload_without_output)
         assert rec.record_hash == compute_hash(payload_with_output)
