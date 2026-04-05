@@ -320,6 +320,33 @@ describe("ToolActionProducer", () => {
     expect(result.returnValue).toBe(true);
   });
 
+  it("includes nested kwargs values in parameterHash for Python parity", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new ToolActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+    const inspectPayload = (payload?: { flag?: boolean; nested?: { value?: string } }): boolean =>
+      payload?.flag === true;
+
+    const first = producer.translate({
+      fn: inspectPayload,
+      agentName: "runtime-agent",
+      kwargs: { flag: true, nested: { value: "alpha" } },
+      toolName: "tool:demo.kwargs",
+    });
+    const second = producer.translate({
+      fn: inspectPayload,
+      agentName: "runtime-agent",
+      kwargs: { flag: true, nested: { value: "beta" } },
+      toolName: "tool:demo.kwargs",
+    });
+
+    expect(first.parameters.parameterHash).not.toBe(second.parameters.parameterHash);
+  });
+
   it("exposes a wrapTool helper from the package root", async () => {
     const config = makeConfig({ mode: "enforce", toolsAllowed: ["payments.refund"] });
     const producer = new ToolActionProducer(
@@ -458,6 +485,35 @@ describe("HTTPActionProducer", () => {
     expect(await store.count()).toBe(2);
     expect((await store.getRecords())[0]?.toolName).toBe("http:GET:allowed.example.com");
     expect(await store.verifyChain()).toEqual({ valid: true, errors: [] });
+  });
+
+  it("includes nested HTTP payload values in parameterHash for Python parity", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new HTTPActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    const first = producer.translate({
+      method: "POST",
+      url: "https://allowed.example.com/events",
+      agentName: "runtime-agent",
+      headers: { "x-trace-id": "trace-1" },
+      body: { nested: { status: "alpha" } },
+      metadata: { audit: { reason: "first" } },
+    });
+    const second = producer.translate({
+      method: "POST",
+      url: "https://allowed.example.com/events",
+      agentName: "runtime-agent",
+      headers: { "x-trace-id": "trace-2" },
+      body: { nested: { status: "beta" } },
+      metadata: { audit: { reason: "second" } },
+    });
+
+    expect(first.parameters.parameterHash).not.toBe(second.parameters.parameterHash);
   });
 
   it("stores evidence and skips transport when enforce mode blocks an HTTP call", async () => {
