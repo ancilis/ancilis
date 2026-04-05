@@ -4,15 +4,32 @@ from __future__ import annotations
 
 import click
 
-from ancilis.config import load_config, ResolvedConfig
+from datetime import datetime, timezone
+
+from ancilis.config import load_config
 from ancilis.evidence.store import EvidenceStore
-from ancilis.report.generator import ReportGenerator
-from ancilis.report.renderer import render_terminal, render_markdown, render_pdf
+from ancilis.report.generator import ReportGenerator, _parse_period
+from ancilis.report.renderer import (
+    render_csv,
+    render_markdown,
+    render_ndjson,
+    render_pdf,
+    render_terminal,
+)
+
+
+def _parse_period_start(period: str) -> str:
+    return (datetime.now(timezone.utc) - _parse_period(period)).isoformat()
 
 
 @click.command()
 @click.option("--period", default="30d", help="Reporting period (e.g. 7d, 30d, 90d, 365d)")
-@click.option("--format", "fmt", default="terminal", type=click.Choice(["terminal", "markdown", "pdf", "aiuc1-readiness"]))
+@click.option(
+    "--format",
+    "fmt",
+    default="terminal",
+    type=click.Choice(["terminal", "markdown", "pdf", "aiuc1-readiness", "ndjson", "csv"]),
+)
 @click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
 @click.option("--db", "db_path", default=None, help="Path to evidence database")
 @click.option("--output", "-o", "output_path", default=None, help="Output file path")
@@ -52,5 +69,23 @@ def report(period: str, fmt: str, config_path: str | None, db_path: str | None, 
                     f"({pdf_result.fallback_reason}); "
                     f"wrote Markdown fallback to {pdf_result.output_path}"
                 )
+        elif fmt == "ndjson":
+            records = store.get_records(since=_parse_period_start(period), limit=None)
+            output = render_ndjson(records)
+            if output_path:
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(output)
+                click.echo(f"Report written to {output_path}")
+            else:
+                click.echo(output)
+        elif fmt == "csv":
+            records = store.get_records(since=_parse_period_start(period), limit=None)
+            output = render_csv(records)
+            if output_path:
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(output)
+                click.echo(f"Report written to {output_path}")
+            else:
+                click.echo(output)
     finally:
         store.close()

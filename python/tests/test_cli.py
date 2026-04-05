@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 import tempfile
 import unittest.mock
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -101,6 +103,120 @@ def _populate_evidence(config: ResolvedConfig, store: EvidenceStore, n: int = 5)
         action = _make_action(tool_name="read_file", agent_id=config.agent_name)
         evaluation = engine.evaluate(action)
         store.store(evaluation, tool_name="read_file")
+
+
+def _make_renderer_report(
+    *,
+    failing_controls: int = 1,
+    chain_valid: bool = True,
+) -> ReportData:
+    controls: list[dict[str, Any]] = []
+    failing_control_ids = ["PR-03", "PR-04", "PR-05"][:failing_controls]
+    control_names = [
+        ("PR-01", "Access Governance"),
+        ("PR-02", "Tool Scope Control"),
+        ("PR-03", "Data Exposure Prevention"),
+        ("PR-04", "Output Moderation"),
+        ("PR-05", "Action Logging"),
+        ("DE-01", "Evidence Durability"),
+    ]
+
+    for control_id, display_name in control_names:
+        failed = 2 if control_id in failing_control_ids else 0
+        passed = 8 if failed else 10
+        total = passed + failed
+        controls.append(
+            {
+                "control_id": control_id,
+                "display_name": display_name,
+                "display_detail": "",
+                "threshold": 95,
+                "total": total,
+                "passed": passed,
+                "failed": failed,
+                "flagged": 0,
+                "pass_rate": round((passed / total) * 100, 1),
+            }
+        )
+
+    def section(
+        overlay_name: str,
+        rows: list[str],
+        *,
+        trigger: str = "personal_info",
+    ) -> dict[str, Any]:
+        section_controls = []
+        for control_id in rows:
+            failed = 2 if control_id in failing_control_ids else 0
+            total = 10
+            passed = total - failed
+            section_controls.append(
+                {
+                    "control_id": control_id,
+                    "display_name": next(
+                        control["display_name"]
+                        for control in controls
+                        if control["control_id"] == control_id
+                    ),
+                    "citations": [f"{overlay_name[:3].upper()}-{control_id}"],
+                    "total": total,
+                    "passed": passed,
+                    "failed": failed,
+                    "pass_rate": round((passed / total) * 100, 1),
+                    "threshold": "strict" if control_id == "PR-03" else "standard",
+                }
+            )
+
+        return {
+            "overlay_id": overlay_name.lower().replace(" ", "-"),
+            "overlay_name": overlay_name,
+            "triggered_by": trigger,
+            "strict_controls": ["PR-03"] if "PR-03" in rows else [],
+            "controls": section_controls,
+            "gaps": [row for row in section_controls if row["failed"] > 0],
+            "evidence_retention_days": 365,
+            "retention_met": True,
+        }
+
+    return ReportData(
+        agent_name="test-agent",
+        mode="enforce",
+        period_start="2026-03-01T00:00:00+00:00",
+        period_end="2026-03-31T23:59:59+00:00",
+        generated_at="2026-04-01T00:00:00+00:00",
+        report_format="terminal",
+        baseline={
+            "controls": controls,
+            "tools_evaluated": ["read_file", "send_email"],
+            "total_evaluations": 1234,
+            "decisions": {"allow": 1222, "block": 12, "flag": 0},
+            "evidence_retention_days": 365,
+        },
+        compliance_sections=[
+            section("SOC 2", ["PR-01", "PR-03", "PR-05"]),
+            section("PCI-DSS v4.0", ["PR-01", "PR-03", "DE-01"], trigger="credit_cards"),
+            section("GLBA", ["PR-01", "PR-02"]),
+            section("GDPR", ["PR-02", "PR-04", "PR-05"]),
+        ],
+        certification={
+            "certification_id": "aiuc-1",
+            "certification_name": "AIUC-1",
+            "readiness_percentage": 87,
+            "ready_count": 13,
+            "total_requirements": 15,
+            "coverage_percentage": 80,
+            "automated_count": 12,
+            "operator_count": 3,
+            "evidence_count": 1234,
+            "chain_valid": chain_valid,
+            "automated_coverage": [],
+            "operator_action_required": [],
+        },
+        advisory=None,
+        total_evaluations=1234,
+        chain_valid=chain_valid,
+        chain_errors=[],
+    )
 
 
 # ===== CLI Framework Tests =====
@@ -449,6 +565,138 @@ class TestReportBaseline:
         assert not output_path.exists()
         assert fallback_path.read_text().startswith("# Ancilis Posture Report")
 
+    def test_ndjson_report_cli_exports_period_filtered_evidence(self, tmp_path: Path) -> None:
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+        registry = ToolRegistry()
+        registry.register(ToolEntry(name="read_file", status=ToolStatus.APPROVED))
+        engine = Engine(config, registry=registry)
+        now = datetime.now(timezone.utc)
+
+        recent = engine.evaluate(_make_action(tool_name="read_file", agent_id=config.agent_name))
+        recent.timestamp = (now - timedelta(days=2)).isoformat()
+        store.store(recent, tool_name="read_file", output_summary="recent")
+
+        older = engine.evaluate(_make_action(tool_name="read_file", agent_id=config.agent_name))
+        older.timestamp = (now - timedelta(days=45)).isoformat()
+        store.store(older, tool_name="read_file", output_summary="older")
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "report",
+                "--config",
+                str(cfg_path),
+                "--db",
+                str(db),
+                "--format",
+                "ndjson",
+                "--period",
+                "7d",
+            ],
+        )
+
+        assert result.exit_code == 0
+        lines = [line for line in result.output.strip().splitlines() if line]
+        assert len(lines) == 1
+        payload = json.loads(lines[0])
+        assert payload["tool_name"] == "read_file"
+        assert payload["output_summary"] == "recent"
+        assert payload["decision"] == "ALLOW"
+        assert payload["source_type"] == "agent"
+        assert payload["record_hash"]
+        assert payload["previous_hash"]
+
+    def test_csv_report_cli_writes_structured_evidence_rows(self, tmp_path: Path) -> None:
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        output_path = tmp_path / "report.csv"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+        registry = ToolRegistry()
+        registry.register(ToolEntry(name="read_file", status=ToolStatus.APPROVED))
+        engine = Engine(config, registry=registry)
+
+        evaluation = engine.evaluate(_make_action(tool_name="read_file", agent_id=config.agent_name))
+        store.store(evaluation, tool_name="read_file", output_summary="csv-export")
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "report",
+                "--config",
+                str(cfg_path),
+                "--db",
+                str(db),
+                "--format",
+                "csv",
+                "--output",
+                str(output_path),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert result.output.strip() == f"Report written to {output_path}"
+        with output_path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["tool_name"] == "read_file"
+        assert row["decision"] == "ALLOW"
+        assert row["output_summary"] == "csv-export"
+        assert row["control_results"].startswith("[")
+        assert row["active_overlays"] == "[]"
+
+    def test_csv_report_cli_exports_all_period_records(self, tmp_path: Path) -> None:
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        output_path = tmp_path / "report.csv"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+        registry = ToolRegistry()
+        registry.register(ToolEntry(name="read_file", status=ToolStatus.APPROVED))
+        engine = Engine(config, registry=registry)
+        now = datetime.now(timezone.utc)
+
+        for index in range(101):
+            evaluation = engine.evaluate(
+                _make_action(tool_name="read_file", agent_id=config.agent_name)
+            )
+            evaluation.timestamp = (now - timedelta(hours=index)).isoformat()
+            store.store(evaluation, tool_name="read_file", output_summary=f"row-{index}")
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "report",
+                "--config",
+                str(cfg_path),
+                "--db",
+                str(db),
+                "--format",
+                "csv",
+                "--period",
+                "30d",
+                "--output",
+                str(output_path),
+            ],
+        )
+
+        assert result.exit_code == 0
+        with output_path.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+
+        assert len(rows) == 101
+
 
 # ===== Report — Compliance Mode Tests =====
 
@@ -760,6 +1008,85 @@ class TestOutputFormats:
         assert "test-agent" in terminal
         assert "test-agent" in md
         store.close()
+
+
+class TestReportRendererUX:
+    def test_terminal_adds_posture_summary_and_collapses_passing_controls(self) -> None:
+        report = _make_renderer_report(failing_controls=1)
+
+        output = render_terminal(report)
+
+        assert "Posture: ATTENTION" in output
+        assert "Evaluations: 1,234 total | 12 blocked | 1,222 allowed" in output
+        assert "Active overlays: SOC 2, PCI-DSS v4.0, GLBA, GDPR" in output
+        assert "Active certifications: AIUC-1 (87% ready)" in output
+        assert "Evidence chain: ✓ intact (1,234 records)" in output
+        assert "✗ Data Exposure Prevention — 80.0% pass rate (10 evaluations)" in output
+        assert "✓ 5 controls passing" in output
+        assert "Access Governance — 100.0% pass rate" not in output
+
+    def test_terminal_replaces_overlay_sections_with_compact_matrix(self) -> None:
+        report = _make_renderer_report(failing_controls=1)
+
+        output = render_terminal(report)
+
+        assert "Compliance Matrix:" in output
+        assert "Control" in output
+        assert "SOC 2" in output
+        assert "PCI-DSS v4.0" in output
+        assert "PR-03" in output
+        assert "✗(2)" in output
+        assert "SOC 2 Compliance Posture" not in output
+        assert "GDPR Compliance Posture" not in output
+        assert len(output.splitlines()) < 40
+
+    def test_terminal_uses_color_when_stdout_is_tty(self) -> None:
+        report = _make_renderer_report(failing_controls=1)
+
+        with (
+            unittest.mock.patch.dict(os.environ, {}, clear=True),
+            unittest.mock.patch("ancilis.report.renderer.sys.stdout.isatty", return_value=True),
+        ):
+            output = render_terminal(report)
+
+        assert "\033[1m" in output
+        assert "\033[31m" in output
+        assert "\033[32m" in output
+
+    def test_terminal_disables_color_when_no_color_is_set(self) -> None:
+        report = _make_renderer_report(failing_controls=1)
+
+        with (
+            unittest.mock.patch("ancilis.report.renderer.sys.stdout.isatty", return_value=True),
+            unittest.mock.patch.dict(os.environ, {"NO_COLOR": "1"}, clear=False),
+        ):
+            output = render_terminal(report)
+
+        assert "\033[" not in output
+
+    def test_markdown_adds_executive_summary_and_attention_section(self) -> None:
+        report = _make_renderer_report(failing_controls=1)
+
+        md = render_markdown(report)
+
+        assert "## Executive Summary" in md
+        assert "**Posture: ATTENTION**" in md
+        assert "5 of 6 controls passing across 4 active overlays." in md
+        assert "Active overlays: SOC 2, PCI-DSS v4.0, GLBA, GDPR" in md
+        assert "Active certifications: AIUC-1 (87% ready)" in md
+        assert "Evidence chain: intact (1,234 records, SHA-256 verified)" in md
+        assert "### Attention Required" in md
+        assert "**Data Exposure Prevention**: 2 failures in reporting period" in md
+
+    def test_markdown_omits_attention_section_when_all_controls_pass(self) -> None:
+        report = _make_renderer_report(failing_controls=0)
+
+        md = render_markdown(report)
+
+        assert "## Executive Summary" in md
+        assert "**Posture: HEALTHY**" in md
+        assert "6 of 6 controls passing across 4 active overlays." in md
+        assert "### Attention Required" not in md
 
 
 # ===== Display Fields Tests =====

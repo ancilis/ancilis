@@ -19,7 +19,7 @@ import { approveTool } from "../src/ancilis/cli/approve.js";
 import { runDoctor, runReport } from "../src/ancilis/cli/index.js";
 import { runCli } from "../src/cli.js";
 import { ReportGenerator, renderTerminal, renderMarkdown, renderPdf, renderNdjson, renderCsv, renderOscalJson } from "../src/ancilis/report/index.js";
-import type { EvidenceSummary } from "../src/ancilis/report/index.js";
+import type { EvidenceSummary, ReportData } from "../src/ancilis/report/index.js";
 
 // --- Helpers ---
 
@@ -107,6 +107,101 @@ function populatedSummary(n = 5): EvidenceSummary {
     },
     chain_valid: true,
     chain_errors: [],
+  };
+}
+
+function rendererReport(failingControls = 1): ReportData {
+  const passingControl = (controlId: string, displayName: string): Record<string, unknown> => ({
+    controlId,
+    displayName,
+    threshold: "95",
+    total: 10,
+    passed: 10,
+    failed: 0,
+    flagged: 0,
+    passRate: 100,
+  });
+
+  const failingControl: Record<string, unknown> = {
+    controlId: "PR-03",
+    displayName: "Data Exposure Prevention",
+    threshold: "95",
+    total: 10,
+    passed: 8,
+    failed: 2,
+    flagged: 0,
+    passRate: 80,
+  };
+
+  const baselineControls = [
+    passingControl("PR-01", "Identity Verification"),
+    passingControl("PR-02", "Access Governance"),
+    failingControls > 0 ? failingControl : passingControl("PR-03", "Data Exposure Prevention"),
+    passingControl("PR-04", "Output Validation"),
+    passingControl("PR-05", "Runtime Logging"),
+    passingControl("DE-01", "Baseline Monitoring"),
+  ];
+
+  const makeSection = (overlayName: string): Record<string, unknown> => ({
+    overlayName,
+    triggeredBy: overlayName === "SOC 2" ? "credit_cards" : "",
+    strictControls: overlayName === "PCI-DSS v4.0" ? ["PR-03"] : [],
+    controls: [
+      {
+        controlId: "PR-03",
+        citations: ["Art. 5(1)(f)", "Art. 32"],
+        total: 10,
+        passRate: failingControls > 0 ? 80 : 100,
+        failed: failingControls > 0 ? 2 : 0,
+      },
+      {
+        controlId: "PR-01",
+        citations: ["CC6.1"],
+        total: 10,
+        passRate: 100,
+        failed: 0,
+      },
+    ],
+    gaps: failingControls > 0 ? [{ displayName: "Data Exposure Prevention", failed: 2 }] : [],
+    evidenceRetentionDays: 365,
+    retentionMet: true,
+  });
+
+  return {
+    agentName: "test-agent",
+    mode: "audit",
+    periodStart: "2026-01-01T00:00:00.000Z",
+    periodEnd: "2026-01-31T00:00:00.000Z",
+    generatedAt: "2026-01-31T00:00:00.000Z",
+    reportFormat: "markdown",
+    baseline: {
+      controls: baselineControls,
+      toolsEvaluated: ["read_file"],
+      totalEvaluations: 1234,
+      decisions: { allow: 1222, block: 12, flag: 0 },
+      evidenceRetentionDays: 365,
+    },
+    complianceSections: [
+      makeSection("SOC 2"),
+      makeSection("PCI-DSS v4.0"),
+      makeSection("GLBA"),
+      makeSection("GDPR"),
+    ],
+    certification: {
+      certificationName: "AIUC-1",
+      readinessPercentage: 87,
+      readyCount: 15,
+      totalRequirements: 18,
+      coveragePercentage: 83,
+      automatedCount: 10,
+      operatorCount: 2,
+      evidenceCount: 1234,
+      chainValid: true,
+    },
+    advisory: null,
+    totalEvaluations: 1234,
+    chainValid: true,
+    chainErrors: [],
   };
 }
 
@@ -975,6 +1070,90 @@ describe("Output Formats", () => {
     expect(existsSync(outputPath)).toBe(false);
     expect(readFileSync(fallbackPath, "utf-8")).toBe(markdown);
     rmSync(fallbackPath, { force: true });
+  });
+});
+
+describe("Report Renderer UX", () => {
+  it("terminal adds posture summary and collapses passing controls", () => {
+    const output = renderTerminal(rendererReport(1));
+
+    expect(output).toContain("Posture: ATTENTION");
+    expect(output).toContain("Evaluations: 1,234 total | 12 blocked | 1,222 allowed");
+    expect(output).toContain("Active overlays: SOC 2, PCI-DSS v4.0, GLBA, GDPR");
+    expect(output).toContain("Active certifications: AIUC-1 (87% ready)");
+    expect(output).toContain("Evidence chain: ✓ intact (1,234 records)");
+    expect(output).toContain("✗ Data Exposure Prevention — 80.0% pass rate (10 evaluations)");
+    expect(output).toContain("✓ 5 controls passing");
+    expect(output).not.toContain("Access Governance — 100.0% pass rate");
+  });
+
+  it("terminal replaces overlay sections with a compact matrix", () => {
+    const output = renderTerminal(rendererReport(1));
+
+    expect(output).toContain("Compliance Matrix:");
+    expect(output).toContain("Control");
+    expect(output).toContain("SOC 2");
+    expect(output).toContain("PCI-DSS v4.0");
+    expect(output).toContain("PR-03");
+    expect(output).toContain("✗(2)");
+    expect(output).not.toContain("SOC 2 Compliance Posture");
+    expect(output).not.toContain("GDPR Compliance Posture");
+    expect(output.split("\n").length).toBeLessThan(40);
+  });
+
+  it("terminal uses color when stdout is a tty", () => {
+    const descriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    delete process.env.NO_COLOR;
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true });
+
+    try {
+      const output = renderTerminal(rendererReport(1));
+      expect(output).toContain("\u001b[1m");
+      expect(output).toContain("\u001b[31m");
+      expect(output).toContain("\u001b[32m");
+    } finally {
+      if (descriptor) {
+        Object.defineProperty(process.stdout, "isTTY", descriptor);
+      }
+    }
+  });
+
+  it("terminal disables color when NO_COLOR is set", () => {
+    const descriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    process.env.NO_COLOR = "1";
+    Object.defineProperty(process.stdout, "isTTY", { value: true, configurable: true });
+
+    try {
+      const output = renderTerminal(rendererReport(1));
+      expect(output).not.toContain("\u001b[");
+    } finally {
+      delete process.env.NO_COLOR;
+      if (descriptor) {
+        Object.defineProperty(process.stdout, "isTTY", descriptor);
+      }
+    }
+  });
+
+  it("markdown adds an executive summary and attention section", () => {
+    const md = renderMarkdown(rendererReport(1));
+
+    expect(md).toContain("## Executive Summary");
+    expect(md).toContain("**Posture: ATTENTION**");
+    expect(md).toContain("5 of 6 controls passing across 4 active overlays.");
+    expect(md).toContain("Active overlays: SOC 2, PCI-DSS v4.0, GLBA, GDPR");
+    expect(md).toContain("Active certifications: AIUC-1 (87% ready)");
+    expect(md).toContain("Evidence chain: intact (1,234 records, SHA-256 verified)");
+    expect(md).toContain("### Attention Required");
+    expect(md).toContain("**Data Exposure Prevention**: 2 failures in reporting period");
+  });
+
+  it("markdown omits the attention section when all controls pass", () => {
+    const md = renderMarkdown(rendererReport(0));
+
+    expect(md).toContain("## Executive Summary");
+    expect(md).toContain("**Posture: HEALTHY**");
+    expect(md).toContain("6 of 6 controls passing across 4 active overlays.");
+    expect(md).not.toContain("### Attention Required");
   });
 });
 
