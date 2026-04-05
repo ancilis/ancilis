@@ -1,0 +1,21 @@
+agent:
+  name: compliance-auditor
+  description: Regulatory compliance checks for financial operations
+  owner: compliance-team
+my_agent_handles:
+  - financial_records
+  - personal_info
+  - credit_cards
+certification_targets:
+  - aiuc-1
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - check_aml_status
+      - run_kyc_verification
+      - get_sanctions_list
+      - generate_sar_report
+      - check_transaction_limits
+    blocked:
+      - modify_compliance_rules
