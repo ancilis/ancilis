@@ -172,11 +172,14 @@ maybe_open_browser() {
     fi
 }
 
-require_cmd python3
-require_cmd curl
+# --- Pre-flight checks ---
+# shellcheck source=preflight.sh
+source "${SCRIPT_DIR}/preflight.sh"
+check_python_version
+check_command curl
 if [ "${SKIP_STACK_START}" != "1" ]; then
-    require_cmd docker
-    require_docker_daemon || fail "Docker daemon is not reachable. Start Docker Desktop or your local Docker service."
+    check_docker_running
+    check_platform_checkout "${SDK_ROOT}"
     PLATFORM_DIR="$(resolve_platform_dir)"
 fi
 

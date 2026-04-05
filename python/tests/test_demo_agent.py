@@ -23,6 +23,7 @@ from ancilis.evidence.store import EvidenceStore
 
 ROOT = Path(__file__).resolve().parents[2]
 DEMO_PATH = ROOT / "examples" / "demo" / "run.py"
+DEMO_COMPAT_PATH = ROOT / "examples" / "demo" / "run-demo.py"
 DEMO_CONFIG_PATH = ROOT / "examples" / "demo" / "ancilis.yaml"
 DEMO_SETUP_PATH = ROOT / "examples" / "demo" / "setup.sh"
 DEMO_RUN_ALL_PATH = ROOT / "examples" / "demo" / "run-all.sh"
@@ -73,6 +74,35 @@ def test_demo_output_points_to_split_repo_walkthrough(tmp_path: Path) -> None:
 
     assert "bash examples/demo/run-all.sh" in output
     assert "cd platform && ./start.sh" not in output
+
+
+def test_demo_output_is_polished_and_redirect_safe(tmp_path: Path) -> None:
+    _, _, _, output = _run_demo(tmp_path)
+
+    assert "╔" in output
+    assert "╚" in output
+    assert "├─ Tool Registry" in output
+    assert "├─ Tool Calls" in output
+    assert "├─ Summary" in output
+    assert "✓ check_balance" in output
+    assert "✗ drop_audit_log" in output
+    assert "Overlays:" in output
+    assert "Cert:" in output
+    assert "\x1b[" not in output
+
+
+def test_demo_output_uses_ansi_when_stream_is_a_tty(tmp_path: Path, monkeypatch) -> None:
+    module = _load_demo_module()
+    stream = io.StringIO()
+    stream.isatty = lambda: True  # type: ignore[attr-defined]
+    monkeypatch.delenv("NO_COLOR", raising=False)
+
+    module.main(db_path=tmp_path / "demo-evidence.duckdb", stream=stream)
+
+    output = stream.getvalue()
+    assert "\x1b[" in output
+    assert "\x1b[1;32m✓" in output
+    assert "\x1b[1;31m✗" in output
 
 
 def test_demo_run_persists_expected_evidence(tmp_path: Path) -> None:
@@ -249,10 +279,36 @@ def test_demo_main_entry_resets_evidence_on_rerun(tmp_path: Path) -> None:
         text=True,
     )
 
-    assert "Tool calls: 6 evaluated, 2 blocked" in first_run.stdout
-    assert "Tool calls: 6 evaluated, 2 blocked" in second_run.stdout
+    assert "Evaluated: 6 tool calls | Allowed: 4 | Blocked: 2" in first_run.stdout
+    assert "Evaluated: 6 tool calls | Allowed: 4 | Blocked: 2" in second_run.stdout
 
     db_path = _extract_evidence_path(second_run.stdout)
+    config = load_config(path=DEMO_CONFIG_PATH)
+    store = EvidenceStore(config, db_path=db_path)
+
+    try:
+        assert store.count() == 6
+    finally:
+        store.close()
+
+
+def test_demo_compat_entrypoint_matches_run_demo_name(tmp_path: Path) -> None:
+    env = os.environ.copy()
+    env["HOME"] = str(tmp_path)
+    env["PYTHONPATH"] = str(ROOT / "python" / "src")
+
+    run = subprocess.run(
+        [sys.executable, str(DEMO_COMPAT_PATH)],
+        capture_output=True,
+        check=True,
+        cwd=ROOT,
+        env=env,
+        text=True,
+    )
+
+    assert "Evaluated: 6 tool calls | Allowed: 4 | Blocked: 2" in run.stdout
+
+    db_path = _extract_evidence_path(run.stdout)
     config = load_config(path=DEMO_CONFIG_PATH)
     store = EvidenceStore(config, db_path=db_path)
 
@@ -345,4 +401,6 @@ def test_demo_readme_surfaces_end_to_end_walkthrough() -> None:
     assert "ancilis-one-shot" in readme
     assert "when you want `run-all.sh` to start the Platform stack locally" in readme
     assert "ALLOW/BLOCK counts" not in readme
-    assert "middleware summary line" in readme
+    assert "tool registry" in readme
+    assert "summary block" in readme
+    assert "ancilis report generate" in readme

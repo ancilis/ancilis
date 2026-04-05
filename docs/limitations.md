@@ -33,14 +33,11 @@ This means:
 
 ## TypeScript SDK
 
-The TypeScript package is **preview**. Core control engine, config parsing, and middleware build and test. What's not at parity with Python:
+The TypeScript package is **preview**. Python remains the production-supported path, but the current preview is materially further along than the original launch posture:
 
-- Report generation and rendering
-- CLI commands (limited to status, validate, approve)
-- Producer coverage (MCP middleware only)
-- Evidence store maturity
-
-Python is the supported path for production use.
+- The TypeScript SDK now includes the core engine, hash-chained DuckDB evidence store, MCP middleware, CLI/HTTP/tool producers, `doctor`, and report generation/rendering.
+- Preview status remains because parity auditing and release hardening are still in progress, so edge-case behavior can still differ from Python.
+- TypeScript publication must remain artifact-bound: verify the exact packed tarball, then publish that same tarball rather than rebuilding during publish.
 
 ## Overlay depth
 

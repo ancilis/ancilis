@@ -204,7 +204,7 @@ Full configuration reference: [docs/configuration.md](docs/configuration.md)
 
 Honest about what this is and isn't:
 
-- **Python is the primary supported path.** TypeScript is preview — core engine works, but reporting and producers are not at parity.
+- **Python is the primary supported path.** TypeScript remains preview, but the current preview includes the core engine, evidence store, CLI/HTTP/tool producers, `doctor`, and report generation/rendering. Parity auditing and release hardening are still in progress.
 - **HTTP is explicit wrapping, not universal interception.** Ancilis does not monkey-patch `requests`, `httpx`, or `aiohttp`. The HTTPActionProducer wraps calls you explicitly pass to it.
 - **Evidence integrity depends on protecting the DB.** The hash chain detects tampering after the fact. It doesn't prevent an attacker with host access from replacing the entire database.
 - **No GUI. No SaaS platform.** Ancilis is an SDK and CLI. The evidence store is local.
@@ -216,7 +216,7 @@ See [docs/limitations.md](docs/limitations.md) for detailed scope boundaries.
 
 ## TypeScript
 
-> **Preview.** Core control engine and config work. Reporting and producer coverage are not at parity with Python. Python is the supported path for production use.
+> **Preview.** The TypeScript SDK includes the core engine, config loading, evidence store, producers, `doctor`, and reporting, but Python remains the supported path for production use while TypeScript parity auditing and release hardening continue.
 
 ```bash
 npm install ancilis

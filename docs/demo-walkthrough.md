@@ -22,9 +22,10 @@ bash examples/demo/run-all.sh
 
 What this command does:
 
+- runs shared preflight checks for Python, `curl`, Docker, and Platform checkout discovery
 - creates or reuses `.demo-venv` in the SDK repo
 - resets the demo DuckDB evidence store and runs the financial demo agent
-- starts the Platform stack with Docker Compose from `../ancilis-one-shot/platform`
+- starts the Platform stack with Docker Compose from `./platform`, `../ancilis-one-shot/platform`, or `ANCILIS_PLATFORM_DIR`
 - logs into the seeded demo tenant, creates or reuses a workspace-scoped `sdk_direct` integration for the current DuckDB path, and syncs the generated evidence
 - opens the dashboard on macOS when `open` is available
 
@@ -37,12 +38,15 @@ The script keeps the Platform stack running until you press `Ctrl+C`.
 From the SDK repo root:
 
 ```bash
+bash examples/demo/setup.sh
+
+# or manually
 python3 -m venv .demo-venv
 source .demo-venv/bin/activate
 python -m pip install -e ".[dev]"
 ```
 
-This installs the Python SDK and the CLI entrypoints used by the demo.
+`setup.sh` reuses `.demo-venv` and runs the shared demo preflight checks before installing the SDK and CLI entrypoints.
 
 ### Step 2: Run the financial demo agent
 
@@ -52,14 +56,20 @@ python examples/demo/run.py
 
 You should see:
 
-- 6 tool calls evaluated through Ancilis middleware
-- 4 `ALLOW` decisions
-- 2 `BLOCK` decisions
-- overlays activated for `soc2`, `pci-dss`, and `glba`
-- AIUC-1 certification controls listed in the status output
+- a framed banner identifying the financial runtime-controls demo
+- a tool registry section showing approved, unapproved, and explicitly blocked tools
+- a tool-call transcript with 6 evaluated calls, including 4 `ALLOW` and 2 `BLOCK` decisions
+- a summary section with overlay activation, AIUC-1 readiness tracking, and evidence totals
 - a final line showing the generated DuckDB path under `~/.ancilis/`
 
 The demo responses intentionally include financial, card, and PII patterns so the exposure and overlay logic is visible in the output.
+
+If you want the verbose CLI views after the demo run, use the emitted DuckDB path:
+
+```bash
+ancilis status --verbose --config examples/demo/ancilis.yaml --db /path/to/evidence.duckdb
+ancilis report generate --format markdown --config examples/demo/ancilis.yaml --db /path/to/evidence.duckdb
+```
 
 ### Step 3: Start the Platform stack
 

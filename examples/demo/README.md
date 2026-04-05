@@ -27,6 +27,8 @@ pip install -e ".[dev]"
 python examples/demo/run.py
 ```
 
+`setup.sh` now performs the shared demo preflight checks first, so it fails fast if Python 3.10+ is missing.
+
 ## 5-Minute Demo Path
 
 Use this when you want the fuller SDK -> Platform walkthrough, including local Platform startup, evidence registration, and dashboard sync:
@@ -79,9 +81,17 @@ The demo simulates a financial AI agent making 6 MCP tool calls:
 | `lookup_credit_score` | ALLOW | In allowed list, triggers GLBA overlay (SSN in response) |
 
 After the tool calls, the demo prints:
-- A middleware summary line showing the evaluated tool-call total and detected issues
-- Full `ancilis status --verbose` output showing active overlays and certifications
-- The DuckDB evidence file path
+- A framed tool registry showing which demo tools are approved, unapproved, or explicitly blocked
+- A tool-call transcript with the 4 `ALLOW` and 2 `BLOCK` decisions plus short explanatory notes
+- A summary block with evaluated counts, active overlays, AIUC-1 readiness tracking, and evidence totals
+- The DuckDB evidence file path plus the command to continue into the full SDK -> Platform walkthrough
+
+If you want the verbose CLI views after the local demo run, point them at the emitted DuckDB path:
+
+```bash
+ancilis status --verbose --config examples/demo/ancilis.yaml --db /path/to/evidence.duckdb
+ancilis report generate --format markdown --config examples/demo/ancilis.yaml --db /path/to/evidence.duckdb
+```
 
 ## Configuration
 
