@@ -28,6 +28,7 @@ function usage(): string {
     "Usage:",
     "  ancilis doctor [--config <path>] [--db <path>]",
     "  ancilis report [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
+    "  ancilis report generate [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
     "  ancilis status [--verbose] [--config <path>] [--db <path>]",
     "  ancilis config validate [--config <path>]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
@@ -90,21 +91,22 @@ async function handleDoctor(args: string[], io: CliIo): Promise<number> {
 }
 
 async function handleReport(args: string[], io: CliIo): Promise<number> {
+  const normalizedArgs = args[0] === "generate" ? args.slice(1) : args;
   let period: string | undefined;
   let format: "terminal" | "markdown" | "ndjson" | "csv" | "oscal-json" | "pdf" | "aiuc1-readiness" | undefined;
   let configPath: string | undefined;
   let dbPath: string | undefined;
   let outputPath: string | undefined;
 
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
+  for (let index = 0; index < normalizedArgs.length; index += 1) {
+    const arg = normalizedArgs[index];
     if (arg === "--period") {
-      period = readOption(args, index, arg);
+      period = readOption(normalizedArgs, index, arg);
       index += 1;
       continue;
     }
     if (arg === "--format") {
-      const value = readOption(args, index, arg);
+      const value = readOption(normalizedArgs, index, arg);
       if (!["terminal", "markdown", "ndjson", "csv", "oscal-json", "pdf", "aiuc1-readiness"].includes(value)) {
         throw new Error(`Unsupported report format: ${value}`);
       }
@@ -113,17 +115,17 @@ async function handleReport(args: string[], io: CliIo): Promise<number> {
       continue;
     }
     if (arg === "--config") {
-      configPath = readOption(args, index, arg);
+      configPath = readOption(normalizedArgs, index, arg);
       index += 1;
       continue;
     }
     if (arg === "--db") {
-      dbPath = readOption(args, index, arg);
+      dbPath = readOption(normalizedArgs, index, arg);
       index += 1;
       continue;
     }
     if (arg === "--output" || arg === "-o") {
-      outputPath = readOption(args, index, arg);
+      outputPath = readOption(normalizedArgs, index, arg);
       index += 1;
       continue;
     }
