@@ -422,6 +422,33 @@ describe("Conflict Resolution", () => {
     expect(spec.activeOverlays).toContain("nist-csf");
     expect(spec.activeControls.length).toBe(26);
   });
+
+  it("financial_records activates glba with strict financial controls", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["financial_records"] });
+    expect(spec.dataClassifications).toContain("DC-FIN");
+    expect(spec.activeOverlays).toContain("glba");
+    expect(spec.activeOverlays).toContain("soc2");
+    expect(spec.controlThresholds["PR-01"]).toBe("strict");
+    expect(spec.controlThresholds["PR-05"]).toBe("strict");
+  });
+
+  it("mnpi activates securities-mnpi with evidence requirements", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["mnpi"] });
+    expect(spec.dataClassifications).toContain("DC-MNPI");
+    expect(spec.activeOverlays).toContain("securities-mnpi");
+    expect(spec.controlThresholds["PR-01"]).toBe("strict");
+    expect(spec.controlThresholds["PR-05"]).toBe("strict");
+    expect((spec.evidenceRequirements["PR-01"] ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("material_nonpublic activates securities-mnpi via the MNPI taxonomy alias", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["material_nonpublic"] });
+    expect(spec.dataClassifications).toContain("DC-MNPI");
+    expect(spec.activeOverlays).toContain("securities-mnpi");
+  });
 });
 
 // --- Engine Integration ---
