@@ -1,7 +1,7 @@
 /** CLIActionProducer — intercepts CLI/subprocess tool calls for evaluation. */
 
 import { createHash, randomUUID } from "node:crypto";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { accessSync, constants as fsConstants } from "node:fs";
 import { basename, delimiter, isAbsolute, join, resolve } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
@@ -172,26 +172,30 @@ export class CLIActionProducer {
     let scanResult: ScanResult | undefined;
 
     if (!blocked) {
-      try {
-        const output = execFileSync(command[0]!, command.slice(1), {
-          cwd: workingDirectory,
-          timeout: timeoutMs,
-          encoding: "utf-8",
-        });
-        stdout = output;
-        returnCode = 0;
-      } catch (err: unknown) {
-        const e = err as { stdout?: string; stderr?: string; status?: number; code?: string; message?: string };
-        stdout = e.stdout ?? undefined;
-        stderr = e.stderr ?? e.message ?? "Command failed";
-        returnCode = e.status ?? -1;
-        if (e.code === "ETIMEDOUT") {
+      const result = spawnSync(command[0]!, command.slice(1), {
+        cwd: workingDirectory,
+        timeout: timeoutMs,
+        encoding: "utf-8",
+      });
+      stdout = result.stdout || undefined;
+      stderr = result.stderr || undefined;
+      returnCode = result.status ?? undefined;
+
+      if (result.error) {
+        const error = result.error as NodeJS.ErrnoException;
+        if (error.code === "ETIMEDOUT") {
           stderr = `Command timed out after ${timeoutMs}ms`;
           returnCode = -1;
-        } else if (e.code === "ENOENT") {
+        } else if (error.code === "ENOENT") {
           stderr = `Command not found: ${command[0]}`;
           returnCode = -1;
+        } else {
+          stderr = stderr ?? error.message ?? "Command failed";
+          returnCode = returnCode ?? -1;
         }
+      } else if (returnCode === null || returnCode === undefined) {
+        returnCode = -1;
+        stderr = stderr ?? "Command failed";
       }
 
       if (stdout) {
