@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import csv
+import json
+import os
+import re
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
+from ancilis.evidence.record import EvidenceRecord
 from ancilis.report.generator import ReportData
 
 
@@ -18,38 +25,87 @@ class RenderPdfResult:
     fallback_reason: str | None = None
 
 
+EXPORT_FIELDNAMES = [
+    "record_id",
+    "evaluation_id",
+    "timestamp",
+    "agent_id",
+    "source_type",
+    "tool_name",
+    "decision",
+    "mode",
+    "control_results",
+    "active_overlays",
+    "data_classifications",
+    "active_certifications",
+    "record_hash",
+    "previous_hash",
+    "total_duration_ms",
+    "output_summary",
+]
+
+
+def render_ndjson(records: list[EvidenceRecord]) -> str:
+    """Render evidence records as newline-delimited JSON."""
+    return "\n".join(
+        json.dumps(_record_to_export_dict(record), sort_keys=True) for record in records
+    )
+
+
+def render_csv(records: list[EvidenceRecord]) -> str:
+    """Render evidence records as CSV with stable export fields."""
+    buffer = StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=EXPORT_FIELDNAMES)
+    writer.writeheader()
+    for record in records:
+        row = _record_to_export_dict(record)
+        writer.writerow({key: _csv_value(value) for key, value in row.items()})
+    return buffer.getvalue()
+
+
 def render_terminal(data: ReportData) -> str:
     """Render report data as terminal output."""
     lines: list[str] = []
+    posture = _build_posture_summary(data)
+    color_enabled = _use_color()
 
     # Header
-    lines.append(f"Ancilis Posture Report — {data.agent_name}")
+    lines.append(_style(f"Ancilis Posture Report — {data.agent_name}", color_enabled, bold=True))
     lines.append(f"Period: {_short_date(data.period_start)} to {_short_date(data.period_end)}")
     lines.append(f"Mode: {data.mode}")
+    lines.append(
+        "Posture: "
+        f"{_style(posture['status'], color_enabled, color=posture['status_color'], bold=True)} "
+        f"({posture['passing_control_count']}/{posture['total_controls']} controls passing)"
+    )
+    lines.append(
+        "Evaluations: "
+        f"{data.total_evaluations:,} total | "
+        f"{posture['blocked_evaluations']} blocked | "
+        f"{posture['allowed_evaluations']:,} allowed"
+    )
+    lines.append(f"Active overlays: {posture['overlay_label']}")
+    lines.append(f"Active certifications: {posture['certification_label']}")
+    chain_mark = _style(posture["chain_mark"], color_enabled, color=posture["chain_color"])
+    lines.append(f"Evidence chain: {chain_mark} {posture['chain_label']} ({data.total_evaluations:,} records)")
     lines.append("")
 
     # Baseline section
-    _render_baseline_terminal(lines, data.baseline)
+    _render_baseline_terminal(lines, data.baseline, color_enabled=color_enabled)
 
-    # Compliance sections
-    for section in data.compliance_sections:
+    if data.compliance_sections:
         lines.append("")
-        _render_compliance_terminal(lines, section)
+        _render_compliance_matrix_terminal(lines, data.compliance_sections, color_enabled=color_enabled)
 
     # Certification section
     if data.certification:
         lines.append("")
-        _render_certification_terminal(lines, data.certification)
+        _render_certification_terminal(lines, data.certification, color_enabled=color_enabled)
 
     # Advisory section
     if data.advisory:
         lines.append("")
-        _render_advisory_terminal(lines, data.advisory)
-
-    # Evidence integrity
-    lines.append("")
-    chain_status = "\u2713 intact" if data.chain_valid else "\u2717 BROKEN"
-    lines.append(f"Evidence: {data.total_evaluations:,} records, hash chain {chain_status}")
+        _render_advisory_terminal(lines, data.advisory, color_enabled=color_enabled)
 
     return "\n".join(lines)
 
@@ -71,6 +127,7 @@ def render_markdown(data: ReportData) -> str:
     lines.append(f"**Generated:** {_short_date(data.generated_at)}  ")
     lines.append(f"**Mode:** {data.mode}")
     lines.append("")
+    _render_executive_summary_markdown(lines, data)
 
     # Baseline
     _render_baseline_markdown(lines, data.baseline)
@@ -141,6 +198,35 @@ def render_pdf(markdown: str, output_path: str) -> RenderPdfResult:
         Path(md_path).unlink(missing_ok=True)
 
 
+def _record_to_export_dict(record: EvidenceRecord) -> dict[str, Any]:
+    return {
+        "record_id": record.record_id,
+        "evaluation_id": record.evaluation_id,
+        "timestamp": record.timestamp,
+        "agent_id": record.agent_id,
+        "source_type": record.source_type,
+        "tool_name": record.tool_name,
+        "decision": record.decision,
+        "mode": record.mode,
+        "control_results": record.control_results,
+        "active_overlays": record.active_overlays,
+        "data_classifications": record.data_classifications,
+        "active_certifications": record.active_certifications,
+        "record_hash": record.record_hash,
+        "previous_hash": record.previous_hash,
+        "total_duration_ms": record.total_duration_ms,
+        "output_summary": record.output_summary,
+    }
+
+
+def _csv_value(value: Any) -> str:
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, sort_keys=True)
+    if value is None:
+        return ""
+    return str(value)
+
+
 def _markdown_fallback_path(output_path: str) -> str:
     path = Path(output_path)
     if path.suffix.lower() == ".pdf":
@@ -153,58 +239,206 @@ def _markdown_fallback_path(output_path: str) -> str:
 # --- Terminal section renderers ---
 
 
-def _render_baseline_terminal(lines: list[str], baseline: dict[str, Any]) -> None:
-    total = baseline.get("total_evaluations", 0)
-    decisions = baseline.get("decisions", {})
-    lines.append(f"Evaluations: {total:,} total, {decisions.get('block', 0)} blocked")
-    lines.append("")
-    lines.append("Controls:")
-    for c in baseline.get("controls", []):
-        if c["total"] > 0:
-            mark = "\u2713" if c["failed"] == 0 else "\u2717"
-            lines.append(f"  {mark} {c['display_name']} — {c['pass_rate']}% pass rate ({c['total']} evaluations)")
-        else:
-            lines.append(f"  - {c['display_name']} — no evaluations recorded")
+ANSI_PATTERN = re.compile(r"\033\[[0-9;]*m")
+
+
+def _use_color() -> bool:
+    if os.environ.get("NO_COLOR"):
+        return False
+    return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+
+def _style(text: str, enabled: bool, *, color: str | None = None, bold: bool = False) -> str:
+    if not enabled:
+        return text
+
+    codes: list[str] = []
+    if bold:
+        codes.append("1")
+    if color == "green":
+        codes.append("32")
+    elif color == "red":
+        codes.append("31")
+    elif color == "yellow":
+        codes.append("33")
+
+    if not codes:
+        return text
+    return f"\033[{';'.join(codes)}m{text}\033[0m"
+
+
+def _strip_ansi(text: str) -> str:
+    return ANSI_PATTERN.sub("", text)
+
+
+def _pad_cell(text: str, width: int) -> str:
+    visible_width = len(_strip_ansi(text))
+    if visible_width >= width:
+        return text
+    return f"{text}{' ' * (width - visible_width)}"
+
+
+def _build_posture_summary(data: ReportData) -> dict[str, Any]:
+    controls = data.baseline.get("controls", [])
+    failing_controls = [control for control in controls if _control_requires_attention(control)]
+    passing_controls = [
+        control
+        for control in controls
+        if not _control_requires_attention(control) and control.get("total", 0) > 0
+    ]
+
+    if not data.chain_valid or len(failing_controls) >= 3:
+        status = "CRITICAL"
+        status_color = "red"
+    elif failing_controls:
+        status = "ATTENTION"
+        status_color = "yellow"
+    else:
+        status = "HEALTHY"
+        status_color = "green"
+
+    certification = data.certification
+    certification_label = "none"
+    if certification:
+        certification_label = (
+            f"{certification.get('certification_name', 'AIUC-1')} "
+            f"({certification.get('readiness_percentage', 0)}% ready)"
+        )
+
+    return {
+        "status": status,
+        "status_color": status_color,
+        "failing_controls": failing_controls,
+        "passing_controls": passing_controls,
+        "passing_control_count": len(passing_controls),
+        "total_controls": len(controls),
+        "allowed_evaluations": data.baseline.get("decisions", {}).get("allow", 0),
+        "blocked_evaluations": data.baseline.get("decisions", {}).get("block", 0),
+        "overlay_label": ", ".join(section["overlay_name"] for section in data.compliance_sections) or "none",
+        "certification_label": certification_label,
+        "chain_mark": "\u2713" if data.chain_valid else "\u2717",
+        "chain_label": "intact" if data.chain_valid else "BROKEN",
+        "chain_color": "green" if data.chain_valid else "red",
+    }
+
+
+def _control_requires_attention(control: dict[str, Any]) -> bool:
+    total = control.get("total", 0)
+    if total <= 0:
+        return False
+    threshold = _numeric_threshold(control.get("threshold"))
+    if threshold is None:
+        return control.get("failed", 0) > 0
+    return (
+        control.get("failed", 0) > 0
+        or float(control.get("pass_rate", 0.0)) < threshold
+    )
+
+
+def _numeric_threshold(value: Any) -> float | None:
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _control_mark(control: dict[str, Any], color_enabled: bool) -> str:
+    if control.get("total", 0) <= 0:
+        return "-"
+    if _control_requires_attention(control):
+        return _style("\u2717", color_enabled, color="red")
+    return _style("\u2713", color_enabled, color="green")
+
+
+def _render_baseline_terminal(
+    lines: list[str],
+    baseline: dict[str, Any],
+    *,
+    color_enabled: bool,
+) -> None:
+    controls = baseline.get("controls", [])
+    failing_controls = [control for control in controls if _control_requires_attention(control)]
+    passing_controls = [
+        control for control in controls if control.get("total", 0) > 0 and not _control_requires_attention(control)
+    ]
+
+    lines.append(_style("Baseline Controls:", color_enabled, bold=True))
+    if failing_controls:
+        for control in failing_controls:
+            lines.append(
+                f"  {_control_mark(control, color_enabled)} {control['display_name']} — "
+                f"{control['pass_rate']}% pass rate ({control['total']} evaluations)"
+            )
+    if passing_controls:
+        passing_mark = _style("\u2713", color_enabled, color="green")
+        lines.append(
+            f"  {passing_mark} "
+            f"{len(passing_controls)} controls passing (full detail preserved in markdown)"
+        )
+    elif not failing_controls:
+        lines.append("  - No evaluations recorded")
 
     tools = baseline.get("tools_evaluated", [])
     if tools:
-        lines.append("")
         lines.append(f"Tools evaluated: {', '.join(tools)}")
 
 
-def _render_compliance_terminal(lines: list[str], section: dict[str, Any]) -> None:
-    name = section["overlay_name"]
-    trigger = section.get("triggered_by", "")
-    lines.append(f"{name} Compliance Posture")
-    if trigger:
-        lines.append(f"Activated by: {trigger} declaration")
-    strict = section.get("strict_controls", [])
-    if strict:
-        lines.append(f"Controls at strict threshold: {', '.join(strict)}")
-    lines.append("")
+def _render_compliance_matrix_terminal(
+    lines: list[str],
+    sections: list[dict[str, Any]],
+    *,
+    color_enabled: bool,
+) -> None:
+    lines.append(_style("Compliance Matrix:", color_enabled, bold=True))
 
-    for c in section.get("controls", []):
-        citations = ", ".join(c.get("citations", []))
-        if c["total"] > 0:
-            mark = "\u2713" if c["failed"] == 0 else "\u2717"
-            lines.append(f"  {citations}  {mark} {c['control_id']}: {c['total']} evaluations, {c['pass_rate']}% pass")
-        else:
-            lines.append(f"  {citations}  - {c['control_id']}: no evaluations")
+    overlay_names = [section["overlay_name"] for section in sections]
+    control_ids = sorted(
+        {control["control_id"] for section in sections for control in section.get("controls", [])}
+    )
+    section_maps = {
+        section["overlay_name"]: {control["control_id"]: control for control in section.get("controls", [])}
+        for section in sections
+    }
 
-    retention = section.get("evidence_retention_days", 365)
-    met = "\u2713" if section.get("retention_met", True) else "\u2717"
-    lines.append(f"  Evidence retention: {retention} days {met}")
+    rows: list[list[str]] = [["Control", *overlay_names]]
+    for control_id in control_ids:
+        row = [control_id]
+        for overlay_name in overlay_names:
+            control = section_maps[overlay_name].get(control_id)
+            row.append(_matrix_cell(control, color_enabled))
+        rows.append(row)
 
-    gaps = section.get("gaps", [])
-    if gaps:
-        lines.append("")
-        lines.append("  Areas for improvement:")
-        for g in gaps:
-            lines.append(f"    - {g['display_name']}: {g['failed']} issues in reporting period")
+    widths = [
+        max(len(_strip_ansi(row[column_index])) for row in rows)
+        for column_index in range(len(rows[0]))
+    ]
+
+    for row in rows:
+        padded = [_pad_cell(cell, widths[index]) for index, cell in enumerate(row)]
+        lines.append(f"  {' | '.join(padded)}")
 
 
-def _render_certification_terminal(lines: list[str], cert: dict[str, Any]) -> None:
-    lines.append(f"{cert['certification_name']} Readiness")
+def _matrix_cell(control: dict[str, Any] | None, color_enabled: bool) -> str:
+    if not control:
+        return "-"
+    if control.get("failed", 0) > 0:
+        return _style(f"\u2717({control['failed']})", color_enabled, color="red")
+    if control.get("total", 0) > 0:
+        return _style("\u2713", color_enabled, color="green")
+    return "-"
+
+
+def _render_certification_terminal(
+    lines: list[str],
+    cert: dict[str, Any],
+    *,
+    color_enabled: bool,
+) -> None:
+    lines.append(_style(f"{cert['certification_name']} Readiness", color_enabled, bold=True))
     readiness = cert.get("readiness_percentage", 0)
     coverage = cert.get("coverage_percentage", 0)
     ready = cert.get("ready_count", 0)
@@ -214,8 +448,13 @@ def _render_certification_terminal(lines: list[str], cert: dict[str, Any]) -> No
     lines.append(f"  Evidence records: {cert.get('evidence_count', 0):,}, hash chain {chain}")
 
 
-def _render_advisory_terminal(lines: list[str], advisory: dict[str, Any]) -> None:
-    lines.append("Classification Advisory")
+def _render_advisory_terminal(
+    lines: list[str],
+    advisory: dict[str, Any],
+    *,
+    color_enabled: bool,
+) -> None:
+    lines.append(_style("Classification Advisory", color_enabled, bold=True))
     for pattern in advisory.get("pattern_detections", []):
         lines.append(
             f"  Detected {pattern['pattern_type']}: {pattern['count']} occurrence(s) in the reporting period"
@@ -241,6 +480,40 @@ def _render_advisory_terminal(lines: list[str], advisory: dict[str, Any]) -> Non
 
 
 # --- Markdown section renderers ---
+
+
+def _render_executive_summary_markdown(lines: list[str], data: ReportData) -> None:
+    posture = _build_posture_summary(data)
+
+    lines.append("## Executive Summary")
+    lines.append("")
+    lines.append(
+        f"**Posture: {posture['status']}** — "
+        f"{posture['passing_control_count']} of {posture['total_controls']} controls passing "
+        f"across {len(data.compliance_sections)} active overlays."
+    )
+    lines.append("")
+    lines.append(
+        f"- {data.total_evaluations:,} evaluations in period | "
+        f"{posture['blocked_evaluations']} blocked | "
+        f"{posture['allowed_evaluations']} allowed"
+    )
+    lines.append(f"- Active overlays: {posture['overlay_label']}")
+    lines.append(f"- Active certifications: {posture['certification_label']}")
+    if data.chain_valid:
+        lines.append(f"- Evidence chain: intact ({data.total_evaluations:,} records, SHA-256 verified)")
+    else:
+        lines.append(f"- Evidence chain: **BROKEN** ({data.total_evaluations:,} records)")
+
+    if posture["failing_controls"]:
+        lines.append("")
+        lines.append("### Attention Required")
+        lines.append("")
+        for control in posture["failing_controls"]:
+            lines.append(
+                f"- **{control['display_name']}**: {control['failed']} failures in reporting period"
+            )
+    lines.append("")
 
 
 def _render_baseline_markdown(lines: list[str], baseline: dict[str, Any]) -> None:

@@ -36,73 +36,237 @@ function formatPassRate(value: unknown): string {
   return typeof value === "number" ? value.toFixed(1) : String(value);
 }
 
-export function renderTerminal(data: ReportData): string {
-  const lines: string[] = [];
+const ANSI_PATTERN = /\u001b\[[0-9;]*m/g;
 
-  lines.push(`Ancilis Posture Report — ${data.agentName}`);
-  lines.push(`Period: ${shortDate(data.periodStart)} to ${shortDate(data.periodEnd)}`);
-  lines.push(`Mode: ${data.mode}`);
-  lines.push("");
+function useColor(): boolean {
+  if (process.env.NO_COLOR) return false;
+  return process.stdout.isTTY === true;
+}
 
-  // Baseline
+function style(text: string, enabled: boolean, options?: { color?: "green" | "red" | "yellow"; bold?: boolean }): string {
+  if (!enabled) return text;
+  const codes: string[] = [];
+  if (options?.bold) codes.push("1");
+  if (options?.color === "green") codes.push("32");
+  if (options?.color === "red") codes.push("31");
+  if (options?.color === "yellow") codes.push("33");
+  if (codes.length === 0) return text;
+  return `\u001b[${codes.join(";")}m${text}\u001b[0m`;
+}
+
+function stripAnsi(text: string): string {
+  return text.replace(ANSI_PATTERN, "");
+}
+
+function padCell(text: string, width: number): string {
+  const visibleWidth = stripAnsi(text).length;
+  if (visibleWidth >= width) return text;
+  return `${text}${" ".repeat(width - visibleWidth)}`;
+}
+
+function numericThreshold(value: unknown): number | null {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  return null;
+}
+
+function controlRequiresAttention(control: Record<string, unknown>): boolean {
+  const total = Number(control.total ?? 0);
+  if (total <= 0) return false;
+  const threshold = numericThreshold(control.threshold);
+  if (threshold === null) {
+    return Number(control.failed ?? 0) > 0;
+  }
+  return Number(control.failed ?? 0) > 0 || Number(control.passRate ?? 0) < threshold;
+}
+
+function controlMark(control: Record<string, unknown>, colorEnabled: boolean): string {
+  const total = Number(control.total ?? 0);
+  if (total <= 0) return "-";
+  if (controlRequiresAttention(control)) {
+    return style("\u2717", colorEnabled, { color: "red" });
+  }
+  return style("\u2713", colorEnabled, { color: "green" });
+}
+
+function buildPostureSummary(data: ReportData): Record<string, unknown> {
   const baseline = data.baseline as Record<string, unknown>;
-  const total = (baseline.totalEvaluations as number) ?? 0;
-  const decisions = (baseline.decisions as Record<string, number>) ?? {};
-  lines.push(`Evaluations: ${total.toLocaleString()} total, ${decisions.block ?? 0} blocked`);
-  lines.push("");
-  lines.push("Controls:");
-  for (const c of (baseline.controls as Record<string, unknown>[]) ?? []) {
-    const cTotal = c.total as number;
-    const failed = c.failed as number;
-    if (cTotal > 0) {
-      const mark = failed === 0 ? "\u2713" : "\u2717";
-      lines.push(`  ${mark} ${c.displayName} — ${formatPassRate(c.passRate)}% pass rate (${cTotal} evaluations)`);
-    } else {
-      lines.push(`  - ${c.displayName} — no evaluations recorded`);
+  const controls = (baseline.controls as Record<string, unknown>[]) ?? [];
+  const failingControls = controls.filter(controlRequiresAttention);
+  const passingControls = controls.filter((control) => Number(control.total ?? 0) > 0 && !controlRequiresAttention(control));
+
+  let status: "HEALTHY" | "ATTENTION" | "CRITICAL" = "HEALTHY";
+  let statusColor: "green" | "yellow" | "red" = "green";
+  if (!data.chainValid || failingControls.length >= 3) {
+    status = "CRITICAL";
+    statusColor = "red";
+  } else if (failingControls.length > 0) {
+    status = "ATTENTION";
+    statusColor = "yellow";
+  }
+
+  const certificationLabel = data.certification
+    ? `${data.certification.certificationName ?? "AIUC-1"} (${data.certification.readinessPercentage ?? 0}% ready)`
+    : "none";
+
+  return {
+    status,
+    statusColor,
+    failingControls,
+    passingControls,
+    passingControlCount: passingControls.length,
+    totalControls: controls.length,
+    allowedEvaluations: (baseline.decisions as Record<string, number> | undefined)?.allow ?? 0,
+    blockedEvaluations: (baseline.decisions as Record<string, number> | undefined)?.block ?? 0,
+    overlayLabel: data.complianceSections.map((section) => String(section.overlayName)).join(", ") || "none",
+    certificationLabel,
+    chainMark: data.chainValid ? "\u2713" : "\u2717",
+    chainLabel: data.chainValid ? "intact" : "BROKEN",
+    chainColor: data.chainValid ? "green" : "red",
+  };
+}
+
+function renderBaselineTerminal(lines: string[], baseline: Record<string, unknown>, colorEnabled: boolean): void {
+  const controls = (baseline.controls as Record<string, unknown>[]) ?? [];
+  const failingControls = controls.filter(controlRequiresAttention);
+  const passingControls = controls.filter((control) => Number(control.total ?? 0) > 0 && !controlRequiresAttention(control));
+
+  lines.push(style("Baseline Controls:", colorEnabled, { bold: true }));
+  if (failingControls.length > 0) {
+    for (const control of failingControls) {
+      lines.push(
+        `  ${controlMark(control, colorEnabled)} ${control.displayName} — `
+        + `${formatPassRate(control.passRate)}% pass rate (${control.total} evaluations)`,
+      );
     }
   }
+  if (passingControls.length > 0) {
+    const passingMark = style("\u2713", colorEnabled, { color: "green" });
+    lines.push(`  ${passingMark} ${passingControls.length} controls passing (full detail preserved in markdown)`);
+  } else if (failingControls.length === 0) {
+    lines.push("  - No evaluations recorded");
+  }
+
   const tools = (baseline.toolsEvaluated as string[]) ?? [];
   if (tools.length > 0) {
-    lines.push("");
     lines.push(`Tools evaluated: ${tools.join(", ")}`);
   }
+}
 
-  // Compliance
-  for (const section of data.complianceSections) {
-    lines.push("");
-    lines.push(`${section.overlayName} Compliance Posture`);
-    if (section.triggeredBy) lines.push(`Activated by: ${section.triggeredBy} declaration`);
-    const strict = (section.strictControls as string[]) ?? [];
-    if (strict.length) lines.push(`Controls at strict threshold: ${strict.join(", ")}`);
-    lines.push("");
-    for (const c of (section.controls as Record<string, unknown>[]) ?? []) {
-      const citations = ((c.citations as string[]) ?? []).join(", ");
-      const cTotal = c.total as number;
-      if (cTotal > 0) {
-        const mark = (c.failed as number) === 0 ? "\u2713" : "\u2717";
-        lines.push(`  ${citations}  ${mark} ${c.controlId}: ${cTotal} evaluations, ${formatPassRate(c.passRate)}% pass`);
-      } else {
-        lines.push(`  ${citations}  - ${c.controlId}: no evaluations`);
-      }
-    }
-    const retention = (section.evidenceRetentionDays as number) ?? 365;
-    const retentionMark = section.retentionMet ? "\u2713" : "\u2717";
-    lines.push(`  Evidence retention: ${retention} days ${retentionMark}`);
-    const gaps = (section.gaps as Record<string, unknown>[]) ?? [];
-    if (gaps.length > 0) {
-      lines.push("");
-      lines.push("  Areas for improvement:");
-      for (const gap of gaps) {
-        lines.push(`    - ${gap.displayName}: ${gap.failed} issues in reporting period`);
-      }
-    }
+function matrixCell(control: Record<string, unknown> | undefined, colorEnabled: boolean): string {
+  if (!control) return "-";
+  if (Number(control.failed ?? 0) > 0) {
+    return style(`\u2717(${control.failed})`, colorEnabled, { color: "red" });
+  }
+  if (Number(control.total ?? 0) > 0) {
+    return style("\u2713", colorEnabled, { color: "green" });
+  }
+  return "-";
+}
+
+function renderComplianceMatrixTerminal(lines: string[], sections: Record<string, unknown>[], colorEnabled: boolean): void {
+  lines.push(style("Compliance Matrix:", colorEnabled, { bold: true }));
+
+  const overlayNames = sections.map((section) => String(section.overlayName));
+  const controlIds = [...new Set(sections.flatMap((section) => ((section.controls as Record<string, unknown>[]) ?? []).map((control) => String(control.controlId))))].sort();
+  const sectionMaps = new Map<string, Map<string, Record<string, unknown>>>();
+  for (const section of sections) {
+    sectionMaps.set(
+      String(section.overlayName),
+      new Map((((section.controls as Record<string, unknown>[]) ?? []).map((control) => [String(control.controlId), control]))),
+    );
   }
 
-  // Certification
+  const rows: string[][] = [["Control", ...overlayNames]];
+  for (const controlId of controlIds) {
+    const row = [controlId];
+    for (const overlayName of overlayNames) {
+      row.push(matrixCell(sectionMaps.get(overlayName)?.get(controlId), colorEnabled));
+    }
+    rows.push(row);
+  }
+
+  const widths = rows[0]!.map((_, columnIndex) => Math.max(...rows.map((row) => stripAnsi(row[columnIndex] ?? "").length)));
+  for (const row of rows) {
+    lines.push(`  ${row.map((cell, index) => padCell(cell, widths[index] ?? 0)).join(" | ")}`);
+  }
+}
+
+function renderExecutiveSummaryMarkdown(lines: string[], data: ReportData): void {
+  const posture = buildPostureSummary(data);
+  lines.push("## Executive Summary");
+  lines.push("");
+  lines.push(
+    `**Posture: ${posture.status}** — `
+    + `${posture.passingControlCount} of ${posture.totalControls} controls passing `
+    + `across ${data.complianceSections.length} active overlays.`,
+  );
+  lines.push("");
+  lines.push(
+    `- ${data.totalEvaluations.toLocaleString()} evaluations in period | `
+    + `${posture.blockedEvaluations} blocked | `
+    + `${Number(posture.allowedEvaluations).toLocaleString()} allowed`,
+  );
+  lines.push(`- Active overlays: ${posture.overlayLabel}`);
+  lines.push(`- Active certifications: ${posture.certificationLabel}`);
+  if (data.chainValid) {
+    lines.push(`- Evidence chain: intact (${data.totalEvaluations.toLocaleString()} records, SHA-256 verified)`);
+  } else {
+    lines.push(`- Evidence chain: **BROKEN** (${data.totalEvaluations.toLocaleString()} records)`);
+  }
+
+  const failingControls = posture.failingControls as Record<string, unknown>[];
+  if (failingControls.length > 0) {
+    lines.push("");
+    lines.push("### Attention Required");
+    lines.push("");
+    for (const control of failingControls) {
+      lines.push(`- **${control.displayName}**: ${control.failed} failures in reporting period`);
+    }
+  }
+  lines.push("");
+}
+
+export function renderTerminal(data: ReportData): string {
+  const lines: string[] = [];
+  const posture = buildPostureSummary(data);
+  const colorEnabled = useColor();
+
+  lines.push(style(`Ancilis Posture Report — ${data.agentName}`, colorEnabled, { bold: true }));
+  lines.push(`Period: ${shortDate(data.periodStart)} to ${shortDate(data.periodEnd)}`);
+  lines.push(`Mode: ${data.mode}`);
+  lines.push(
+    `Posture: ${style(String(posture.status), colorEnabled, { color: posture.statusColor as "green" | "yellow" | "red", bold: true })} `
+    + `(${posture.passingControlCount}/${posture.totalControls} controls passing)`,
+  );
+  lines.push(
+    `Evaluations: ${data.totalEvaluations.toLocaleString()} total | `
+    + `${posture.blockedEvaluations} blocked | `
+    + `${Number(posture.allowedEvaluations).toLocaleString()} allowed`,
+  );
+  lines.push(`Active overlays: ${posture.overlayLabel}`);
+  lines.push(`Active certifications: ${posture.certificationLabel}`);
+  lines.push(
+    `Evidence chain: ${style(String(posture.chainMark), colorEnabled, { color: posture.chainColor as "green" | "red" })} `
+    + `${posture.chainLabel} (${data.totalEvaluations.toLocaleString()} records)`,
+  );
+  lines.push("");
+
+  const baseline = data.baseline as Record<string, unknown>;
+  renderBaselineTerminal(lines, baseline, colorEnabled);
+
+  if (data.complianceSections.length > 0) {
+    lines.push("");
+    renderComplianceMatrixTerminal(lines, data.complianceSections as Record<string, unknown>[], colorEnabled);
+  }
+
   if (data.certification) {
     const cert = data.certification;
     lines.push("");
-    lines.push(`${cert.certificationName} Readiness`);
+    lines.push(style(`${cert.certificationName} Readiness`, colorEnabled, { bold: true }));
     lines.push(`  Readiness: ${cert.readinessPercentage}% (${cert.readyCount} of ${cert.totalRequirements} requirements passing)`);
     lines.push(`  Coverage: ${cert.coveragePercentage}% (${cert.automatedCount} automated, ${cert.operatorCount} operator)`);
     const chainStr = cert.chainValid ? "intact" : "BROKEN";
@@ -113,11 +277,6 @@ export function renderTerminal(data: ReportData): string {
     lines.push("");
     renderAdvisoryTerminal(lines, data.advisory);
   }
-
-  // Evidence
-  lines.push("");
-  const chainStatus = data.chainValid ? "\u2713 intact" : "\u2717 BROKEN";
-  lines.push(`Evidence: ${data.totalEvaluations.toLocaleString()} records, hash chain ${chainStatus}`);
 
   return lines.join("\n");
 }
@@ -184,8 +343,8 @@ export function renderMarkdown(data: ReportData): string {
   lines.push(`**Generated:** ${shortDate(data.generatedAt)}  `);
   lines.push(`**Mode:** ${data.mode}`);
   lines.push("");
+  renderExecutiveSummaryMarkdown(lines, data);
 
-  // Baseline
   renderBaselineMarkdown(lines, data.baseline as Record<string, unknown>);
 
   // Compliance
