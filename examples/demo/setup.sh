@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Ancilis Demo Setup ==="
 cd "$(dirname "$0")/../.."
+
+echo "Setting up Ancilis demo..."
+
 if [ ! -d ".demo-venv" ]; then
+    echo "  Creating virtual environment..."
     python3 -m venv .demo-venv
 fi
+
 source .demo-venv/bin/activate
-python -m pip install -e ".[dev]" --quiet
-echo "Setup complete. Running demo..."
+
+echo "  Installing Ancilis..."
+python -m pip install -e ".[dev]" --quiet 2>/dev/null
+
+echo "  Ready."
+echo ""
 python examples/demo/run.py
