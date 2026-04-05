@@ -22,19 +22,21 @@ def _parse_period_start(period: str) -> str:
     return (datetime.now(timezone.utc) - _parse_period(period)).isoformat()
 
 
-@click.command()
-@click.option("--period", default="30d", help="Reporting period (e.g. 7d, 30d, 90d, 365d)")
-@click.option(
-    "--format",
-    "fmt",
-    default="terminal",
-    type=click.Choice(["terminal", "markdown", "pdf", "aiuc1-readiness", "ndjson", "csv"]),
-)
-@click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
-@click.option("--db", "db_path", default=None, help="Path to evidence database")
-@click.option("--output", "-o", "output_path", default=None, help="Output file path")
-def report(period: str, fmt: str, config_path: str | None, db_path: str | None, output_path: str | None) -> None:
-    """Generate a posture report."""
+def _report_options(func):
+    func = click.option("--output", "-o", "output_path", default=None, help="Output file path")(func)
+    func = click.option("--db", "db_path", default=None, help="Path to evidence database")(func)
+    func = click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")(func)
+    func = click.option(
+        "--format",
+        "fmt",
+        default="terminal",
+        type=click.Choice(["terminal", "markdown", "pdf", "aiuc1-readiness", "ndjson", "csv"]),
+    )(func)
+    func = click.option("--period", default="30d", help="Reporting period (e.g. 7d, 30d, 90d, 365d)")(func)
+    return func
+
+
+def _emit_report(period: str, fmt: str, config_path: str | None, db_path: str | None, output_path: str | None) -> None:
     try:
         config = load_config(path=config_path) if config_path else load_config()
     except (FileNotFoundError, ValueError) as e:
@@ -89,3 +91,32 @@ def report(period: str, fmt: str, config_path: str | None, db_path: str | None, 
                 click.echo(output)
     finally:
         store.close()
+
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+@_report_options
+def report(
+    ctx: click.Context,
+    period: str,
+    fmt: str,
+    config_path: str | None,
+    db_path: str | None,
+    output_path: str | None,
+) -> None:
+    """Generate a posture report."""
+    if ctx.invoked_subcommand is None:
+        _emit_report(period, fmt, config_path, db_path, output_path)
+
+
+@report.command(name="generate")
+@_report_options
+def report_generate(
+    period: str,
+    fmt: str,
+    config_path: str | None,
+    db_path: str | None,
+    output_path: str | None,
+) -> None:
+    """Generate a posture report."""
+    _emit_report(period, fmt, config_path, db_path, output_path)

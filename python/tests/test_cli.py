@@ -516,6 +516,20 @@ class TestReportBaseline:
         assert result.exit_code == 0
         assert "test-agent" in result.output
 
+    def test_baseline_report_generate_subcommand_alias(self, tmp_path: Path) -> None:
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+        _populate_evidence(config, store, n=2)
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["report", "generate", "--config", str(cfg_path), "--db", str(db)])
+
+        assert result.exit_code == 0
+        assert "test-agent" in result.output
+
     def test_pdf_renderer_writes_markdown_fallback_next_to_pdf(self, tmp_path: Path) -> None:
         output_path = tmp_path / "report.pdf"
         fallback_path = tmp_path / "report.md"

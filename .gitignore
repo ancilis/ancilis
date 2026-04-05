@@ -57,3 +57,5 @@ ancilis-reports/
 workspace/
 # CocoIndex Code (ccc)
 /.cocoindex_code/
+.dual-graph/
+.grepai/
