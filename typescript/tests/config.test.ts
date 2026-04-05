@@ -133,12 +133,12 @@ describe("Overlay Activation", () => {
     expect(resolved.activeOverlays.has("soc2")).toBe(true);
   });
 
-  it("reports unavailable overlays for government_documents", () => {
+  it("activates cmmc-l2 for government_cui", () => {
     const resolved = loadConfig({
-      raw: { agent: { name: "x" }, my_agent_handles: ["government_documents"] },
+      raw: { agent: { name: "x" }, my_agent_handles: ["government_cui"] },
     });
-    const unavailableIds = resolved.unavailableOverlays.map(u => u.overlayId);
-    expect(unavailableIds.some(id => id === "cmmc-l2")).toBe(true);
+    expect(resolved.activeOverlays.has("cmmc-l2")).toBe(true);
+    expect(resolved.unavailableOverlays.some(u => u.overlayId === "cmmc-l2")).toBe(false);
   });
 
   it("activates EU AI Act for ai_training_data", () => {

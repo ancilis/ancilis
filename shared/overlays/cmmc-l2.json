@@ -1,0 +1,153 @@
+{
+  "id": "cmmc-l2",
+  "name": "Government CUI (CMMC Level 2, NIST 800-171r3)",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-CUI", "DC-GOV"],
+  "description": "Government overlay for agents handling Controlled Unclassified Information or federal-system data that must be safeguarded to CMMC Level 2 expectations. Packages evidence for the six active AKSI evaluators with CMMC Level 2 and NIST SP 800-171 Rev. 3 references suitable for contractor audit preparation.",
+  "jurisdiction": "us",
+  "enforcement_date": "2025-01-01",
+  "applicable_data_types": ["controlled_unclassified", "government_cui", "government_documents", "government_system"],
+  "controls": {
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Identity and access controls restrict CUI workflows to approved users, service principals, and managed devices",
+        "Multi-factor authentication is enforced for privileged or remote access paths touching CUI systems",
+        "Access review evidence shows dormant, orphaned, or over-privileged identities are removed before continued CUI access"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 AC.L2-3.1.1, AC.L2-3.1.2, IA.L2-3.5.1, IA.L2-3.5.2; NIST SP 800-171 Rev. 3 03.01.01, 03.01.02, 03.05.01, 03.05.02, 03.05.03"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Least-privilege roles and separation-of-duties rules are documented for CUI operations, approvals, and administrative actions",
+        "Provisioning records show privileged access is authorized, time-bounded where appropriate, and reviewed on a recurring cadence",
+        "Boundary and session restrictions prevent unauthorized transactions, functions, or external system use in CUI workflows"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 AC.L2-3.1.3, AC.L2-3.1.5, AC.L2-3.1.7, AC.L2-3.1.20; NIST SP 800-171 Rev. 3 03.01.03, 03.01.05, 03.01.07, 03.01.12"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Baseline configuration records define approved software, services, prompts, and tool integrations for CUI-handling agents",
+        "Change requests include security impact analysis before release into environments that process or store CUI",
+        "Unauthorized software, configuration drift, and unapproved component changes are detected and remediated before production use"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.2, CM.L2-3.4.3, CM.L2-3.4.4; NIST SP 800-171 Rev. 3 03.04.01, 03.04.02, 03.04.03, 03.04.04"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Encryption protects CUI in transit and at rest, with compensating-control approvals documented when encryption cannot be applied",
+        "Outbound responses, stored artifacts, and transient context buffers are reviewed to prevent unauthorized CUI disclosure",
+        "Media handling and export controls document how CUI is labeled, transmitted, retained, and sanitized across agent workflows"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 SC.L2-3.13.8, SC.L2-3.13.11, MP.L2-3.8.1, MP.L2-3.8.2; NIST SP 800-171 Rev. 3 03.13.08, 03.13.11, 03.08.01, 03.08.02"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Tamper-evident audit records capture every CUI-relevant action with user, tool, timestamp, and decision context",
+        "Audit logging protections prevent unauthorized modification or deletion of evidence supporting CUI handling",
+        "Log review procedures show anomalies, failed access attempts, and administrative changes are investigated and retained for assessment"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 AU.L2-3.3.1, AU.L2-3.3.2, AU.L2-3.3.8, AU.L2-3.3.9; NIST SP 800-171 Rev. 3 03.03.01, 03.03.02, 03.03.08, 03.03.09"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Monitoring detects unauthorized use, suspicious communication patterns, and indicators of compromise affecting CUI systems",
+        "Incident handling procedures define triage, containment, reporting, and recovery responsibilities for CUI security events",
+        "Incident response exercises and post-incident records demonstrate lessons learned and follow-through on corrective actions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, IR.L2-3.6.3, SI.L2-3.14.6; NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": 72,
+    "assessment_type": "CMMC Level 2 readiness and CUI safeguarding evidence package aligned to NIST SP 800-171 Rev. 3 control families used by the active AKSI evaluators.",
+    "reporting_entity": "Contractor security leadership, system owner, and contracting / government oversight contacts defined for the CUI environment."
+  },
+  "human_oversight_mandates": {
+    "required": false,
+    "description": "No AI-specific human-in-the-loop mandate is imposed by CMMC Level 2 itself, but organizations must retain accountable review over privileged access, change approval, incident response, and assessment evidence for CUI systems."
+  },
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["mfa_enforced", "approved_identity_store", "cui_access_review_completed"],
+      "regulatory_citation": "CMMC Level 2 AC.L2-3.1.1, IA.L2-3.5.1, IA.L2-3.5.2; NIST SP 800-171 Rev. 3 03.01.01, 03.05.01, 03.05.02, 03.05.03"
+    },
+    "PR-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["least_privilege_matrix", "privileged_access_approval", "cui_boundary_restrictions"],
+      "regulatory_citation": "CMMC Level 2 AC.L2-3.1.3, AC.L2-3.1.5, AC.L2-3.1.7; NIST SP 800-171 Rev. 3 03.01.03, 03.01.05, 03.01.07"
+    },
+    "PR-03": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["baseline_configuration_version", "change_security_impact_review", "unauthorized_component_detection"],
+      "regulatory_citation": "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.2, CM.L2-3.4.3, CM.L2-3.4.4; NIST SP 800-171 Rev. 3 03.04.01, 03.04.02, 03.04.03, 03.04.04"
+    },
+    "PR-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["cui_encryption_status", "transport_protection_review", "media_sanitization_record"],
+      "regulatory_citation": "CMMC Level 2 SC.L2-3.13.8, SC.L2-3.13.11, MP.L2-3.8.1, MP.L2-3.8.2; NIST SP 800-171 Rev. 3 03.13.08, 03.13.11, 03.08.01, 03.08.02"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["audit_log_retention_days", "tamper_evidence_verified", "cui_log_review_completed"],
+      "regulatory_citation": "CMMC Level 2 AU.L2-3.3.1, AU.L2-3.3.8, AU.L2-3.3.9; NIST SP 800-171 Rev. 3 03.03.01, 03.03.08, 03.03.09"
+    },
+    "DE-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["incident_triage_record", "cui_incident_reporting_path", "continuous_monitoring_signal"],
+      "regulatory_citation": "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, IR.L2-3.6.3, SI.L2-3.14.6; NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06"
+    }
+  },
+  "evidence_requirements": {
+    "PR-01": ["mfa_enforced", "approved_identity_store", "cui_access_review_completed"],
+    "PR-02": ["least_privilege_matrix", "privileged_access_approval", "cui_boundary_restrictions"],
+    "PR-03": ["baseline_configuration_version", "change_security_impact_review", "unauthorized_component_detection"],
+    "PR-04": ["cui_encryption_status", "transport_protection_review", "media_sanitization_record"],
+    "PR-05": ["audit_log_retention_days", "tamper_evidence_verified", "cui_log_review_completed"],
+    "DE-01": ["incident_triage_record", "cui_incident_reporting_path", "continuous_monitoring_signal"]
+  },
+  "framework_mapping": {
+    "GOV-01": ["CMMC Level 2 CA.L2-3.12.1", "NIST SP 800-171 Rev. 3 03.12.01, 03.12.03"],
+    "GOV-02": ["CMMC Level 2 CA.L2-3.12.2", "NIST SP 800-171 Rev. 3 03.12.02, 03.12.05"],
+    "GOV-03": ["CMMC Level 2 RA.L2-3.11.1", "NIST SP 800-171 Rev. 3 03.11.01, 03.11.02"],
+    "GOV-04": ["CMMC Level 2 governance documentation expectation", "NIST SP 800-171 Rev. 3 03.15.02, 03.15.03"],
+    "ID-01": ["CMMC Level 2 CM.L2-3.4.1", "NIST SP 800-171 Rev. 3 03.04.01, 03.04.10"],
+    "ID-02": ["CMMC Level 2 SC.L2-3.13.1", "NIST SP 800-171 Rev. 3 03.13.01, 03.13.03"],
+    "ID-03": ["CMMC Level 2 MP.L2-3.8.1", "NIST SP 800-171 Rev. 3 03.08.01, 03.08.04"],
+    "ID-04": ["CMMC Level 2 supplier-risk expectation", "NIST SP 800-171 Rev. 3 03.16.01, 03.16.03"],
+    "ID-05": ["CMMC Level 2 RA.L2-3.11.1", "NIST SP 800-171 Rev. 3 03.11.01, 03.11.05"],
+    "PR-01": ["CMMC Level 2 AC.L2-3.1.1, IA.L2-3.5.1, IA.L2-3.5.2", "NIST SP 800-171 Rev. 3 03.01.01, 03.05.01, 03.05.02, 03.05.03"],
+    "PR-02": ["CMMC Level 2 AC.L2-3.1.3, AC.L2-3.1.5, AC.L2-3.1.7", "NIST SP 800-171 Rev. 3 03.01.03, 03.01.05, 03.01.07"],
+    "PR-03": ["CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.2, CM.L2-3.4.3", "NIST SP 800-171 Rev. 3 03.04.01, 03.04.02, 03.04.03, 03.04.04"],
+    "PR-04": ["CMMC Level 2 SC.L2-3.13.8, SC.L2-3.13.11, MP.L2-3.8.1", "NIST SP 800-171 Rev. 3 03.13.08, 03.13.11, 03.08.01, 03.08.02"],
+    "PR-05": ["CMMC Level 2 AU.L2-3.3.1, AU.L2-3.3.8, AU.L2-3.3.9", "NIST SP 800-171 Rev. 3 03.03.01, 03.03.08, 03.03.09"],
+    "PR-06": ["CMMC Level 2 CM.L2-3.4.6, CM.L2-3.4.7", "NIST SP 800-171 Rev. 3 03.04.06, 03.04.07"],
+    "PR-07": ["CMMC Level 2 SC.L2-3.13.5, SC.L2-3.13.8", "NIST SP 800-171 Rev. 3 03.13.05, 03.13.08, 03.13.11"],
+    "PR-08": ["CMMC Level 2 SI.L2-3.14.5", "NIST SP 800-171 Rev. 3 03.14.02, 03.14.05, 03.14.06"],
+    "DE-01": ["CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, SI.L2-3.14.6", "NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06"],
+    "DE-02": ["CMMC Level 2 CA.L2-3.12.3", "NIST SP 800-171 Rev. 3 03.12.03, 03.12.04"],
+    "DE-03": ["CMMC Level 2 CA.L2-3.12.1", "NIST SP 800-171 Rev. 3 03.12.01, 03.12.05"],
+    "DE-04": ["CMMC Level 2 AU.L2-3.3.4, AU.L2-3.3.6", "NIST SP 800-171 Rev. 3 03.03.04, 03.03.06, 03.03.07"],
+    "RS-01": ["CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.5", "NIST SP 800-171 Rev. 3 03.06.01, 03.06.05"],
+    "RS-02": ["CMMC Level 2 IR.L2-3.6.2", "NIST SP 800-171 Rev. 3 03.06.02, 03.06.04"],
+    "RS-03": ["CMMC Level 2 IR.L2-3.6.3", "NIST SP 800-171 Rev. 3 03.06.03, 03.06.06"],
+    "RC-01": ["CMMC Level 2 recovery planning expectation", "NIST SP 800-171 Rev. 3 03.15.02, 03.15.03"],
+    "RC-02": ["CMMC Level 2 CA.L2-3.12.3", "NIST SP 800-171 Rev. 3 03.12.03, 03.12.06"]
+  },
+  "evidence_retention_minimum_days": 1095,
+  "human_oversight_required": false,
+  "notes": "CMMC Level 2 aligns contractors to the safeguarding of Controlled Unclassified Information. This overlay focuses on evidencing the six currently enforced AKSI evaluator controls while preserving a full framework mapping across the broader AKSI baseline so government-oriented deployments can demonstrate CUI handling readiness without changing resolver logic."
+}

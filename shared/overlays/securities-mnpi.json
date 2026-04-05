@@ -1,0 +1,153 @@
+{
+  "id": "securities-mnpi",
+  "name": "Securities Markets (MNPI, SEC Reg FD, SOX)",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-MNPI"],
+  "description": "Securities-market overlay for agents handling material non-public information (MNPI). Packages evidence for SEC Regulation FD disclosure controls, SOX internal-control and record-retention obligations, and market-abuse prevention workflows before information can influence investors or securities transactions.",
+  "jurisdiction": "us",
+  "enforcement_date": "2002-07-30",
+  "applicable_data_types": ["material_nonpublic", "mnpi"],
+  "controls": {
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Access to MNPI workflows is limited to approved issuer, legal, finance, and investor-relations identities with multi-factor authentication enforced",
+        "Periodic access reviews confirm dormant, orphaned, and over-privileged identities cannot retrieve or disclose market-moving information",
+        "Disclosure-owner assignments document which accountable humans may approve, supervise, or revoke MNPI-handling permissions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Least-privilege entitlements and information barriers are enforced between insider teams and external-facing communication workflows",
+        "Provisioning and recertification records show only authorized roles can query, summarize, or prepare dissemination of MNPI",
+        "Watchlist, restricted-list, or disclosure-window controls are reflected in system entitlements before market-sensitive actions are allowed"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SEC Reg FD 17 CFR 243.100(b); SOX §302, §404"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Approved data sources, prompts, and model workflows for MNPI analysis are versioned and reviewed before production use",
+        "Change records show disclosure logic, summarization prompts, and external distribution paths undergo control-owner review before release",
+        "Release approvals tie provenance checks to accountable disclosure, legal, or compliance reviewers for market-sensitive systems"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Outbound responses, generated artifacts, and integrated channels are scanned for unauthorized MNPI disclosure before release",
+        "Distribution workflows require explicit approval for any external communication that could constitute investor or analyst disclosure",
+        "Communication-channel reviews verify public, simultaneous disclosure paths are used when disclosure is permitted"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SEC Reg FD 17 CFR 243.100(a), 243.101(e); SOX §302, §404"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Tamper-evident logs capture every access, summarization, approval, and disclosure action involving MNPI",
+        "Retention schedules preserve disclosure-control and access evidence for seven years to support SOX-aligned recordkeeping expectations",
+        "Audit trails connect access to approved business purpose, disclosure status, and downstream dissemination decisions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404, §802; SEC Rule 17a-4"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Monitoring detects unusual access patterns, bulk exports, or attempted dissemination of MNPI outside approved windows or channels",
+        "Escalation runbooks route selective-disclosure, insider-risk, and anomalous-access signals to legal, compliance, and investor-relations owners",
+        "Incident records document triage, containment, public-disclosure decisions, and corrective actions for MNPI handling events"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SEC Reg FD 17 CFR 243.100(a); SOX §302, §404; SEC Rule 17a-4"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": 24,
+    "assessment_type": "MNPI handling and disclosure-control evidence package aligned to SEC Reg FD selective-disclosure prevention, SOX internal controls, and seven-year record-retention support.",
+    "reporting_entity": "Issuer disclosure committee, legal/compliance leadership, investor relations, and audit committee or equivalent governance body."
+  },
+  "human_oversight_mandates": {
+    "required": false,
+    "description": "The overlay does not impose a blanket human-in-the-loop flag, but SEC Reg FD and issuer disclosure controls require accountable human review before public dissemination, disclosure exceptions, or incident response decisions involving MNPI."
+  },
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["mfa_enforced", "approved_disclosure_owners", "mnpi_access_review_completed"],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404"
+    },
+    "PR-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["least_privilege_matrix", "information_barrier_review", "watchlist_entitlement_check"],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(b); SOX §302, §404"
+    },
+    "PR-03": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["approved_data_source_inventory", "disclosure_workflow_change_review", "mnpi_release_checklist"],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404"
+    },
+    "PR-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["external_release_approval", "mnpi_scan_status", "investor_communications_channel_review"],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(a), 243.101(e); SOX §302, §404"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["log_retention_years", "mnpi_access_log_review", "disclosure_decision_audit_chain"],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404, §802; SEC Rule 17a-4"
+    },
+    "DE-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["mnpi_anomaly_triage_records", "escalation_runbook", "selective_disclosure_incident_log"],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(a); SOX §302, §404; SEC Rule 17a-4"
+    }
+  },
+  "evidence_requirements": {
+    "PR-01": ["mfa_enforced", "approved_disclosure_owners", "mnpi_access_review_completed"],
+    "PR-02": ["least_privilege_matrix", "information_barrier_review", "watchlist_entitlement_check"],
+    "PR-03": ["approved_data_source_inventory", "disclosure_workflow_change_review", "mnpi_release_checklist"],
+    "PR-04": ["external_release_approval", "mnpi_scan_status", "investor_communications_channel_review"],
+    "PR-05": ["log_retention_years", "mnpi_access_log_review", "disclosure_decision_audit_chain"],
+    "DE-01": ["mnpi_anomaly_triage_records", "escalation_runbook", "selective_disclosure_incident_log"]
+  },
+  "framework_mapping": {
+    "GOV-01": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100-103"],
+    "GOV-02": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(a)"],
+    "GOV-03": ["SOX §404", "SEC Reg FD 17 CFR 243.100(b)"],
+    "GOV-04": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.101(e)"],
+    "ID-01": ["SOX §404", "SEC Reg FD 17 CFR 243.100(b)(1)"],
+    "ID-02": ["SOX §404", "SEC Reg FD 17 CFR 243.100(b)"],
+    "ID-03": ["SOX §404", "SEC Reg FD 17 CFR 243.100-103"],
+    "ID-04": ["SOX §404", "SEC Reg FD 17 CFR 243.100(b)"],
+    "ID-05": ["SOX §404", "SEC Reg FD 17 CFR 243.100(a)"],
+    "PR-01": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100-103"],
+    "PR-02": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(b)"],
+    "PR-03": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100-103"],
+    "PR-04": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(a), 243.101(e)"],
+    "PR-05": ["SOX §302, §404, §802", "SEC Reg FD 17 CFR 243.100-103", "SEC Rule 17a-4"],
+    "PR-06": ["SOX §404", "SEC Reg FD 17 CFR 243.100(a)"],
+    "PR-07": ["SOX §404", "SEC Reg FD 17 CFR 243.100(a)"],
+    "PR-08": ["SOX §802", "SEC Rule 17a-4"],
+    "DE-01": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(a)", "SEC Rule 17a-4"],
+    "DE-02": ["SOX §404", "SEC Reg FD 17 CFR 243.100(a)"],
+    "DE-03": ["SOX §404", "SEC Reg FD 17 CFR 243.100-103"],
+    "DE-04": ["SOX §404, §802", "SEC Rule 17a-4"],
+    "RS-01": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(a)"],
+    "RS-02": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.101(e)"],
+    "RS-03": ["SOX §802", "SEC Rule 17a-4"],
+    "RC-01": ["SOX §404", "SEC Reg FD 17 CFR 243.100-103"],
+    "RC-02": ["SOX §404, §802", "SEC Rule 17a-4"]
+  },
+  "evidence_retention_minimum_days": 2555,
+  "human_oversight_required": false,
+  "notes": "This overlay treats MNPI handling as a market-integrity and disclosure-control problem. SEC Reg FD drives selective-disclosure prevention and simultaneous-public-disclosure expectations, while SOX drives accountable internal controls and seven-year evidence retention for market-sensitive workflows."
+}

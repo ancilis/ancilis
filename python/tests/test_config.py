@@ -117,13 +117,12 @@ class TestOverlayActivation:
         assert "gdpr" in resolved.active_overlays
         assert "pci-dss-v4" in resolved.active_overlays
 
-    def test_unavailable_overlay_warning(self):
+    def test_government_cui_alias_activates_cmmc_overlay(self):
         resolved = load_config(
-            raw={"agent": {"name": "x"}, "my_agent_handles": ["government_documents"]}
+            raw={"agent": {"name": "x"}, "my_agent_handles": ["government_cui"]}
         )
-        unavailable_ids = [uo.overlay_id for uo in resolved.unavailable_overlays]
-        # DC-CUI maps to cmmc-l2 (roadmap overlay)
-        assert "cmmc-l2" in unavailable_ids or len(unavailable_ids) > 0
+        assert "cmmc-l2" in resolved.active_overlays
+        assert all(item.overlay_id != "cmmc-l2" for item in resolved.unavailable_overlays)
 
     def test_ai_training_data_activates_eu_ai_act(self):
         resolved = load_config(

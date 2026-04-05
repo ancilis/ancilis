@@ -36,7 +36,16 @@ ALL_16_DC_CODES = {
     "DC-MINOR", "DC-BIO", "DC-LEGAL", "DC-IP",
 }
 
-OVERLAY_IDS = {"glba", "pci-dss-v4", "soc2", "eu-ai-act", "iso-42001", "nist-csf"}
+OVERLAY_IDS = {
+    "glba",
+    "pci-dss-v4",
+    "soc2",
+    "eu-ai-act",
+    "iso-42001",
+    "nist-csf",
+    "cmmc-l2",
+    "securities-mnpi",
+}
 
 
 # --- Part 1: AKSI Control Registry ---
@@ -467,17 +476,13 @@ class TestActivationPaths:
         assert len(spec.active_controls) == 26
         assert set(spec.active_controls) == ALL_26_CONTROL_IDS
 
-    def test_roadmap_overlay_graceful_degradation(self):
-        """DC code with no overlay profile should not error."""
+    def test_controlled_unclassified_activates_cmmc_l2(self):
+        """Declared CUI should activate the government overlay."""
         resolver = ActivationResolver()
-        # DC-CUI maps to cmmc-l2 which is roadmap — should not crash
         spec = resolver.resolve(my_agent_handles=["controlled_unclassified"])
         assert "DC-CUI" in spec.data_classifications
-        # cmmc-l2 should NOT be in active overlays (it doesn't exist)
-        assert "cmmc-l2" not in spec.active_overlays
-        # But NIST CSF baseline should still be active
+        assert "cmmc-l2" in spec.active_overlays
         assert "nist-csf" in spec.active_overlays
-        # All 26 controls should still be active
         assert len(spec.active_controls) == 26
 
     def test_financial_data_activates_glba_and_soc2(self):
@@ -487,6 +492,14 @@ class TestActivationPaths:
         assert "DC-FIN" in spec.data_classifications
         assert "glba" in spec.active_overlays
         assert "soc2" in spec.active_overlays
+
+    def test_mnpi_activates_securities_overlay(self):
+        """Declared MNPI should activate the securities overlay."""
+        resolver = ActivationResolver()
+        spec = resolver.resolve(my_agent_handles=["mnpi"])
+        assert "DC-MNPI" in spec.data_classifications
+        assert "securities-mnpi" in spec.active_overlays
+        assert "nist-csf" in spec.active_overlays
 
     def test_general_data_activates_soc2(self):
         """General business data should activate SOC 2."""

@@ -103,10 +103,12 @@
         "type": "string",
         "enum": [
           "health_records", "patient_data", "personal_info", "credit_cards",
-          "financial_records", "government_documents", "childrens_data",
-          "public_data", "biometric_data", "legal_data", "trade_secrets",
-          "export_controlled", "critical_infrastructure", "ai_training_data",
-          "federal_contract_info", "mnpi"
+          "financial_data", "financial_records", "controlled_unclassified",
+          "government_cui", "government_documents", "government_system",
+          "material_nonpublic", "federal_contract", "general", "childrens_data",
+          "public_data", "biometric_data", "legal_data", "legal_privileged",
+          "trade_secrets", "export_controlled", "critical_infrastructure",
+          "ai_training_data", "federal_contract_info", "mnpi"
         ]
       },
       "description": "Declaring data types activates compliance overlays."

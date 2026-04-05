@@ -68,7 +68,7 @@ python/src/ancilis/
 shared/
 ├── classifications/ # Data classification taxonomy
 ├── controls/        # 26 AKSI control definitions (JSON)
-├── overlays/        # 7 regulatory overlay profiles + certifications
+├── overlays/        # 8 regulatory overlay profiles + certifications
 └── schemas/         # JSON schemas for Action, EvaluationResult, EvidenceRecord
 ```
 
