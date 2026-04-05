@@ -8,6 +8,7 @@ import { ToolRegistry, ToolStatus } from "../engine/registry.js";
 import type { ToolEntry } from "../engine/registry.js";
 import type { EvaluationResult } from "../engine/result.js";
 import { EvidenceStore } from "../evidence/store.js";
+import { canonicalJsonStringify } from "../evidence/chain.js";
 import { matchesToolList } from "../engine/tool-matching.js";
 import { ProducerType } from "./protocol.js";
 
@@ -108,7 +109,7 @@ export class ToolActionProducer {
       kwargs: invocation.kwargs ?? {},
     };
     const paramHash = createHash("sha256")
-      .update(JSON.stringify(payload, Object.keys(payload).sort()))
+      .update(canonicalJsonStringify(payload))
       .digest("hex");
     const entry = this._registry.lookup(toolName);
 
