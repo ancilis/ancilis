@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     evaluation_id VARCHAR NOT NULL,
     timestamp VARCHAR NOT NULL,
     agent_id VARCHAR NOT NULL,
+    session_id VARCHAR,
     source_type VARCHAR NOT NULL DEFAULT 'agent',
     tool_name VARCHAR NOT NULL,
     decision VARCHAR NOT NULL,
@@ -68,15 +69,15 @@ CREATE TABLE IF NOT EXISTS evidence_records (
 
 INSERT_SQL = """
 INSERT INTO evidence_records (
-    record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+    record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms, output_summary
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_COLUMNS = """
-seq_id, record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary
 """
@@ -128,6 +129,10 @@ class EvidenceStore:
 
         self._connection.execute(CREATE_TABLE_SQL)
         columns = {row[1] for row in self._connection.execute("PRAGMA table_info('evidence_records')").fetchall()}
+        if "session_id" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN session_id VARCHAR"
+            )
         if "source_type" not in columns:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'"
@@ -178,6 +183,7 @@ class EvidenceStore:
         self._ensure_initialized()
         record_id = str(uuid.uuid4())
         previous_hash = self._get_last_hash()
+        session_id = getattr(evaluation, "session_id", None)
 
         control_results_data = [
             {
@@ -206,6 +212,7 @@ class EvidenceStore:
             total_duration_ms=evaluation.total_duration_ms,
             previous_hash=previous_hash,
             output_summary=output_summary,
+            session_id=session_id,
         )
         record_hash = compute_hash(canon)
 
@@ -226,6 +233,7 @@ class EvidenceStore:
             previous_hash=previous_hash,
             total_duration_ms=evaluation.total_duration_ms,
             output_summary=output_summary,
+            session_id=session_id,
         )
 
         self._connection.execute(INSERT_SQL, [
@@ -233,6 +241,7 @@ class EvidenceStore:
             record.evaluation_id,
             record.timestamp,
             record.agent_id,
+            record.session_id,
             record.source_type,
             record.tool_name,
             record.decision,
@@ -252,9 +261,11 @@ class EvidenceStore:
     def get_records(
         self,
         agent_id: str | None = None,
+        session_id: str | None = None,
         tool_name: str | None = None,
         decision: str | None = None,
-        limit: int = 100,
+        since: str | None = None,
+        limit: int | None = 100,
     ) -> list[EvidenceRecord]:
         """Query evidence records with optional filters."""
         self._ensure_initialized()
@@ -264,21 +275,29 @@ class EvidenceStore:
         if agent_id is not None:
             conditions.append("agent_id = ?")
             params.append(agent_id)
+        if session_id is not None:
+            conditions.append("session_id = ?")
+            params.append(session_id)
         if tool_name is not None:
             conditions.append("tool_name = ?")
             params.append(tool_name)
         if decision is not None:
             conditions.append("decision = ?")
             params.append(_normalize_decision_key(decision))
+        if since is not None:
+            conditions.append("timestamp >= ?")
+            params.append(since)
 
         # Build query with parameterized WHERE conditions
         base_query = "SELECT " + SELECT_COLUMNS + " FROM evidence_records"
         if conditions:
             where_clause = " WHERE " + " AND ".join(conditions)
-            query = base_query + where_clause + " ORDER BY seq_id ASC LIMIT ?"
+            query = base_query + where_clause + " ORDER BY seq_id ASC"
         else:
-            query = base_query + " ORDER BY seq_id ASC LIMIT ?"
-        params.append(limit)
+            query = base_query + " ORDER BY seq_id ASC"
+        if limit is not None:
+            query += " LIMIT ?"
+            params.append(limit)
 
         # nosemgrep: all parameters properly bound, where_clause from internal conditions only
         rows = self._connection.execute(query, params).fetchall()
@@ -329,6 +348,7 @@ class EvidenceStore:
                 total_duration_ms=record.total_duration_ms,
                 previous_hash=record.previous_hash,
                 output_summary=record.output_summary,
+                session_id=record.session_id,
             )
             expected_hash = compute_hash(canon)
 
@@ -342,12 +362,19 @@ class EvidenceStore:
 
         return len(errors) == 0, errors
 
-    def get_summary(self, since: str | None = None) -> dict[str, Any]:
+    def get_summary(
+        self,
+        since: str | None = None,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
         """Generate a summary for posture reports.
 
         Args:
             since: Optional ISO timestamp. When provided, only evidence records
                    with timestamp >= since are included in counts and stats.
+            session_id: Optional session identifier. When provided, only
+                   evidence records from that session are included in counts
+                   and stats.
                    Chain verification always runs against the full store.
 
         Returns empty results if no evidence has been recorded yet (without
@@ -366,11 +393,15 @@ class EvidenceStore:
             }
 
         self._ensure_initialized()
-        where_clause = ""
+        conditions: list[str] = []
         params: list[str] = []
         if since is not None:
-            where_clause = " WHERE timestamp >= ?"
-            params = [since]
+            conditions.append("timestamp >= ?")
+            params.append(since)
+        if session_id is not None:
+            conditions.append("session_id = ?")
+            params.append(session_id)
+        where_clause = f" WHERE {' AND '.join(conditions)}" if conditions else ""
 
         # Total evaluations (period-filtered)
         # where_clause is built from internal logic (constant or " WHERE timestamp >= ?"), safe to concatenate
@@ -460,25 +491,26 @@ class EvidenceStore:
         """Convert a DuckDB row tuple to an EvidenceRecord.
 
         Column order: seq_id, record_id, evaluation_id, timestamp, agent_id,
-        source_type, tool_name, decision, mode, control_results, active_overlays,
-        data_classifications, active_certifications, record_hash,
-        previous_hash, total_duration_ms, output_summary
+        session_id, source_type, tool_name, decision, mode, control_results,
+        active_overlays, data_classifications, active_certifications,
+        record_hash, previous_hash, total_duration_ms, output_summary
         """
         return EvidenceRecord(
             record_id=row[1],
             evaluation_id=row[2],
             timestamp=row[3],
             agent_id=row[4],
-            source_type=row[5],
-            tool_name=row[6],
-            decision=row[7],
-            mode=row[8],
-            control_results=json.loads(row[9]) if isinstance(row[9], str) else row[9],
-            active_overlays=json.loads(row[10]) if isinstance(row[10], str) else row[10],
-            data_classifications=json.loads(row[11]) if isinstance(row[11], str) else row[11],
-            active_certifications=json.loads(row[12]) if isinstance(row[12], str) else row[12],
-            record_hash=row[13],
-            previous_hash=row[14],
-            total_duration_ms=row[15],
-            output_summary=row[16] if len(row) > 16 else None,
+            source_type=row[6],
+            tool_name=row[7],
+            decision=row[8],
+            mode=row[9],
+            control_results=json.loads(row[10]) if isinstance(row[10], str) else row[10],
+            active_overlays=json.loads(row[11]) if isinstance(row[11], str) else row[11],
+            data_classifications=json.loads(row[12]) if isinstance(row[12], str) else row[12],
+            active_certifications=json.loads(row[13]) if isinstance(row[13], str) else row[13],
+            record_hash=row[14],
+            previous_hash=row[15],
+            total_duration_ms=row[16],
+            output_summary=row[17] if len(row) > 17 else None,
+            session_id=row[5] if len(row) > 5 else None,
         )

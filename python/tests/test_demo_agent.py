@@ -198,6 +198,28 @@ def test_demo_main_can_preserve_evidence_when_requested(tmp_path: Path, monkeypa
         store.close()
 
 
+def test_demo_main_preserved_history_reports_latest_session_only(tmp_path: Path, monkeypatch) -> None:
+    module = _load_demo_module()
+    monkeypatch.setattr(evidence_store_module, "DEFAULT_DB_DIR", tmp_path / ".ancilis")
+    monkeypatch.chdir(tmp_path)
+    stream = io.StringIO()
+
+    module.main(stream=stream, fresh=False)
+    second_result = module.main(stream=stream, fresh=False)
+
+    assert second_result.decisions == {"ALLOW": 4, "BLOCK": 2}
+    assert "Tool calls: 6 evaluated, 2 blocked" in second_result.status_output
+    assert "Evidence records: 6" in second_result.report_markdown
+
+    config = load_config(path=DEMO_CONFIG_PATH)
+    store = EvidenceStore(config, db_path=second_result.db_path)
+
+    try:
+        assert store.count() == 12
+    finally:
+        store.close()
+
+
 def test_demo_main_entry_resets_evidence_on_rerun(tmp_path: Path) -> None:
     env = os.environ.copy()
     env["HOME"] = str(tmp_path)

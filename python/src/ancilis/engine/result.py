@@ -33,3 +33,4 @@ class EvaluationResult:
     active_overlays: list[str] = field(default_factory=list)
     data_classifications: list[str] = field(default_factory=list)
     total_duration_ms: float = 0.0
+    session_id: str | None = None

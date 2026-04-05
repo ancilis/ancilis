@@ -222,6 +222,24 @@ class TestEvidenceStore:
         assert records[0].decision == "BLOCK"
         store.close()
 
+    def test_get_records_filter_session_id(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        ev1 = make_evaluation(evaluation_id="e1")
+        ev1.session_id = "sess-1"
+        ev2 = make_evaluation(evaluation_id="e2")
+        ev2.session_id = "sess-2"
+
+        store.store(ev1, tool_name="tool-a")
+        store.store(ev2, tool_name="tool-b")
+
+        records = store.get_records(session_id="sess-2")
+        assert len(records) == 1
+        assert records[0].evaluation_id == "e2"
+        assert records[0].session_id == "sess-2"
+        store.close()
+
     def test_verify_chain_valid(self):
         config = make_config()
         store = EvidenceStore(config, in_memory=True)
@@ -370,6 +388,24 @@ class TestSummary:
 
         summary = store.get_summary()
         assert summary["pattern_detections"] == {"credit_card": 2, "ssn": 1}
+        store.close()
+
+    def test_get_summary_filters_by_session_id(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        ev1 = make_evaluation(evaluation_id="e1", decision="ALLOW")
+        ev1.session_id = "sess-1"
+        ev2 = make_evaluation(evaluation_id="e2", decision="BLOCK")
+        ev2.session_id = "sess-2"
+
+        store.store(ev1, tool_name="tool-a")
+        store.store(ev2, tool_name="tool-a")
+
+        summary = store.get_summary(session_id="sess-2")
+        assert summary["total_evaluations"] == 1
+        assert summary["decisions"] == {"BLOCK": 1}
+        assert summary["tools_evaluated"] == ["tool-a"]
         store.close()
 
 

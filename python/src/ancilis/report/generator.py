@@ -67,7 +67,12 @@ class ReportGenerator:
         self._control_defs = load_control_definitions()
         self._overlay_profiles = load_overlay_profiles()
 
-    def generate(self, period: str = "30d", report_format: str = "terminal") -> ReportData:
+    def generate(
+        self,
+        period: str = "30d",
+        report_format: str = "terminal",
+        session_id: str | None = None,
+    ) -> ReportData:
         """Generate a complete report."""
         now = datetime.now(timezone.utc)
         delta = _parse_period(period)
@@ -83,7 +88,10 @@ class ReportGenerator:
         )
 
         # Get evidence summary (period-filtered)
-        summary = self._store.get_summary(since=period_start.isoformat())
+        summary = self._store.get_summary(
+            since=period_start.isoformat(),
+            session_id=session_id,
+        )
         data.total_evaluations = summary.get("total_evaluations", 0)
         data.chain_valid = summary.get("chain_valid", True)
         data.chain_errors = summary.get("chain_errors", [])
