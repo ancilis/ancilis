@@ -3,8 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SDK_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+MANIFEST_PATH="${SDK_ROOT}/examples/demo/discovery/discovery-manifest.json"
 BACKEND_URL="${ANCILIS_DEMO_BACKEND_URL:-http://localhost:8000}"
 DASHBOARD_URL="${ANCILIS_DEMO_DASHBOARD_URL:-http://localhost:3000}"
+DISCOVERY_URL="${DASHBOARD_URL}/discovery"
 SKIP_STACK_START="${ANCILIS_DEMO_SKIP_STACK_START:-0}"
 KEEP_RUNNING=true
 STACK_STARTED=false
@@ -44,7 +46,7 @@ except Exception:
 cleanup() {
     if [ "${STACK_STARTED}" = true ]; then
         log
-        log "Stopping demo stack..."
+        log "Stopping discovery demo stack..."
         (
             cd "${PLATFORM_DIR}"
             docker compose down >/dev/null 2>&1 || true
@@ -106,17 +108,22 @@ extract_json_field() {
     python3 -c 'import json, sys; print(json.load(sys.stdin).get(sys.argv[1], ""))' "${field}"
 }
 
-build_demo_db_path() {
-    python3 - <<'PY'
-from pathlib import Path
+manifest_agents() {
+    python3 - <<'PY' "${MANIFEST_PATH}"
+import json
+import sys
 
-from ancilis.config import load_config
-from ancilis.evidence.store import EvidenceStore
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    manifest = json.load(handle)
 
-config = load_config(path=Path("examples/demo/ancilis.yaml"))
-store = EvidenceStore(config, in_memory=False)
-print(store.db_path)
+for agent in manifest.get("agents", []):
+    print(json.dumps(agent, separators=(",", ":")))
 PY
+}
+
+agent_field() {
+    local field="$1"
+    python3 -c 'import json, sys; print(json.load(sys.stdin).get(sys.argv[1], ""))' "${field}"
 }
 
 find_existing_integration_id() {
@@ -133,28 +140,64 @@ for item in payload.get("items", []):
 ' "$1"
 }
 
-build_demo_integration_name() {
-    local db_path="$1"
+build_discovery_integration_name() {
+    local agent_name="$1"
+    local db_path="$2"
     python3 -c '
 import sys
 
 from ancilis.demo_orchestration import build_demo_integration_name
 
-print(build_demo_integration_name(sys.argv[1]))
-' "${db_path}"
+print(
+    build_demo_integration_name(
+        sys.argv[2],
+        base_name=f"Discovery Demo SDK - {sys.argv[1]}",
+    )
+)
+' "${agent_name}" "${db_path}"
 }
 
-build_integration_payload() {
-    local db_path="$1"
+build_discovery_integration_payload() {
+    local agent_name="$1"
+    local db_path="$2"
     python3 -c '
 import json
 import sys
 
 from ancilis.demo_orchestration import build_demo_integration_payload
 
-payload = build_demo_integration_payload(sys.argv[1])
+name = f"Discovery Demo SDK - {sys.argv[1]}"
+payload = build_demo_integration_payload(
+    sys.argv[2],
+    name=name,
+)
 print(json.dumps(payload, separators=(",", ":")))
-' "${db_path}"
+' "${agent_name}" "${db_path}"
+}
+
+build_discovery_agent_payload() {
+    local integration_id="$1"
+    python3 -c '
+import json
+import sys
+
+agent = json.load(sys.stdin)
+payload = {
+    "agent_name": agent["name"],
+    "runtime_type": agent["runtime_type"],
+    "description": agent.get("description", ""),
+    "tool_count": agent["tool_count"],
+    "data_types": agent.get("data_types", []),
+    "classifications": agent.get("classifications", []),
+    "active_overlays": agent.get("active_overlays", []),
+    "active_certifications": agent.get("active_certifications", []),
+    "posture_summary": agent["evidence_summary"],
+    "config_path": agent["config_path"],
+    "db_path": agent["db_path"],
+    "evidence_source_id": sys.argv[1],
+}
+print(json.dumps(payload, separators=(",", ":")))
+' "${integration_id}"
 }
 
 maybe_open_browser() {
@@ -163,12 +206,12 @@ maybe_open_browser() {
     fi
 
     if command -v open >/dev/null 2>&1; then
-        open "${DASHBOARD_URL}" >/dev/null 2>&1 || true
+        open "${DISCOVERY_URL}" >/dev/null 2>&1 || true
         return
     fi
 
     if command -v xdg-open >/dev/null 2>&1; then
-        xdg-open "${DASHBOARD_URL}" >/dev/null 2>&1 || true
+        xdg-open "${DISCOVERY_URL}" >/dev/null 2>&1 || true
     fi
 }
 
@@ -181,11 +224,11 @@ if [ "${SKIP_STACK_START}" != "1" ]; then
 fi
 
 log "╔══════════════════════════════════════════════════════╗"
-log "║              Ancilis End-to-End Demo                ║"
-log "║        SDK -> Evidence -> Platform -> Dashboard     ║"
+log "║            Ancilis Discovery Demo Orchestration     ║"
+log "║     SDK -> Multi-Agent Evidence -> Discovery UI     ║"
 log "╚══════════════════════════════════════════════════════╝"
 
-step "1/4" "Preparing the SDK demo environment"
+step "1/5" "Preparing the SDK demo environment"
 cd "${SDK_ROOT}"
 export TMPDIR="${SCRIPT_DIR}"
 export TMP="${TMPDIR}"
@@ -200,25 +243,16 @@ source .demo-venv/bin/activate
 python -m pip install -e ".[dev]" --quiet
 log "  Python environment ready"
 
-DEMO_DB_PATH="$(build_demo_db_path)"
-rm -f "${DEMO_DB_PATH}"
-
-step "2/4" "Running the financial demo agent"
-DEMO_LOG="$(mktemp)"
-python examples/demo/run.py | tee "${DEMO_LOG}"
-DEMO_DB_PATH="$(sed -n 's/^Evidence stored at: //p' "${DEMO_LOG}" | tail -n 1)"
-rm -f "${DEMO_LOG}"
-[ -n "${DEMO_DB_PATH}" ] || fail "Could not determine the generated evidence database path."
-[ -f "${DEMO_DB_PATH}" ] || fail "Expected evidence database was not created at ${DEMO_DB_PATH}"
-DEMO_NAME="$(build_demo_integration_name "${DEMO_DB_PATH}")"
-log "  Evidence generated at ${DEMO_DB_PATH}"
-log "  Integration name: ${DEMO_NAME}"
+step "2/5" "Generating discovery evidence stores"
+python examples/demo/run-discovery.py
+[ -f "${MANIFEST_PATH}" ] || fail "Expected discovery manifest was not created at ${MANIFEST_PATH}"
+log "  Discovery manifest: ${MANIFEST_PATH}"
 
 if [ "${SKIP_STACK_START}" = "1" ]; then
-    step "3/4" "Reusing an existing Platform stack"
+    step "3/5" "Reusing an existing Platform stack"
     log "  Reusing existing Platform stack at ${BACKEND_URL} / ${DASHBOARD_URL}"
 else
-    step "3/4" "Starting the Platform stack"
+    step "3/5" "Starting the Platform stack"
     (
         cd "${PLATFORM_DIR}"
         docker compose up --build -d
@@ -230,7 +264,7 @@ wait_for_url "${DASHBOARD_URL}" "Dashboard"
 log "  Platform API ready at ${BACKEND_URL}"
 log "  Dashboard ready at ${DASHBOARD_URL}"
 
-step "4/4" "Registering the SDK evidence source and syncing it into the Platform"
+step "4/5" "Registering discovery demo integrations and syncing evidence"
 LOGIN_RESPONSE="$(
     curl -fsS \
         -X POST \
@@ -246,41 +280,67 @@ INTEGRATIONS_RESPONSE="$(
         -H "Authorization: Bearer ${AUTH_TOKEN}" \
         "${BACKEND_URL}/v1/integrations"
 )"
-INTEGRATION_ID="$(printf '%s' "${INTEGRATIONS_RESPONSE}" | find_existing_integration_id "${DEMO_NAME}")"
 
-if [ -z "${INTEGRATION_ID}" ]; then
-    CREATE_PAYLOAD="$(build_integration_payload "${DEMO_DB_PATH}")"
-    CREATE_RESPONSE="$(
-        curl -fsS \
-            -X POST \
-            -H "Authorization: Bearer ${AUTH_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "${CREATE_PAYLOAD}" \
-            "${BACKEND_URL}/v1/integrations"
-    )"
-    INTEGRATION_ID="$(printf '%s' "${CREATE_RESPONSE}" | extract_json_field id)"
-fi
-
-[ -n "${INTEGRATION_ID}" ] || fail "Could not determine the demo integration id."
-
-SYNC_RESPONSE="$(
+DISCOVERY_SESSION_RESPONSE="$(
     curl -fsS \
         -X POST \
         -H "Authorization: Bearer ${AUTH_TOKEN}" \
-        "${BACKEND_URL}/v1/integrations/${INTEGRATION_ID}/sync"
+        -H "Content-Type: application/json" \
+        -d '{"name":"Ancilis Discovery Demo","source":"sdk_demo"}' \
+        "${BACKEND_URL}/v1/discovery/sessions"
 )"
-SYNC_CREATED="$(printf '%s' "${SYNC_RESPONSE}" | extract_json_field evidence_created)"
-SYNC_DEDUPED="$(printf '%s' "${SYNC_RESPONSE}" | extract_json_field evidence_deduplicated)"
-log "  Synced integration ${INTEGRATION_ID}"
-log "  Evidence created: ${SYNC_CREATED:-0}"
-log "  Evidence deduplicated: ${SYNC_DEDUPED:-0}"
+DISCOVERY_SESSION_ID="$(printf '%s' "${DISCOVERY_SESSION_RESPONSE}" | extract_json_field id)"
+[ -n "${DISCOVERY_SESSION_ID}" ] || fail "Discovery session creation did not return an id."
 
-log
-log "Demo is live."
-log "  Dashboard: ${DASHBOARD_URL}"
+while IFS= read -r agent_json; do
+    [ -n "${agent_json}" ] || continue
+
+    agent_name="$(printf '%s' "${agent_json}" | agent_field name)"
+    db_path="$(printf '%s' "${agent_json}" | agent_field db_path)"
+    integration_name="$(build_discovery_integration_name "${agent_name}" "${db_path}")"
+    integration_id="$(printf '%s' "${INTEGRATIONS_RESPONSE}" | find_existing_integration_id "${integration_name}")"
+
+    if [ -z "${integration_id}" ]; then
+        create_payload="$(build_discovery_integration_payload "${agent_name}" "${db_path}")"
+        create_response="$(
+            curl -fsS \
+                -X POST \
+                -H "Authorization: Bearer ${AUTH_TOKEN}" \
+                -H "Content-Type: application/json" \
+                -d "${create_payload}" \
+                "${BACKEND_URL}/v1/integrations"
+        )"
+        integration_id="$(printf '%s' "${create_response}" | extract_json_field id)"
+    fi
+
+    [ -n "${integration_id}" ] || fail "Could not determine the integration id for ${agent_name}."
+
+    sync_response="$(
+        curl -fsS \
+            -X POST \
+            -H "Authorization: Bearer ${AUTH_TOKEN}" \
+            "${BACKEND_URL}/v1/integrations/${integration_id}/sync"
+    )"
+    sync_created="$(printf '%s' "${sync_response}" | extract_json_field evidence_created)"
+    sync_deduped="$(printf '%s' "${sync_response}" | extract_json_field evidence_deduplicated)"
+
+    register_payload="$(printf '%s' "${agent_json}" | build_discovery_agent_payload "${integration_id}")"
+    curl -fsS \
+        -X POST \
+        -H "Authorization: Bearer ${AUTH_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "${register_payload}" \
+        "${BACKEND_URL}/v1/discovery/sessions/${DISCOVERY_SESSION_ID}/agents" \
+        >/dev/null
+
+    log "  ${agent_name}: synced integration ${integration_id} (created=${sync_created:-0}, deduped=${sync_deduped:-0})"
+done < <(manifest_agents)
+
+step "5/5" "Opening the discovery dashboard"
+log "  Discovery session: ${DISCOVERY_SESSION_ID}"
+log "  Dashboard: ${DISCOVERY_URL}"
 log "  Backend docs: ${BACKEND_URL}/docs"
 log "  Login: admin@ancilis.demo / AncilisDemo123!"
-log "  Integration: ${DEMO_NAME}"
 if [ "${STACK_STARTED}" = true ]; then
     log "Press Ctrl+C to stop the Platform stack."
 else

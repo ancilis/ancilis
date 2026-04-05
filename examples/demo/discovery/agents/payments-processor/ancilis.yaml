@@ -1,0 +1,21 @@
+agent:
+  name: payments-processor
+  description: Processes card payments and refunds via Stripe API
+  owner: finops-team
+my_agent_handles:
+  - credit_cards
+  - financial_records
+certification_targets:
+  - aiuc-1
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - process_payment
+      - issue_refund
+      - get_payment_status
+      - verify_card
+      - get_merchant_info
+      - generate_receipt
+    blocked:
+      - delete_transaction_log

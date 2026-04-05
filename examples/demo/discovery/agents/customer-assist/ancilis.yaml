@@ -1,0 +1,23 @@
+agent:
+  name: customer-assist
+  description: Customer support agent with payment account access
+  owner: support-team
+my_agent_handles:
+  - personal_info
+  - credit_cards
+  - financial_records
+certification_targets:
+  - aiuc-1
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - lookup_customer
+      - check_balance
+      - get_transactions
+      - create_support_ticket
+      - update_contact_info
+      - lookup_credit_score
+    blocked:
+      - transfer_funds
+      - close_account

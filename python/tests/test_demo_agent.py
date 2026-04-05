@@ -158,6 +158,13 @@ def test_demo_setup_script_is_present_and_executable() -> None:
     assert DEMO_SETUP_PATH.stat().st_mode & 0o111
 
 
+def test_demo_setup_script_reuses_demo_venv() -> None:
+    script = DEMO_SETUP_PATH.read_text(encoding="utf-8")
+
+    assert 'if [ ! -d ".demo-venv" ]; then' in script
+    assert 'python3 -m venv .demo-venv' in script
+
+
 def test_demo_main_resets_evidence_on_programmatic_rerun_by_default(tmp_path: Path, monkeypatch) -> None:
     module = _load_demo_module()
     monkeypatch.setattr(evidence_store_module, "DEFAULT_DB_DIR", tmp_path / ".ancilis")
@@ -308,16 +315,34 @@ def test_run_all_uses_workspace_scoped_demo_name_helper() -> None:
     assert "build_demo_integration_name" in script
 
 
+def test_run_all_can_reuse_an_existing_platform_stack() -> None:
+    script = DEMO_RUN_ALL_PATH.read_text(encoding="utf-8")
+
+    assert "ANCILIS_DEMO_SKIP_STACK_START" in script
+    assert 'if [ "${SKIP_STACK_START}" = "1" ]; then' in script
+    assert "Reusing existing Platform stack" in script
+    assert "Press Ctrl+C to exit without stopping the reused Platform stack." in script
+
+
 def test_demo_readme_surfaces_end_to_end_walkthrough() -> None:
     readme = DEMO_README_PATH.read_text(encoding="utf-8")
 
+    assert "30-Second Demo Path" in readme
+    assert "5-Minute Demo Path" in readme
+    assert "bash examples/demo/setup.sh" in readme
     assert "bash examples/demo/run-all.sh" in readme
     assert "ANCILIS_PLATFORM_DIR" in readme
     assert "ANCILIS_DEMO_BACKEND_URL" in readme
     assert "ANCILIS_DEMO_DASHBOARD_URL" in readme
+    assert "ANCILIS_DEMO_SKIP_STACK_START" in readme
+    assert "http://localhost:3000" in readme
+    assert "http://localhost:8000" in readme
+    assert "http://localhost:8000/docs" in readme
     assert "Docker" in readme
+    assert "Node.js" in readme
     assert "curl" in readme
     assert "admin@ancilis.demo" in readme
     assert "ancilis-one-shot" in readme
+    assert "when you want `run-all.sh` to start the Platform stack locally" in readme
     assert "ALLOW/BLOCK counts" not in readme
     assert "middleware summary line" in readme

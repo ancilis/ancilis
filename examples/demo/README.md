@@ -9,21 +9,29 @@ A self-contained demo that shows Ancilis intercepting AI agent tool calls, evalu
 ## Prerequisites
 
 - Python 3.10+
-- Docker Desktop (or another reachable local Docker daemon) for the full SDK -> Platform walkthrough
+- Node.js 18+ for the dashboard portion of the full SDK -> Platform walkthrough
 - `curl` for the Platform login, integration registration, and sync steps in `run-all.sh`
-- A Platform checkout at either `./platform`, `../ancilis-one-shot/platform`, or a custom path passed via `ANCILIS_PLATFORM_DIR`
+- Docker Desktop (or another reachable local Docker daemon) when you want `run-all.sh` to start the Platform stack locally
+- A Platform checkout at either `./platform`, `../ancilis-one-shot/platform`, or a custom path passed via `ANCILIS_PLATFORM_DIR` when you want `run-all.sh` to start the Platform stack locally
 
-## Quick Start
+## 30-Second Demo Path
+
+Use this when you only need to show the SDK intercepting tool calls, enforcing policy, and writing DuckDB evidence locally:
 
 ```bash
-# One-command setup and run (from repo root)
+# One-command setup and local demo run (from repo root)
 bash examples/demo/setup.sh
 
 # Or run manually
 pip install -e ".[dev]"
 python examples/demo/run.py
+```
 
-# Full SDK -> Platform walkthrough
+## 5-Minute Demo Path
+
+Use this when you want the fuller SDK -> Platform walkthrough, including local Platform startup, evidence registration, and dashboard sync:
+
+```bash
 bash examples/demo/run-all.sh
 ```
 
@@ -43,7 +51,15 @@ ANCILIS_PLATFORM_DIR=/path/to/platform-or-repo-root bash examples/demo/run-all.s
 ANCILIS_DEMO_BACKEND_URL=http://localhost:8000
 ANCILIS_DEMO_DASHBOARD_URL=http://localhost:3000
 ANCILIS_DEMO_OPEN_BROWSER=0
+ANCILIS_DEMO_SKIP_STACK_START=1
 ```
+
+Set `ANCILIS_DEMO_SKIP_STACK_START=1` when the Platform API and dashboard are already running. In that mode, `run-all.sh` skips the local `docker compose up` step and reuses the stack exposed at `ANCILIS_DEMO_BACKEND_URL` and `ANCILIS_DEMO_DASHBOARD_URL`.
+
+When the full walkthrough is up, the default local endpoints are:
+- Dashboard: `http://localhost:3000`
+- Backend API: `http://localhost:8000`
+- Backend docs: `http://localhost:8000/docs`
 
 When the walkthrough finishes, sign in to the dashboard with:
 - `admin@ancilis.demo`

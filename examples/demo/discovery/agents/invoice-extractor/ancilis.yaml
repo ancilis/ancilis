@@ -1,0 +1,18 @@
+agent:
+  name: invoice-extractor
+  description: Extracts and validates invoice data from documents
+  owner: finops-team
+my_agent_handles:
+  - financial_records
+  - personal_info
+security:
+  mode: audit
+  tools:
+    allowed:
+      - extract_invoice_data
+      - validate_line_items
+      - match_purchase_order
+      - get_vendor_info
+      - submit_for_approval
+    blocked:
+      - delete_invoice

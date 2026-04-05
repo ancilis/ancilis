@@ -1,0 +1,21 @@
+agent:
+  name: fraud-sentinel
+  description: Real-time fraud detection and transaction risk scoring
+  owner: risk-team
+my_agent_handles:
+  - financial_records
+  - personal_info
+certification_targets:
+  - aiuc-1
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - score_transaction
+      - get_fraud_rules
+      - flag_suspicious
+      - get_account_history
+      - verify_identity
+    blocked:
+      - override_fraud_flag
+      - bulk_export_scores
