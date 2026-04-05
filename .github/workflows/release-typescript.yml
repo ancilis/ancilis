@@ -15,8 +15,8 @@ jobs:
     name: Verify TypeScript release artifacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
@@ -32,7 +32,7 @@ jobs:
           TARBALL=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; const [{ filename }] = JSON.parse(readFileSync('release-artifacts/pack.json', 'utf8')); console.log(filename);")
           npm run pack:smoke -- "release-artifacts/$TARBALL"
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ancilis-typescript-package
           path: |
@@ -48,11 +48,11 @@ jobs:
       name: npm
       url: https://www.npmjs.com/package/ancilis
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: ancilis-typescript-package
           path: release-artifacts
