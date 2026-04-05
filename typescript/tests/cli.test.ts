@@ -1158,6 +1158,29 @@ describe("Report Renderer UX", () => {
 });
 
 describe("runCli", () => {
+  it("accepts report generate as an alias for the report command", async () => {
+    const dir = tmpDir();
+    const configPath = writeConfig(dir, fullConfig());
+    const dbPath = join(dir, "report.duckdb");
+    const outputPath = join(dir, "report-generate.md");
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await populateEvidence(config, store);
+    await store.close();
+
+    const { io, stdout, stderr } = captureIo();
+    const exitCode = await runCli(
+      ["report", "generate", "--config", configPath, "--db", dbPath, "--format", "markdown", "--output", outputPath],
+      io,
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stderr()).toBe("");
+    expect(stdout()).toContain(`Report written to ${outputPath}`);
+    expect(existsSync(outputPath)).toBe(true);
+    expect(readFileSync(outputPath, "utf-8")).toContain("# Ancilis Posture Report");
+  });
+
   it("accepts oscal-json as a report format", async () => {
     const dir = tmpDir();
     const configPath = writeConfig(dir, fullConfig());
