@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Callable, TypeVar
+
 import click
 
 from datetime import datetime, timezone
+
+F = TypeVar("F", bound=Callable[..., object])
 
 from ancilis.config import load_config
 from ancilis.evidence.store import EvidenceStore
@@ -22,7 +26,7 @@ def _parse_period_start(period: str) -> str:
     return (datetime.now(timezone.utc) - _parse_period(period)).isoformat()
 
 
-def _report_options(func):
+def _report_options(func: F) -> F:
     func = click.option("--output", "-o", "output_path", default=None, help="Output file path")(func)
     func = click.option("--db", "db_path", default=None, help="Path to evidence database")(func)
     func = click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")(func)

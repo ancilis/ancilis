@@ -328,7 +328,7 @@ def _control_requires_attention(control: dict[str, Any]) -> bool:
         return False
     threshold = _numeric_threshold(control.get("threshold"))
     if threshold is None:
-        return control.get("failed", 0) > 0
+        return bool(control.get("failed", 0) > 0)
     return (
         control.get("failed", 0) > 0
         or float(control.get("pass_rate", 0.0)) < threshold
