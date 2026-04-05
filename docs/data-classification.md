@@ -67,6 +67,26 @@ These data types trigger specific regulatory overlays with adjusted thresholds a
 | `ai_training_data` | DC-AI | EU AI Act, ISO 42001 | 10-year retention (EU AI Act), human oversight required |
 | `biometric_data` | DC-BIO | EU AI Act | 10-year retention, human oversight required |
 
+### Government overlay types
+
+These types now activate the CMMC Level 2 overlay for CUI safeguarding and related government-system handling.
+
+| Data type | DC code | Active overlay |
+|-----------|---------|----------------|
+| `controlled_unclassified` | DC-CUI | CMMC Level 2 |
+| `government_cui` | DC-GOV, DC-CUI | CMMC Level 2 |
+| `government_documents` | DC-GOV, DC-CUI | CMMC Level 2 |
+| `government_system` | DC-GOV | CMMC Level 2 |
+
+### Securities overlay types
+
+These types now activate the securities-market overlay for MNPI handling, disclosure controls, and seven-year evidence retention.
+
+| Data type | DC code | Active overlay |
+|-----------|---------|----------------|
+| `material_nonpublic` | DC-MNPI | Securities Markets (SEC Reg FD, SOX) |
+| `mnpi` | DC-MNPI | Securities Markets (SEC Reg FD, SOX) |
+
 ### Baseline-only types
 
 These types are recognized and classified but don't currently trigger additional overlays beyond the 26 baseline controls. Overlays for these types are on the roadmap.
@@ -74,17 +94,12 @@ These types are recognized and classified but don't currently trigger additional
 | Data type | DC code | Future overlay |
 |-----------|---------|----------------|
 | `childrens_data` | DC-MINOR | COPPA, GDPR Art. 8, FERPA |
-| `controlled_unclassified` | DC-CUI | CMMC Level 2 |
 | `critical_infrastructure` | DC-CRIT | NERC CIP, NIS2 |
 | `export_controlled` | DC-ITAR | ITAR, EAR |
 | `federal_contract` | DC-FCI | CMMC Level 1 |
 | `federal_contract_info` | DC-FCI | CMMC Level 1 |
-| `government_documents` | DC-GOV | FedRAMP, FISMA |
-| `government_system` | DC-GOV | FedRAMP, FISMA |
 | `legal_data` | DC-LEGAL | Attorney-client privilege |
 | `legal_privileged` | DC-LEGAL | Attorney-client privilege |
-| `material_nonpublic` | DC-MNPI | SEC Reg FD, SOX |
-| `mnpi` | DC-MNPI | SEC Reg FD, SOX |
 | `trade_secrets` | DC-IP | Trade secret protection |
 
 ## DC codes explained
@@ -157,6 +172,15 @@ First regulation directly governing AI agent behavior. Activated by: `ai_trainin
 - **Evidence retention:** 3650 days (10 years)
 - **Human oversight required:** Yes (Art. 14)
 - **Key focus:** Risk management, data governance, automatic logging, human oversight, post-market monitoring, serious incident reporting
+
+### Securities Markets (MNPI, SEC Reg FD, SOX)
+
+Activated by: `material_nonpublic`, `mnpi`.
+
+- **Jurisdiction:** US
+- **Strict controls:** PR-01, PR-02, PR-03, PR-04, PR-05, DE-01
+- **Evidence retention:** 2555 days (7 years)
+- **Key focus:** MNPI access control, information barriers, disclosure approvals, simultaneous-public-disclosure paths, and audit-ready evidence for market-sensitive workflows
 
 ### ISO/IEC 42001:2023
 

@@ -414,11 +414,11 @@ describe("Conflict Resolution", () => {
     expect(spec.activeOverlays).toContain("nist-csf");
   });
 
-  it("roadmap overlays degrade gracefully without dropping baseline coverage", () => {
+  it("controlled_unclassified activates cmmc-l2 without dropping baseline coverage", () => {
     const resolver = new ActivationResolver();
     const spec = resolver.resolve({ dataHandling: ["controlled_unclassified"] });
     expect(spec.dataClassifications).toContain("DC-CUI");
-    expect(spec.activeOverlays).not.toContain("cmmc-l2");
+    expect(spec.activeOverlays).toContain("cmmc-l2");
     expect(spec.activeOverlays).toContain("nist-csf");
     expect(spec.activeControls.length).toBe(26);
   });

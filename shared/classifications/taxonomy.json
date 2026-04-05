@@ -73,7 +73,7 @@
       "name": "Controlled Unclassified Information",
       "description": "Government data subject to CMMC Level 2, NIST 800-171r3. Information that requires safeguarding or dissemination controls pursuant to federal law, regulation, or government-wide policy.",
       "overlays": ["cmmc-l2"],
-      "overlay_status": "roadmap",
+      "overlay_status": "active",
       "pattern_detection": {
         "enabled": false,
         "note": "Requires declared classification. CUI markings are organizational, not pattern-detectable."
@@ -83,8 +83,8 @@
       "code": "DC-MNPI",
       "name": "Material Non-Public Information",
       "description": "Securities data subject to SEC Reg FD, SOX. Non-public information that could influence investment decisions.",
-      "overlays": [],
-      "overlay_status": "roadmap",
+      "overlays": ["securities-mnpi"],
+      "overlay_status": "active",
       "pattern_detection": {
         "enabled": false,
         "note": "Requires declared classification. MNPI is contextual, not pattern-detectable."
@@ -116,8 +116,8 @@
       "code": "DC-GOV",
       "name": "Government System Data",
       "description": "Federal system data subject to FedRAMP, FISMA. Data processed, stored, or transmitted by federal information systems.",
-      "overlays": [],
-      "overlay_status": "roadmap",
+      "overlays": ["cmmc-l2"],
+      "overlay_status": "active",
       "pattern_detection": {
         "enabled": false,
         "note": "Requires declared classification."
@@ -209,6 +209,7 @@
     "financial_data": ["DC-FIN"],
     "financial_records": ["DC-FIN"],
     "controlled_unclassified": ["DC-CUI"],
+    "government_cui": ["DC-GOV", "DC-CUI"],
     "government_documents": ["DC-GOV", "DC-CUI"],
     "material_nonpublic": ["DC-MNPI"],
     "federal_contract": ["DC-FCI"],
