@@ -31,3 +31,21 @@ TypeScript: We use `eslint` and strict TypeScript compiler options.
 ## Reporting Issues
 
 Open a GitHub issue. Include steps to reproduce, expected behavior, and actual behavior.
+
+## Release Process
+
+### npm Environment & Secrets (Maintainers Only)
+
+Publishing to npm requires a GitHub environment named `npm` with a configured `NPM_TOKEN` secret. This must be set up by a repo admin:
+
+1. Create an npm **Granular Access Token** at https://www.npmjs.com/settings/tokens
+   - Packages: `ancilis` only
+   - Permissions: **Read and write**
+2. In GitHub → Settings → Environments → Create environment `npm`
+   - Add deployment protection rule: **Required reviewers**
+   - Add secret `NPM_TOKEN` with the token from step 1
+3. The `id-token: write` permission in the workflow provides npm provenance (OIDC) — no additional secret needed for that.
+
+The release workflow is artifact-bound: the verify job packs the tarball and uploads it as a GitHub Actions artifact, and the publish job downloads and publishes that exact tarball. Do not manually rebuild before publishing.
+
+Both SDKs (`package.json` and `pyproject.toml`) must share the same version string. The release workflow enforces this and will fail if they diverge.
