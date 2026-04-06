@@ -197,8 +197,13 @@ Full configuration reference: [docs/configuration.md](docs/configuration.md)
 | `ai_training_data` | ISO 42001, EU AI Act |
 | `biometric_data` | EU AI Act |
 | `financial_records` | SOC 2 Type II |
+| `controlled_unclassified` | CMMC L2 |
+| `government_cui` | CMMC L2 |
+| `material_nonpublic` | Securities MNPI |
+| `mnpi` | Securities MNPI |
+| *(all data types)* | NIST CSF (baseline) |
 
-23 data types supported. 7 overlay profiles available. See [docs/configuration.md](docs/configuration.md) for the complete list.
+23 data types supported. 10 overlay profiles available. See [docs/configuration.md](docs/configuration.md) for the complete list.
 
 ## Limitations
 
