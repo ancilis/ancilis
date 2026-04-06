@@ -118,7 +118,7 @@ describe("publish configuration", () => {
     const verifyRuns = verifyJob?.steps?.flatMap((step) => (step.run ? [step.run] : [])) ?? [];
     expect(verifyRuns).toContain("npm ci");
     expect(verifyRuns).toContain("npx vitest run");
-    expect(verifyRuns.some((run) => run.includes("npm run pack:smoke"))).toBe(true);
+    expect(verifyRuns.some((run) => run.includes("ts_package_smoke.mjs"))).toBe(true);
 
     const publishJob = workflow.jobs?.publish_typescript;
     expect(publishJob?.needs).toBe("verify_typescript_release");
