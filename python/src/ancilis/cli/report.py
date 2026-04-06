@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from datetime import datetime, timezone
+from typing import TypeVar
 
 import click
-
-from datetime import datetime, timezone
-
-F = TypeVar("F", bound=Callable[..., object])
 
 from ancilis.config import load_config
 from ancilis.evidence.store import EvidenceStore
@@ -20,6 +18,8 @@ from ancilis.report.renderer import (
     render_pdf,
     render_terminal,
 )
+
+F = TypeVar("F", bound=Callable[..., object])
 
 
 def _parse_period_start(period: str) -> str:
