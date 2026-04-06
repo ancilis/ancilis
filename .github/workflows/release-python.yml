@@ -23,6 +23,14 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+      - name: Verify cross-SDK version alignment
+        run: |
+          TS_VERSION=$(node -p "require('./package.json').version")
+          PY_VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ "$TS_VERSION" != "$PY_VERSION" ]; then
+            echo "::error::TypeScript ($TS_VERSION) and Python ($PY_VERSION) versions diverged"
+            exit 1
+          fi
       - name: Run local release check
         run: python scripts/release_check.py
       - name: Upload artifacts
