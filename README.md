@@ -203,7 +203,7 @@ Full configuration reference: [docs/configuration.md](docs/configuration.md)
 | `mnpi` | Securities MNPI |
 | *(all data types)* | NIST CSF (baseline) |
 
-23 data types supported. 10 overlay profiles available. See [docs/configuration.md](docs/configuration.md) for the complete list.
+23 data types supported. 11 overlay profiles available. See [docs/configuration.md](docs/configuration.md) for the complete list.
 
 ## Limitations
 
