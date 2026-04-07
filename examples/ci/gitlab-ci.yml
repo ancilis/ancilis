@@ -1,0 +1,89 @@
+# Ancilis Compliance Check — GitLab CI
+#
+# Drop this snippet into your .gitlab-ci.yml or include it as a template.
+# The job runs ancilis scan --ci and fails the pipeline on violations.
+#
+# Prerequisites:
+#   1. ancilis.yaml present in repository root (or set ANCILIS_CONFIG var)
+#   2. Evidence database populated during the agent run (or restored from cache)
+#   3. Python 3.10+ available in the job image
+
+# ── Variables ────────────────────────────────────────────────────────────────
+# Override these in GitLab CI/CD → Settings → Variables, or per-job.
+variables:
+  ANCILIS_CONFIG: "${CI_PROJECT_DIR}/ancilis.yaml"
+  ANCILIS_DB: "${CI_PROJECT_DIR}/ancilis-evidence.duckdb"
+  ANCILIS_PERIOD: "24h"  # Evidence window; adjust to your deployment cadence
+
+# ── Compliance stage ─────────────────────────────────────────────────────────
+ancilis-compliance:
+  stage: test
+  image: python:3.11-slim
+
+  # Install Ancilis before the scan runs.
+  before_script:
+    - pip install --quiet ancilis
+    - ancilis --version
+
+  # Run the scan in CI mode:
+  #   --ci     → JSON output to stdout (also written to ancilis-scan.json)
+  #   --period → Scope evidence to the last N hours/days
+  #
+  # Exit codes:
+  #   0 = compliant  →  pipeline continues
+  #   1 = violations  →  pipeline fails (allow_failure: false)
+  #   2 = config error  →  pipeline fails with diagnostic message
+  script:
+    - |
+      ancilis scan --ci \
+        --config "$ANCILIS_CONFIG" \
+        --db     "$ANCILIS_DB" \
+        --period "$ANCILIS_PERIOD" \
+        | tee ancilis-scan.json
+      SCAN_EXIT=$?
+
+      # Print a human-readable summary for the job log
+      python3 - <<'EOF'
+      import json, sys
+      try:
+          d = json.load(open("ancilis-scan.json"))
+      except Exception:
+          print("Could not parse ancilis-scan.json")
+          sys.exit(0)
+      s = d["summary"]
+      print(f"\nAncilis posture: {d['posture'].upper()}")
+      print(f"  {s['passing']} passing  {s['failing']} failing  {s['skipped']} skipped")
+      print(f"  {s['total_evaluations']} total evaluations  (period: {d.get('period','n/a')})")
+      for c in d["controls"]:
+          icon = "✓" if c["status"] == "pass" else ("✗" if c["status"] == "fail" else "–")
+          print(f"  {icon}  {c['id']}  {c['name']}  evals={c['evaluations']} fail={c['failures']}")
+      EOF
+
+      exit $SCAN_EXIT
+
+  # Persist the scan JSON as a GitLab artifact:
+  #   - reports/dotenv  →  expose posture as a pipeline variable downstream
+  #   - paths           →  download the full JSON from the artifacts browser
+  after_script:
+    - |
+      if [ -f ancilis-scan.json ]; then
+        POSTURE=$(python3 -c "import json; print(json.load(open('ancilis-scan.json'))['posture'])" 2>/dev/null || echo "unknown")
+        echo "ANCILIS_POSTURE=${POSTURE}" > ancilis-results.env
+      fi
+
+  artifacts:
+    when: always
+    paths:
+      - ancilis-scan.json
+    reports:
+      dotenv: ancilis-results.env
+    expire_in: 30 days
+
+  # Change to true if you want the pipeline to continue despite violations
+  # (useful when introducing Ancilis in audit mode for the first time).
+  allow_failure: false
+
+  # Only run on merge requests and the default branch.
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
