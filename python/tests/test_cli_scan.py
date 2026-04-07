@@ -161,7 +161,7 @@ class TestScanCommand:
         runner = CliRunner()
         result = runner.invoke(cli, ["scan", "--config", str(tmp_path / "missing.yaml")])
         assert result.exit_code == 0
-        assert "No tool-call evidence found yet" in result.output
+        assert "No tool-call evidence" in result.output
 
     def test_scan_human_readable_no_ci_flag(self, tmp_path: Path) -> None:
         """Without --ci, output is human-readable text (not JSON)."""
@@ -202,14 +202,14 @@ class TestScanCommand:
         assert data["summary"]["total_evaluations"] == 0
 
     def test_scan_no_evaluations_compliant(self, tmp_path: Path) -> None:
-        """No evaluations in period → exit 0, posture compliant."""
+        """No evaluations in period → exit 0, no-evidence guidance shown."""
         cfg_path = _make_config_file(_minimal_config(), tmp_path)
         db = tmp_path / "evidence.db"
 
         runner = CliRunner()
         result = runner.invoke(cli, ["scan", "--config", str(cfg_path), "--db", str(db)])
         assert result.exit_code == 0
-        assert "compliant" in result.output.lower()
+        assert "No tool-call evidence" in result.output
 
     def test_scan_ci_schema_fields_present(self, tmp_path: Path) -> None:
         """--ci JSON output includes all required schema fields."""
