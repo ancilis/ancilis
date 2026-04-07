@@ -58,12 +58,14 @@ def _print_human_summary(
 @click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
 @click.option("--db", "db_path", default=None, help="Path to evidence database")
 @click.option("--session", "session_id", default=None, help="Scope to a specific session ID")
+@click.option("--latest/--all", "use_latest", default=True, help="Show latest session (default) or all sessions")
 @click.option("--period", default="24h", help="Evidence window (e.g. 1h, 24h, 7d)")
 def scan(
     ci: bool,
     config_path: str | None,
     db_path: str | None,
     session_id: str | None,
+    use_latest: bool,
     period: str,
 ) -> None:
     """Evaluate evidence posture and return pass/fail for CI/CD pipelines."""
@@ -73,6 +75,8 @@ def scan(
 
     store = EvidenceStore(config, db_path=db_path)
     try:
+        if session_id is None and use_latest:
+            session_id = store.latest_session_id()
         since = _period_to_since(period)
         summary = store.get_summary(since=since, session_id=session_id)
         control_defs = load_control_definitions()

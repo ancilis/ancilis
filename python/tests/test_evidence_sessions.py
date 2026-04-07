@@ -35,11 +35,12 @@ def make_evaluation(
     decision: str = "ALLOW",
     mode: str = "audit",
     session_id: str | None = None,
+    timestamp: str = "2025-01-15T10:30:00Z",
 ) -> EvaluationResult:
     return EvaluationResult(
         evaluation_id=str(uuid.uuid4()),
         action_id="action-001",
-        timestamp="2025-01-15T10:30:00Z",
+        timestamp=timestamp,
         agent_id="test-agent",
         mode=mode,
         session_id=session_id,
@@ -325,3 +326,32 @@ class TestCLISessionFlag:
         assert result.exit_code == 0, result.output
         assert "3" in result.output
         assert "reset" in result.output.lower()
+
+
+# ---------------------------------------------------------------------------
+# 6. latest_session_id
+# ---------------------------------------------------------------------------
+
+
+class TestLatestSessionId:
+    def test_latest_session_id_returns_most_recent(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        store.store(
+            make_evaluation(session_id="first-session", timestamp="2025-01-15T10:00:00Z"),
+            tool_name="tool",
+        )
+        store.store(
+            make_evaluation(session_id="second-session", timestamp="2025-01-15T11:00:00Z"),
+            tool_name="tool",
+        )
+
+        assert store.latest_session_id() == "second-session"
+        store.close()
+
+    def test_latest_session_id_empty_store(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        assert store.latest_session_id() is None
+        store.close()

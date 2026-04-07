@@ -157,7 +157,8 @@ def _format_status(
 @click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
 @click.option("--db", "db_path", default=None, help="Path to evidence database")
 @click.option("--session", "session_id", default=None, help="Scope to a specific session ID")
-def status(verbose: bool, config_path: str | None, db_path: str | None, session_id: str | None) -> None:
+@click.option("--latest/--all", "use_latest", default=True, help="Show latest session (default) or all sessions")
+def status(verbose: bool, config_path: str | None, db_path: str | None, session_id: str | None, use_latest: bool) -> None:
     """Show current agent security posture."""
     config = _load_config_safe(config_path)
     if config is None:
@@ -165,6 +166,8 @@ def status(verbose: bool, config_path: str | None, db_path: str | None, session_
 
     store = EvidenceStore(config, db_path=db_path)
     try:
+        if session_id is None and use_latest:
+            session_id = store.latest_session_id()
         output = _format_status(config, store, verbose, session_id=session_id)
         click.echo(output)
     finally:

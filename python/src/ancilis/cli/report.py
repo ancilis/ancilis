@@ -38,6 +38,7 @@ def _report_options(func: F) -> F:
     )(func)
     func = click.option("--period", default="30d", help="Reporting period (e.g. 7d, 30d, 90d, 365d)")(func)
     func = click.option("--session", "session_id", default=None, help="Scope to a specific session ID")(func)
+    func = click.option("--latest/--all", "use_latest", default=True, help="Show latest session (default) or all sessions")(func)
     return func
 
 
@@ -48,6 +49,7 @@ def _emit_report(
     db_path: str | None,
     output_path: str | None,
     session_id: str | None = None,
+    use_latest: bool = True,
 ) -> None:
     try:
         config = load_config(path=config_path) if config_path else load_config()
@@ -57,6 +59,8 @@ def _emit_report(
 
     store = EvidenceStore(config, db_path=db_path)
     try:
+        if session_id is None and use_latest:
+            session_id = store.latest_session_id()
         generator = ReportGenerator(config, store)
         report_data = generator.generate(period=period, report_format=fmt, session_id=session_id)
 
@@ -116,10 +120,11 @@ def report(
     db_path: str | None,
     output_path: str | None,
     session_id: str | None,
+    use_latest: bool,
 ) -> None:
     """Generate a posture report."""
     if ctx.invoked_subcommand is None:
-        _emit_report(period, fmt, config_path, db_path, output_path, session_id)
+        _emit_report(period, fmt, config_path, db_path, output_path, session_id, use_latest)
 
 
 @report.command(name="generate")
@@ -131,6 +136,7 @@ def report_generate(
     db_path: str | None,
     output_path: str | None,
     session_id: str | None,
+    use_latest: bool,
 ) -> None:
     """Generate a posture report."""
-    _emit_report(period, fmt, config_path, db_path, output_path, session_id)
+    _emit_report(period, fmt, config_path, db_path, output_path, session_id, use_latest)
