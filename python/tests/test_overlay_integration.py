@@ -181,7 +181,7 @@ def test_resolver_composes_overlay_and_aiuc1_requirements_without_weakening_over
         (
             ["personal_info", "financial_data"],
             None,
-            {"gdpr", "glba", "soc2"},
+            {"gdpr", "ccpa", "glba", "soc2"},
             2555,
             False,
             {"PR-01": "strict", "PR-03": "standard"},

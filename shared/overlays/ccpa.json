@@ -1,0 +1,341 @@
+{
+  "id": "ccpa",
+  "name": "CCPA/CPRA",
+  "version": "0.2",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-PII"],
+  "description": "California Consumer Privacy Act (as amended by California Privacy Rights Act) overlay. Activated by personal information declarations. Covers consumer rights (access, deletion, correction, opt-out), business obligations (notice, purpose limitation, data minimization), service provider requirements, sensitive personal information handling, and automated decision-making disclosures.",
+  "jurisdiction": "us-ca",
+  "enforcement_date": "2020-01-01",
+  "triggered_by_classifications": ["DC-PII"],
+  "applicable_data_types": ["personal_info"],
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Privacy policies implemented demonstrating compliance with CCPA/CPRA obligations (§1798.130(a)(5))",
+        "Policies updated at least every 12 months and posted at point of collection (§1798.130(a)(5))",
+        "Designated methods for consumers to submit requests documented (§1798.130(a))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.130(a)(5), §1798.155"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Privacy program accountability established — business responsible for CCPA/CPRA compliance (§1798.100)",
+        "Employee and contractor training on CCPA consumer rights handling (§1798.135(a)(3))",
+        "California Privacy Protection Agency (CPPA) cooperation procedures in place (§1798.199.40)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.100, §1798.199.40"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessments performed for processing that presents significant risk to consumer privacy (CPRA §1798.185(a)(15))",
+        "Risk assessments weigh benefits of processing against potential risks to consumer rights",
+        "Risk assessment documentation maintained and submitted to CPPA upon request"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.185(a)(15)"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Consumer rights management process — right to know, delete, correct, opt-out, and limit SPI use (§§1798.100–1798.125)",
+        "Verifiable consumer requests responded to within 45 days, extendable by 45 days with notice (§1798.130(a)(2))",
+        "Non-discrimination policy — no retaliation against consumers exercising CCPA rights (§1798.125)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "CCPA §§1798.100-1798.125 consumer rights — businesses must provide at least two methods for consumers to submit requests and respond within statutory timelines"
+      },
+      "framework_reference": "§§1798.100–1798.135"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Personal information inventory maintained — categories of PI collected, sold, shared, and disclosed for business purposes (§1798.110, §1798.115)",
+        "Sources of personal information documented for each category (§1798.110(c)(2))",
+        "Business or commercial purpose for each category of PI collection documented (§1798.110(c)(3))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.110, §1798.115"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Service provider and contractor agreements include CCPA-required terms — prohibit selling/sharing received PI (§1798.140(ag))",
+        "Contracts require service providers to notify business of inability to comply and grant right to remediate (§1798.140(ag)(1))",
+        "Sub-contractor flow-down — same CCPA obligations applied to downstream processors (§1798.140(ag)(2))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.140(ag)"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data minimization principle applied — collection of PI reasonably necessary and proportionate to disclosed purposes (§1798.100(c))",
+        "Retention limited to what is reasonably necessary for disclosed purpose (§1798.100(d))",
+        "Storage limitation enforced — PI deleted or deidentified when no longer needed"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.100(c), §1798.100(d)"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Third-party inventory maintained — list of entities to which PI is sold or shared (§1798.115(c))",
+        "Categories of PI disclosed to each third party documented (§1798.115(c)(2))",
+        "Third-party due diligence — reasonable steps to ensure third parties use PI consistent with CCPA (§1798.100(d))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.115"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data flow mapping — track PI disclosures for business purposes and sales/sharing to third parties (§1798.115)",
+        "Cross-context behavioral advertising transfers identified and disclosed (§1798.140(ah))",
+        "Consumer opt-out mechanisms for sale/sharing of PI across data flows (§1798.120)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.115, §1798.120"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Reasonable security procedures and practices appropriate to the nature of PI maintained (§1798.150)",
+        "Access controls implemented to protect PI from unauthorized access, destruction, use, modification, or disclosure (§1798.150(a))",
+        "Security measures commensurate with risk — failure constitutes grounds for private right of action for data breaches"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Purpose limitation applied — PI used only for purposes disclosed at or before collection (§1798.100(a))",
+        "Secondary use prohibition — no further processing incompatible with disclosed purposes without additional notice (§1798.100(a))",
+        "Sensitive Personal Information use limited to purposes authorized by consumer or necessary for disclosed purpose (§1798.121)"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "CCPA §1798.100(a) purpose limitation — PI shall not be collected, used, retained, or disclosed in a manner inconsistent with reasonable consumer expectations"
+      },
+      "framework_reference": "§1798.100(a), §1798.121"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Privacy by design integrated into PI processing operations (§1798.100(c))",
+        "Data minimization at collection — only PI reasonably necessary for disclosed purpose (§1798.100(c))",
+        "Accuracy of PI maintained — reasonable steps to ensure correctness (§1798.106)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.100(c), §1798.106"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Encryption or redaction of PI as part of reasonable security measures (§1798.150 safe harbor)",
+        "Technical safeguards appropriate to the nature of the PI and the risks of the processing",
+        "Deidentification standards applied when PI no longer needed in identifiable form (§1798.140(m))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150, §1798.140(m)"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Records of consumer requests maintained for at least 24 months (§1798.130(a)(7) via regulations)",
+        "Processing records demonstrate compliance — categories of PI, purposes, and third-party disclosures documented (§1798.110, §1798.115)",
+        "Audit trail for consumer rights requests — request type, date received, response date, and outcome"
+      ],
+      "threshold_adjustments": {
+        "threshold": "strict",
+        "reason": "CCPA §1798.130 recordkeeping and CPRA cybersecurity audit requirements — businesses must maintain verifiable records of consumer requests and compliance activities"
+      },
+      "framework_reference": "§1798.130, §1798.185(a)(15)"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Physical security measures protect PI from unauthorized access (§1798.150)",
+        "Physical access controls for systems and media containing PI",
+        "Hardware and media disposal procedures ensure PI is unrecoverable"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Endpoint security measures protect PI on devices (§1798.150)",
+        "Remote access to PI secured with appropriate technical safeguards",
+        "Mobile and endpoint device management for systems processing PI"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Right to delete process implemented — PI deleted within 45 days of verifiable request (§1798.105)",
+        "Deletion cascaded to service providers and contractors who received PI (§1798.105(c))",
+        "Deletion exceptions documented — legal obligations, security incidents, internal uses consistent with consumer expectations (§1798.105(d))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.105"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Breach detection capability — ability to identify unauthorized access to, or exfiltration of, PI (§1798.150)",
+        "Breach assessment process — determine whether breach involves unencrypted/unredacted PI triggering notification obligations",
+        "Security incident register maintained for all PI-related incidents"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150, Cal. Civ. Code §1798.82"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Ongoing monitoring of systems processing PI for security compliance (§1798.150)",
+        "Regular testing and evaluation of security procedures and practices",
+        "CPRA cybersecurity audit compliance — annual audit for businesses whose processing presents significant risk (§1798.185(a)(15))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150, §1798.185(a)(15)"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Anomalous access detection — identify unusual access patterns to PI or bulk data exfiltration",
+        "Security monitoring appropriate to volume and sensitivity of PI processed",
+        "Automated decision-making technology monitoring — profiling activities reviewed for compliance (§1798.185(a)(16))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150, §1798.185(a)(16)"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Cybersecurity audit performed annually for businesses whose processing presents significant risk (CPRA §1798.185(a)(15))",
+        "Security assessment program covers all systems processing PI",
+        "Vulnerability management — known vulnerabilities in PI processing systems remediated promptly"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.185(a)(15)"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Breach notification to affected California residents in the most expedient time possible without unreasonable delay (Cal. Civ. Code §1798.82)",
+        "Notification includes nature of breach, categories of PI affected, and contact information for further inquiries",
+        "California Attorney General notified when breach affects more than 500 California residents (Cal. Civ. Code §1798.82(f))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Cal. Civ. Code §1798.82"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Coordination with California Attorney General and CPPA during breach response as required",
+        "Remediation measures documented and implemented to address breach cause",
+        "Service provider and contractor breach notification procedures in place (§1798.140(ag))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Cal. Civ. Code §1798.82, §1798.199.40"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Consumer notification in plain language describing the breach and affected PI categories (Cal. Civ. Code §1798.82(d))",
+        "Contact information provided for consumer credit reporting agencies when breach involves specified data elements",
+        "Identity theft prevention and mitigation information provided to affected consumers"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "Cal. Civ. Code §1798.82(d)"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Ability to restore availability and access to PI systems in timely manner following security incident",
+        "Business continuity procedures cover PI processing systems",
+        "Recovery procedures tested to validate PI can be restored without loss or corruption"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-incident review to update security procedures and privacy risk assessments",
+        "Lessons learned documented and security measures updated to prevent recurrence",
+        "Recovery improvements incorporated into cybersecurity audit program"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "§1798.150, §1798.185(a)(15)"
+    }
+  },
+  "control_adjustments": {
+    "GOV-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["consumer_rights_methods", "response_timeline"],
+      "regulatory_citation": "CCPA §§1798.100-1798.135 - Consumer rights"
+    },
+    "PR-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["purpose_limitation", "spi_use_limitation"],
+      "regulatory_citation": "CCPA §1798.100(a) - Purpose limitation"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["consumer_request_records", "processing_purpose"],
+      "regulatory_citation": "CCPA §1798.130 - Recordkeeping requirements"
+    }
+  },
+  "evidence_requirements": {
+    "GOV-04": ["consumer_rights_methods", "response_timeline"],
+    "PR-02": ["purpose_limitation", "spi_use_limitation"],
+    "PR-05": ["consumer_request_records", "processing_purpose"]
+  },
+  "framework_mapping": {
+    "GOV-01": ["§1798.130(a)(5)", "§1798.155"],
+    "GOV-02": ["§1798.100", "§1798.199.40"],
+    "GOV-03": ["§1798.185(a)(15)"],
+    "GOV-04": ["§§1798.100–1798.135"],
+    "ID-01": ["§1798.110", "§1798.115"],
+    "ID-02": ["§1798.140(ag)"],
+    "ID-03": ["§1798.100(c)", "§1798.100(d)"],
+    "ID-04": ["§1798.115"],
+    "ID-05": ["§1798.115", "§1798.120"],
+    "PR-01": ["§1798.150"],
+    "PR-02": ["§1798.100(a)", "§1798.121"],
+    "PR-03": ["§1798.100(c)", "§1798.106"],
+    "PR-04": ["§1798.150", "§1798.140(m)"],
+    "PR-05": ["§1798.130", "§1798.185(a)(15)"],
+    "PR-06": ["§1798.150"],
+    "PR-07": ["§1798.150"],
+    "PR-08": ["§1798.105"],
+    "DE-01": ["§1798.150", "Cal. Civ. Code §1798.82"],
+    "DE-02": ["§1798.150", "§1798.185(a)(15)"],
+    "DE-03": ["§1798.150", "§1798.185(a)(16)"],
+    "DE-04": ["§1798.185(a)(15)"],
+    "RS-01": ["Cal. Civ. Code §1798.82"],
+    "RS-02": ["Cal. Civ. Code §1798.82", "§1798.199.40"],
+    "RS-03": ["Cal. Civ. Code §1798.82(d)"],
+    "RC-01": ["§1798.150"],
+    "RC-02": ["§1798.150", "§1798.185(a)(15)"]
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": null,
+    "assessment_type": "CPRA requires annual cybersecurity audits and risk assessments for businesses whose processing presents significant risk to consumer privacy (§1798.185(a)(15)). California AG may investigate and enforce. CPPA may audit.",
+    "reporting_entity": "California Privacy Protection Agency (CPPA) for CCPA enforcement; California Attorney General for breaches affecting 500+ residents. Consumers may bring private right of action for data breaches under §1798.150."
+  },
+  "evidence_retention_minimum_days": 730,
+  "human_oversight_required": false,
+  "notes": "CCPA/CPRA applies to businesses with California consumers meeting revenue, data volume, or data-sale thresholds. This overlay maps all 26 AKSI controls to CCPA/CPRA provisions. CPRA amendments (effective Jan 2023) added data minimization (§1798.100(c)), purpose limitation (§1798.100(d)), cybersecurity audits (§1798.185(a)(15)), risk assessments, and automated decision-making disclosures. Breach notification follows California Civil Code §1798.82, which does not specify a fixed hour window but requires notification 'in the most expedient time possible.' Evidence retention set to 24 months per CCPA regulatory recordkeeping requirements."
+}

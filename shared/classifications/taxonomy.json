@@ -23,7 +23,7 @@
       "code": "DC-PII",
       "name": "Personally Identifiable Information",
       "description": "Personal data subject to GDPR, CCPA/CPRA. Includes names, addresses, identifiers, and any data that can directly or indirectly identify a natural person.",
-      "overlays": ["gdpr", "soc2"],
+      "overlays": ["gdpr", "ccpa", "soc2"],
       "overlay_status": "active",
       "pattern_detection": {
         "enabled": true,
