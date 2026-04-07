@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     record_hash VARCHAR NOT NULL,
     previous_hash VARCHAR NOT NULL,
     total_duration_ms DOUBLE NOT NULL,
-    output_summary VARCHAR
+    output_summary VARCHAR,
+    tenant_id VARCHAR
 );
 `;
 
@@ -38,14 +39,14 @@ INSERT INTO evidence_records (
     record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
-    record_hash, previous_hash, total_duration_ms, output_summary
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 `;
 
 const SELECT_COLUMNS = `
 seq_id, record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
-active_certifications, record_hash, previous_hash, total_duration_ms, output_summary
+active_certifications, record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
 `;
 
 function execAsync(conn: duckdb.Connection, sql: string): Promise<void> {
@@ -92,10 +93,12 @@ export class EvidenceStore {
   private _initialized: Promise<void> | null = null;
   private _dbPath: string;
   private _inMemory: boolean;
+  private _tenantId: string | undefined;
 
-  constructor(config: ResolvedConfig, options?: { dbPath?: string; inMemory?: boolean }) {
+  constructor(config: ResolvedConfig, options?: { dbPath?: string; inMemory?: boolean; tenantId?: string }) {
     this._certifications = [...(config.activeCertifications ?? [])];
     this._inMemory = options?.inMemory ?? false;
+    this._tenantId = options?.tenantId;
 
     if (this._inMemory) {
       this._dbPath = ":memory:";
@@ -132,6 +135,9 @@ export class EvidenceStore {
       if (!names.has("output_summary")) {
         await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN output_summary VARCHAR");
       }
+      if (!names.has("tenant_id")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN tenant_id VARCHAR");
+      }
     })();
 
     return this._initialized;
@@ -153,9 +159,12 @@ export class EvidenceStore {
 
   private async getLastHash(): Promise<string> {
     await this.ensureInitialized();
+    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
     const rows = await allAsync(
       this._conn!,
-      "SELECT record_hash FROM evidence_records ORDER BY seq_id DESC LIMIT 1",
+      `SELECT record_hash FROM evidence_records${whereClause} ORDER BY seq_id DESC LIMIT 1`,
+      params,
     );
     return rows.length > 0 ? (rows[0] as Record<string, unknown>).record_hash as string : GENESIS_SEED;
   }
@@ -193,6 +202,7 @@ export class EvidenceStore {
       totalDurationMs: evaluation.totalDurationMs,
       previousHash,
       outputSummary,
+      tenantId: this._tenantId,
     });
     const recordHash = computeHash(canon);
 
@@ -213,6 +223,7 @@ export class EvidenceStore {
       previousHash,
       totalDurationMs: evaluation.totalDurationMs,
       outputSummary: outputSummary ?? null,
+      tenantId: this._tenantId ?? null,
     };
 
     await runAsync(this._conn!, INSERT_SQL, [
@@ -232,6 +243,7 @@ export class EvidenceStore {
       record.previousHash,
       record.totalDurationMs,
       record.outputSummary,
+      record.tenantId ?? null,
     ]);
 
     return record;
@@ -248,6 +260,10 @@ export class EvidenceStore {
     const conditions: string[] = [];
     const params: unknown[] = [];
 
+    if (this._tenantId) {
+      conditions.push("tenant_id = ?");
+      params.push(this._tenantId);
+    }
     if (filters?.agentId) {
       conditions.push("agent_id = ?");
       params.push(filters.agentId);
@@ -283,15 +299,20 @@ export class EvidenceStore {
 
   async count(): Promise<number> {
     await this.ensureInitialized();
-    const rows = await allAsync(this._conn!, "SELECT COUNT(*)::INTEGER as cnt FROM evidence_records");
+    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
+    const rows = await allAsync(this._conn!, `SELECT COUNT(*)::INTEGER as cnt FROM evidence_records${whereClause}`, params);
     return (rows[0] as Record<string, unknown>).cnt as number;
   }
 
   async verifyChain(): Promise<{ valid: boolean; errors: string[] }> {
     await this.ensureInitialized();
+    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
     const rows = await allAsync(
       this._conn!,
-      `SELECT ${SELECT_COLUMNS} FROM evidence_records ORDER BY seq_id ASC`,
+      `SELECT ${SELECT_COLUMNS} FROM evidence_records${whereClause} ORDER BY seq_id ASC`,
+      params,
     );
 
     if (rows.length === 0) {
@@ -326,6 +347,7 @@ export class EvidenceStore {
         totalDurationMs: record.totalDurationMs,
         previousHash: record.previousHash,
         outputSummary: record.outputSummary,
+        tenantId: record.tenantId,
       });
       const expectedHash = computeHash(canon);
 
@@ -482,6 +504,7 @@ export class EvidenceStore {
       previousHash: row.previous_hash as string,
       totalDurationMs: row.total_duration_ms as number,
       outputSummary: (row.output_summary as string | null | undefined) ?? null,
+      tenantId: (row.tenant_id as string | null | undefined) ?? null,
     };
   }
 }
