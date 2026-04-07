@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import click
@@ -18,9 +19,16 @@ def _load_config_safe(config_path: str | None) -> ResolvedConfig | None:
         if config_path:
             return load_config(path=config_path)
         return load_config()
-    except (FileNotFoundError, ValueError) as e:
-        click.echo(f"Error loading config: {e}", err=True)
+    except (FileNotFoundError, ValueError):
         return None
+
+
+def _default_config() -> ResolvedConfig:
+    """Create a minimal in-memory config for zero-config scanning."""
+    return load_config(raw={
+        "agent": {"name": Path.cwd().name},
+        "mode": "audit",
+    })
 
 
 def _period_to_since(period: str) -> str:
@@ -40,7 +48,19 @@ def _print_human_summary(
         "",
     ]
     if total_evaluations == 0:
-        lines.append("  No evaluations recorded in period. Posture: compliant (nothing to check).")
+        lines.append("")
+        lines.append("No tool-call evidence found yet. Ancilis records evidence")
+        lines.append("when your AI agent runs with the middleware active.")
+        lines.append("")
+        lines.append("Quick start:")
+        lines.append("  1. Add middleware to your agent")
+        lines.append("  2. Run your agent (tool calls get recorded)")
+        lines.append("  3. Run `ancilis scan` again")
+        lines.append("")
+        lines.append("Try the demo:")
+        lines.append("  cd examples/demo && ancilis scan")
+        lines.append("")
+        lines.append("Docs: https://ancilis.dev/quickstart")
     else:
         for ctrl in control_results:
             mark = {"pass": "\u2713", "fail": "\u2717", "skip": "\u2013"}.get(ctrl["status"], "?")
@@ -50,6 +70,11 @@ def _print_human_summary(
             if ctrl["flags"] > 0:
                 detail += f", {ctrl['flags']} flags"
             lines.append(f"  {mark} {ctrl['name']} \u2014 {ctrl['status']} ({detail})")
+        lines.append("")
+        lines.append("Next steps:")
+        lines.append("  ancilis report              -- generate a compliance report")
+        lines.append("  ancilis status --verbose    -- control-by-control breakdown")
+        lines.append("  ancilis scan --ci           -- JSON output for CI/CD pipelines")
     click.echo("\n".join(lines))
 
 
@@ -71,7 +96,7 @@ def scan(
     """Evaluate evidence posture and return pass/fail for CI/CD pipelines."""
     config = _load_config_safe(config_path)
     if config is None:
-        raise SystemExit(2)
+        config = _default_config()
 
     store = EvidenceStore(config, db_path=db_path)
     try:
