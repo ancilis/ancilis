@@ -37,10 +37,18 @@ def _report_options(func: F) -> F:
         type=click.Choice(["terminal", "markdown", "pdf", "aiuc1-readiness", "ndjson", "csv"]),
     )(func)
     func = click.option("--period", default="30d", help="Reporting period (e.g. 7d, 30d, 90d, 365d)")(func)
+    func = click.option("--session", "session_id", default=None, help="Scope to a specific session ID")(func)
     return func
 
 
-def _emit_report(period: str, fmt: str, config_path: str | None, db_path: str | None, output_path: str | None) -> None:
+def _emit_report(
+    period: str,
+    fmt: str,
+    config_path: str | None,
+    db_path: str | None,
+    output_path: str | None,
+    session_id: str | None = None,
+) -> None:
     try:
         config = load_config(path=config_path) if config_path else load_config()
     except (FileNotFoundError, ValueError) as e:
@@ -50,7 +58,7 @@ def _emit_report(period: str, fmt: str, config_path: str | None, db_path: str | 
     store = EvidenceStore(config, db_path=db_path)
     try:
         generator = ReportGenerator(config, store)
-        report_data = generator.generate(period=period, report_format=fmt)
+        report_data = generator.generate(period=period, report_format=fmt, session_id=session_id)
 
         if fmt == "terminal":
             output = render_terminal(report_data)
@@ -76,7 +84,7 @@ def _emit_report(period: str, fmt: str, config_path: str | None, db_path: str | 
                     f"wrote Markdown fallback to {pdf_result.output_path}"
                 )
         elif fmt == "ndjson":
-            records = store.get_records(since=_parse_period_start(period), limit=None)
+            records = store.get_records(since=_parse_period_start(period), session_id=session_id, limit=None)
             output = render_ndjson(records)
             if output_path:
                 with open(output_path, "w", encoding="utf-8") as f:
@@ -85,7 +93,7 @@ def _emit_report(period: str, fmt: str, config_path: str | None, db_path: str | 
             else:
                 click.echo(output)
         elif fmt == "csv":
-            records = store.get_records(since=_parse_period_start(period), limit=None)
+            records = store.get_records(since=_parse_period_start(period), session_id=session_id, limit=None)
             output = render_csv(records)
             if output_path:
                 with open(output_path, "w", encoding="utf-8") as f:
@@ -107,10 +115,11 @@ def report(
     config_path: str | None,
     db_path: str | None,
     output_path: str | None,
+    session_id: str | None,
 ) -> None:
     """Generate a posture report."""
     if ctx.invoked_subcommand is None:
-        _emit_report(period, fmt, config_path, db_path, output_path)
+        _emit_report(period, fmt, config_path, db_path, output_path, session_id)
 
 
 @report.command(name="generate")
@@ -121,6 +130,7 @@ def report_generate(
     config_path: str | None,
     db_path: str | None,
     output_path: str | None,
+    session_id: str | None,
 ) -> None:
     """Generate a posture report."""
-    _emit_report(period, fmt, config_path, db_path, output_path)
+    _emit_report(period, fmt, config_path, db_path, output_path, session_id)
