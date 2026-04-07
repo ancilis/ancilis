@@ -50,6 +50,13 @@ jobs:
         run: |
           TARBALL=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; const [{ filename }] = JSON.parse(readFileSync('release-artifacts/pack.json', 'utf8')); console.log(filename);")
           node scripts/ts_package_smoke.mjs "release-artifacts/$TARBALL"
+      - name: Compute SHA-256 hash
+        id: hash
+        run: |
+          TARBALL=$(ls release-artifacts/*.tgz)
+          sha256sum "$TARBALL" > release-artifacts/SHA256SUMS
+          echo "sha256=$(sha256sum "$TARBALL" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          cat release-artifacts/SHA256SUMS
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
@@ -57,6 +64,7 @@ jobs:
           path: |
             release-artifacts/*.tgz
             release-artifacts/pack.json
+            release-artifacts/SHA256SUMS
 
   publish_typescript:
     name: Publish TypeScript package
@@ -71,10 +79,15 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v6
         with:
           name: ancilis-typescript-package
           path: release-artifacts
+      - name: Verify SHA-256 integrity
+        run: |
+          cd release-artifacts
+          sha256sum -c SHA256SUMS
+          echo "Tarball integrity verified"
       - run: npm publish release-artifacts/*.tgz --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
