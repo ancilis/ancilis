@@ -62,6 +62,7 @@ export function canonicalPayload(fields: {
   totalDurationMs: number;
   previousHash: string;
   outputSummary?: string | null;
+  tenantId?: string | null;
 }): string {
   const payload: Record<string, unknown> = {
     active_certifications: fields.activeCertifications,
@@ -80,6 +81,9 @@ export function canonicalPayload(fields: {
   };
   if (fields.outputSummary !== undefined && fields.outputSummary !== null) {
     payload.output_summary = fields.outputSummary;
+  }
+  if (fields.tenantId !== undefined && fields.tenantId !== null) {
+    payload.tenant_id = fields.tenantId;
   }
   return canonicalJsonStringify(payload);
 }
