@@ -1,0 +1,120 @@
+# Ancilis Compliance Check — GitHub Actions
+#
+# Runs `ancilis scan` on every pull request to main.
+# Fails the PR if any enabled control reports violations.
+# Posts a formatted summary as a PR comment via github-script.
+#
+# Prerequisites:
+#   1. ancilis.yaml present in repository root (or set ANCILIS_CONFIG)
+#   2. Evidence database populated during the agent run (or mounted via artifact)
+#   3. Python 3.10+ runner (ubuntu-latest satisfies this)
+
+name: Ancilis Compliance Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  compliance:
+    name: Ancilis Compliance Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout source ───────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Python ─────────────────────────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── 3. Install Ancilis ───────────────────────────────────────────────
+      - name: Install Ancilis
+        run: pip install ancilis
+
+      # ── 4. Run compliance scan ───────────────────────────────────────────
+      # --ci   → machine-readable JSON output
+      # --period 24h → evaluate evidence from the last 24 hours
+      #
+      # Exit codes:
+      #   0 = compliant (all enabled controls pass)
+      #   1 = non-compliant (one or more controls have violations)
+      #   2 = configuration error (ancilis.yaml missing or invalid)
+      - name: Run compliance scan
+        id: scan
+        run: |
+          ancilis scan --ci --period 24h > ancilis-scan.json
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true  # capture exit code; fail step below
+        env:
+          ANCILIS_CONFIG: ${{ env.ANCILIS_CONFIG || './ancilis.yaml' }}
+          ANCILIS_DB: ${{ env.ANCILIS_DB || './ancilis-evidence.duckdb' }}
+
+      # ── 5. Upload scan artifact ──────────────────────────────────────────
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ancilis-scan-results
+          path: ancilis-scan.json
+          retention-days: 30
+
+      # ── 6. Post PR comment ───────────────────────────────────────────────
+      # Reads ancilis-scan.json and formats a markdown summary on the PR.
+      - name: Post compliance summary
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let scan;
+            try {
+              scan = JSON.parse(fs.readFileSync('ancilis-scan.json', 'utf8'));
+            } catch (e) {
+              // Config error — no JSON produced
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '## ❌ Ancilis Compliance Scan — Configuration Error\n\nThe scan could not run. Check that `ancilis.yaml` is present and valid.',
+              });
+              core.setFailed('Ancilis config error');
+              return;
+            }
+
+            const statusIcon = scan.posture === 'compliant' ? '✅' : '❌';
+            const s = scan.summary;
+
+            // Build controls table
+            const rows = scan.controls.map(c => {
+              const icon = c.status === 'pass' ? '✅' : c.status === 'fail' ? '❌' : '⏭️';
+              return `| ${icon} | \`${c.id}\` | ${c.name} | ${c.evaluations} | ${c.failures} |`;
+            }).join('\n');
+
+            const body = [
+              `## ${statusIcon} Ancilis Compliance Scan`,
+              '',
+              `**Posture:** \`${scan.posture}\` | **Agent:** \`${scan.agent}\` | **Mode:** \`${scan.mode}\``,
+              '',
+              `| | Control | Name | Evaluations | Failures |`,
+              `|---|---|---|---|---|`,
+              rows,
+              '',
+              `**Summary:** ${s.passing} passing · ${s.failing} failing · ${s.skipped} skipped · ${s.total_evaluations} total evaluations`,
+              '',
+              `_Scan timestamp: ${scan.timestamp}_`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+            if (scan.exit_code !== 0) {
+              core.setFailed(`Ancilis compliance scan failed: posture=${scan.posture}`);
+            }
