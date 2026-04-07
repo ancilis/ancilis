@@ -156,11 +156,12 @@ class TestScanCommand:
         failing = [c for c in data["controls"] if c["status"] == "fail"]
         assert len(failing) > 0
 
-    def test_scan_missing_config_exit_2(self, tmp_path: Path) -> None:
-        """Exit 2 when config file is missing."""
+    def test_scan_missing_config_uses_default(self, tmp_path: Path) -> None:
+        """Missing config falls back to zero-config default instead of exit 2."""
         runner = CliRunner()
         result = runner.invoke(cli, ["scan", "--config", str(tmp_path / "missing.yaml")])
-        assert result.exit_code == 2
+        assert result.exit_code == 0
+        assert "No tool-call evidence found yet" in result.output
 
     def test_scan_human_readable_no_ci_flag(self, tmp_path: Path) -> None:
         """Without --ci, output is human-readable text (not JSON)."""
