@@ -69,14 +69,18 @@ These data types trigger specific regulatory overlays with adjusted thresholds a
 
 ### Government overlay types
 
-These types now activate the CMMC Level 2 overlay for CUI safeguarding and related government-system handling.
+These types activate CMMC Level 2, FedRAMP Rev 5 Moderate, or both overlays for government data handling. Government system data (`DC-GOV`) activates both overlays simultaneously.
 
 | Data type | DC code | Active overlay |
 |-----------|---------|----------------|
 | `controlled_unclassified` | DC-CUI | CMMC Level 2 |
 | `government_cui` | DC-GOV, DC-CUI | CMMC Level 2 |
-| `government_documents` | DC-GOV, DC-CUI | CMMC Level 2 |
-| `government_system` | DC-GOV | CMMC Level 2 |
+| `government_documents` | DC-GOV, DC-CUI | CMMC Level 2, FedRAMP Rev 5 Moderate |
+| `government_system` | DC-GOV | CMMC Level 2, FedRAMP Rev 5 Moderate |
+| `federal_contract` | DC-FCI | FedRAMP Rev 5 Moderate |
+| `federal_contract_info` | DC-FCI | FedRAMP Rev 5 Moderate |
+| `federal_cloud` | DC-FCI, DC-GOV | FedRAMP Rev 5 Moderate |
+| `fedramp_system` | DC-FCI, DC-GOV | FedRAMP Rev 5 Moderate |
 
 ### Securities overlay types
 
@@ -96,8 +100,6 @@ These types are recognized and classified but don't currently trigger additional
 | `childrens_data` | DC-MINOR | COPPA, GDPR Art. 8, FERPA |
 | `critical_infrastructure` | DC-CRIT | NERC CIP, NIS2 |
 | `export_controlled` | DC-ITAR | ITAR, EAR |
-| `federal_contract` | DC-FCI | CMMC Level 1 |
-| `federal_contract_info` | DC-FCI | CMMC Level 1 |
 | `legal_data` | DC-LEGAL | Attorney-client privilege |
 | `legal_privileged` | DC-LEGAL | Attorney-client privilege |
 | `trade_secrets` | DC-IP | Trade secret protection |

@@ -1,0 +1,153 @@
+{
+  "id": "fedramp",
+  "name": "FedRAMP Rev 5 Moderate Baseline (NIST SP 800-53 Rev 5)",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-FCI", "DC-GOV"],
+  "description": "FedRAMP Moderate overlay for agents operating in or supporting federal cloud environments. Packages evidence for the six active AKSI evaluators with NIST SP 800-53 Rev 5 control references aligned to the FedRAMP Moderate impact baseline, suitable for cloud service providers (CSPs) seeking or maintaining a FedRAMP authorization to operate (ATO).",
+  "jurisdiction": "us",
+  "enforcement_date": "2024-05-01",
+  "applicable_data_types": ["federal_contract", "federal_cloud", "fedramp_system", "government_documents"],
+  "controls": {
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "PIV/CAC or equivalent phishing-resistant MFA is enforced for all privileged and remote access to federal systems and cloud service components",
+        "Identity provider meets FedRAMP-approved identity assurance requirements; access reviews are completed on a recurring basis aligned to the continuous monitoring (ConMon) program",
+        "Account lifecycle records demonstrate timely deprovisioning of separated employees, contractors, and service principals accessing FedRAMP-authorized environments"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 AC-2, AC-3, IA-2, IA-2(1), IA-2(2), IA-5, IA-8; FedRAMP Moderate Baseline AC-2, IA-2, IA-5"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Separation of duties and least-privilege access controls are documented and enforced across FedRAMP authorization boundary functions and privileged administrative roles",
+        "Privileged access authorizations are time-bounded where feasible and reviewed on a cadence consistent with the FedRAMP Moderate ConMon program",
+        "Remote access restrictions enforce session encryption, source IP controls, and just-in-time approval workflows before privileged functions are invoked"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 AC-5, AC-6, AC-6(1), AC-14, AC-17, AC-17(2); FedRAMP Moderate Baseline AC-5, AC-6, AC-17"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Baseline configuration documentation for all federal cloud components is current, version-controlled, and reviewed against USGCB or DISA STIG benchmarks where applicable",
+        "Change control board (CCB) or equivalent approval is documented for all configuration changes within the FedRAMP authorization boundary, including prompt, model, and tooling changes",
+        "Flaw remediation records show high and critical vulnerabilities are patched or mitigated within FedRAMP-required timeframes (high: 30 days, critical: immediate)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 CM-2, CM-3, CM-6, CM-7, CM-7(1), SI-2; FedRAMP Moderate Baseline CM-2, CM-3, CM-6, CM-7"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "FIPS 140-2/140-3 validated cryptographic modules protect federal data in transit and at rest; compensating controls are documented and accepted by the authorizing official when FIPS modules are unavailable",
+        "All data transmitted through or stored in FedRAMP-authorized components is protected by TLS 1.2+ or equivalent; downgrade attacks are mitigated at network boundaries",
+        "Media sanitization and disposal records demonstrate federal data is purged per NIST SP 800-88 Rev 1 guidelines before component decommission or reassignment"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 SC-8, SC-8(1), SC-13, SC-28, SC-28(1), MP-2, MP-6; FedRAMP Moderate Baseline SC-8, SC-13, SC-28, MP-2"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Audit event types are configured per the FedRAMP Moderate baseline audit requirements; log collection and alerting feeds into the agency or CSP continuous monitoring platform",
+        "Audit log integrity is verified through cryptographic signing or write-once storage; unauthorized modification or deletion generates automated alerts to the security operations team",
+        "Log review procedures confirm that anomalous events, failed access attempts, and privilege escalations are investigated and documented within FedRAMP ConMon reporting cycles"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 AU-2, AU-3, AU-3(1), AU-6, AU-9, AU-9(4), AU-12; FedRAMP Moderate Baseline AU-2, AU-3, AU-6, AU-9, AU-12"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "US-CERT notification path is documented and tested; significant cybersecurity incidents are reported within 1 hour of detection per FISMA and OMB M-20-04 requirements",
+        "Incident response plan is versioned, approved by the authorizing official, and reviewed annually or after significant incidents; roles and escalation procedures for federal system events are exercised",
+        "Continuous monitoring (ConMon) status demonstrates active vulnerability scanning, configuration drift detection, and security event aggregation across all FedRAMP authorization boundary components"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-6(1), IR-8, SI-4, SI-4(2), SI-4(4); FedRAMP Moderate Baseline IR-4, IR-5, IR-6, IR-8, SI-4"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": 1,
+    "assessment_type": "FedRAMP Moderate authorization evidence package aligned to NIST SP 800-53 Rev 5 control families for the six active AKSI evaluators. Supports annual assessment (3PAO) and continuous monitoring (ConMon) deliverables.",
+    "reporting_entity": "Cloud service provider (CSP) security team, agency authorizing official (AO), and FedRAMP PMO as required by the authorization agreement and FISMA reporting obligations."
+  },
+  "human_oversight_mandates": {
+    "required": false,
+    "description": "FedRAMP Moderate does not impose a per-AI-action human-in-the-loop mandate, but organizations must retain accountable human oversight over change control board approvals, incident response escalation, continuous monitoring findings, and annual 3PAO assessment activities."
+  },
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["piv_cac_enforced", "approved_identity_provider", "fedramp_access_review_completed"],
+      "regulatory_citation": "NIST SP 800-53 Rev 5 AC-2, AC-3, IA-2, IA-5, IA-8; FedRAMP Moderate Baseline"
+    },
+    "PR-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["least_privilege_baseline", "privileged_access_authorization", "remote_access_restrictions"],
+      "regulatory_citation": "NIST SP 800-53 Rev 5 AC-5, AC-6, AC-14, AC-17; FedRAMP Moderate Baseline"
+    },
+    "PR-03": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["fedramp_baseline_configuration", "change_control_board_approval", "flaw_remediation_status"],
+      "regulatory_citation": "NIST SP 800-53 Rev 5 CM-2, CM-3, CM-6, CM-7; FedRAMP Moderate Baseline"
+    },
+    "PR-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["fips_140_encryption_status", "data_in_transit_protection", "media_protection_level"],
+      "regulatory_citation": "NIST SP 800-53 Rev 5 SC-8, SC-13, SC-28, MP-2; FedRAMP Moderate Baseline"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["audit_event_types_configured", "audit_log_integrity_verified", "fedramp_log_review_completed"],
+      "regulatory_citation": "NIST SP 800-53 Rev 5 AU-2, AU-3, AU-6, AU-9, AU-12; FedRAMP Moderate Baseline"
+    },
+    "DE-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": ["us_cert_notification_path", "incident_response_plan_version", "continuous_monitoring_conmon_status"],
+      "regulatory_citation": "NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-8, SI-4; FedRAMP Moderate Baseline"
+    }
+  },
+  "evidence_requirements": {
+    "PR-01": ["piv_cac_enforced", "approved_identity_provider", "fedramp_access_review_completed"],
+    "PR-02": ["least_privilege_baseline", "privileged_access_authorization", "remote_access_restrictions"],
+    "PR-03": ["fedramp_baseline_configuration", "change_control_board_approval", "flaw_remediation_status"],
+    "PR-04": ["fips_140_encryption_status", "data_in_transit_protection", "media_protection_level"],
+    "PR-05": ["audit_event_types_configured", "audit_log_integrity_verified", "fedramp_log_review_completed"],
+    "DE-01": ["us_cert_notification_path", "incident_response_plan_version", "continuous_monitoring_conmon_status"]
+  },
+  "framework_mapping": {
+    "GOV-01": ["NIST SP 800-53 Rev 5 PL-1, PL-2", "FedRAMP Moderate PL-1, PL-2, AC-1"],
+    "GOV-02": ["NIST SP 800-53 Rev 5 CA-2, CA-5", "FedRAMP Moderate CA-2, CA-5, CA-7"],
+    "GOV-03": ["NIST SP 800-53 Rev 5 RA-1, RA-3", "FedRAMP Moderate RA-1, RA-3, RA-5"],
+    "GOV-04": ["NIST SP 800-53 Rev 5 PL-1, PM-10", "FedRAMP Moderate PL-1, AT-2, AT-3"],
+    "ID-01": ["NIST SP 800-53 Rev 5 CM-8, CM-10", "FedRAMP Moderate CM-8, CM-10, CM-11"],
+    "ID-02": ["NIST SP 800-53 Rev 5 SC-7, SC-7(5)", "FedRAMP Moderate SC-7, SC-7(5), SC-7(8)"],
+    "ID-03": ["NIST SP 800-53 Rev 5 MP-1, MP-4", "FedRAMP Moderate MP-1, MP-4, MP-5"],
+    "ID-04": ["NIST SP 800-53 Rev 5 SA-9, SA-12", "FedRAMP Moderate SA-9, SA-12, SA-4"],
+    "ID-05": ["NIST SP 800-53 Rev 5 RA-3, RA-5", "FedRAMP Moderate RA-3, RA-5, RA-5(1)"],
+    "PR-01": ["NIST SP 800-53 Rev 5 AC-2, AC-3, IA-2, IA-5, IA-8", "FedRAMP Moderate AC-2, AC-3, IA-2, IA-5"],
+    "PR-02": ["NIST SP 800-53 Rev 5 AC-5, AC-6, AC-14, AC-17", "FedRAMP Moderate AC-5, AC-6, AC-14, AC-17"],
+    "PR-03": ["NIST SP 800-53 Rev 5 CM-2, CM-3, CM-6, CM-7", "FedRAMP Moderate CM-2, CM-3, CM-6, CM-7"],
+    "PR-04": ["NIST SP 800-53 Rev 5 SC-8, SC-13, SC-28, MP-2", "FedRAMP Moderate SC-8, SC-13, SC-28, MP-2"],
+    "PR-05": ["NIST SP 800-53 Rev 5 AU-2, AU-3, AU-6, AU-9, AU-12", "FedRAMP Moderate AU-2, AU-3, AU-6, AU-9"],
+    "PR-06": ["NIST SP 800-53 Rev 5 CM-7, CM-7(1)", "FedRAMP Moderate CM-7, CM-7(1), CM-7(2)"],
+    "PR-07": ["NIST SP 800-53 Rev 5 SC-5, SC-7", "FedRAMP Moderate SC-5, SC-7, SC-7(3)"],
+    "PR-08": ["NIST SP 800-53 Rev 5 SI-2, SI-3", "FedRAMP Moderate SI-2, SI-3, SI-3(1)"],
+    "DE-01": ["NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-8, SI-4", "FedRAMP Moderate IR-4, IR-5, IR-6, IR-8, SI-4"],
+    "DE-02": ["NIST SP 800-53 Rev 5 CA-7, CA-7(1)", "FedRAMP Moderate CA-7, CA-7(1), CA-7(3)"],
+    "DE-03": ["NIST SP 800-53 Rev 5 CA-2, CA-7", "FedRAMP Moderate CA-2, CA-7, CA-2(1)"],
+    "DE-04": ["NIST SP 800-53 Rev 5 AU-6, AU-12", "FedRAMP Moderate AU-6, AU-12, AU-6(1)"],
+    "RS-01": ["NIST SP 800-53 Rev 5 IR-4, IR-8", "FedRAMP Moderate IR-4, IR-8, IR-4(1)"],
+    "RS-02": ["NIST SP 800-53 Rev 5 IR-5, IR-6", "FedRAMP Moderate IR-5, IR-6, IR-6(1)"],
+    "RS-03": ["NIST SP 800-53 Rev 5 IR-4, IR-8", "FedRAMP Moderate IR-4, IR-8, IR-4(6)"],
+    "RC-01": ["NIST SP 800-53 Rev 5 CP-2, CP-9", "FedRAMP Moderate CP-2, CP-9, CP-10"],
+    "RC-02": ["NIST SP 800-53 Rev 5 CA-7, CP-2", "FedRAMP Moderate CA-7, CP-2, CP-2(8)"]
+  },
+  "evidence_retention_minimum_days": 1095,
+  "human_oversight_required": false,
+  "notes": "FedRAMP Rev 5 Moderate aligns cloud service providers to the NIST SP 800-53 Rev 5 Moderate impact baseline for federal authorization. This overlay focuses on evidencing the six currently enforced AKSI evaluator controls with FedRAMP-specific evidence fields (PIV/CAC, FIPS 140, ConMon, US-CERT) while preserving a full 26-control framework mapping so federal cloud deployments can demonstrate authorization readiness without changing resolver logic. Evidence field names are non-overlapping with the CMMC-L2 overlay to support simultaneous activation when both overlays are triggered."
+}
