@@ -303,11 +303,47 @@ class EvidenceStore:
         rows = self._connection.execute(query, params).fetchall()
         return [self._row_to_record(row) for row in rows]
 
-    def count(self) -> int:
-        """Return total number of evidence records."""
+    def count(self, session_id: str | None = None) -> int:
+        """Return total number of evidence records, optionally scoped to a session."""
         self._ensure_initialized()
-        row = self._connection.execute("SELECT COUNT(*) FROM evidence_records").fetchone()
+        if session_id is not None:
+            row = self._connection.execute(
+                "SELECT COUNT(*) FROM evidence_records WHERE session_id = ?",
+                [session_id],
+            ).fetchone()
+        else:
+            row = self._connection.execute(
+                "SELECT COUNT(*) FROM evidence_records"
+            ).fetchone()
         return row[0] if row else 0
+
+    def list_sessions(self) -> list[dict[str, Any]]:
+        """Return known sessions with record counts and time ranges."""
+        self._ensure_initialized()
+        rows = self._connection.execute(
+            "SELECT session_id, COUNT(*) as count, "
+            "MIN(timestamp) as first_seen, MAX(timestamp) as last_seen "
+            "FROM evidence_records "
+            "WHERE session_id IS NOT NULL "
+            "GROUP BY session_id ORDER BY last_seen DESC"
+        ).fetchall()
+        return [
+            {"session_id": r[0], "count": r[1], "first_seen": r[2], "last_seen": r[3]}
+            for r in rows
+        ]
+
+    def reset(self) -> int:
+        """Delete ALL evidence records and return count deleted.
+
+        This is a full reset — the hash chain restarts from GENESIS_SEED.
+        For session-scoped views, use session_id filters on queries instead.
+        """
+        self._ensure_initialized()
+        n = self.count()
+        self._connection.execute("DELETE FROM evidence_records")
+        self._connection.execute("DROP SEQUENCE IF EXISTS evidence_seq")
+        self._connection.execute("CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1")
+        return n
 
     def verify_chain(self) -> tuple[bool, list[str]]:
         """Verify the hash chain integrity. Returns (valid, errors)."""
