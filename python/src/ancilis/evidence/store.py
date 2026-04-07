@@ -341,8 +341,6 @@ class EvidenceStore:
         self._ensure_initialized()
         n = self.count()
         self._connection.execute("DELETE FROM evidence_records")
-        self._connection.execute("DROP SEQUENCE IF EXISTS evidence_seq")
-        self._connection.execute("CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1")
         return n
 
     def verify_chain(self) -> tuple[bool, list[str]]:
