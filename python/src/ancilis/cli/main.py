@@ -10,6 +10,7 @@ from ancilis.cli.validate import validate
 from ancilis.cli.approve import approve_tool
 from ancilis.cli.doctor import doctor
 from ancilis.cli.evidence import evidence
+from ancilis.cli.scan import scan
 
 
 @click.group()
@@ -23,6 +24,7 @@ cli.add_command(report)
 cli.add_command(approve_tool)
 cli.add_command(doctor)
 cli.add_command(evidence)
+cli.add_command(scan)
 
 
 @cli.group(name="config")
