@@ -156,7 +156,8 @@ def _format_status(
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed status with per-control breakdown")
 @click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
 @click.option("--db", "db_path", default=None, help="Path to evidence database")
-def status(verbose: bool, config_path: str | None, db_path: str | None) -> None:
+@click.option("--session", "session_id", default=None, help="Scope to a specific session ID")
+def status(verbose: bool, config_path: str | None, db_path: str | None, session_id: str | None) -> None:
     """Show current agent security posture."""
     config = _load_config_safe(config_path)
     if config is None:
@@ -164,7 +165,7 @@ def status(verbose: bool, config_path: str | None, db_path: str | None) -> None:
 
     store = EvidenceStore(config, db_path=db_path)
     try:
-        output = _format_status(config, store, verbose)
+        output = _format_status(config, store, verbose, session_id=session_id)
         click.echo(output)
     finally:
         store.close()
