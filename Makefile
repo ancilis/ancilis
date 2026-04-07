@@ -4,7 +4,7 @@ NPM ?= npm
 
 DEMO_DIR := examples/demo
 
-.PHONY: help test-python test-typescript release-check demo demo-platform demo-discovery
+.PHONY: help test-python test-typescript release-check demo demo-hosted demo-platform demo-discovery
 
 help: ## Show all available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -26,6 +26,9 @@ demo: ## Run the 30-second SDK demo
 
 demo-platform: ## Run the full SDK + Platform walkthrough
 	@bash $(DEMO_DIR)/run-all.sh
+
+demo-hosted: ## 30-second hosted demo (SDK -> Railway dashboard, no Docker required)
+	@bash $(DEMO_DIR)/run-hosted.sh
 
 demo-discovery: ## Run the multi-agent discovery demo
 	@bash $(DEMO_DIR)/run-discovery.sh
