@@ -224,3 +224,63 @@ class TestScanCommand:
         assert required_top <= set(data.keys())
         required_summary = {"total_controls", "passing", "failing", "skipped", "total_evaluations"}
         assert required_summary <= set(data["summary"].keys())
+
+
+class TestScanLatestSessionDefault:
+    def test_scan_defaults_to_latest_session(self, tmp_path: Path) -> None:
+        """Default scan shows only latest session — stale prior-run violations don't bleed in."""
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+
+        # Old session: has a BLOCK violation (no session_id → stored with NULL)
+        store.store(_make_fail_evaluation(decision="BLOCK"), tool_name="bad-tool")
+
+        # Latest session: clean passes (session_id="sess-1")
+        _populate_clean_evidence(config, store, n=3)
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["scan", "--ci", "--config", str(cfg_path), "--db", str(db)])
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["posture"] == "compliant"
+
+    def test_scan_all_shows_everything(self, tmp_path: Path) -> None:
+        """--all flag shows all accumulated sessions including prior violations."""
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+
+        # Old failure (no session_id)
+        store.store(_make_fail_evaluation(decision="BLOCK"), tool_name="bad-tool")
+        # Latest session: clean
+        _populate_clean_evidence(config, store, n=3)
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["scan", "--ci", "--all", "--config", str(cfg_path), "--db", str(db)])
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["posture"] == "non_compliant"
+
+    def test_scan_explicit_session_overrides_latest(self, tmp_path: Path) -> None:
+        """--session <id> scopes to that session regardless of --latest default."""
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+        _populate_clean_evidence(config, store, n=2)  # session_id="sess-1"
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["scan", "--ci", "--session", "sess-1", "--config", str(cfg_path), "--db", str(db)],
+        )
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["posture"] == "compliant"
+        assert data["summary"]["total_evaluations"] == 2

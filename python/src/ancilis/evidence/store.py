@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     record_hash VARCHAR NOT NULL,
     previous_hash VARCHAR NOT NULL,
     total_duration_ms DOUBLE NOT NULL,
-    output_summary VARCHAR
+    output_summary VARCHAR,
+    tenant_id VARCHAR
 );
 """
 
@@ -72,14 +73,15 @@ INSERT INTO evidence_records (
     record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
-    record_hash, previous_hash, total_duration_ms, output_summary
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_COLUMNS = """
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
-active_certifications, record_hash, previous_hash, total_duration_ms, output_summary
+active_certifications, record_hash, previous_hash, total_duration_ms, output_summary,
+tenant_id
 """
 
 
@@ -95,6 +97,7 @@ class EvidenceStore:
         config: ResolvedConfig,
         db_path: str | Path | None = None,
         in_memory: bool = False,
+        tenant_id: str | None = None,
     ) -> None:
         self._config = config
         self._certifications: list[str] = list(
@@ -102,6 +105,7 @@ class EvidenceStore:
         )
         self._in_memory = in_memory
         self._conn: duckdb.DuckDBPyConnection | None = None
+        self._tenant_id = tenant_id
 
         if in_memory:
             self._db_path = ":memory:"
@@ -141,6 +145,10 @@ class EvidenceStore:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN output_summary VARCHAR"
             )
+        if "tenant_id" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN tenant_id VARCHAR"
+            )
 
     @property
     def db_path(self) -> str:
@@ -166,11 +174,20 @@ class EvidenceStore:
         self.close()
 
     def _get_last_hash(self) -> str:
-        """Get the hash of the most recent record, or GENESIS_SEED if empty."""
+        """Get the hash of the most recent record, or GENESIS_SEED if empty.
+
+        When tenant_id is set, only considers records for that tenant (independent chains).
+        """
         self._ensure_initialized()
-        row = self._connection.execute(
-            "SELECT record_hash FROM evidence_records ORDER BY seq_id DESC LIMIT 1"
-        ).fetchone()
+        if self._tenant_id is not None:
+            row = self._connection.execute(
+                "SELECT record_hash FROM evidence_records WHERE tenant_id = ? ORDER BY seq_id DESC LIMIT 1",
+                [self._tenant_id],
+            ).fetchone()
+        else:
+            row = self._connection.execute(
+                "SELECT record_hash FROM evidence_records ORDER BY seq_id DESC LIMIT 1"
+            ).fetchone()
         return row[0] if row else GENESIS_SEED
 
     def store(
@@ -213,6 +230,7 @@ class EvidenceStore:
             previous_hash=previous_hash,
             output_summary=output_summary,
             session_id=session_id,
+            tenant_id=self._tenant_id,
         )
         record_hash = compute_hash(canon)
 
@@ -234,6 +252,7 @@ class EvidenceStore:
             total_duration_ms=evaluation.total_duration_ms,
             output_summary=output_summary,
             session_id=session_id,
+            tenant_id=self._tenant_id,
         )
 
         self._connection.execute(INSERT_SQL, [
@@ -254,6 +273,7 @@ class EvidenceStore:
             record.previous_hash,
             record.total_duration_ms,
             record.output_summary,
+            record.tenant_id,
         ])
 
         return record
@@ -272,6 +292,9 @@ class EvidenceStore:
         conditions: list[str] = []
         params: list[Any] = []
 
+        if self._tenant_id is not None:
+            conditions.append("tenant_id = ?")
+            params.append(self._tenant_id)
         if agent_id is not None:
             conditions.append("agent_id = ?")
             params.append(agent_id)
@@ -306,31 +329,60 @@ class EvidenceStore:
     def count(self, session_id: str | None = None) -> int:
         """Return total number of evidence records, optionally scoped to a session."""
         self._ensure_initialized()
+        conditions: list[str] = []
+        params: list[Any] = []
+        if self._tenant_id is not None:
+            conditions.append("tenant_id = ?")
+            params.append(self._tenant_id)
         if session_id is not None:
-            row = self._connection.execute(
-                "SELECT COUNT(*) FROM evidence_records WHERE session_id = ?",
-                [session_id],
-            ).fetchone()
-        else:
-            row = self._connection.execute(
-                "SELECT COUNT(*) FROM evidence_records"
-            ).fetchone()
+            conditions.append("session_id = ?")
+            params.append(session_id)
+        where = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+        # where is built from internal conditions only, safe to concatenate
+        row = self._connection.execute(  # nosemgrep
+            "SELECT COUNT(*) FROM evidence_records" + where, params  # nosemgrep
+        ).fetchone()
         return row[0] if row else 0
 
     def list_sessions(self) -> list[dict[str, Any]]:
         """Return known sessions with record counts and time ranges."""
         self._ensure_initialized()
-        rows = self._connection.execute(
-            "SELECT session_id, COUNT(*) as count, "
-            "MIN(timestamp) as first_seen, MAX(timestamp) as last_seen "
-            "FROM evidence_records "
-            "WHERE session_id IS NOT NULL "
-            "GROUP BY session_id ORDER BY last_seen DESC"
-        ).fetchall()
+        if self._tenant_id is not None:
+            rows = self._connection.execute(
+                "SELECT session_id, COUNT(*) as count, "
+                "MIN(timestamp) as first_seen, MAX(timestamp) as last_seen "
+                "FROM evidence_records "
+                "WHERE session_id IS NOT NULL AND tenant_id = ? "
+                "GROUP BY session_id ORDER BY last_seen DESC",
+                [self._tenant_id],
+            ).fetchall()
+        else:
+            rows = self._connection.execute(
+                "SELECT session_id, COUNT(*) as count, "
+                "MIN(timestamp) as first_seen, MAX(timestamp) as last_seen "
+                "FROM evidence_records "
+                "WHERE session_id IS NOT NULL "
+                "GROUP BY session_id ORDER BY last_seen DESC"
+            ).fetchall()
         return [
             {"session_id": r[0], "count": r[1], "first_seen": r[2], "last_seen": r[3]}
             for r in rows
         ]
+
+    def latest_session_id(self) -> str | None:
+        """Return the session_id of the most recent evidence record, or None if empty."""
+        self._ensure_initialized()
+        if self._tenant_id is not None:
+            result = self._connection.execute(
+                "SELECT session_id FROM evidence_records "
+                "WHERE tenant_id = ? ORDER BY timestamp DESC LIMIT 1",
+                [self._tenant_id],
+            ).fetchone()
+        else:
+            result = self._connection.execute(
+                "SELECT session_id FROM evidence_records ORDER BY timestamp DESC LIMIT 1"
+            ).fetchone()
+        return result[0] if result else None
 
     def reset(self) -> int:
         """Delete ALL evidence records and return count deleted.
@@ -383,6 +435,7 @@ class EvidenceStore:
                 previous_hash=record.previous_hash,
                 output_summary=record.output_summary,
                 session_id=record.session_id,
+                tenant_id=record.tenant_id,
             )
             expected_hash = compute_hash(canon)
 
@@ -527,7 +580,7 @@ class EvidenceStore:
         Column order: seq_id, record_id, evaluation_id, timestamp, agent_id,
         session_id, source_type, tool_name, decision, mode, control_results,
         active_overlays, data_classifications, active_certifications,
-        record_hash, previous_hash, total_duration_ms, output_summary
+        record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
         """
         return EvidenceRecord(
             record_id=row[1],
@@ -547,4 +600,5 @@ class EvidenceStore:
             total_duration_ms=row[16],
             output_summary=row[17] if len(row) > 17 else None,
             session_id=row[5] if len(row) > 5 else None,
+            tenant_id=row[18] if len(row) > 18 else None,
         )
