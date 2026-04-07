@@ -25,3 +25,4 @@ class EvidenceRecord:
     total_duration_ms: float = 0.0
     output_summary: str | None = None
     session_id: str | None = None
+    tenant_id: str | None = None

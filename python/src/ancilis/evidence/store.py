@@ -399,8 +399,12 @@ class EvidenceStore:
         """Verify the hash chain integrity. Returns (valid, errors)."""
         self._ensure_initialized()
         # SELECT_COLUMNS is a constant defined at module level, safe to concatenate
-        query = "SELECT " + SELECT_COLUMNS + " FROM evidence_records ORDER BY seq_id ASC"  # nosemgrep
-        rows = self._connection.execute(query).fetchall()  # nosemgrep
+        if self._tenant_id is not None:
+            query = "SELECT " + SELECT_COLUMNS + " FROM evidence_records WHERE tenant_id = ? ORDER BY seq_id ASC"  # nosemgrep
+            rows = self._connection.execute(query, [self._tenant_id]).fetchall()  # nosemgrep
+        else:
+            query = "SELECT " + SELECT_COLUMNS + " FROM evidence_records ORDER BY seq_id ASC"  # nosemgrep
+            rows = self._connection.execute(query).fetchall()  # nosemgrep
 
         if not rows:
             return True, []
