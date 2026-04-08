@@ -1,0 +1,123 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "CodeQL",
+          "version": "2.15.0",
+          "rules": [
+            {
+              "id": "js/sql-injection",
+              "name": "SqlInjection",
+              "shortDescription": { "text": "Database query built from user-controlled sources" },
+              "helpUri": "https://codeql.github.com/codeql-query-help/javascript/js-sql-injection/"
+            },
+            {
+              "id": "js/xss",
+              "name": "ReflectedXss",
+              "shortDescription": { "text": "Reflected cross-site scripting" },
+              "helpUri": "https://codeql.github.com/codeql-query-help/javascript/js-xss/"
+            },
+            {
+              "id": "js/hardcoded-credentials",
+              "name": "HardcodedCredentials",
+              "shortDescription": { "text": "Hard-coded credentials" },
+              "helpUri": "https://codeql.github.com/codeql-query-help/javascript/js-hardcoded-credentials/"
+            },
+            {
+              "id": "js/insecure-randomness",
+              "name": "InsecureRandomness",
+              "shortDescription": { "text": "Use of cryptographically weak pseudo-random number generator" },
+              "helpUri": "https://codeql.github.com/codeql-query-help/javascript/js-insecure-randomness/"
+            },
+            {
+              "id": "js/missing-rate-limiting",
+              "name": "MissingRateLimiting",
+              "shortDescription": { "text": "Missing rate limiting" },
+              "helpUri": "https://codeql.github.com/codeql-query-help/javascript/js-missing-rate-limiting/"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "js/sql-injection",
+          "level": "error",
+          "message": {
+            "text": "This query depends on a user-provided value."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/db/users.js", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 42, "startColumn": 18 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "js/xss",
+          "level": "error",
+          "message": {
+            "text": "Cross-site scripting vulnerability due to user-controlled data flowing into HTML."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/routes/search.js", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 87, "startColumn": 5 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "js/hardcoded-credentials",
+          "level": "error",
+          "message": {
+            "text": "Hard-coded credential in source code."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/config/db.js", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 15, "startColumn": 20 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "js/insecure-randomness",
+          "level": "warning",
+          "message": {
+            "text": "Math.random() is used for token generation — use crypto.randomBytes instead."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/auth/token.js", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 23, "startColumn": 14 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "js/missing-rate-limiting",
+          "level": "note",
+          "message": {
+            "text": "This route handler performs a login operation without rate limiting."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/routes/auth.js", "uriBaseId": "%SRCROOT%" },
+                "region": { "startLine": 31, "startColumn": 1 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
