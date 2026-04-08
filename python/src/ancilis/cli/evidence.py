@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 import click
 
 from ancilis.config import load_config
@@ -65,5 +67,74 @@ def evidence_reset(config_path: str | None, db_path: str | None, yes: bool) -> N
     try:
         n = store.reset()
         click.echo(f"Evidence store reset: {n} record(s) deleted. Hash chain restarted from genesis.")
+    finally:
+        store.close()
+
+
+@evidence.command(name="import")
+@click.argument("file", type=click.Path(exists=True, dir_okay=False))
+@click.option("--format", "fmt", type=click.Choice(["sarif", "cyclonedx", "auto"]), default="auto", show_default=True, help="Input format")
+@click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
+@click.option("--db", "db_path", default=None, help="Path to evidence database")
+@click.option("--agent-id", default="import", show_default=True, help="Agent ID to tag imported records")
+def evidence_import(
+    file: str,
+    fmt: str,
+    config_path: str | None,
+    db_path: str | None,
+    agent_id: str,
+) -> None:
+    """Import SARIF or CycloneDX findings into the evidence store."""
+    import json as _json
+
+    from ancilis.importers.sarif import SarifImporter
+    from ancilis.importers.cyclonedx import CycloneDxImporter
+
+    # Auto-detect format from extension
+    if fmt == "auto":
+        lower = file.lower()
+        if lower.endswith(".sarif") or lower.endswith(".sarif.json"):
+            fmt = "sarif"
+        elif lower.endswith(".cdx.json") or lower.endswith(".bom.json") or "cyclonedx" in lower or "sbom" in lower:
+            fmt = "cyclonedx"
+        else:
+            try:
+                with open(file) as _f:
+                    _sniff = _json.load(_f)
+                if "runs" in _sniff:
+                    fmt = "sarif"
+                elif "bomFormat" in _sniff or "components" in _sniff:
+                    fmt = "cyclonedx"
+                else:
+                    click.echo("Error: Cannot detect format. Use --format sarif|cyclonedx.", err=True)
+                    sys.exit(1)
+            except Exception as e:
+                click.echo(f"Error reading file: {e}", err=True)
+                sys.exit(1)
+
+    try:
+        if fmt == "sarif":
+            importer: SarifImporter | CycloneDxImporter = SarifImporter(agent_id=agent_id)
+        else:
+            importer = CycloneDxImporter(agent_id=agent_id)
+        evaluations = importer.parse(file)
+    except Exception as e:
+        click.echo(f"Error parsing {fmt} file: {e}", err=True)
+        sys.exit(1)
+
+    try:
+        config = load_config(path=config_path) if config_path else load_config()
+    except (FileNotFoundError, ValueError) as e:
+        click.echo(f"Error: {e}", err=True)
+        click.echo("Tip: pass --config path/to/ancilis.yaml or run from a directory with ancilis.yaml", err=True)
+        sys.exit(1)
+
+    store = EvidenceStore(config, db_path=db_path)
+    try:
+        stored = 0
+        for evaluation in evaluations:
+            store.store(evaluation, tool_name=file)
+            stored += 1
+        click.echo(f"Imported {stored} evidence record(s) from {fmt.upper()} file: {file}")
     finally:
         store.close()
