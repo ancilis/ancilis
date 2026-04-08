@@ -71,7 +71,7 @@ def _run_tool_flow(
     [
         (
             ["financial_data", "government_cui"],
-            {"nist-csf", "glba", "soc2", "cmmc-l2"},
+            {"nist-csf", "glba", "soc2", "cmmc-l2", "fedramp"},
             {"DC-FIN", "DC-GOV", "DC-CUI"},
         ),
         (
@@ -81,7 +81,7 @@ def _run_tool_flow(
         ),
         (
             ["biometric_data", "government_cui"],
-            {"nist-csf", "eu-ai-act", "cmmc-l2"},
+            {"nist-csf", "eu-ai-act", "cmmc-l2", "fedramp"},
             {"DC-BIO", "DC-GOV", "DC-CUI"},
         ),
     ],
@@ -165,7 +165,7 @@ def test_resolver_composes_overlay_and_aiuc1_requirements_without_weakening_over
         (
             ["financial_data", "government_cui"],
             None,
-            {"cmmc-l2", "glba", "soc2"},
+            {"cmmc-l2", "glba", "soc2", "fedramp"},
             2555,
             False,
             {"PR-01": "strict", "PR-03": "strict"},
@@ -173,7 +173,7 @@ def test_resolver_composes_overlay_and_aiuc1_requirements_without_weakening_over
         (
             ["biometric_data", "government_cui"],
             None,
-            {"cmmc-l2", "eu-ai-act"},
+            {"cmmc-l2", "eu-ai-act", "fedramp"},
             3650,
             True,
             {"GOV-04": "strict", "PR-03": "strict"},
@@ -217,9 +217,9 @@ def test_load_config_tracks_combined_overlay_state(
 @pytest.mark.parametrize(
     ("handles", "control_id", "expected_overlay_ids"),
     [
-        (["financial_data", "government_cui"], "PR-01", {"cmmc-l2", "glba", "soc2"}),
+        (["financial_data", "government_cui"], "PR-01", {"cmmc-l2", "glba", "soc2", "fedramp"}),
         (["financial_data", "mnpi"], "PR-05", {"glba", "securities-mnpi", "soc2"}),
-        (["biometric_data", "government_cui"], "PR-01", {"cmmc-l2", "eu-ai-act"}),
+        (["biometric_data", "government_cui"], "PR-01", {"cmmc-l2", "eu-ai-act", "fedramp"}),
     ],
 )
 def test_load_config_merges_per_control_overlay_requirements(
@@ -239,9 +239,9 @@ def test_load_config_merges_per_control_overlay_requirements(
 @pytest.mark.parametrize(
     ("handles", "expected_overlays"),
     [
-        (["financial_data", "government_cui"], {"cmmc-l2", "glba", "soc2"}),
+        (["financial_data", "government_cui"], {"cmmc-l2", "glba", "soc2", "fedramp"}),
         (["financial_data", "mnpi"], {"glba", "securities-mnpi", "soc2"}),
-        (["biometric_data", "government_cui"], {"cmmc-l2", "eu-ai-act"}),
+        (["biometric_data", "government_cui"], {"cmmc-l2", "eu-ai-act", "fedramp"}),
     ],
 )
 def test_tool_producer_keeps_hash_chain_valid_for_multi_overlay_runs(

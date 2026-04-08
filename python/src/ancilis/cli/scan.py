@@ -13,6 +13,8 @@ from ancilis.config import ResolvedConfig, load_config, load_control_definitions
 from ancilis.evidence.store import EvidenceStore
 from ancilis.report.generator import _parse_period
 
+_SENTINEL = Path.home() / ".ancilis" / ".first-run-complete"
+
 
 def _load_config_safe(config_path: str | None) -> ResolvedConfig | None:
     try:
@@ -40,28 +42,41 @@ def _print_human_summary(
     control_results: list[dict[str, Any]],
     posture: str,
     total_evaluations: int,
+    sentinel_exists: bool = False,
 ) -> None:
-    lines = [
-        f"Ancilis scan — {config.agent_name}",
-        f"  Mode:    {config.mode}",
-        f"  Posture: {posture}",
-        "",
-    ]
     if total_evaluations == 0:
-        lines.append("")
-        lines.append("No tool-call evidence found yet. Ancilis records evidence")
-        lines.append("when your AI agent runs with the middleware active.")
-        lines.append("")
-        lines.append("Quick start:")
-        lines.append("  1. Add middleware to your agent")
-        lines.append("  2. Run your agent (tool calls get recorded)")
-        lines.append("  3. Run `ancilis scan` again")
-        lines.append("")
-        lines.append("Try the demo:")
-        lines.append("  cd examples/demo && ancilis scan")
-        lines.append("")
-        lines.append("Docs: https://ancilis.dev/quickstart")
+        if sentinel_exists:
+            click.echo("Ancilis scan \u2014 no evidence found")
+            click.echo()
+            click.echo("No tool-call evidence in this window.")
+            click.echo("Run your agent with Ancilis middleware to collect evidence.")
+            click.echo()
+            click.echo("Next steps:")
+            click.echo("  ancilis report              \u2014 generate a compliance report")
+            click.echo("  ancilis status --verbose    \u2014 control-by-control breakdown")
+            click.echo("  ancilis scan --ci           \u2014 JSON output for CI/CD pipelines")
+        else:
+            click.echo("Ancilis \u2014 first run")
+            click.echo()
+            click.echo("No tool-call evidence found yet. Ancilis records evidence")
+            click.echo("when your AI agent runs with the middleware active.")
+            click.echo()
+            click.echo("Quick start:")
+            click.echo("  1. Add middleware to your agent")
+            click.echo("  2. Run your agent (tool calls get recorded)")
+            click.echo("  3. Run `ancilis scan` again")
+            click.echo()
+            click.echo("Try the demo:")
+            click.echo("  cd examples/demo && ancilis scan")
+            click.echo()
+            click.echo("Docs: https://ancilis.dev/quickstart")
     else:
+        lines = [
+            f"Ancilis scan \u2014 {config.agent_name}",
+            f"  Mode:    {config.mode}",
+            f"  Posture: {posture}",
+            "",
+        ]
         for ctrl in control_results:
             mark = {"pass": "\u2713", "fail": "\u2717", "skip": "\u2013"}.get(ctrl["status"], "?")
             detail = f"{ctrl['evaluations']} evals"
@@ -72,10 +87,10 @@ def _print_human_summary(
             lines.append(f"  {mark} {ctrl['name']} \u2014 {ctrl['status']} ({detail})")
         lines.append("")
         lines.append("Next steps:")
-        lines.append("  ancilis report              -- generate a compliance report")
-        lines.append("  ancilis status --verbose    -- control-by-control breakdown")
-        lines.append("  ancilis scan --ci           -- JSON output for CI/CD pipelines")
-    click.echo("\n".join(lines))
+        lines.append("  ancilis report              \u2014 generate a compliance report")
+        lines.append("  ancilis status --verbose    \u2014 control-by-control breakdown")
+        lines.append("  ancilis scan --ci           \u2014 JSON output for CI/CD pipelines")
+        click.echo("\n".join(lines))
 
 
 @click.command()
@@ -172,7 +187,11 @@ def scan(
             }
             click.echo(json.dumps(output, indent=2))
         else:
-            _print_human_summary(config, control_results, posture, total_evaluations)
+            sentinel_exists = _SENTINEL.exists()
+            _print_human_summary(config, control_results, posture, total_evaluations, sentinel_exists=sentinel_exists)
+            if total_evaluations > 0 and not sentinel_exists:
+                _SENTINEL.parent.mkdir(parents=True, exist_ok=True)
+                _SENTINEL.touch()
 
         raise SystemExit(exit_code)
     finally:
