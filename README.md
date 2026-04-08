@@ -201,9 +201,9 @@ Full configuration reference: [docs/configuration.md](docs/configuration.md)
 | `government_cui` | CMMC L2 |
 | `material_nonpublic` | Securities MNPI |
 | `mnpi` | Securities MNPI |
-| *(all data types)* | NIST CSF (baseline) |
+| *(all data types)* | NIST CSF 2.0 (baseline) |
 
-23 data types supported. 11 overlay profiles available. See [docs/configuration.md](docs/configuration.md) for the complete list.
+23 data types supported. 12 overlay profiles available. See [docs/configuration.md](docs/configuration.md) for the complete list.
 
 ## Limitations
 
