@@ -26,6 +26,7 @@ def _load_config_safe(config_path: str | None) -> ResolvedConfig | None:
         return load_config()
     except (FileNotFoundError, ValueError) as e:
         click.echo(f"Error loading config: {e}", err=True)
+        click.echo("Suggested fix: Create ancilis.yaml or run 'ancilis doctor' for setup help", err=True)
         return None
 
 

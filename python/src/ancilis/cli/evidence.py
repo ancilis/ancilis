@@ -22,6 +22,7 @@ def evidence_sessions(config_path: str | None, db_path: str | None) -> None:
         config = load_config(path=config_path) if config_path else load_config()
     except (FileNotFoundError, ValueError) as e:
         click.echo(f"Error: {e}", err=True)
+        click.echo("Suggested fix: Run your agent with Ancilis middleware to collect evidence", err=True)
         raise SystemExit(1) from None
 
     store = EvidenceStore(config, db_path=db_path)
@@ -51,6 +52,7 @@ def evidence_reset(config_path: str | None, db_path: str | None, yes: bool) -> N
         config = load_config(path=config_path) if config_path else load_config()
     except (FileNotFoundError, ValueError) as e:
         click.echo(f"Error: {e}", err=True)
+        click.echo("Suggested fix: Run your agent with Ancilis middleware to collect evidence", err=True)
         raise SystemExit(1) from None
 
     if not yes:

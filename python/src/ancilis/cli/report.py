@@ -55,6 +55,7 @@ def _emit_report(
         config = load_config(path=config_path) if config_path else load_config()
     except (FileNotFoundError, ValueError) as e:
         click.echo(f"Error: {e}", err=True)
+        click.echo("Suggested fix: Create ancilis.yaml or run 'ancilis doctor' for setup help", err=True)
         raise SystemExit(1) from None
 
     store = EvidenceStore(config, db_path=db_path)

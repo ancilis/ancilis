@@ -32,6 +32,7 @@ def approve_tool(tool_name: str, config_path: str) -> None:
     path = Path(config_path)
     if not path.exists():
         click.echo(f"Config file not found: {config_path}", err=True)
+        click.echo("Suggested fix: Create ancilis.yaml or run 'ancilis doctor' for setup help", err=True)
         raise SystemExit(1)
 
     data = _read_config(config_path)
