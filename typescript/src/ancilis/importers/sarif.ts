@@ -1,0 +1,176 @@
+/** SARIF v2.1.0 importer — parses findings and maps them to AKSI controls. */
+
+import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { sharedPathFrom } from "../shared-path.js";
+import type { ControlResult, EvaluationResult } from "../engine/result.js";
+
+const CONTROL_NAMES: Record<string, string> = {
+  "PR-01": "Prompt Injection Prevention",
+  "PR-02": "Rate Limiting",
+  "PR-03": "Input Validation",
+  "PR-04": "Cryptographic Controls",
+  "PR-05": "Secret Detection",
+  "DE-01": "Data Exfiltration Prevention",
+};
+
+const UNMAPPED_CONTROL = "PR-03";
+
+interface SarifMappings {
+  mappings: Record<string, string>;
+}
+
+function loadMappings(): Record<string, string> {
+  try {
+    const p = sharedPathFrom(import.meta.url, "mappings", "sarif-aksi-controls.json");
+    const data = JSON.parse(readFileSync(p, "utf-8")) as SarifMappings;
+    return data.mappings ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/** Match a string against a simple glob pattern (supports * and ? only). */
+function fnmatch(name: string, pattern: string): boolean {
+  const regex = new RegExp(
+    "^" +
+      pattern
+        .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+        .replace(/\*/g, ".*")
+        .replace(/\?/g, ".") +
+      "$"
+  );
+  return regex.test(name);
+}
+
+function mapRuleToControl(ruleId: string, mappings: Record<string, string>): string {
+  if (ruleId in mappings) return mappings[ruleId]!;
+  for (const [pattern, controlId] of Object.entries(mappings)) {
+    if (fnmatch(ruleId, pattern)) return controlId;
+  }
+  return UNMAPPED_CONTROL;
+}
+
+function formatLocation(location: Record<string, unknown>): string {
+  const phys = (location["physicalLocation"] as Record<string, unknown>) ?? {};
+  const artifactLocation = (phys["artifactLocation"] as Record<string, unknown>) ?? {};
+  const uri = (artifactLocation["uri"] as string) ?? "";
+  const region = (phys["region"] as Record<string, unknown>) ?? {};
+  const line = region["startLine"];
+  if (uri && line !== undefined) return `${uri}:${line}`;
+  return uri || (line !== undefined ? String(line) : "");
+}
+
+export class SarifImporter {
+  private readonly agentId: string;
+  private readonly mode: "audit" | "enforce";
+  private readonly mappings: Record<string, string>;
+
+  constructor(agentId = "import", mode: "audit" | "enforce" = "audit") {
+    this.agentId = agentId;
+    this.mode = mode;
+    this.mappings = loadMappings();
+  }
+
+  parse(path: string): EvaluationResult[] {
+    const doc = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+    return this._parseDoc(doc);
+  }
+
+  parseString(content: string): EvaluationResult[] {
+    const doc = JSON.parse(content) as Record<string, unknown>;
+    return this._parseDoc(doc);
+  }
+
+  private _parseDoc(doc: Record<string, unknown>): EvaluationResult[] {
+    const runs = (doc["runs"] as Record<string, unknown>[]) ?? [];
+    return runs.map((run) => this._parseRun(run));
+  }
+
+  private _parseRun(run: Record<string, unknown>): EvaluationResult {
+    const tool = (run["tool"] as Record<string, unknown>) ?? {};
+    const driver = (tool["driver"] as Record<string, unknown>) ?? {};
+    const toolName = (driver["name"] as string) ?? "unknown-sarif-tool";
+    const toolVersion = (driver["version"] as string) ?? "";
+    const sourceTool = toolVersion ? `${toolName}/${toolVersion}` : toolName;
+
+    // Build rule-id → rule-metadata index
+    const rules = (driver["rules"] as Record<string, unknown>[]) ?? [];
+    const ruleIndex: Record<string, Record<string, unknown>> = {};
+    for (const rule of rules) {
+      const id = rule["id"] as string;
+      if (id) ruleIndex[id] = rule;
+    }
+
+    const findings = (run["results"] as Record<string, unknown>[]) ?? [];
+    const controlResults: ControlResult[] = [];
+
+    for (const finding of findings) {
+      const ruleId = (finding["ruleId"] as string) ?? "";
+      const controlId = mapRuleToControl(ruleId, this.mappings);
+      const controlName = CONTROL_NAMES[controlId] ?? controlId;
+
+      const ruleMeta = ruleIndex[ruleId] ?? {};
+      const shortDescObj = (ruleMeta["shortDescription"] as Record<string, unknown>) ?? {};
+      const shortDesc =
+        (shortDescObj["text"] as string) || (ruleMeta["name"] as string) || ruleId;
+
+      const locations = (finding["locations"] as Record<string, unknown>[]) ?? [];
+      const locSummary = locations.length > 0 ? formatLocation(locations[0]!) : "";
+      const detail =
+        `${ruleId}: ${shortDesc}` + (locSummary ? ` [${locSummary}]` : "");
+
+      const level = (finding["level"] as string) ?? "warning";
+      const crResult: ControlResult["result"] =
+        level === "error" || level === "warning" ? "FAIL" : "FLAG";
+
+      const message = (finding["message"] as Record<string, unknown>) ?? {};
+
+      controlResults.push({
+        controlId,
+        controlName,
+        result: crResult,
+        detail,
+        evidenceData: {
+          rule_id: ruleId,
+          level,
+          source_tool: sourceTool,
+          message: (message["text"] as string) ?? "",
+        },
+        durationMs: 0,
+      });
+    }
+
+    if (controlResults.length === 0) {
+      controlResults.push({
+        controlId: "PR-01",
+        controlName: CONTROL_NAMES["PR-01"]!,
+        result: "PASS",
+        detail: `No findings reported by ${sourceTool}`,
+        evidenceData: { source_tool: sourceTool },
+        durationMs: 0,
+      });
+    }
+
+    const overall: EvaluationResult["decision"] = controlResults.every(
+      (cr) => cr.result === "PASS"
+    )
+      ? "ALLOW"
+      : "FLAG";
+
+    return {
+      evaluationId: randomUUID(),
+      actionId: `sarif-import-${randomUUID().replace(/-/g, "").slice(0, 8)}`,
+      timestamp: new Date().toISOString(),
+      agentId: this.agentId,
+      sourceType: "sarif_import",
+      mode: this.mode,
+      controlResults,
+      decision: overall,
+      decisionReason: `Imported from SARIF (${sourceTool}): ${findings.length} finding(s)`,
+      activeOverlays: [],
+      dataClassifications: [],
+      totalDurationMs: 0,
+    };
+  }
+}

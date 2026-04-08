@@ -3,7 +3,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { approveTool, formatStatus, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
+import { approveTool, formatStatus, handleScan, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import type { EvidenceSummary } from "./ancilis/report/index.js";
@@ -32,6 +32,7 @@ function usage(): string {
     "  ancilis status [--verbose] [--config <path>] [--db <path>]",
     "  ancilis config validate [--config <path>]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
+    "  ancilis scan [--period <window>] [--ci] [--config <path>] [--db <path>]",
     "  ancilis --version",
   ].join("\n");
 }
@@ -246,6 +247,21 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
           throw new Error(`Unknown config subcommand: ${rest[0] ?? "<missing>"}`);
         }
         return handleConfigValidate(rest.slice(1), io);
+      case "scan": {
+        const knownFlags = ["--ci", "--config", "--db", "--period", "--session", "--latest", "--all"];
+        const unknown = rest.filter(a => a.startsWith("--") && !knownFlags.includes(a));
+        if (unknown.length > 0) throw new Error(`Unknown scan flag: ${unknown[0]}`);
+        const ci = rest.includes("--ci");
+        const configIdx = rest.indexOf("--config");
+        const dbIdx = rest.indexOf("--db");
+        const periodIdx = rest.indexOf("--period");
+        return await handleScan({
+          ci,
+          config: configIdx !== -1 ? rest[configIdx + 1] : undefined,
+          db: dbIdx !== -1 ? rest[dbIdx + 1] : undefined,
+          period: periodIdx !== -1 ? rest[periodIdx + 1] : undefined,
+        }, io);
+      }
       default:
         throw new Error(`Unknown command: ${command}`);
     }
