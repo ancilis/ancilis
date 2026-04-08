@@ -31,7 +31,10 @@ export type { BaselineWindow, DeviationFlag } from "./controls/index.js";
 export { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderNdjson, renderCsv, renderOscalJson, renderPdf } from "./report/index.js";
 export type { ReportData, EvidenceSummary, RenderPdfOptions, RenderPdfResult } from "./report/index.js";
 
-export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport } from "./cli/index.js";
+export { SarifImporter } from "./importers/sarif.js";
+export { CycloneDxImporter } from "./importers/cyclonedx.js";
+
+export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan } from "./cli/index.js";
 export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
 export {
   CLIActionProducer,
