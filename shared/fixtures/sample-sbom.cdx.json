@@ -1,0 +1,79 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2024-03-15T10:00:00Z",
+    "tools": [
+      {
+        "vendor": "Trivy",
+        "name": "Trivy",
+        "version": "0.48.3"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "my-api-service",
+      "version": "1.2.3"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "lodash",
+      "version": "4.17.20",
+      "purl": "pkg:npm/lodash@4.17.20",
+      "bom-ref": "pkg:npm/lodash@4.17.20"
+    },
+    {
+      "type": "library",
+      "name": "express",
+      "version": "4.18.2",
+      "purl": "pkg:npm/express@4.18.2",
+      "bom-ref": "pkg:npm/express@4.18.2"
+    },
+    {
+      "type": "library",
+      "name": "jsonwebtoken",
+      "version": "8.5.1",
+      "purl": "pkg:npm/jsonwebtoken@8.5.1",
+      "bom-ref": "pkg:npm/jsonwebtoken@8.5.1"
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "id": "CVE-2021-23337",
+      "source": { "name": "NVD", "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-23337" },
+      "ratings": [
+        { "source": { "name": "NVD" }, "score": 7.2, "severity": "high", "method": "CVSSv3" }
+      ],
+      "description": "lodash command injection via template function",
+      "affects": [
+        { "ref": "pkg:npm/lodash@4.17.20" }
+      ]
+    },
+    {
+      "id": "CVE-2022-24999",
+      "source": { "name": "NVD", "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24999" },
+      "ratings": [
+        { "source": { "name": "NVD" }, "score": 7.5, "severity": "high", "method": "CVSSv3" }
+      ],
+      "description": "qs prototype poisoning via parseObject",
+      "affects": [
+        { "ref": "pkg:npm/express@4.18.2" }
+      ]
+    },
+    {
+      "id": "CVE-2022-23529",
+      "source": { "name": "NVD", "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-23529" },
+      "ratings": [
+        { "source": { "name": "NVD" }, "score": 4.4, "severity": "medium", "method": "CVSSv3" }
+      ],
+      "description": "jsonwebtoken unrestricted key type vulnerability",
+      "affects": [
+        { "ref": "pkg:npm/jsonwebtoken@8.5.1" }
+      ]
+    }
+  ]
+}
