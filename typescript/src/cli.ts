@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { approveTool, formatStatus, handleScan, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
+import { BaselineManager } from "./ancilis/baselines/index.js";
 import type { EvidenceSummary } from "./ancilis/report/index.js";
 import { packageRootFrom } from "./ancilis/shared-path.js";
 
@@ -33,6 +34,9 @@ function usage(): string {
     "  ancilis config validate [--config <path>]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
     "  ancilis scan [--period <window>] [--ci] [--config <path>] [--db <path>]",
+    "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
+    "  ancilis baseline list [--overlay <id>] [--config <path>] [--db <path>]",
+    "  ancilis baseline drift [--id <baseline-id>] [--overlay <id>] [--format terminal|json] [--config <path>] [--db <path>]",
     "  ancilis --version",
   ].join("\n");
 }
@@ -219,6 +223,99 @@ function handleApproveTool(args: string[], io: CliIo): number {
   return result.success ? 0 : 1;
 }
 
+async function handleBaseline(args: string[], io: CliIo): Promise<number> {
+  const subcommand = args[0];
+  if (!subcommand || subcommand === "--help" || subcommand === "-h") {
+    print(io.stdout, [
+      "Usage:",
+      "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
+      "  ancilis baseline list [--overlay <id>] [--config <path>] [--db <path>]",
+      "  ancilis baseline drift [--id <baseline-id>] [--overlay <id>] [--format terminal|json] [--config <path>] [--db <path>]",
+    ].join("\n"));
+    return 0;
+  }
+
+  const rest = args.slice(1);
+  let configPath: string | undefined;
+  let dbPath: string | undefined;
+  let overlayId: string | undefined;
+  let label: string | undefined;
+  let windowHours: number | undefined;
+  let baselineId: string | undefined;
+  let format: "terminal" | "json" = "terminal";
+
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i];
+    if (arg === "--config") { configPath = readOption(rest, i, arg); i++; }
+    else if (arg === "--db") { dbPath = readOption(rest, i, arg); i++; }
+    else if (arg === "--overlay") { overlayId = readOption(rest, i, arg); i++; }
+    else if (arg === "--label") { label = readOption(rest, i, arg); i++; }
+    else if (arg === "--window") { windowHours = parseInt(readOption(rest, i, arg), 10); i++; }
+    else if (arg === "--id") { baselineId = readOption(rest, i, arg); i++; }
+    else if (arg === "--format") {
+      const v = readOption(rest, i, arg);
+      if (v !== "terminal" && v !== "json") throw new Error(`Unknown format: ${v}`);
+      format = v;
+      i++;
+    } else {
+      throw new Error(`Unknown option for baseline ${subcommand}: ${arg}`);
+    }
+  }
+
+  const config = loadConfig(configPath ? { path: configPath } : {});
+  const store = new EvidenceStore(config, dbPath ? { dbPath } : undefined);
+  const manager = new BaselineManager(store, config);
+
+  try {
+    switch (subcommand) {
+      case "create": {
+        if (!label) throw new Error("--label is required for baseline create");
+        const baseline = await manager.create({
+          label,
+          overlayId,
+          evidenceWindowHours: windowHours,
+        });
+        print(io.stdout, `Baseline created: ${baseline.baselineId} (${baseline.label})\n  Controls captured: ${baseline.controlSnapshots.length}\n  Created: ${baseline.createdAt}`);
+        return 0;
+      }
+      case "list": {
+        const baselines = await manager.listBaselines(overlayId);
+        if (baselines.length === 0) {
+          print(io.stdout, "No baselines found.");
+        } else {
+          for (const b of baselines) {
+            const status = b.isActive ? "active" : "inactive";
+            print(io.stdout, `  ${b.baselineId}  ${b.label}  [${status}]  ${b.createdAt}`);
+          }
+        }
+        return 0;
+      }
+      case "drift": {
+        const report = await manager.checkDrift({ baselineId, overlayId });
+        if (format === "json") {
+          print(io.stdout, JSON.stringify(report, null, 2));
+        } else {
+          const lines = [
+            `Drift Report — ${report.overallStatus}`,
+            `  Baseline: ${report.baselineLabel} (${report.baselineId})`,
+            `  Checked: ${report.checkedAt}`,
+            `  Controls: ${report.summary.totalControls} total, ${report.summary.regressed} regressed, ${report.summary.degraded} degraded, ${report.summary.stable} stable`,
+          ];
+          for (const d of report.controlDrifts) {
+            lines.push(`  [${d.severity}] ${d.controlId}: ${d.baselineResult} → ${d.currentResult} (pass rate ${(d.baselinePassRate * 100).toFixed(0)}% → ${(d.currentPassRate * 100).toFixed(0)}%)`);
+          }
+          print(io.stdout, lines.join("\n"));
+        }
+        return 0;
+      }
+      default:
+        throw new Error(`Unknown baseline subcommand: ${subcommand}`);
+    }
+  } finally {
+    await store.close();
+  }
+}
+
 export async function runCli(args: string[], io: CliIo = defaultIo): Promise<number> {
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     print(io.stdout, usage());
@@ -247,6 +344,8 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
           throw new Error(`Unknown config subcommand: ${rest[0] ?? "<missing>"}`);
         }
         return handleConfigValidate(rest.slice(1), io);
+      case "baseline":
+        return await handleBaseline(rest, io);
       case "scan": {
         const knownFlags = ["--ci", "--config", "--db", "--period", "--session", "--latest", "--all"];
         const unknown = rest.filter(a => a.startsWith("--") && !knownFlags.includes(a));
