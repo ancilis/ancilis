@@ -31,6 +31,9 @@ export type { BaselineWindow, DeviationFlag } from "./controls/index.js";
 export { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderNdjson, renderCsv, renderOscalJson, renderPdf } from "./report/index.js";
 export type { ReportData, EvidenceSummary, RenderPdfOptions, RenderPdfResult } from "./report/index.js";
 
+export { BaselineManager } from "./baselines/index.js";
+export type { Baseline, ControlSnapshot, ControlDrift, DriftReport, DriftSummary, EvidenceDelta } from "./baselines/index.js";
+
 export { SarifImporter } from "./importers/sarif.js";
 export { CycloneDxImporter } from "./importers/cyclonedx.js";
 

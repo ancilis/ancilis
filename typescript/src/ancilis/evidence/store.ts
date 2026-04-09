@@ -463,6 +463,24 @@ export class EvidenceStore {
     };
   }
 
+  /** Execute a DDL or DML statement with no result. */
+  async exec(sql: string): Promise<void> {
+    await this.ensureInitialized();
+    return execAsync(this._conn!, sql);
+  }
+
+  /** Run a parameterised query and return all rows. */
+  async query(sql: string, params: unknown[] = []): Promise<duckdb.TableData> {
+    await this.ensureInitialized();
+    return allAsync(this._conn!, sql, params);
+  }
+
+  /** Run a parameterised DML statement (INSERT / UPDATE / DELETE). */
+  async run(sql: string, params: unknown[] = []): Promise<void> {
+    await this.ensureInitialized();
+    return runAsync(this._conn!, sql, params);
+  }
+
   async purgeBefore(beforeTimestamp: string): Promise<number> {
     await this.ensureInitialized();
     const countRows = await allAsync(
