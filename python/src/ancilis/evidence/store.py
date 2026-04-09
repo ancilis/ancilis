@@ -9,9 +9,12 @@ import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import duckdb
+
+if TYPE_CHECKING:
+    from ancilis.baselines.models import DriftReport
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.result import EvaluationResult
@@ -98,6 +101,7 @@ class EvidenceStore:
         db_path: str | Path | None = None,
         in_memory: bool = False,
         tenant_id: str | None = None,
+        on_drift: Callable[[DriftReport], None] | None = None,
     ) -> None:
         self._config = config
         self._certifications: list[str] = list(
@@ -106,6 +110,7 @@ class EvidenceStore:
         self._in_memory = in_memory
         self._conn: duckdb.DuckDBPyConnection | None = None
         self._tenant_id = tenant_id
+        self._on_drift = on_drift
 
         if in_memory:
             self._db_path = ":memory:"
@@ -276,7 +281,23 @@ class EvidenceStore:
             record.tenant_id,
         ])
 
+        self._maybe_trigger_drift_check()
         return record
+
+    def _maybe_trigger_drift_check(self) -> None:
+        """Fire the on_drift callback if configured and an active baseline exists."""
+        if self._on_drift is None:
+            return
+        try:
+            from ancilis.baselines.manager import BaselineManager  # lazy — avoids circular import
+            mgr = BaselineManager(self, self._config)
+            report = mgr.check_drift()
+            self._on_drift(report)
+        except KeyError:
+            # No active baseline — nothing to check
+            pass
+        except Exception as exc:
+            logger.warning("on_drift callback error: %s", exc)
 
     def get_records(
         self,
