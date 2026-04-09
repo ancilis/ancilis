@@ -12,6 +12,7 @@ from ancilis.cli.doctor import doctor
 from ancilis.cli.evidence import evidence
 from ancilis.cli.connect import connect
 from ancilis.cli.scan import scan
+from ancilis.cli.baseline import baseline
 
 
 @click.group()
@@ -27,6 +28,7 @@ cli.add_command(doctor)
 cli.add_command(evidence)
 cli.add_command(connect)
 cli.add_command(scan)
+cli.add_command(baseline)
 
 
 @cli.group(name="config")

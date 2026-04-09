@@ -1,5 +1,6 @@
 """Ancilis — runtime policy enforcement for AI agents."""
 
+from ancilis.baselines import BaselineManager, DriftReport
 from ancilis.config import load_config
 from ancilis.evidence import EvidenceRecord, EvidenceStore
 from ancilis.producers.protocol import ActionProducer, ProducerType
@@ -37,7 +38,9 @@ def __getattr__(name: str) -> object:
 __all__ = [
     "ActionProducer",
     "AncilisMiddleware",
+    "BaselineManager",
     "BlockedActionError",
+    "DriftReport",
     "CLIActionProducer",
     "CLIExecutionResult",
     "CLIInvocation",
