@@ -339,6 +339,40 @@ describe("BaselineManager", () => {
     expect(parsed[0]).not.toHaveProperty("controlId");
   });
 
+  it("multi-agent isolation: drift check only reads its own agent evidence", async () => {
+    // Two managers sharing the SAME store but different agentIds
+    const sharedStore = await makeStore(config);
+    const configAlpha = makeConfig("agent-alpha");
+    const configBeta = makeConfig("agent-beta");
+    const mgrAlpha = new BaselineManager(sharedStore, configAlpha);
+    const mgrBeta = new BaselineManager(sharedStore, configBeta);
+
+    // Alpha stores passing evidence and creates a baseline
+    await sharedStore.store(makeEval("PR-01", "PASS", "agent-alpha"), "bash_tool");
+    await mgrAlpha.create({ label: "alpha-v1" });
+
+    // Beta stores failing evidence for the same control
+    await sharedStore.store(makeEval("PR-01", "FAIL", "agent-beta"), "bash_tool");
+    await mgrBeta.create({ label: "beta-v1" });
+
+    // Now add post-baseline evidence: alpha still passes, beta still fails
+    await sharedStore.store(makeEval("PR-01", "PASS", "agent-alpha"), "bash_tool");
+    await sharedStore.store(makeEval("PR-01", "FAIL", "agent-beta"), "bash_tool");
+
+    // Alpha's drift check should see STABLE (only its own passing evidence)
+    const alphaReport = await mgrAlpha.checkDrift();
+    expect(alphaReport.overallStatus).toBe("STABLE");
+    expect(alphaReport.agentId).toBe("agent-alpha");
+
+    // Beta's drift check should see its own failing evidence (no regression from baseline though)
+    const betaReport = await mgrBeta.checkDrift();
+    expect(betaReport.agentId).toBe("agent-beta");
+
+    // Critically: alpha must NOT see beta's failures
+    const alphaDrifts = alphaReport.controlDrifts.filter(d => d.severity === "CRITICAL" || d.severity === "HIGH");
+    expect(alphaDrifts).toHaveLength(0);
+  });
+
   it("tenant isolation: baselines from different tenants don't cross", async () => {
     const storeA = new EvidenceStore(config, { inMemory: true });
     const storeB = new EvidenceStore(config, { inMemory: true });

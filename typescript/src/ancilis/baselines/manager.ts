@@ -1,4 +1,11 @@
-/** BaselineManager — snapshot and drift detection for evidence baselines. */
+/**
+ * BaselineManager — snapshot and drift detection for evidence baselines.
+ *
+ * Trust model: baselines are operator assertions (policy intent), not a link in
+ * the evidence hash chain. They are stored in the same DuckDB database as
+ * evidence_records for convenience, but they carry no cryptographic guarantee.
+ * Treat them as configuration, not as audit proof.
+ */
 
 import { randomUUID } from "node:crypto";
 import type { EvidenceStore } from "../evidence/store.js";
@@ -86,6 +93,8 @@ export class BaselineManager {
       if (!hasCol) {
         await this._store.exec("ALTER TABLE baselines ADD COLUMN tenant_id VARCHAR");
       }
+      await this._store.exec("CREATE INDEX IF NOT EXISTS idx_baselines_agent_active ON baselines(agent_id, is_active)");
+      await this._store.exec("CREATE INDEX IF NOT EXISTS idx_baselines_agent_overlay ON baselines(agent_id, overlay_id)");
     })();
     return this._initialized;
   }
@@ -103,15 +112,15 @@ export class BaselineManager {
     const windowStart = new Date(now.getTime() - evidenceWindowHours * 3600 * 1000).toISOString();
     const windowEnd = now.toISOString();
 
-    const conditions: string[] = ["timestamp >= ?"];
-    const params: unknown[] = [windowStart];
+    const conditions: string[] = ["agent_id = ?", "timestamp >= ?"];
+    const params: unknown[] = [agentId, windowStart];
     if (this._tenantId) {
       conditions.push("tenant_id = ?");
       params.push(this._tenantId);
     }
     if (overlayId !== undefined) {
-      conditions.push("active_overlays LIKE ?");
-      params.push(`%${overlayId}%`);
+      conditions.push("list_contains(CAST(active_overlays AS VARCHAR[]), ?)");
+      params.push(overlayId);
     }
 
     const where = ` WHERE ${conditions.join(" AND ")}`;
@@ -238,20 +247,20 @@ export class BaselineManager {
     }
 
     const since = baseline.createdAt;
-    const conditions: string[] = ["timestamp >= ?"];
-    const params: unknown[] = [since];
+    const conditions: string[] = ["agent_id = ?", "timestamp >= ?"];
+    const params: unknown[] = [agentId, since];
     if (this._tenantId) {
       conditions.push("tenant_id = ?");
       params.push(this._tenantId);
     }
     if (baseline.overlayId !== null) {
-      conditions.push("active_overlays LIKE ?");
-      params.push(`%${baseline.overlayId}%`);
+      conditions.push("list_contains(CAST(active_overlays AS VARCHAR[]), ?)");
+      params.push(baseline.overlayId);
     }
     const where = ` WHERE ${conditions.join(" AND ")}`;
 
     const evidenceRows = await this._store.query(
-      `SELECT control_results, evaluation_id, tool_name FROM evidence_records${where}`,
+      `SELECT control_results, evaluation_id, tool_name, timestamp FROM evidence_records${where}`,
       params,
     );
 
@@ -281,14 +290,26 @@ export class BaselineManager {
       typedEvidenceRows.map(r => ({ control_results: r.control_results })),
     );
 
-    // First failure timestamps per control
+    // First failure timestamps per control — single-pass over already-fetched rows, no N+1
     const firstFailures: Record<string, string | null> = {};
     for (const cid of Object.keys(currentStats)) {
-      const failRows = await this._store.query(
-        `SELECT MIN(timestamp) as first_fail FROM evidence_records WHERE timestamp >= ? AND control_results LIKE ?`,
-        [since, `%"control_id": "${cid}"%`],
-      );
-      firstFailures[cid] = ((failRows as Array<Record<string, unknown>>)[0]?.first_fail as string | null | undefined) ?? null;
+      firstFailures[cid] = null;
+    }
+    for (const row of typedEvidenceRows) {
+      const crRaw = row.control_results;
+      const crs = typeof crRaw === "string"
+        ? JSON.parse(crRaw) as Array<Record<string, unknown>>
+        : crRaw as Array<Record<string, unknown>>;
+      for (const cr of crs) {
+        const cid = cr.control_id as string;
+        const result = ((cr.result as string | undefined) ?? "SKIP").toUpperCase();
+        if (result === "FAIL" || result === "ERROR") {
+          const ts = row.timestamp as string;
+          if (firstFailures[cid] === null || ts < firstFailures[cid]!) {
+            firstFailures[cid] = ts;
+          }
+        }
+      }
     }
 
     // New failure evaluation IDs and tools per control
