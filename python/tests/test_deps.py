@@ -3,18 +3,11 @@
 from __future__ import annotations
 
 import json
-import sys
 import urllib.error
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# Ensure src on path (conftest already does this, but make it explicit for clarity)
-ROOT = Path(__file__).resolve().parents[2]
-SRC = ROOT / "python" / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
 
 from ancilis.config import ControlStatus, ResolvedConfig
 from ancilis.deps.manifest import Dependency, Manifest, ManifestDetector
