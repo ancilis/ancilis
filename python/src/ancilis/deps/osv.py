@@ -152,7 +152,7 @@ class OSVClient:
             return None
 
         out: dict[str, list[Vuln]] = {}
-        for dep, result in zip(deps, body.get("results", [])):
+        for dep, result in zip(deps, body.get("results", []), strict=False):
             vulns: list[Vuln] = []
             for v in result.get("vulns", []):
                 vulns.append(
