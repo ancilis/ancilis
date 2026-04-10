@@ -12,7 +12,12 @@ if TYPE_CHECKING:
     from ancilis.config import ResolvedConfig
     from ancilis.evidence.store import EvidenceStore
 
-CREATE_BASELINES_TABLE_SQL = """
+# TRUST MODEL: Baselines are operator-declared assertions about expected control
+# posture, NOT evidence-chain entries. They intentionally do NOT participate in
+# the SHA-256 hash chain maintained in evidence_records. Baselines represent
+# expectations set by operators; evidence records represent runtime observations.
+# See evidence/store.py for the hash chain implementation.
+_CREATE_BASELINES_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS baselines (
     baseline_id VARCHAR PRIMARY KEY,
     created_at VARCHAR NOT NULL,
@@ -24,6 +29,14 @@ CREATE TABLE IF NOT EXISTS baselines (
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 """
+_CREATE_BASELINES_IDX_AGENT_ACTIVE = (
+    "CREATE INDEX IF NOT EXISTS idx_baselines_agent_active "
+    "ON baselines(agent_id, is_active);"
+)
+_CREATE_BASELINES_IDX_AGENT_OVERLAY = (
+    "CREATE INDEX IF NOT EXISTS idx_baselines_agent_overlay "
+    "ON baselines(agent_id, overlay_id, is_active);"
+)
 
 
 class BaselineManager:
@@ -40,7 +53,10 @@ class BaselineManager:
     # ------------------------------------------------------------------
 
     def _ensure_table(self) -> None:
-        self._store._connection.execute(CREATE_BASELINES_TABLE_SQL)
+        conn = self._store._connection
+        conn.execute(_CREATE_BASELINES_TABLE_SQL)
+        conn.execute(_CREATE_BASELINES_IDX_AGENT_ACTIVE)
+        conn.execute(_CREATE_BASELINES_IDX_AGENT_OVERLAY)
 
     def _conn(self):  # type: ignore[return]
         return self._store._connection
@@ -68,13 +84,13 @@ class BaselineManager:
         window_start = (now - timedelta(hours=evidence_window_hours)).isoformat()
         window_end = now.isoformat()
 
-        # Fetch evidence in the window
-        conditions = ["timestamp >= ?"]
-        params: list[Any] = [window_start]
+        # Fetch evidence in the window, scoped to this agent
+        conditions = ["timestamp >= ?", "agent_id = ?"]
+        params: list[Any] = [window_start, agent_id]
         if overlay_id is not None:
-            # Filter by overlay presence in active_overlays JSON array
-            conditions.append("active_overlays LIKE ?")
-            params.append(f"%{overlay_id}%")
+            # Use list_contains on the JSON array — avoids LIKE injection on overlay IDs
+            conditions.append("list_contains(CAST(active_overlays AS VARCHAR[]), ?)")
+            params.append(overlay_id)
 
         where = " WHERE " + " AND ".join(conditions)
         rows = self._conn().execute(
@@ -208,31 +224,36 @@ class BaselineManager:
                 raise KeyError("No active baseline found. Run 'ancilis baseline create' first.")
             baseline = self._row_to_baseline(row)
 
-        # Fetch evidence since baseline was created
+        # Fetch evidence since baseline was created, scoped to this agent
         since = baseline.created_at
-        conditions = ["timestamp >= ?"]
-        params: list[Any] = [since]
+        conditions = ["timestamp >= ?", "agent_id = ?"]
+        params: list[Any] = [since, agent_id]
         if baseline.overlay_id is not None:
-            conditions.append("active_overlays LIKE ?")
-            params.append(f"%{baseline.overlay_id}%")
+            # Use list_contains on the JSON array — avoids LIKE injection on overlay IDs
+            conditions.append("list_contains(CAST(active_overlays AS VARCHAR[]), ?)")
+            params.append(baseline.overlay_id)
 
         where = " WHERE " + " AND ".join(conditions)
         rows = self._conn().execute(
-            "SELECT control_results FROM evidence_records" + where,
+            "SELECT timestamp, control_results FROM evidence_records" + where,
             params,
         ).fetchall()
 
-        current_stats = _compute_control_stats(rows)
+        # Compute stats from (timestamp, control_results) rows
+        current_stats = _compute_control_stats([(cr,) for _, cr in rows])
 
-        # Collect first failure timestamps per control
+        # Compute first_failure_at per control in a single Python pass — no N+1, no injection
         first_failures: dict[str, str | None] = {}
+        for ts, cr_json in rows:
+            results = json.loads(cr_json) if isinstance(cr_json, str) else cr_json
+            for cr in results:
+                cid = cr["control_id"]
+                if cid in current_stats:
+                    existing = first_failures.get(cid)
+                    if existing is None or ts < existing:
+                        first_failures[cid] = ts
         for cid in current_stats:
-            fail_row = self._conn().execute(
-                "SELECT MIN(timestamp) FROM evidence_records "
-                "WHERE timestamp >= ? AND control_results LIKE ?",
-                [since, f'%"control_id": "{cid}"%'],
-            ).fetchone()
-            first_failures[cid] = fail_row[0] if fail_row and fail_row[0] else None
+            first_failures.setdefault(cid, None)
 
         return self._detector.detect(baseline, current_stats, first_failures)
 
