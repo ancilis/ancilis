@@ -2,6 +2,7 @@
 
 from ancilis.baselines import BaselineManager, DriftReport
 from ancilis.config import load_config
+from ancilis.deps.scanner import DependencyScanner
 from ancilis.evidence import EvidenceRecord, EvidenceStore
 from ancilis.producers.protocol import ActionProducer, ProducerType
 from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
@@ -40,6 +41,7 @@ __all__ = [
     "AncilisMiddleware",
     "BaselineManager",
     "BlockedActionError",
+    "DependencyScanner",
     "DriftReport",
     "CLIActionProducer",
     "CLIExecutionResult",

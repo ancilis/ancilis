@@ -10,6 +10,7 @@ from typing import Any
 import click
 
 from ancilis.config import ResolvedConfig, load_config, load_control_definitions
+from ancilis.deps.scanner import DependencyScanner
 from ancilis.evidence.store import EvidenceStore
 from ancilis.report.generator import _parse_period
 
@@ -43,6 +44,7 @@ def _print_human_summary(
     posture: str,
     total_evaluations: int,
     sentinel_exists: bool = False,
+    dep_items: list[dict[str, Any]] | None = None,
 ) -> None:
     if total_evaluations == 0:
         if sentinel_exists:
@@ -91,6 +93,16 @@ def _print_human_summary(
         lines.append("  ancilis status --verbose    \u2014 control-by-control breakdown")
         lines.append("  ancilis scan --ci           \u2014 JSON output for CI/CD pipelines")
         click.echo("\n".join(lines))
+
+    if dep_items:
+        dep_marks = {"PASS": "\u2713", "FAIL": "\u2717", "FLAG": "\u26a0", "SKIP": "\u2013"}
+        dep_lines = ["", "  DEPENDENCIES (DE-01):"]
+        for item in dep_items:
+            mark = dep_marks.get(item["result"], "?")
+            dep_lines.append(f"    {mark} {item['detail']}")
+            if item.get("remediation"):
+                dep_lines.append(f"      \u2192 {item['remediation']}")
+        click.echo("\n".join(dep_lines))
 
 
 @click.command()
@@ -165,6 +177,32 @@ def scan(
         if normalized.get("BLOCK", 0) > 0:
             any_failing = True
 
+        # Dependency vulnerability scan (DE-01)
+        dep_items: list[dict[str, Any]] = []
+        dep_any_failing = False
+        for eval_result in DependencyScanner(config).scan():
+            for cr in eval_result.control_results:
+                dep_item: dict[str, Any] = {"result": cr.result, "detail": cr.detail}
+                if cr.remediation_hint:
+                    dep_item["remediation"] = cr.remediation_hint
+                if cr.evidence_data:
+                    dep_item["evidence"] = cr.evidence_data
+                dep_items.append(dep_item)
+                if cr.result == "FAIL":
+                    dep_any_failing = True
+                    any_failing = True
+
+        dep_posture = "skip"
+        if dep_items:
+            if dep_any_failing:
+                dep_posture = "non_compliant"
+            elif any(i["result"] == "FLAG" for i in dep_items):
+                dep_posture = "flag"
+            elif all(i["result"] == "SKIP" for i in dep_items):
+                dep_posture = "skip"
+            elif any(i["result"] == "PASS" for i in dep_items):
+                dep_posture = "compliant"
+
         posture = "non_compliant" if any_failing else "compliant"
         exit_code = 1 if any_failing else 0
 
@@ -175,6 +213,10 @@ def scan(
                 "mode": config.mode,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "controls": control_results,
+                "dependencies": {
+                    "posture": dep_posture,
+                    "findings": dep_items,
+                },
                 "summary": {
                     "total_controls": len(enabled),
                     "passing": passing_count,
@@ -188,7 +230,10 @@ def scan(
             click.echo(json.dumps(output, indent=2))
         else:
             sentinel_exists = _SENTINEL.exists()
-            _print_human_summary(config, control_results, posture, total_evaluations, sentinel_exists=sentinel_exists)
+            _print_human_summary(
+                config, control_results, posture, total_evaluations,
+                sentinel_exists=sentinel_exists, dep_items=dep_items or None,
+            )
             if total_evaluations > 0 and not sentinel_exists:
                 _SENTINEL.parent.mkdir(parents=True, exist_ok=True)
                 _SENTINEL.touch()
