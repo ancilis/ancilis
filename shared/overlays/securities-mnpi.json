@@ -1,13 +1,18 @@
 {
   "id": "securities-mnpi",
   "name": "Securities Markets (MNPI, SEC Reg FD, SOX)",
-  "version": "0.1",
+  "version": "0.2",
   "trigger_type": "data_classification",
-  "triggered_by": ["DC-MNPI"],
-  "description": "Securities-market overlay for agents handling material non-public information (MNPI). Packages evidence for SEC Regulation FD disclosure controls, SOX internal-control and record-retention obligations, and market-abuse prevention workflows before information can influence investors or securities transactions.",
+  "triggered_by": [
+    "DC-MNPI"
+  ],
+  "description": "Securities-market overlay for agents handling material non-public information (MNPI). Provides full 26-control AKSI coverage with citations to SEC Regulation FD, SOX \u00a7302/\u00a7404/\u00a7802, SEC Cybersecurity Disclosure Rules, and SEC Rule 17a-4. Covers all control domains: governance, identification, protection, detection, response, and recovery. Addresses AI agent-specific MNPI risks including selective disclosure, market manipulation, and insider information leakage through automated workflows.",
   "jurisdiction": "us",
   "enforcement_date": "2002-07-30",
-  "applicable_data_types": ["material_nonpublic", "mnpi"],
+  "applicable_data_types": [
+    "material_nonpublic",
+    "mnpi"
+  ],
   "controls": {
     "PR-01": {
       "applicable": true,
@@ -17,7 +22,7 @@
         "Disclosure-owner assignments document which accountable humans may approve, supervise, or revoke MNPI-handling permissions"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404"
+      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX \u00a7302, \u00a7404"
     },
     "PR-02": {
       "applicable": true,
@@ -27,7 +32,7 @@
         "Watchlist, restricted-list, or disclosure-window controls are reflected in system entitlements before market-sensitive actions are allowed"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "SEC Reg FD 17 CFR 243.100(b); SOX §302, §404"
+      "framework_reference": "SEC Reg FD 17 CFR 243.100(b); SOX \u00a7302, \u00a7404"
     },
     "PR-03": {
       "applicable": true,
@@ -37,7 +42,7 @@
         "Release approvals tie provenance checks to accountable disclosure, legal, or compliance reviewers for market-sensitive systems"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404"
+      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX \u00a7302, \u00a7404"
     },
     "PR-04": {
       "applicable": true,
@@ -47,7 +52,7 @@
         "Communication-channel reviews verify public, simultaneous disclosure paths are used when disclosure is permitted"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "SEC Reg FD 17 CFR 243.100(a), 243.101(e); SOX §302, §404"
+      "framework_reference": "SEC Reg FD 17 CFR 243.100(a), 243.101(e); SOX \u00a7302, \u00a7404"
     },
     "PR-05": {
       "applicable": true,
@@ -57,7 +62,7 @@
         "Audit trails connect access to approved business purpose, disclosure status, and downstream dissemination decisions"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404, §802; SEC Rule 17a-4"
+      "framework_reference": "SEC Reg FD 17 CFR 243.100-103; SOX \u00a7302, \u00a7404, \u00a7802; SEC Rule 17a-4"
     },
     "DE-01": {
       "applicable": true,
@@ -67,7 +72,207 @@
         "Incident records document triage, containment, public-disclosure decisions, and corrective actions for MNPI handling events"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "SEC Reg FD 17 CFR 243.100(a); SOX §302, §404; SEC Rule 17a-4"
+      "framework_reference": "SEC Reg FD 17 CFR 243.100(a); SOX \u00a7302, \u00a7404; SEC Rule 17a-4"
+    },
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "MNPI governance policy documented and approved by disclosure committee or senior compliance officer; policy covers AI agent handling of market-sensitive information per SOX \u00a7302/\u00a7404",
+        "Policy reviewed at minimum annually and following material incidents, regulatory changes, or significant changes to AI agent capabilities",
+        "AI agent use in MNPI workflows formally authorized in governance documentation with defined scope, permitted actions, and oversight requirements"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7302, \u00a7404; SEC Reg FD 17 CFR 243.100-103; SEC Cybersecurity Rules 17 CFR 229.106"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Disclosure committee composition and authority documented; members identified by name and role with explicit accountability for MNPI handling decisions (SOX \u00a7302)",
+        "Segregation of duties between MNPI-handling AI agent operators and disclosure decision-makers documented and enforced",
+        "Compliance and legal oversight roles for AI agent supervision in MNPI contexts defined with reporting lines to executive management and audit committee (SOX \u00a7404)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7302, \u00a7404; SEC Reg FD 17 CFR 243.100(a), 243.101(e)"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment conducted for AI agent components handling MNPI; insider trading, selective disclosure, and market manipulation scenarios assessed (SOX \u00a7404)",
+        "MNPI risk register maintained covering AI agent failure modes, data leakage vectors, and unauthorized disclosure pathways",
+        "Risk assessment incorporated into annual SOX internal control evaluation; findings drive remediation in internal control environment"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100(b); SEC Cybersecurity Rules 17 CFR 229.106(b)"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Human review gate mandated before any AI agent output involving MNPI reaches external parties or influences investor communications (SEC Reg FD 17 CFR 243.101(e))",
+        "Disclosure committee review documented for any AI-assisted investor communication or earnings material involving material non-public information",
+        "Automated disclosure workflows require manual approval from designated disclosure officer before transmission; approval records preserved per SOX \u00a7802"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7302, \u00a7404; SEC Reg FD 17 CFR 243.101(e); SEC Cybersecurity Rules 17 CFR 229.106"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Inventory of AI agent components with access to MNPI data sources, systems, or workflows maintained; inventory includes model versions, tool integrations, and data connection scope (SOX \u00a7404)",
+        "MNPI data systems and repositories inventoried; each system classified by sensitivity and disclosure restriction status",
+        "Inventory reviewed quarterly or when AI agent capabilities or MNPI data sources change materially"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100(b)(1)"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information barriers (Chinese walls) implemented between MNPI-holding AI agent workflows and external-facing communication systems; boundary controls documented",
+        "Network and application segmentation prevents MNPI from flowing to unauthorized systems; data flow diagrams show MNPI containment boundaries (SOX \u00a7404)",
+        "External access controls verified \u2014 investor relations, sell-side analysts, and media channels blocked from direct MNPI system access"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100(b)"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "MNPI classification procedures applied to all data accessed by AI agents; data classified as material, non-public, or restricted with handling instructions per SEC Reg FD",
+        "AI agent context windows and memory scoped to minimum necessary MNPI; access restrictions documented and enforced",
+        "Data handling procedures govern how AI agents process earnings data, M&A information, and other MNPI categories; retention and purge schedules defined"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100-103"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Third-party AI service providers with potential MNPI exposure assessed for disclosure risk; contractual confidentiality obligations documented",
+        "Model provider agreements prohibit training on customer MNPI data; data processing terms reviewed by legal and compliance",
+        "Subprocessors handling MNPI workflows identified; flow-down restrictions equivalent to primary regulatory obligations included in contracts (SOX \u00a7404)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100(b)"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk profile for each AI agent with MNPI access documented: data categories accessible, authorized action scope, and potential disclosure impact (SOX \u00a7404)",
+        "AI agent risk profiling includes insider trading and market manipulation scenario analysis specific to each agent's MNPI access scope",
+        "Risk profiles reviewed quarterly and updated when agent capabilities, data access scope, or regulatory guidance changes materially"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100(a)"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "AI agent output filtering prevents generation or transmission of MNPI-derived content to unauthorized recipients or channels (SEC Reg FD 17 CFR 243.100(a))",
+        "Disclosure window controls enforced at agent output layer \u2014 agent cannot transmit earnings-sensitive content outside of approved quiet-period and disclosure windows",
+        "Content filtering rules reviewed by legal and compliance quarterly; filter bypass events logged and investigated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100(a)"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "MNPI data minimization enforced in AI agent workflows \u2014 only MNPI necessary for the approved business purpose is ingested; excess scope documented and approved by compliance (SOX \u00a7404)",
+        "AI agent context and memory purge procedures ensure MNPI is not retained beyond the authorized session or task scope",
+        "Data-in-transit encryption applied to all MNPI flows between AI agent components; unencrypted MNPI transmission blocked"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100(a)"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Input validation applied to MNPI-handling AI agent workflows; prompt injection and data poisoning attack patterns included in threat model (SOX \u00a7802)",
+        "Adversarial input detection monitoring deployed on AI agents with MNPI access; alerts generated for anomalous or potentially manipulative inputs",
+        "Security testing of MNPI-handling AI agent inputs conducted periodically; test cases cover disclosure-coercion and market manipulation input scenarios (SEC Rule 17a-4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7802; SEC Rule 17a-4; SEC Cybersecurity Rules 17 CFR 229.106"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Continuous monitoring of AI agent MNPI access patterns; automated alerts for anomalous data access volumes, off-hours activity, or unusual output distribution (SOX \u00a7404)",
+        "Compliance monitoring program reviews AI agent MNPI handling controls at minimum quarterly; monitoring results documented and escalated",
+        "Internal audit coverage includes AI agent MNPI workflows; audit findings and remediation tracked through SOX internal control program"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100(a)"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Annual SOX \u00a7404 assessment includes evaluation of AI agent controls in MNPI handling workflows; external auditor sign-off documented",
+        "Internal control testing covers AI agent access controls, output filtering, and disclosure workflow approval gates (SOX \u00a7404)",
+        "Penetration testing or red team exercises include MNPI exfiltration scenarios targeting AI agent components; findings drive remediation (SEC Cybersecurity Rules)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100-103"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Audit log analysis identifies unusual MNPI access patterns, bulk data retrievals, and unauthorized output generation attempts (SOX \u00a7404, \u00a7802)",
+        "Threat intelligence feeds inform detection of market manipulation and insider trading attack patterns relevant to AI agent MNPI workflows (SEC Rule 17a-4)",
+        "Behavioral analytics or equivalent monitoring detects deviations from normal AI agent MNPI access and output patterns; alerts reviewed by compliance"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404, \u00a7802; SEC Rule 17a-4"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident response plan covers AI agent MNPI disclosure incidents: unauthorized dissemination, selective disclosure, and suspected market manipulation (SOX \u00a7302, \u00a7404)",
+        "Regulatory notification procedures documented for material cybersecurity incidents affecting MNPI systems per SEC Cybersecurity Rules (4-business-day 8-K disclosure requirement)",
+        "Incident response exercises include MNPI breach scenarios; exercise results and plan updates documented annually"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7302, \u00a7404; SEC Reg FD 17 CFR 243.100(a); SEC Cybersecurity Rules 17 CFR 229.106"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Human escalation matrix for MNPI incidents identifies disclosure committee, legal, CFO, and investor relations contacts with response authority (SEC Reg FD 17 CFR 243.101(e))",
+        "SEC Form 8-K notification procedure documented for material cybersecurity incidents; 4-business-day disclosure timeline tracked per SEC Cybersecurity Rules",
+        "Simultaneous public disclosure procedures (press release, 8-K, or other Reg FD-compliant channel) documented for inadvertent selective disclosure remediation"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7302, \u00a7404; SEC Reg FD 17 CFR 243.101(e); SEC Cybersecurity Rules"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Automated response playbooks for MNPI incidents include AI agent session termination, MNPI data quarantine, and access revocation procedures",
+        "Playbooks cover Reg FD-specific containment: immediate cessation of AI agent MNPI distribution and initiation of simultaneous public disclosure when required",
+        "Playbook testing conducted at defined cadence; test results reviewed by compliance and legal; playbooks updated following regulatory guidance changes"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7802; SEC Reg FD 17 CFR 243.100(a); SEC Rule 17a-4"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Recovery procedures for MNPI handling systems documented; restoration process verifies disclosure controls and access restrictions re-enabled before system returns to production",
+        "Business continuity plan covers AI agent MNPI workflow availability; recovery prioritizes disclosure control integrity over operational throughput",
+        "Recovery plan tested annually; test results document that MNPI safeguards verified as part of restoration process (SOX \u00a7404)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404; SEC Reg FD 17 CFR 243.100-103"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-incident review conducted following MNPI disclosure incidents; lessons learned documented and incorporated into governance and technical controls (SOX \u00a7404, \u00a7802)",
+        "Seven-year evidence preservation for MNPI incident records per SEC Rule 17a-4 and SOX \u00a7802 record-retention requirements; audit trail integrity verified post-incident",
+        "Control improvements from post-incident review implemented and tested; improvements documented in SOX internal control program with updated risk and control matrix"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "SOX \u00a7404, \u00a7802; SEC Rule 17a-4"
     }
   },
   "reporting_obligations": {
@@ -82,70 +287,198 @@
   "control_adjustments": {
     "PR-01": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["mfa_enforced", "approved_disclosure_owners", "mnpi_access_review_completed"],
-      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404"
+      "additional_evidence_fields": [
+        "mfa_enforced",
+        "approved_disclosure_owners",
+        "mnpi_access_review_completed"
+      ],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX \u00a7302, \u00a7404"
     },
     "PR-02": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["least_privilege_matrix", "information_barrier_review", "watchlist_entitlement_check"],
-      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(b); SOX §302, §404"
+      "additional_evidence_fields": [
+        "least_privilege_matrix",
+        "information_barrier_review",
+        "watchlist_entitlement_check"
+      ],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(b); SOX \u00a7302, \u00a7404"
     },
     "PR-03": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["approved_data_source_inventory", "disclosure_workflow_change_review", "mnpi_release_checklist"],
-      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404"
+      "additional_evidence_fields": [
+        "approved_data_source_inventory",
+        "disclosure_workflow_change_review",
+        "mnpi_release_checklist"
+      ],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX \u00a7302, \u00a7404"
     },
     "PR-04": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["external_release_approval", "mnpi_scan_status", "investor_communications_channel_review"],
-      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(a), 243.101(e); SOX §302, §404"
+      "additional_evidence_fields": [
+        "external_release_approval",
+        "mnpi_scan_status",
+        "investor_communications_channel_review"
+      ],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(a), 243.101(e); SOX \u00a7302, \u00a7404"
     },
     "PR-05": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["log_retention_years", "mnpi_access_log_review", "disclosure_decision_audit_chain"],
-      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX §302, §404, §802; SEC Rule 17a-4"
+      "additional_evidence_fields": [
+        "log_retention_years",
+        "mnpi_access_log_review",
+        "disclosure_decision_audit_chain"
+      ],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100-103; SOX \u00a7302, \u00a7404, \u00a7802; SEC Rule 17a-4"
     },
     "DE-01": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["mnpi_anomaly_triage_records", "escalation_runbook", "selective_disclosure_incident_log"],
-      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(a); SOX §302, §404; SEC Rule 17a-4"
+      "additional_evidence_fields": [
+        "mnpi_anomaly_triage_records",
+        "escalation_runbook",
+        "selective_disclosure_incident_log"
+      ],
+      "regulatory_citation": "SEC Reg FD 17 CFR 243.100(a); SOX \u00a7302, \u00a7404; SEC Rule 17a-4"
     }
   },
   "evidence_requirements": {
-    "PR-01": ["mfa_enforced", "approved_disclosure_owners", "mnpi_access_review_completed"],
-    "PR-02": ["least_privilege_matrix", "information_barrier_review", "watchlist_entitlement_check"],
-    "PR-03": ["approved_data_source_inventory", "disclosure_workflow_change_review", "mnpi_release_checklist"],
-    "PR-04": ["external_release_approval", "mnpi_scan_status", "investor_communications_channel_review"],
-    "PR-05": ["log_retention_years", "mnpi_access_log_review", "disclosure_decision_audit_chain"],
-    "DE-01": ["mnpi_anomaly_triage_records", "escalation_runbook", "selective_disclosure_incident_log"]
+    "PR-01": [
+      "mfa_enforced",
+      "approved_disclosure_owners",
+      "mnpi_access_review_completed"
+    ],
+    "PR-02": [
+      "least_privilege_matrix",
+      "information_barrier_review",
+      "watchlist_entitlement_check"
+    ],
+    "PR-03": [
+      "approved_data_source_inventory",
+      "disclosure_workflow_change_review",
+      "mnpi_release_checklist"
+    ],
+    "PR-04": [
+      "external_release_approval",
+      "mnpi_scan_status",
+      "investor_communications_channel_review"
+    ],
+    "PR-05": [
+      "log_retention_years",
+      "mnpi_access_log_review",
+      "disclosure_decision_audit_chain"
+    ],
+    "DE-01": [
+      "mnpi_anomaly_triage_records",
+      "escalation_runbook",
+      "selective_disclosure_incident_log"
+    ]
   },
   "framework_mapping": {
-    "GOV-01": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100-103"],
-    "GOV-02": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(a)"],
-    "GOV-03": ["SOX §404", "SEC Reg FD 17 CFR 243.100(b)"],
-    "GOV-04": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.101(e)"],
-    "ID-01": ["SOX §404", "SEC Reg FD 17 CFR 243.100(b)(1)"],
-    "ID-02": ["SOX §404", "SEC Reg FD 17 CFR 243.100(b)"],
-    "ID-03": ["SOX §404", "SEC Reg FD 17 CFR 243.100-103"],
-    "ID-04": ["SOX §404", "SEC Reg FD 17 CFR 243.100(b)"],
-    "ID-05": ["SOX §404", "SEC Reg FD 17 CFR 243.100(a)"],
-    "PR-01": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100-103"],
-    "PR-02": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(b)"],
-    "PR-03": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100-103"],
-    "PR-04": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(a), 243.101(e)"],
-    "PR-05": ["SOX §302, §404, §802", "SEC Reg FD 17 CFR 243.100-103", "SEC Rule 17a-4"],
-    "PR-06": ["SOX §404", "SEC Reg FD 17 CFR 243.100(a)"],
-    "PR-07": ["SOX §404", "SEC Reg FD 17 CFR 243.100(a)"],
-    "PR-08": ["SOX §802", "SEC Rule 17a-4"],
-    "DE-01": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(a)", "SEC Rule 17a-4"],
-    "DE-02": ["SOX §404", "SEC Reg FD 17 CFR 243.100(a)"],
-    "DE-03": ["SOX §404", "SEC Reg FD 17 CFR 243.100-103"],
-    "DE-04": ["SOX §404, §802", "SEC Rule 17a-4"],
-    "RS-01": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.100(a)"],
-    "RS-02": ["SOX §302, §404", "SEC Reg FD 17 CFR 243.101(e)"],
-    "RS-03": ["SOX §802", "SEC Rule 17a-4"],
-    "RC-01": ["SOX §404", "SEC Reg FD 17 CFR 243.100-103"],
-    "RC-02": ["SOX §404, §802", "SEC Rule 17a-4"]
+    "GOV-01": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "GOV-02": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "GOV-03": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(b)"
+    ],
+    "GOV-04": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.101(e)"
+    ],
+    "ID-01": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(b)(1)"
+    ],
+    "ID-02": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(b)"
+    ],
+    "ID-03": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "ID-04": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(b)"
+    ],
+    "ID-05": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "PR-01": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "PR-02": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(b)"
+    ],
+    "PR-03": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "PR-04": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(a), 243.101(e)"
+    ],
+    "PR-05": [
+      "SOX \u00a7302, \u00a7404, \u00a7802",
+      "SEC Reg FD 17 CFR 243.100-103",
+      "SEC Rule 17a-4"
+    ],
+    "PR-06": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "PR-07": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "PR-08": [
+      "SOX \u00a7802",
+      "SEC Rule 17a-4"
+    ],
+    "DE-01": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(a)",
+      "SEC Rule 17a-4"
+    ],
+    "DE-02": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "DE-03": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "DE-04": [
+      "SOX \u00a7404, \u00a7802",
+      "SEC Rule 17a-4"
+    ],
+    "RS-01": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "RS-02": [
+      "SOX \u00a7302, \u00a7404",
+      "SEC Reg FD 17 CFR 243.101(e)"
+    ],
+    "RS-03": [
+      "SOX \u00a7802",
+      "SEC Rule 17a-4"
+    ],
+    "RC-01": [
+      "SOX \u00a7404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "RC-02": [
+      "SOX \u00a7404, \u00a7802",
+      "SEC Rule 17a-4"
+    ]
   },
   "evidence_retention_minimum_days": 2555,
   "human_oversight_required": false,

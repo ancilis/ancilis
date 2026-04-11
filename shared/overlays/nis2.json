@@ -1,0 +1,432 @@
+{
+  "id": "nis2",
+  "name": "EU NIS2 Directive — Network and Information Security",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-GOV", "DC-CRIT"],
+  "description": "NIS2 overlay for EU essential and important entities subject to Directive (EU) 2022/2555 (NIS2). Enforcement: October 18, 2024 (EU member state transposition deadline). Applies to essential entities (energy, transport, banking, financial market infrastructure, health, drinking water, digital infrastructure) and important entities (postal, waste, chemicals, food, manufacturing, digital providers) with 50+ employees or €10M+ annual turnover. AI agent systems operating in or for NIS2-covered sectors must evidence the security measures required under Art. 21 and incident notification under Art. 23. This overlay recommends triggering on DC-GOV (public administration and government data) and DC-CRIT (critical infrastructure operational data). Operators in other covered sectors should evaluate triggering based on data classification of sector-specific operational data.",
+  "jurisdiction": "eu",
+  "enforcement_date": "2024-10-18",
+  "applicable_data_types": [
+    "government_data",
+    "critical_infrastructure_data",
+    "operational_technology_data"
+  ],
+  "reporting_obligations": {
+    "breach_notification_hours": 24,
+    "assessment_type": "ICT incident notification per NIS2 Art. 23. Significant incidents require: early warning within 24 hours of detection, incident notification within 72 hours including preliminary assessment, and final report within 1 month with detailed description, root cause analysis, and cross-border impact assessment. CSIRT and competent authority are the notification recipients.",
+    "reporting_entity": "CSIRT (Computer Security Incident Response Team) and competent national authority per NIS2 Art. 23(1). For cross-border incidents, the competent authority of primary establishment notifies counterparts through ENISA-coordinated mechanisms."
+  },
+  "human_oversight_mandates": {
+    "required": true,
+    "description": "NIS2 Art. 20 requires management bodies to approve cybersecurity risk management measures and oversee their implementation. Management body members are personally liable for compliance failures. Management bodies must undertake cybersecurity training to assess risks and evaluate measures. This creates direct management accountability for AI agent security governance that cannot be delegated purely to automated systems."
+  },
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Cybersecurity risk management policy approved by management body per Art. 21(1) and Art. 20(1)",
+        "Policy addresses all ten minimum security measures listed in Art. 21(2)(a)-(j)",
+        "Management body approval documented (Art. 20(1)) — personal liability applies for non-compliance",
+        "Policy reviewed following significant incidents or changes to threat landscape (Art. 21(1))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 20(1), Art. 21(1), Art. 21(2)(a)"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Management body member(s) responsible for cybersecurity oversight identified (Art. 20(1))",
+        "Cybersecurity governance structure documented with clear reporting lines to management body",
+        "Management body cybersecurity training completed and documented per Art. 20(2)",
+        "Designated security officer or equivalent role defined with authority and accountability"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 20(1), Art. 20(2)"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk analysis conducted per Art. 21(2)(a) covering network and information systems security",
+        "Risk assessment scope includes AI agent systems as ICT components (Art. 21(2)(a))",
+        "Supply chain security risks assessed per Art. 21(2)(d) including AI model providers and tool vendors",
+        "Risk assessment outcomes used to select and calibrate security measures (Art. 21(2))",
+        "Risk register maintained and updated following material changes (Art. 21(1))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(1), Art. 21(2)(a), Art. 21(2)(d)"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Human oversight mechanisms implemented for automated decisions with significant impact on essential services",
+        "Management body review of cybersecurity measure effectiveness at least annually (Art. 20(1))",
+        "Anomaly escalation paths documented ensuring human review before critical automated actions (Art. 21(2)(b))",
+        "Management body briefed following significant incidents and policy adjustments documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 20(1), Art. 21(2)(b)"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Asset inventory maintained covering network and information systems supporting essential or important services",
+        "AI agent systems and their infrastructure components included in asset inventory",
+        "Asset classification based on criticality to essential service delivery",
+        "Inventory reviewed and updated at minimum annually or after significant changes"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(a), Art. 21(2)(d)"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Software inventory maintained covering systems supporting essential or important functions",
+        "AI model versions, tool inventories, and agent component versions tracked",
+        "Software security assessed as part of supply chain security program (Art. 21(2)(d))",
+        "End-of-support and vulnerability status tracked for all software components"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(d), Art. 21(2)(e)"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data classification scheme applied to data processed by network and information systems (Art. 21(2)(a))",
+        "Classification covers operational data supporting essential or important services",
+        "Classification informs selection of protective measures per Art. 21(2)",
+        "Data flows mapped to identify cross-border and cross-sector data handling"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(a)"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Supply chain security policy documented covering ICT product and service providers per Art. 21(2)(d)",
+        "Security requirements imposed on ICT suppliers through contractual mechanisms",
+        "AI model providers, tool vendors, and cloud providers assessed in supply chain security program",
+        "Vulnerabilities affecting ICT products and services in the supply chain monitored (Art. 21(2)(d))",
+        "EU-coordinated supply chain risk assessments considered where applicable (Art. 22)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(d), Art. 22"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment methodology documented per Art. 21(2)(a) appropriate to size, exposure, and services",
+        "Threat landscape assessment covering cyber threats relevant to the sector",
+        "AI agent system risks assessed including autonomous decision-making risks for essential services",
+        "Risk assessments proportionate to criticality of services and assets involved"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(1), Art. 21(2)(a)"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Multi-factor authentication implemented per Art. 21(2)(i) for access to network and information systems",
+        "MFA enforced for privileged accounts, remote access, and access to critical systems",
+        "Authentication policy documented and applied to AI agent system access controls",
+        "Continuous authentication or session monitoring implemented where MFA not feasible"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "NIS2 Art. 21(2)(i)"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Access control policies implemented per Art. 21(2)(i) applying least privilege principle",
+        "Role-based access control documented and enforced for systems supporting essential functions",
+        "Privileged access management procedures in place with documented access reviews",
+        "AI agent system permissions scoped to minimum necessary for operational function"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "NIS2 Art. 21(2)(i)"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security requirements integrated into system acquisition and development processes per Art. 21(2)(e)",
+        "Secure development lifecycle practices documented and followed for internally developed systems",
+        "Change management process includes security review for changes to systems supporting essential services",
+        "Vulnerability disclosure and handling processes documented (Art. 21(2)(e))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(e)"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Encryption and cryptographic controls implemented per Art. 21(2)(h) for data at rest and in transit",
+        "Encryption standards applied to sensitive data processed by AI agent systems",
+        "Data protection measures commensurate with data classification and risk assessment outcomes",
+        "Encrypted communications implemented for inter-system and inter-agent communications"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "NIS2 Art. 21(2)(h)"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security event logging implemented for network and information systems per Art. 21(2)(b)",
+        "Logs capture events relevant to incident detection, investigation, and compliance",
+        "AI agent system actions logged with sufficient detail for incident investigation",
+        "Log retention period defined and appropriate to regulatory and operational requirements",
+        "Secure communications and emergency communication systems per Art. 21(2)(j) documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(b), Art. 21(2)(j)"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configuration management procedures documented for systems supporting essential or important services",
+        "Baseline configurations established and deviation detection implemented",
+        "Patch management applied per Art. 21(2)(e) with defined timelines for vulnerability remediation",
+        "Configuration change records demonstrate security review for critical systems"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(e)"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Encryption policy documented per Art. 21(2)(h) covering cryptographic algorithm selection and key management",
+        "End-to-end encryption implemented for communications involving essential service data",
+        "Cryptographic controls reviewed following identified vulnerabilities or advances in threat landscape",
+        "Key management procedures documented including generation, rotation, and revocation"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "NIS2 Art. 21(2)(h)"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security measures for network and information system acquisition per Art. 21(2)(e) include input security",
+        "Vulnerability management covering AI agent system components and their dependencies (Art. 21(2)(e))",
+        "Secure coding practices and input validation documented for systems developed internally",
+        "Penetration testing or vulnerability assessments conducted for critical systems (proportionate to risk)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(e)"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident detection capabilities implemented per Art. 21(2)(b) for significant cyber incidents",
+        "Security monitoring covers network and information systems supporting essential or important services",
+        "AI agent system behavioral anomaly detection implemented where operationally feasible",
+        "Detection threshold calibrated to classify significant incidents per Art. 23 criteria"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "NIS2 Art. 21(2)(b), Art. 23"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configuration change monitoring implemented for systems supporting essential or important services",
+        "Unauthorized configuration changes detected and alerted per defined procedures",
+        "Monitoring scope covers ICT assets identified in asset inventory"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(b)"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Continuous monitoring program documented and operational per Art. 21(2)(b)",
+        "Security measure effectiveness reviewed at minimum annually with results reported to management body",
+        "Monitoring coverage validated against asset inventory with gap analysis"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 20(1), Art. 21(2)(b)"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Audit log integrity protection implemented to prevent unauthorized modification or deletion",
+        "Log availability verified as part of business continuity planning (Art. 21(2)(c))",
+        "Access to audit logs restricted to authorized personnel with separation from production systems"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 21(2)(b), Art. 21(2)(c)"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident handling policy and procedures documented per Art. 21(2)(b)",
+        "Early warning submitted to CSIRT/competent authority within 24 hours of significant incident detection (Art. 23(1)(a))",
+        "Incident notification submitted within 72 hours with preliminary impact assessment (Art. 23(1)(b))",
+        "Incident response procedures tested at minimum annually (proportionate to risk)",
+        "Crisis communication plan documented covering internal and external stakeholder notification (Art. 21(2)(b))"
+      ],
+      "threshold_adjustments": {
+        "notification_hours_early_warning": 24,
+        "notification_hours_intermediate": 72,
+        "notification_days_final": 30
+      },
+      "framework_reference": "NIS2 Art. 21(2)(b), Art. 23"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Early warning notification to CSIRT/competent authority within 24 hours (Art. 23(1)(a))",
+        "Full incident notification within 72 hours including preliminary assessment and cross-border impact (Art. 23(1)(b))",
+        "Progress report submitted on request of CSIRT/competent authority (Art. 23(1)(c))",
+        "Final report within 1 month including root cause analysis and measures taken (Art. 23(1)(d))",
+        "Recipients of essential services notified of significant incidents where required (Art. 23(4))"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict",
+        "notification_hours_early_warning": 24,
+        "notification_hours_intermediate": 72,
+        "notification_days_final": 30
+      },
+      "framework_reference": "NIS2 Art. 23"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Significant incident documentation preserved with timeline, impact assessment, and response actions",
+        "Root cause analysis records retained for significant incidents (Art. 23(1)(d))",
+        "Evidence preservation procedures prevent tampering during and after incidents",
+        "Records retained for minimum 5 years or as required by applicable national transposition"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 23(1)(d)"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Business continuity and disaster recovery plan documented per Art. 21(2)(c)",
+        "Backup management procedures documented covering backup frequency, retention, and recovery testing (Art. 21(2)(c))",
+        "Recovery time and recovery point objectives defined for systems supporting essential services",
+        "Crisis management procedures documented and activated for significant incidents (Art. 21(2)(c))",
+        "BCP and DRP tested at minimum annually with results reviewed by management body"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "NIS2 Art. 21(2)(c)"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-incident review conducted following significant incidents with lessons learned documented",
+        "Lessons learned from incidents used to update cybersecurity risk management measures (Art. 21(2)(b))",
+        "Changes implemented from post-incident reviews tracked to completion",
+        "Annual review of security measure effectiveness incorporating incident experience (Art. 20(1))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIS2 Art. 20(1), Art. 21(2)(b)"
+    }
+  },
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "mfa_enforced",
+        "continuous_auth_implemented",
+        "privileged_access_controls_verified"
+      ],
+      "regulatory_citation": "NIS2 Art. 21(2)(i)"
+    },
+    "RS-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "early_warning_submitted_24h",
+        "notification_submitted_72h",
+        "competent_authority_notified"
+      ],
+      "regulatory_citation": "NIS2 Art. 23"
+    },
+    "RS-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "notification_timeline_24h_met",
+        "notification_timeline_72h_met",
+        "final_report_within_30d"
+      ],
+      "regulatory_citation": "NIS2 Art. 23(1)"
+    },
+    "PR-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "encryption_at_rest_verified",
+        "encryption_in_transit_verified",
+        "cryptographic_policy_current"
+      ],
+      "regulatory_citation": "NIS2 Art. 21(2)(h)"
+    },
+    "RC-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "bcp_tested_date",
+        "rto_defined",
+        "rpo_defined",
+        "backup_restoration_tested"
+      ],
+      "regulatory_citation": "NIS2 Art. 21(2)(c)"
+    },
+    "ID-04": {
+      "threshold_adjustment": "standard",
+      "additional_evidence_fields": [
+        "supply_chain_assessment_completed",
+        "ict_supplier_security_requirements",
+        "eu_supply_chain_assessment_reviewed"
+      ],
+      "regulatory_citation": "NIS2 Art. 21(2)(d), Art. 22"
+    }
+  },
+  "evidence_requirements": {
+    "PR-01": ["mfa_enforced", "continuous_auth_implemented", "privileged_access_controls_verified"],
+    "RS-01": ["early_warning_submitted_24h", "notification_submitted_72h", "competent_authority_notified"],
+    "RS-02": ["notification_timeline_24h_met", "notification_timeline_72h_met", "final_report_within_30d"],
+    "PR-04": ["encryption_at_rest_verified", "encryption_in_transit_verified", "cryptographic_policy_current"],
+    "RC-01": ["bcp_tested_date", "rto_defined", "rpo_defined", "backup_restoration_tested"],
+    "ID-04": ["supply_chain_assessment_completed", "ict_supplier_security_requirements", "eu_supply_chain_assessment_reviewed"]
+  },
+  "framework_mapping": {
+    "GOV-01": ["NIS2 Art. 20(1)", "NIS2 Art. 21(1)", "NIS2 Art. 21(2)(a)"],
+    "GOV-02": ["NIS2 Art. 20(1)", "NIS2 Art. 20(2)"],
+    "GOV-03": ["NIS2 Art. 21(1)", "NIS2 Art. 21(2)(a)", "NIS2 Art. 21(2)(d)"],
+    "GOV-04": ["NIS2 Art. 20(1)", "NIS2 Art. 21(2)(b)"],
+    "ID-01": ["NIS2 Art. 21(2)(a)", "NIS2 Art. 21(2)(d)"],
+    "ID-02": ["NIS2 Art. 21(2)(d)", "NIS2 Art. 21(2)(e)"],
+    "ID-03": ["NIS2 Art. 21(2)(a)"],
+    "ID-04": ["NIS2 Art. 21(2)(d)", "NIS2 Art. 22"],
+    "ID-05": ["NIS2 Art. 21(1)", "NIS2 Art. 21(2)(a)"],
+    "PR-01": ["NIS2 Art. 21(2)(i)"],
+    "PR-02": ["NIS2 Art. 21(2)(i)"],
+    "PR-03": ["NIS2 Art. 21(2)(e)"],
+    "PR-04": ["NIS2 Art. 21(2)(h)"],
+    "PR-05": ["NIS2 Art. 21(2)(b)", "NIS2 Art. 21(2)(j)"],
+    "PR-06": ["NIS2 Art. 21(2)(e)"],
+    "PR-07": ["NIS2 Art. 21(2)(h)"],
+    "PR-08": ["NIS2 Art. 21(2)(e)"],
+    "DE-01": ["NIS2 Art. 21(2)(b)", "NIS2 Art. 23"],
+    "DE-02": ["NIS2 Art. 21(2)(b)"],
+    "DE-03": ["NIS2 Art. 20(1)", "NIS2 Art. 21(2)(b)"],
+    "DE-04": ["NIS2 Art. 21(2)(b)", "NIS2 Art. 21(2)(c)"],
+    "RS-01": ["NIS2 Art. 21(2)(b)", "NIS2 Art. 23"],
+    "RS-02": ["NIS2 Art. 23"],
+    "RS-03": ["NIS2 Art. 23(1)(d)"],
+    "RC-01": ["NIS2 Art. 21(2)(c)"],
+    "RC-02": ["NIS2 Art. 20(1)", "NIS2 Art. 21(2)(b)"]
+  },
+  "evidence_retention_minimum_days": 1825,
+  "human_oversight_required": true,
+  "notes": "NIS2 Directive (EU) 2022/2555 replaced the original NIS Directive from October 18, 2024 (member state transposition deadline). Key NIS2 features: (1) Expanded scope — two-tier system (essential/important entities); (2) Management body personal accountability under Art. 20 including potential personal liability for repeated infringement; (3) Ten minimum security measures under Art. 21(2) that all covered entities must implement; (4) Incident notification — 24h early warning, 72h notification, 1 month final report; (5) Supply chain security requirements extending to ICT product and service providers; (6) EU-level coordinated supply chain risk assessment under Art. 22. Trigger recommendation: DC-GOV activates this overlay for public administration entities. DC-CRIT for critical infrastructure operators. Other covered sector entities should evaluate trigger based on operational data classification. Note: DORA applies as lex specialis for financial entities covered by both NIS2 and DORA — in that case, DORA compliance is deemed to satisfy NIS2 requirements for ICT systems in scope."
+}
