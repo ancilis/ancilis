@@ -1,14 +1,30 @@
 {
   "id": "gdpr",
   "name": "GDPR",
-  "version": "0.2",
+  "version": "0.3",
   "trigger_type": "data_classification",
-  "triggered_by": ["DC-PII", "DC-PHI", "DC-MINOR", "DC-BIO"],
+  "triggered_by": [
+    "DC-PII",
+    "DC-PHI",
+    "DC-MINOR",
+    "DC-BIO"
+  ],
   "description": "EU General Data Protection Regulation overlay. Activated by personal data, health data, children's data, or biometric data declarations. Covers GDPR requirements including lawful basis, data subject rights, security of processing, breach notification, and data protection by design.",
   "jurisdiction": "eu",
   "enforcement_date": "2018-05-25",
-  "triggered_by_classifications": ["DC-PII", "DC-PHI", "DC-MINOR", "DC-BIO"],
-  "applicable_data_types": ["personal_info", "health_records", "patient_data", "childrens_data", "biometric_data"],
+  "triggered_by_classifications": [
+    "DC-PII",
+    "DC-PHI",
+    "DC-MINOR",
+    "DC-BIO"
+  ],
+  "applicable_data_types": [
+    "personal_info",
+    "health_records",
+    "patient_data",
+    "childrens_data",
+    "biometric_data"
+  ],
   "controls": {
     "GOV-01": {
       "applicable": true,
@@ -24,7 +40,7 @@
       "applicable": true,
       "evidence_requirements": [
         "Data Protection Officer (DPO) appointed where required and contact details published (Art. 37, Art. 38)",
-        "Accountability principle demonstrated — controller responsible for and able to demonstrate GDPR compliance (Art. 5(2))",
+        "Accountability principle demonstrated \u2014 controller responsible for and able to demonstrate GDPR compliance (Art. 5(2))",
         "Supervisory authority cooperation procedures in place (Art. 31)"
       ],
       "threshold_adjustments": {},
@@ -43,17 +59,18 @@
     "GOV-04": {
       "applicable": true,
       "evidence_requirements": [
-        "Data subject rights management process — procedures for handling access, rectification, erasure, portability, objection requests (Arts. 15-22)",
-        "Response to data subject requests within one month (Art. 12(3))",
-        "Privacy notices provided to data subjects at time of collection (Arts. 13, 14)"
+        "Human oversight mechanisms configured for agent operations where automated decisions significantly affect data subjects (Art. 22(3))",
+        "Safeguards implemented for automated decision-making \u2014 data subjects can request human intervention, express point of view, and contest decisions (Art. 22(3))",
+        "Human-in-the-loop (HITL) or human-on-the-loop (HOTL) policy documented and enforced for high-risk automated processing operations (Art. 22, recital 71)",
+        "Override and halt mechanisms tested \u2014 designated reviewers can intervene in agent decisions before or after execution"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "Art. 12, Art. 13, Art. 14, Arts. 15-22"
+      "framework_reference": "Art. 22, Art. 22(3)"
     },
     "ID-01": {
       "applicable": true,
       "evidence_requirements": [
-        "Records of processing activities maintained — controller and processor records per Art. 30",
+        "Records of processing activities maintained \u2014 controller and processor records per Art. 30",
         "Records include categories of data subjects, categories of personal data, purposes, and recipients (Art. 30(1))",
         "Records available to supervisory authority on request (Art. 30(4))"
       ],
@@ -73,8 +90,8 @@
     "ID-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Data minimization principle applied — only personal data adequate, relevant, and limited to what is necessary (Art. 5(1)(c))",
-        "Storage limitation principle applied — personal data not kept longer than necessary for its purpose (Art. 5(1)(e))",
+        "Data minimization principle applied \u2014 only personal data adequate, relevant, and limited to what is necessary (Art. 5(1)(c))",
+        "Storage limitation principle applied \u2014 personal data not kept longer than necessary for its purpose (Art. 5(1)(e))",
         "Data retention schedule documented and enforced"
       ],
       "threshold_adjustments": {},
@@ -83,9 +100,9 @@
     "ID-04": {
       "applicable": true,
       "evidence_requirements": [
-        "Processor inventory maintained — list of all processors and sub-processors with processing descriptions (Art. 28)",
-        "Due diligence performed on processor selection — processors provide sufficient guarantees (Art. 28(1))",
-        "Processor monitoring — ongoing verification of processor compliance"
+        "Processor inventory maintained \u2014 list of all processors and sub-processors with processing descriptions (Art. 28)",
+        "Due diligence performed on processor selection \u2014 processors provide sufficient guarantees (Art. 28(1))",
+        "Processor monitoring \u2014 ongoing verification of processor compliance"
       ],
       "threshold_adjustments": {},
       "framework_reference": "Art. 28(1), Art. 28(2)"
@@ -93,18 +110,19 @@
     "ID-05": {
       "applicable": true,
       "evidence_requirements": [
-        "International data transfer mapping — all transfers of personal data to third countries identified (Arts. 44-49)",
-        "Transfer mechanism documented for each cross-border transfer — adequacy decision, SCCs, BCRs, or derogation (Art. 44)",
-        "Standard Contractual Clauses (SCCs) implemented for transfers to non-adequate third countries"
+        "Data Protection Impact Assessment (DPIA) conducted for agent operations likely to result in high risk to rights and freedoms of data subjects (Art. 35(1))",
+        "Agent risk profile documents nature, scope, context, and purposes of processing; necessity, proportionality, and risk assessment (Art. 35(7))",
+        "Risk classification for each agent \u2014 Low/Moderate/High/Critical \u2014 based on data classification, autonomous action scope, and processing impact",
+        "Prior consultation with supervisory authority completed where DPIA indicates high residual risk that cannot be mitigated (Art. 36)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "Art. 44, Art. 45, Art. 46, Art. 49"
+      "framework_reference": "Art. 35, Art. 36"
     },
     "PR-01": {
       "applicable": true,
       "evidence_requirements": [
         "Appropriate technical and organisational measures to ensure appropriate level of security for personal data (Art. 32)",
-        "Access controls implemented — access to personal data restricted to authorised persons on need-to-know basis (Art. 5(1)(f))",
+        "Access controls implemented \u2014 access to personal data restricted to authorised persons on need-to-know basis (Art. 5(1)(f))",
         "Authentication and authorisation mechanisms protect personal data from unauthorised access"
       ],
       "threshold_adjustments": {},
@@ -113,22 +131,22 @@
     "PR-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Lawful basis documented for each processing activity — one of six lawful bases under Art. 6 applied",
-        "Purpose limitation principle applied — personal data collected for specified, explicit, and legitimate purposes only (Art. 5(1)(b))",
+        "Lawful basis documented for each processing activity \u2014 one of six lawful bases under Art. 6 applied",
+        "Purpose limitation principle applied \u2014 personal data collected for specified, explicit, and legitimate purposes only (Art. 5(1)(b))",
         "Special category data (Art. 9) and criminal conviction data (Art. 10) processed only under explicit grounds"
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "GDPR Art. 6 lawfulness of processing — every processing operation must have a documented lawful basis; scope violations are Art. 5 violations"
+        "reason": "GDPR Art. 6 lawfulness of processing \u2014 every processing operation must have a documented lawful basis; scope violations are Art. 5 violations"
       },
       "framework_reference": "Art. 5(1)(b), Art. 6, Art. 9"
     },
     "PR-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Data protection by design — appropriate technical measures integrated into processing at design stage (Art. 25(1))",
-        "Data protection by default — only personal data necessary for each specific purpose processed by default (Art. 25(2))",
-        "Accuracy principle — personal data is accurate and kept up to date (Art. 5(1)(d))"
+        "Data protection by design \u2014 appropriate technical measures integrated into processing at design stage (Art. 25(1))",
+        "Data protection by default \u2014 only personal data necessary for each specific purpose processed by default (Art. 25(2))",
+        "Accuracy principle \u2014 personal data is accurate and kept up to date (Art. 5(1)(d))"
       ],
       "threshold_adjustments": {},
       "framework_reference": "Art. 5(1)(d), Art. 25"
@@ -142,7 +160,7 @@
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "GDPR Art. 32 security of processing — controllers must implement appropriate measures to ensure security level appropriate to the risk, including encryption"
+        "reason": "GDPR Art. 32 security of processing \u2014 controllers must implement appropriate measures to ensure security level appropriate to the risk, including encryption"
       },
       "framework_reference": "Art. 25, Art. 32(1)(a)"
     },
@@ -150,12 +168,12 @@
       "applicable": true,
       "evidence_requirements": [
         "Records of processing activities include data categories, purposes, recipients, and retention periods (Art. 30)",
-        "Processing records serve as audit trail — demonstrate compliance with GDPR principles (Art. 5(2))",
+        "Processing records serve as audit trail \u2014 demonstrate compliance with GDPR principles (Art. 5(2))",
         "Logs of automated processing activities available for supervisory authority (Art. 30(4))"
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "GDPR Art. 30 records of processing and Art. 5(2) accountability — processing must be documented to demonstrate compliance"
+        "reason": "GDPR Art. 30 records of processing and Art. 5(2) accountability \u2014 processing must be documented to demonstrate compliance"
       },
       "framework_reference": "Art. 5(2), Art. 30"
     },
@@ -182,19 +200,20 @@
     "PR-08": {
       "applicable": true,
       "evidence_requirements": [
-        "Right to erasure (right to be forgotten) process implemented — personal data erased without undue delay upon valid request (Art. 17)",
-        "Erasure cascaded to processors and third parties who have received personal data (Art. 17(2))",
-        "Data retention enforcement — personal data deleted or anonymised at end of retention period"
+        "Appropriate technical measures ensuring integrity and confidentiality of personal data \u2014 inputs to systems processing personal data validated and sanitised (Art. 5(1)(f))",
+        "Protection of personal data against unauthorised or unlawful processing including injection attacks that could cause unauthorised disclosure or alteration (Art. 32(1)(b))",
+        "Input validation procedures applied at all ingress points where personal data is received, including API inputs, tool responses, and retrieved context",
+        "Audit logs capture detected injection attempts and blocked malicious inputs to personal data processing systems (Art. 5(2), Art. 30)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "Art. 17"
+      "framework_reference": "Art. 5(1)(f), Art. 32(1)(b)"
     },
     "DE-01": {
       "applicable": true,
       "evidence_requirements": [
-        "Personal data breach detection capability — ability to identify and confirm breaches affecting personal data (Art. 33)",
-        "Breach assessment process — determine whether breach likely results in risk to data subjects (Art. 33(1))",
-        "Breach register maintained — documentation of all personal data breaches regardless of notification obligation (Art. 33(5))"
+        "Personal data breach detection capability \u2014 ability to identify and confirm breaches affecting personal data (Art. 33)",
+        "Breach assessment process \u2014 determine whether breach likely results in risk to data subjects (Art. 33(1))",
+        "Breach register maintained \u2014 documentation of all personal data breaches regardless of notification obligation (Art. 33(5))"
       ],
       "threshold_adjustments": {},
       "framework_reference": "Art. 33, Art. 34"
@@ -212,7 +231,7 @@
     "DE-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Anomalous processing detection — identify unusual access patterns, bulk downloads, or exfiltration indicators",
+        "Anomalous processing detection \u2014 identify unusual access patterns, bulk downloads, or exfiltration indicators",
         "Security monitoring appropriate to risk level of processing (Art. 32(2))",
         "Vulnerability scanning and penetration testing as part of security assessment program"
       ],
@@ -223,7 +242,7 @@
       "applicable": true,
       "evidence_requirements": [
         "Process for regularly testing, assessing, and evaluating effectiveness of security measures (Art. 32(1)(d))",
-        "Vulnerability management — known vulnerabilities in systems processing personal data addressed promptly",
+        "Vulnerability management \u2014 known vulnerabilities in systems processing personal data addressed promptly",
         "Audit of compliance with GDPR processing requirements, including lawful basis verification"
       ],
       "threshold_adjustments": {},
@@ -242,19 +261,20 @@
     "RS-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Supervisory authority collaboration during breach response — provide further information requested (Art. 33(4))",
-        "Remediation measures documented and implemented to address breach cause",
-        "Updated risk assessment following breach — reassess likelihood and severity of impact"
+        "Human escalation paths configured for agent actions that trigger data subject rights under Art. 22 \u2014 automated decisions with significant effect routed to human reviewer (Art. 22(3))",
+        "Escalation SLAs defined for GDPR-relevant agent incidents \u2014 human reviewer acknowledges and responds within defined timeframe",
+        "Data subjects notified of right to obtain human intervention, express point of view, and contest automated decisions (Art. 22(3))",
+        "Escalation logs maintained with reviewer identity, timestamp, decision rationale, and outcome \u2014 available to supervisory authority on request (Art. 5(2))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "Art. 33(4)"
+      "framework_reference": "Art. 22, Art. 22(3)"
     },
     "RS-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Data subject notification where breach likely results in high risk to rights and freedoms — notification without undue delay (Art. 34(1))",
+        "Data subject notification where breach likely results in high risk to rights and freedoms \u2014 notification without undue delay (Art. 34(1))",
         "Data subject notification in clear and plain language describing nature, consequences, and measures taken (Art. 34(2))",
-        "Notification exemptions documented when applied — data encrypted, measures mitigate risk, disproportionate effort (Art. 34(3))"
+        "Notification exemptions documented when applied \u2014 data encrypted, measures mitigate risk, disproportionate effort (Art. 34(3))"
       ],
       "threshold_adjustments": {},
       "framework_reference": "Art. 34"
@@ -283,57 +303,151 @@
   "control_adjustments": {
     "PR-02": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["lawful_basis", "purpose_limitation"],
+      "additional_evidence_fields": [
+        "lawful_basis",
+        "purpose_limitation"
+      ],
       "regulatory_citation": "GDPR Art. 6 - Lawfulness of processing"
     },
     "PR-04": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["data_categories", "cross_border_transfer", "encryption_status"],
+      "additional_evidence_fields": [
+        "data_categories",
+        "cross_border_transfer",
+        "encryption_status"
+      ],
       "regulatory_citation": "GDPR Art. 32 - Security of processing"
     },
     "PR-05": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["processing_purpose", "data_subject_category", "lawful_basis"],
+      "additional_evidence_fields": [
+        "processing_purpose",
+        "data_subject_category",
+        "lawful_basis"
+      ],
       "regulatory_citation": "GDPR Art. 30 - Records of processing activities"
     },
     "DE-01": {
       "threshold_adjustment": "standard",
-      "additional_evidence_fields": ["data_breach_indicators"],
+      "additional_evidence_fields": [
+        "data_breach_indicators"
+      ],
       "regulatory_citation": "GDPR Art. 33 - Notification of personal data breach"
     }
   },
   "evidence_requirements": {
-    "PR-02": ["lawful_basis", "purpose_limitation"],
-    "PR-04": ["data_categories", "cross_border_transfer", "encryption_status"],
-    "PR-05": ["processing_purpose", "data_subject_category"]
+    "PR-02": [
+      "lawful_basis",
+      "purpose_limitation"
+    ],
+    "PR-04": [
+      "data_categories",
+      "cross_border_transfer",
+      "encryption_status"
+    ],
+    "PR-05": [
+      "processing_purpose",
+      "data_subject_category"
+    ]
   },
   "framework_mapping": {
-    "GOV-01": ["Art. 24", "Art. 25"],
-    "GOV-02": ["Art. 5(2)", "Art. 37", "Art. 38"],
-    "GOV-03": ["Art. 35", "Art. 36"],
-    "GOV-04": ["Art. 12", "Art. 13", "Art. 14"],
-    "ID-01": ["Art. 30"],
-    "ID-02": ["Art. 28"],
-    "ID-03": ["Art. 5(1)(c)", "Art. 5(1)(e)"],
-    "ID-04": ["Art. 28(1)", "Art. 28(2)"],
-    "ID-05": ["Art. 44", "Art. 45", "Art. 46"],
-    "PR-01": ["Art. 5(1)(f)", "Art. 32"],
-    "PR-02": ["Art. 5(1)(b)", "Art. 6", "Art. 9"],
-    "PR-03": ["Art. 5(1)(d)", "Art. 25"],
-    "PR-04": ["Art. 25", "Art. 32(1)(a)"],
-    "PR-05": ["Art. 5(2)", "Art. 30"],
-    "PR-06": ["Art. 32(1)(b)"],
-    "PR-07": ["Art. 32(1)(b)"],
-    "PR-08": ["Art. 17"],
-    "DE-01": ["Art. 33", "Art. 34"],
-    "DE-02": ["Art. 32(1)(d)", "Art. 39"],
-    "DE-03": ["Art. 32(2)"],
-    "DE-04": ["Art. 32(1)(d)"],
-    "RS-01": ["Art. 33"],
-    "RS-02": ["Art. 33(4)"],
-    "RS-03": ["Art. 34"],
-    "RC-01": ["Art. 32(1)(c)"],
-    "RC-02": ["Art. 32(1)(c)", "Art. 35"]
+    "GOV-01": [
+      "Art. 24",
+      "Art. 25"
+    ],
+    "GOV-02": [
+      "Art. 5(2)",
+      "Art. 37",
+      "Art. 38"
+    ],
+    "GOV-03": [
+      "Art. 35",
+      "Art. 36"
+    ],
+    "GOV-04": [
+      "Art. 22",
+      "Art. 22(3)"
+    ],
+    "ID-01": [
+      "Art. 30"
+    ],
+    "ID-02": [
+      "Art. 28"
+    ],
+    "ID-03": [
+      "Art. 5(1)(c)",
+      "Art. 5(1)(e)"
+    ],
+    "ID-04": [
+      "Art. 28(1)",
+      "Art. 28(2)"
+    ],
+    "ID-05": [
+      "Art. 35",
+      "Art. 36"
+    ],
+    "PR-01": [
+      "Art. 5(1)(f)",
+      "Art. 32"
+    ],
+    "PR-02": [
+      "Art. 5(1)(b)",
+      "Art. 6",
+      "Art. 9"
+    ],
+    "PR-03": [
+      "Art. 5(1)(d)",
+      "Art. 25"
+    ],
+    "PR-04": [
+      "Art. 25",
+      "Art. 32(1)(a)"
+    ],
+    "PR-05": [
+      "Art. 5(2)",
+      "Art. 30"
+    ],
+    "PR-06": [
+      "Art. 32(1)(b)"
+    ],
+    "PR-07": [
+      "Art. 32(1)(b)"
+    ],
+    "PR-08": [
+      "Art. 5(1)(f)",
+      "Art. 32(1)(b)"
+    ],
+    "DE-01": [
+      "Art. 33",
+      "Art. 34"
+    ],
+    "DE-02": [
+      "Art. 32(1)(d)",
+      "Art. 39"
+    ],
+    "DE-03": [
+      "Art. 32(2)"
+    ],
+    "DE-04": [
+      "Art. 32(1)(d)"
+    ],
+    "RS-01": [
+      "Art. 33"
+    ],
+    "RS-02": [
+      "Art. 22",
+      "Art. 22(3)"
+    ],
+    "RS-03": [
+      "Art. 34"
+    ],
+    "RC-01": [
+      "Art. 32(1)(c)"
+    ],
+    "RC-02": [
+      "Art. 32(1)(c)",
+      "Art. 35"
+    ]
   },
   "reporting_obligations": {
     "breach_notification_hours": 72,
