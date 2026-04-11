@@ -1,10 +1,14 @@
 {
   "id": "eu-ai-act",
   "name": "EU AI Act",
-  "version": "0.2",
+  "version": "0.3",
   "trigger_type": "data_classification",
-  "triggered_by": ["DC-AI", "DC-BIO"],
-  "description": "EU AI Act overlay for AI systems operating in or serving the EU market. First regulation directly governing AI agent behavior. Applies comprehensive requirements for high-risk AI systems including risk management, data governance, transparency, human oversight, and accuracy.",
+  "triggered_by": [
+    "DC-AI",
+    "DC-BIO",
+    "DC-GEN"
+  ],
+  "description": "EU AI Act overlay for AI systems operating in or serving the EU market. First regulation directly governing AI agent behavior. Applies comprehensive requirements for high-risk AI systems including risk management, data governance, transparency, human oversight, and accuracy. Trigger updated in v0.3 to include DC-GEN (general-purpose AI outputs and model-generated content): any EU-serving agent producing general-purpose AI outputs is subject to the GPAI provisions of the EU AI Act regardless of specific data classification.",
   "jurisdiction": "eu",
   "enforcement_date": "2025-08-02",
   "controls": {
@@ -20,7 +24,7 @@
     "GOV-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Deployer obligations documented — monitoring, human oversight, and reporting responsibilities assigned (Art.26)",
+        "Deployer obligations documented \u2014 monitoring, human oversight, and reporting responsibilities assigned (Art.26)",
         "Provider and deployer responsibilities clearly delineated"
       ],
       "threshold_adjustments": {},
@@ -45,7 +49,7 @@
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "Art.14 mandates human oversight for high-risk AI systems — human overseers must be able to understand, interpret, and override"
+        "reason": "Art.14 mandates human oversight for high-risk AI systems \u2014 human overseers must be able to understand, interpret, and override"
       },
       "framework_reference": "Art.14"
     },
@@ -91,7 +95,7 @@
       "evidence_requirements": [
         "Risk assessment identifying known and foreseeable risks of AI system (Art.9.2)",
         "Risk classification determination documented (Art.6, Art.7)",
-        "Note: Risk classification is an operator determination — Ancilis provides evidence but cannot classify risk level for the operator"
+        "Note: Risk classification is an operator determination \u2014 Ancilis provides evidence but cannot classify risk level for the operator"
       ],
       "threshold_adjustments": {},
       "framework_reference": "Art.6, Art.7, Art.9.2"
@@ -209,7 +213,7 @@
     "DE-04": {
       "applicable": true,
       "evidence_requirements": [
-        "Log integrity verified — automatic logging records not tampered with (Art.12)",
+        "Log integrity verified \u2014 automatic logging records not tampered with (Art.12)",
         "Traceability of AI system operation maintained"
       ],
       "threshold_adjustments": {},
@@ -273,60 +277,155 @@
   "control_adjustments": {
     "PR-01": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["ai_system_id", "risk_classification"],
-      "regulatory_citation": "EU AI Act Art.16, Art.50 — Provider obligations and transparency"
+      "additional_evidence_fields": [
+        "ai_system_id",
+        "risk_classification"
+      ],
+      "regulatory_citation": "EU AI Act Art.16, Art.50 \u2014 Provider obligations and transparency"
     },
     "PR-05": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["ai_decision_rationale", "human_oversight_status", "risk_level"],
-      "regulatory_citation": "EU AI Act Art.12 — Automatic record-keeping"
+      "additional_evidence_fields": [
+        "ai_decision_rationale",
+        "human_oversight_status",
+        "risk_level"
+      ],
+      "regulatory_citation": "EU AI Act Art.12 \u2014 Automatic record-keeping"
     },
     "DE-01": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["performance_metrics", "drift_indicators", "bias_indicators"],
-      "regulatory_citation": "EU AI Act Art.9.2, Art.72 — Risk management and post-market monitoring"
+      "additional_evidence_fields": [
+        "performance_metrics",
+        "drift_indicators",
+        "bias_indicators"
+      ],
+      "regulatory_citation": "EU AI Act Art.9.2, Art.72 \u2014 Risk management and post-market monitoring"
     },
     "GOV-04": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["human_oversight_mode", "override_capability_verified"],
-      "regulatory_citation": "EU AI Act Art.14 — Human oversight for high-risk AI systems"
+      "additional_evidence_fields": [
+        "human_oversight_mode",
+        "override_capability_verified"
+      ],
+      "regulatory_citation": "EU AI Act Art.14 \u2014 Human oversight for high-risk AI systems"
     }
   },
   "evidence_requirements": {
-    "PR-01": ["ai_system_id", "risk_classification"],
-    "PR-05": ["ai_decision_rationale", "human_oversight_status", "risk_level"],
-    "DE-01": ["performance_metrics", "drift_indicators", "bias_indicators"],
-    "GOV-04": ["human_oversight_mode", "override_capability_verified"]
+    "PR-01": [
+      "ai_system_id",
+      "risk_classification"
+    ],
+    "PR-05": [
+      "ai_decision_rationale",
+      "human_oversight_status",
+      "risk_level"
+    ],
+    "DE-01": [
+      "performance_metrics",
+      "drift_indicators",
+      "bias_indicators"
+    ],
+    "GOV-04": [
+      "human_oversight_mode",
+      "override_capability_verified"
+    ]
   },
   "framework_mapping": {
-    "GOV-01": ["Art.9", "Art.17"],
-    "GOV-02": ["Art.26"],
-    "GOV-03": ["Art.9.2", "Art.9.3"],
-    "GOV-04": ["Art.14"],
-    "ID-01": ["Art.49"],
-    "ID-02": ["Art.11", "Annex IV"],
-    "ID-03": ["Art.10"],
-    "ID-04": ["Art.11", "Annex IV"],
-    "ID-05": ["Art.6", "Art.7", "Art.9.2"],
-    "PR-01": ["Art.16", "Art.50"],
-    "PR-02": ["Art.9.4"],
-    "PR-03": ["Art.15"],
-    "PR-04": ["Art.10"],
-    "PR-05": ["Art.12"],
-    "PR-06": ["Art.11", "Annex IV"],
-    "PR-07": ["Art.15.4"],
-    "PR-08": ["Art.15.3", "Art.15.4"],
-    "DE-01": ["Art.9.2", "Art.72"],
-    "DE-02": ["Art.11", "Annex IV"],
-    "DE-03": ["Art.43", "Art.72"],
-    "DE-04": ["Art.12"],
-    "RS-01": ["Art.16g"],
-    "RS-02": ["Art.14", "Art.73"],
-    "RS-03": ["Art.18", "Art.73"],
-    "RC-01": ["Art.16g"],
-    "RC-02": ["Art.9", "Art.72"]
+    "GOV-01": [
+      "Art.9",
+      "Art.17"
+    ],
+    "GOV-02": [
+      "Art.26"
+    ],
+    "GOV-03": [
+      "Art.9.2",
+      "Art.9.3"
+    ],
+    "GOV-04": [
+      "Art.14"
+    ],
+    "ID-01": [
+      "Art.49"
+    ],
+    "ID-02": [
+      "Art.11",
+      "Annex IV"
+    ],
+    "ID-03": [
+      "Art.10"
+    ],
+    "ID-04": [
+      "Art.11",
+      "Annex IV"
+    ],
+    "ID-05": [
+      "Art.6",
+      "Art.7",
+      "Art.9.2"
+    ],
+    "PR-01": [
+      "Art.16",
+      "Art.50"
+    ],
+    "PR-02": [
+      "Art.9.4"
+    ],
+    "PR-03": [
+      "Art.15"
+    ],
+    "PR-04": [
+      "Art.10"
+    ],
+    "PR-05": [
+      "Art.12"
+    ],
+    "PR-06": [
+      "Art.11",
+      "Annex IV"
+    ],
+    "PR-07": [
+      "Art.15.4"
+    ],
+    "PR-08": [
+      "Art.15.3",
+      "Art.15.4"
+    ],
+    "DE-01": [
+      "Art.9.2",
+      "Art.72"
+    ],
+    "DE-02": [
+      "Art.11",
+      "Annex IV"
+    ],
+    "DE-03": [
+      "Art.43",
+      "Art.72"
+    ],
+    "DE-04": [
+      "Art.12"
+    ],
+    "RS-01": [
+      "Art.16g"
+    ],
+    "RS-02": [
+      "Art.14",
+      "Art.73"
+    ],
+    "RS-03": [
+      "Art.18",
+      "Art.73"
+    ],
+    "RC-01": [
+      "Art.16g"
+    ],
+    "RC-02": [
+      "Art.9",
+      "Art.72"
+    ]
   },
   "evidence_retention_minimum_days": 3650,
   "human_oversight_required": true,
-  "notes": "EU AI Act is the first regulation directly governing AI agent behavior. Enforcement phases: prohibited AI practices (Feb 2025), GPAI model obligations (Aug 2025), high-risk AI system obligations (Aug 2026). This overlay enforces strict monitoring, logging, and human oversight. Risk classification is an operator determination — Ancilis provides the evidence package but cannot classify risk level for the operator."
+  "notes": "EU AI Act is the first regulation directly governing AI agent behavior. Enforcement phases: prohibited AI practices (Feb 2025), GPAI model obligations (Aug 2025), high-risk AI system obligations (Aug 2026). This overlay enforces strict monitoring, logging, and human oversight. Risk classification is an operator determination \u2014 Ancilis provides the evidence package but cannot classify risk level for the operator."
 }
