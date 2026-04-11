@@ -73,18 +73,24 @@ class ComplianceConfig(BaseModel):
     evidence: EvidenceConfig = Field(default_factory=EvidenceConfig)
 
 
+class CliConfig(BaseModel):
+    update_check: bool = True
+    update_check_interval: int = 86400  # seconds
+
+
 class AncilisConfig(BaseModel):
     agent: AgentConfig
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     my_agent_handles: list[str] = Field(default_factory=list)
     certification_targets: list[str] = Field(default_factory=list)
     compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
+    cli: CliConfig = Field(default_factory=CliConfig)
 
     @model_validator(mode="before")
     @classmethod
     def warn_unknown_keys(cls, values: Any) -> Any:
         if isinstance(values, dict):
-            known = {"agent", "security", "my_agent_handles", "certification_targets", "compliance"}
+            known = {"agent", "security", "my_agent_handles", "certification_targets", "compliance", "cli"}
             unknown = set(values.keys()) - known
             if unknown:
                 # Store warnings for later reporting
