@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from ancilis.config import SHARED_DIR, load_config, validate_config
+from ancilis.errors import ConfigError
 
 
 class TestMinimalConfig:
@@ -70,11 +71,11 @@ class TestValidation:
             load_config(raw={"agent": {"name": "x"}, "security": {"mode": "invalid"}})
 
     def test_unknown_data_type_raises(self):
-        with pytest.raises(ValueError, match="Unknown data type"):
+        with pytest.raises(ConfigError, match="Unknown data type"):
             load_config(raw={"agent": {"name": "x"}, "my_agent_handles": ["not_a_type"]})
 
     def test_unknown_control_id_raises(self):
-        with pytest.raises(ValueError, match="Unknown control ID"):
+        with pytest.raises(ConfigError, match="Unknown control ID"):
             load_config(
                 raw={
                     "agent": {"name": "x"},
