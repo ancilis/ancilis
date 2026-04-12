@@ -1,5 +1,6 @@
 /**
  * Tests for DE-04, GOV-02, ID-01 evaluators (ANC-519).
+ * Also covers PR-01 parity tests (ANC-555).
  */
 
 import { describe, it, expect } from "vitest";
@@ -9,6 +10,7 @@ import type { ResolvedConfig } from "../src/ancilis/config/index.js";
 import { DE04IntegrityEvaluator, type DE04StoreAdapter } from "../src/ancilis/engine/evaluators/de04-integrity.js";
 import { GOV02OwnershipEvaluator } from "../src/ancilis/engine/evaluators/gov02-ownership.js";
 import { ID01InventoryEvaluator } from "../src/ancilis/engine/evaluators/id01-inventory.js";
+import { PR01IdentityEvaluator } from "../src/ancilis/engine/evaluators/pr01-identity.js";
 
 // --- Helpers ---
 
@@ -198,5 +200,46 @@ describe("ID-01 Agent Inventory & Registry", () => {
     expect((result.evidenceData?.["fields"] as Record<string, unknown>)).toHaveProperty("name");
     expect((result.evidenceData?.["fields"] as Record<string, unknown>)).toHaveProperty("id");
     expect(result.durationMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// --- PR-01 Parity Tests (ANC-555) ---
+
+describe("PR-01 Identity — null/undefined agentOwner parity with Python", () => {
+  const ev = new PR01IdentityEvaluator();
+
+  function makeParityAction(agentOwner: string | null | undefined): Action {
+    return {
+      actionId: randomUUID(),
+      timestamp: "2026-04-12T00:00:00Z",
+      agentId: "test-agent",
+      agentOwner,
+      actionType: "tool_call",
+      tool: { name: "test-tool", version: null, descriptionHash: null },
+      parameters: { raw: {}, parameterHash: "abc" },
+      context: {},
+    };
+  }
+
+  const configWithOwner = makeMinimalConfig({ agentName: "test-agent", agentOwner: "alice@example.com" });
+
+  it("parity: null agentOwner passes when owner configured (Python: agent_owner is not None → PASS)", () => {
+    const result = ev.evaluate(makeParityAction(null), configWithOwner);
+    expect(result.result).toBe("PASS");
+  });
+
+  it("parity: undefined agentOwner passes when owner configured (Python: agent_owner is not None → PASS)", () => {
+    const result = ev.evaluate(makeParityAction(undefined), configWithOwner);
+    expect(result.result).toBe("PASS");
+  });
+
+  it("parity: matching agentOwner still passes", () => {
+    const result = ev.evaluate(makeParityAction("alice@example.com"), configWithOwner);
+    expect(result.result).toBe("PASS");
+  });
+
+  it("parity: mismatched non-null agentOwner fails", () => {
+    const result = ev.evaluate(makeParityAction("bob@example.com"), configWithOwner);
+    expect(result.result).toBe("FAIL");
   });
 });

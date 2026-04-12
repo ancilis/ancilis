@@ -135,6 +135,16 @@ describe("PR-01 Identity", () => {
     const result = engine.evaluate(action);
     expect(getControlResult(result.controlResults, "PR-01").result).toBe("FAIL");
   });
+
+  it("parity: null agentOwner passes when owner configured (matches Python None behaviour)", () => {
+    // Python: `action.agent_owner is not None` → False when None → PASS
+    // TypeScript must do the same when agentOwner is null or undefined
+    const config = makeConfig({ agent: { name: "test-agent", owner: "alice" } });
+    const action = makeAction({ agentId: "test-agent", agentOwner: null });
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+    const result = engine.evaluate(action);
+    expect(getControlResult(result.controlResults, "PR-01").result).toBe("PASS");
+  });
 });
 
 // --- PR-02 Scope Tests ---
