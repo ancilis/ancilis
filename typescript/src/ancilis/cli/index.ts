@@ -9,3 +9,4 @@ export { runReport } from "./report.js";
 export type { ReportCommandOptions, ReportCommandResult } from "./report.js";
 export { handleScan } from "./scan.js";
 export type { ScanOptions } from "./scan.js";
+export { handleEvidence, runEvidenceSessions, runEvidenceReset, runEvidenceImport } from "./evidence.js";

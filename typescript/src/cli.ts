@@ -3,7 +3,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { approveTool, formatStatus, handleScan, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
+import { approveTool, formatStatus, handleEvidence, handleScan, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
@@ -37,6 +37,9 @@ function usage(): string {
     "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
     "  ancilis baseline list [--overlay <id>] [--config <path>] [--db <path>]",
     "  ancilis baseline drift [--id <baseline-id>] [--overlay <id>] [--format terminal|json] [--config <path>] [--db <path>]",
+    "  ancilis evidence sessions [--config <path>] [--db <path>]",
+    "  ancilis evidence reset [--config <path>] [--db <path>] [--yes]",
+    "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--config <path>] [--db <path>] [--agent-id <id>]",
     "  ancilis --version",
   ].join("\n");
 }
@@ -346,6 +349,8 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
         return handleConfigValidate(rest.slice(1), io);
       case "baseline":
         return await handleBaseline(rest, io);
+      case "evidence":
+        return await handleEvidence(rest, io);
       case "scan": {
         const knownFlags = ["--ci", "--config", "--db", "--period", "--session", "--latest", "--all"];
         const unknown = rest.filter(a => a.startsWith("--") && !knownFlags.includes(a));

@@ -484,6 +484,44 @@ export class EvidenceStore {
     return runAsync(this._conn!, sql, params);
   }
 
+  async listSessions(): Promise<Array<{ sessionId: string; count: number; firstSeen: string; lastSeen: string }>> {
+    await this.ensureInitialized();
+    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
+    const rows = await allAsync(
+      this._conn!,
+      `SELECT agent_id as session_id, COUNT(*)::INTEGER as count, MIN(timestamp) as first_seen, MAX(timestamp) as last_seen FROM evidence_records${whereClause} GROUP BY agent_id ORDER BY MAX(timestamp) DESC`,
+      params,
+    );
+    return rows.map((row) => {
+      const r = row as Record<string, unknown>;
+      return {
+        sessionId: r.session_id as string,
+        count: r.count as number,
+        firstSeen: r.first_seen as string,
+        lastSeen: r.last_seen as string,
+      };
+    });
+  }
+
+  async reset(): Promise<number> {
+    await this.ensureInitialized();
+    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
+    const countRows = await allAsync(
+      this._conn!,
+      `SELECT COUNT(*)::INTEGER as cnt FROM evidence_records${whereClause}`,
+      params,
+    );
+    const count = (countRows[0] as Record<string, unknown>).cnt as number;
+    if (this._tenantId) {
+      await runAsync(this._conn!, "DELETE FROM evidence_records WHERE tenant_id = ?", [this._tenantId]);
+    } else {
+      await execAsync(this._conn!, "DELETE FROM evidence_records");
+    }
+    return count;
+  }
+
   async purgeBefore(beforeTimestamp: string): Promise<number> {
     await this.ensureInitialized();
     const countRows = await allAsync(
