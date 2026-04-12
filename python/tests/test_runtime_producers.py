@@ -13,7 +13,7 @@ from ancilis.producers.tool import BlockedActionError, ToolActionProducer, tool,
 
 
 def _config(*, mode: str = "audit", tools_allowed: list[str] | None = None) -> object:
-    raw = {"agent": {"name": "runtime-agent"}, "security": {"mode": mode, "tools": {"allowed": tools_allowed or []}}}
+    raw = {"agent": {"name": "runtime-agent", "owner": "test-owner"}, "security": {"mode": mode, "tools": {"allowed": tools_allowed or []}}}
     return load_config(raw=raw)
 
 

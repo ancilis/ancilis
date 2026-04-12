@@ -22,13 +22,13 @@ from ancilis.evidence.store import EvidenceStore
 
 
 def _config(**overrides):
-    raw = {"agent": {"name": "test-agent"}}
+    raw = {"agent": {"name": "test-agent", "owner": "test-owner"}}
     raw.update(overrides)
     return load_config(raw=raw)
 
 
 def _enforce_config(**overrides):
-    raw = {"agent": {"name": "test-agent"}, "security": {"mode": "enforce"}}
+    raw = {"agent": {"name": "test-agent", "owner": "test-owner"}, "security": {"mode": "enforce"}}
     raw.update(overrides)
     return load_config(raw=raw)
 

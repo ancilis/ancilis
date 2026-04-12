@@ -152,7 +152,7 @@ class TestAuditVsEnforce:
     def test_enforce_mode_allows_approved_tool(self) -> None:
         """In enforce mode, approved tools pass through."""
         config = load_config(raw={
-            "agent": {"name": "test"},
+            "agent": {"name": "test", "owner": "test-owner"},
             "security": {"mode": "enforce", "tools": {"allowed": ["approved_tool"]}},
         })
         engine = Engine(config)
@@ -174,7 +174,7 @@ class TestAuditVsEnforce:
         """Evidence records contain the correct mode field."""
         for mode in ("audit", "enforce"):
             config = load_config(raw={
-                "agent": {"name": "test"},
+                "agent": {"name": "test", "owner": "test-owner"},
                 "security": {"mode": mode, "tools": {"allowed": ["test_tool"]}},
             })
             engine = Engine(config)
@@ -286,7 +286,7 @@ class TestMCPMiddlewareIntegration:
     async def test_happy_path_allowed(self, mock_session) -> None:
         """Allowed tool passes through middleware."""
         config = load_config(raw={
-            "agent": {"name": "test"},
+            "agent": {"name": "test", "owner": "test-owner"},
             "security": {"mode": "enforce", "tools": {"allowed": ["allowed-tool"]}},
         })
         from ancilis.middleware import AncilisMiddleware

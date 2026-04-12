@@ -40,7 +40,7 @@ class GOV02OwnershipEvaluator:
                 control_id=self.control_id,
                 control_name=self.control_name,
                 result="FAIL",
-                detail="No agent owner configured. Add agent.owner in ancilis.yaml.",
+                detail="No agent owner configured. Set agent.owner in ancilis.yaml for accountability tracking.",
                 evidence_data=evidence,
                 duration_ms=(time.perf_counter() - start) * 1000,
             )

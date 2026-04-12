@@ -48,7 +48,7 @@ def _make_action(
 
 
 def _make_config(**overrides):
-    raw = {"agent": {"name": "test-agent"}}
+    raw = {"agent": {"name": "test-agent", "owner": "test-owner"}}
     raw.update(overrides)
     return load_config(raw=raw)
 
