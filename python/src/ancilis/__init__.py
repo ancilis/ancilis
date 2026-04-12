@@ -1,5 +1,12 @@
 """Ancilis — runtime policy enforcement for AI agents."""
 
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
+try:
+    __version__ = _pkg_version("ancilis")
+except PackageNotFoundError:
+    __version__ = "0.0.0+dev"
+
 from ancilis.baselines import BaselineManager, DriftReport
 from ancilis.config import load_config
 from ancilis.deps.scanner import DependencyScanner

@@ -26,7 +26,7 @@ source .venv/bin/activate && pytest python/tests/ -v
 source .venv/bin/activate && pip install -e ".[dev]"
 
 # Validate config
-ancilis config validate ancilis.yaml
+ancilis config validate --config ancilis.yaml
 ```
 
 ## Codex Integration — Independent Review Protocol
