@@ -54,7 +54,7 @@ jobs:
         id: hash
         run: |
           TARBALL=$(ls release-artifacts/*.tgz)
-          sha256sum "$TARBALL" > release-artifacts/SHA256SUMS
+          (cd release-artifacts && sha256sum "$(basename "$TARBALL")") > release-artifacts/SHA256SUMS
           echo "sha256=$(sha256sum "$TARBALL" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           cat release-artifacts/SHA256SUMS
       - name: Dry-run publish
