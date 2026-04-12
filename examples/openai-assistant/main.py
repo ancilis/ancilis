@@ -235,7 +235,7 @@ print()
 # ---------------------------------------------------------------------------
 # Evidence summary
 # ---------------------------------------------------------------------------
-summary = evidence.get_summary()
+summary = evidence.get_summary(session_id=producer.session_id)
 print("=== Evidence Summary ===")
 print(f"  API calls recorded: {summary['total_evaluations']}")
 print(f"  Decisions:          {summary['decisions']}")

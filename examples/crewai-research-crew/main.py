@@ -132,7 +132,7 @@ print(f"  generate_report → {rep['word_count']} words, {len(rep['sections'])} 
 print()
 
 # --- Evidence summary ---
-summary = evidence.get_summary()
+summary = evidence.get_summary(session_id=producer.session_id)
 print("=== Evidence Summary ===")
 print(f"  Records:    {summary['total_evaluations']}")
 print(f"  Decisions:  {summary['decisions']}")

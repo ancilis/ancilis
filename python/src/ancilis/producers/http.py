@@ -62,6 +62,12 @@ class HTTPActionProducer:
         self._engine = engine
         self._registry = registry or engine.registry
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
+        self._session_id: str = str(uuid.uuid4())
+
+    @property
+    def session_id(self) -> str:
+        """Unique identifier for this producer instance (one per agent run)."""
+        return self._session_id
 
     @property
     def producer_type(self) -> ProducerType:
