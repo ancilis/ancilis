@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -217,7 +218,11 @@ def scan(
         _threshold_rank = _severity_order.get(_threshold, 1)
 
         if config.scan_dependencies_enabled:
+            # Tag dep scanner records with a session_id so they don't pollute
+            # latest_session_id() and cause subsequent scans to show all-time evidence.
+            dep_scan_session_id = session_id or str(uuid.uuid4())
             for eval_result in DependencyScanner(config).scan():
+                eval_result.session_id = dep_scan_session_id
                 store.store(eval_result, "dependency-scanner")
                 for cr in eval_result.control_results:
                     # Filter out CVE IDs from the ignore list

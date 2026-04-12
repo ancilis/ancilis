@@ -393,17 +393,22 @@ class EvidenceStore:
         ]
 
     def latest_session_id(self) -> str | None:
-        """Return the session_id of the most recent evidence record, or None if empty."""
+        """Return the session_id of the most recent evidence record that has one, or None if empty.
+
+        Records with session_id=NULL (e.g. from the dependency scanner) are skipped
+        so they do not poison the latest-session lookup and inflate subsequent scan results.
+        """
         self._ensure_initialized()
         if self._tenant_id is not None:
             result = self._connection.execute(
                 "SELECT session_id FROM evidence_records "
-                "WHERE tenant_id = ? ORDER BY timestamp DESC LIMIT 1",
+                "WHERE session_id IS NOT NULL AND tenant_id = ? ORDER BY timestamp DESC LIMIT 1",
                 [self._tenant_id],
             ).fetchone()
         else:
             result = self._connection.execute(
-                "SELECT session_id FROM evidence_records ORDER BY timestamp DESC LIMIT 1"
+                "SELECT session_id FROM evidence_records "
+                "WHERE session_id IS NOT NULL ORDER BY timestamp DESC LIMIT 1"
             ).fetchone()
         return result[0] if result else None
 
