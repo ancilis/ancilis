@@ -517,7 +517,7 @@ export class EvidenceStore {
     const params = this._tenantId ? [this._tenantId] : [];
     const rows = await allAsync(
       this._conn!,
-      `SELECT session_id FROM evidence_records ${tenantFilter} ORDER BY timestamp DESC LIMIT 1`,
+      `SELECT session_id FROM evidence_records ${tenantFilter} ORDER BY timestamp DESC, seq_id DESC LIMIT 1`,
       params,
     );
     const row = (rows as Array<Record<string, unknown>>)[0];

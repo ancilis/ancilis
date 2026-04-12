@@ -592,4 +592,31 @@ describe("EvidenceStore.latestSessionId", () => {
     expect(id).toBeNull();
     await store.close();
   });
+
+  it("returns session_id of most recent record", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const e1 = makeEvaluation({ evaluationId: "e1" });
+    e1.context = { sessionId: "sess-A" } as typeof e1.context;
+    await store.store(e1, "tool1");
+    const e2 = makeEvaluation({ evaluationId: "e2" });
+    e2.context = { sessionId: "sess-B" } as typeof e2.context;
+    await store.store(e2, "tool2");
+    const id = await store.latestSessionId();
+    expect(id).toBe("sess-B"); // most recent
+    await store.close();
+  });
+
+  it("returns null when latest record has no session_id", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const e1 = makeEvaluation({ evaluationId: "e1" });
+    e1.context = { sessionId: "sess-A" } as typeof e1.context;
+    await store.store(e1, "tool1");
+    // Store a second record with no session_id (context undefined)
+    const e2 = makeEvaluation({ evaluationId: "e2" });
+    e2.context = undefined as typeof e2.context;
+    await store.store(e2, "tool2");
+    const id = await store.latestSessionId();
+    expect(id).toBeNull();
+    await store.close();
+  });
 });
