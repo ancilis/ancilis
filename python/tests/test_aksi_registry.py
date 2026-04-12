@@ -639,3 +639,60 @@ class TestOverlayCitationRegression:
         assert "Art. 5(1)(f)" not in pr08, (
             f"GDPR PR-08 must NOT cite Art. 5(1)(f) (integrity principle, wrong anchor), got: {pr08}"
         )
+
+    def test_securities_mnpi_pr05_cites_sox802_and_rule17a4_for_retention(self):
+        """PR-05 (Audit Trail) must cite SOX §802 and SEC Rule 17a-4 for 7-year MNPI retention."""
+        profiles = load_overlay_profiles()
+        fm = profiles["securities-mnpi"]["framework_mapping"]
+        pr05 = fm["PR-05"]
+        # framework_mapping values are lists; join for substring checks
+        pr05_str = " | ".join(pr05)
+        # SOX §802 mandates destruction-of-records prohibition and 7-year retention
+        assert "§802" in pr05_str, (
+            f"MNPI PR-05 should cite SOX §802 (record destruction prohibition), got: {pr05}"
+        )
+        # SEC Rule 17a-4 mandates broker-dealer recordkeeping and non-erasable storage
+        assert "17a-4" in pr05_str, (
+            f"MNPI PR-05 should cite SEC Rule 17a-4 (7-year recordkeeping), got: {pr05}"
+        )
+
+    def test_securities_mnpi_gov04_cites_reg_fd_101e_for_disclosure_approval(self):
+        """GOV-04 (HITL Enforcement) must cite Reg FD §243.101(e) for disclosure exceptions."""
+        profiles = load_overlay_profiles()
+        fm = profiles["securities-mnpi"]["framework_mapping"]
+        gov04 = fm["GOV-04"]
+        gov04_str = " | ".join(gov04)
+        # Reg FD §243.101(e) defines the selective disclosure exception requiring human oversight
+        assert "243.101(e)" in gov04_str, (
+            f"MNPI GOV-04 should cite 17 CFR 243.101(e) (selective disclosure exception), got: {gov04}"
+        )
+
+    def test_securities_mnpi_rs02_cites_reg_fd_and_sox_for_notification(self):
+        """RS-02 (Communication) must cite Reg FD §243.101(e) for simultaneous disclosure."""
+        profiles = load_overlay_profiles()
+        fm = profiles["securities-mnpi"]["framework_mapping"]
+        rs02 = fm["RS-02"]
+        rs02_str = " | ".join(rs02)
+        # Reg FD §243.101(e) governs simultaneous public disclosure when Reg FD is violated
+        assert "243.101(e)" in rs02_str, (
+            f"MNPI RS-02 should cite 17 CFR 243.101(e) (simultaneous disclosure), got: {rs02}"
+        )
+        # SOX §302/§404 governs CEO/CFO certification and disclosure controls
+        assert "SOX" in rs02_str, (
+            f"MNPI RS-02 should cite SOX (disclosure controls certification), got: {rs02}"
+        )
+
+    def test_securities_mnpi_pr01_cites_reg_fd_not_broker_records_rule(self):
+        """PR-01 (Identity) must cite Reg FD 17 CFR 243.100-103, not broker-dealer records rules."""
+        profiles = load_overlay_profiles()
+        fm = profiles["securities-mnpi"]["framework_mapping"]
+        pr01 = fm["PR-01"]
+        pr01_str = " | ".join(pr01)
+        # Reg FD 17 CFR 243.100 is the core prohibition on selective disclosure
+        assert "243.100" in pr01_str, (
+            f"MNPI PR-01 should cite SEC Reg FD 17 CFR 243.100 (disclosure prohibition), got: {pr01}"
+        )
+        # Must NOT cite SEC Rule 17a-3 (broker-dealer records rule — wrong anchor for identity)
+        assert "17a-3" not in pr01_str, (
+            f"MNPI PR-01 must NOT cite SEC Rule 17a-3 (broker records, not identity controls), got: {pr01}"
+        )
