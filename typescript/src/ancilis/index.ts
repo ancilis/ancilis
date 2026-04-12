@@ -25,7 +25,7 @@ export {
 } from "./activation/index.js";
 export type { ActivationSpec, ClassificationRecommendation, CertificationUpgradeAdvisory, PatternDetection } from "./activation/index.js";
 
-export { PR05AuditEvaluator, DE01BaselineEvaluator } from "./controls/index.js";
+export { PR05AuditEvaluator, PR06ConfigBaselineEvaluator, PR07TransportEvaluator, PR08InputEvaluator, DE01BaselineEvaluator } from "./controls/index.js";
 export type { BaselineWindow, DeviationFlag } from "./controls/index.js";
 
 export { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderNdjson, renderCsv, renderOscalJson, renderPdf } from "./report/index.js";

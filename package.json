@@ -46,14 +46,11 @@
     "compliance",
     "runtime"
   ],
-  "author": {
-    "name": "Kevin Bauer",
-    "email": "kevin@ancilis.ai"
-  },
+  "author": "Kevin Bauer <kevin@ancilis.ai>",
   "license": "BUSL-1.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ancilis/ancilis.git"
+    "url": "git+https://github.com/ancilis/ancilis.git"
   },
   "homepage": "https://ancilis.ai",
   "bugs": {
@@ -78,5 +75,9 @@
     "eslint": "^9.0.0",
     "typescript": "^5.5.0",
     "vitest": "^4.1.2"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
   }
 }
