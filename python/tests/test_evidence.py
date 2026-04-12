@@ -272,6 +272,33 @@ class TestEvidenceStore:
         assert any("hash mismatch" in error for error in errors)
         store.close()
 
+    def test_verify_chain_detects_null_output_summary_injection(self):
+        """Records stored with output_summary=None must detect post-hoc injection.
+
+        Backward-compat scenario: legacy records had output_summary=NULL, which is
+        excluded from the hash by the conditional-inclusion logic. If an attacker later
+        injects a non-null value, the recomputed hash includes it and won't match the
+        stored hash — tamper detected.
+        """
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        record = store.store(
+            make_evaluation(evaluation_id="e1"),
+            tool_name="t1",
+            output_summary=None,  # stored without output_summary in hash
+        )
+        # Inject a value post-hoc
+        store._connection.execute(
+            "UPDATE evidence_records SET output_summary = ? WHERE record_id = ?",
+            ["injected output", record.record_id],
+        )
+
+        valid, errors = store.verify_chain()
+        assert valid is False
+        assert any("hash mismatch" in error for error in errors)
+        store.close()
+
     def test_verify_chain_empty(self):
         config = make_config()
         store = EvidenceStore(config, in_memory=True)

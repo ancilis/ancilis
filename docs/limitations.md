@@ -68,6 +68,25 @@ The SHA-256 hash chain provides tamper detection — if someone modifies a recor
 
 For stronger guarantees, export evidence to an append-only external store.
 
+### Hash chain field coverage
+
+All evidence record fields relevant to a control decision are included in the SHA-256 hash:
+`evaluation_id`, `timestamp`, `agent_id`, `source_type`, `tool_name`, `decision`, `mode`,
+`control_results`, `active_overlays`, `data_classifications`, `active_certifications`,
+`total_duration_ms`, `previous_hash`, and `output_summary` (when present).
+
+Fields excluded from the hash by design: `record_id`, `sdk_version`, `detected_data_types`,
+`classification_context`. These are supplemental metadata and their modification does not alter
+the tamper-evidence of the control decision record.
+
+**Backward compatibility:** Records created before `output_summary` was added to the hash scheme
+store `NULL` for that field. `verify_chain` uses conditional-inclusion logic — `output_summary`
+is added to the canonical payload only when non-null. This means:
+- Legacy records with `output_summary=NULL` verify correctly against their stored hash.
+- Post-hoc injection of a non-null value into a legacy record is still detected as a hash
+  mismatch, because the recomputed canonical includes the injected value while the stored hash
+  does not.
+
 ## No GUI, no SaaS
 
 Ancilis is an SDK and CLI. There is no web dashboard, no hosted service, no cloud sync. Evidence is local. Reports are generated locally.
