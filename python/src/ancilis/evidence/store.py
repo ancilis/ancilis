@@ -145,7 +145,7 @@ class EvidenceStore:
             )
         if "source_type" not in columns:
             self._connection.execute(
-                "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'"
+                "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR DEFAULT 'agent'"
             )
         if "output_summary" not in columns:
             self._connection.execute(
