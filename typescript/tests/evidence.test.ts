@@ -620,3 +620,81 @@ describe("EvidenceStore.latestSessionId", () => {
     await store.close();
   });
 });
+
+// --- detectedDataTypes + sdkVersion store round-trip (ANC-736) ---
+
+describe("EvidenceStore detectedDataTypes field", () => {
+  it("stores and retrieves empty detectedDataTypes", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const ev = makeEvaluation({ detectedDataTypes: [] });
+    await store.store(ev, "scan-tool");
+    const records = await store.getRecords();
+    expect(records[0].detectedDataTypes).toEqual([]);
+    await store.close();
+  });
+
+  it("stores and retrieves DC code array", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const ev = makeEvaluation({ detectedDataTypes: ["DC-PII", "DC-CHD"] });
+    await store.store(ev, "scan-tool");
+    const records = await store.getRecords();
+    expect(records[0].detectedDataTypes).toEqual(["DC-PII", "DC-CHD"]);
+    await store.close();
+  });
+
+  it("multiple records keep independent detectedDataTypes", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation({ evaluationId: "e1", detectedDataTypes: ["DC-PII"] }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2", detectedDataTypes: ["DC-IP"] }), "t2");
+    const records = await store.getRecords();
+    expect(records[0].detectedDataTypes).toEqual(["DC-PII"]);
+    expect(records[1].detectedDataTypes).toEqual(["DC-IP"]);
+    await store.close();
+  });
+
+  it("defaults to empty array when field is absent", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const ev = makeEvaluation();
+    // detectedDataTypes not set — should default to []
+    await store.store(ev, "scan-tool");
+    const records = await store.getRecords();
+    expect(records[0].detectedDataTypes).toEqual([]);
+    await store.close();
+  });
+});
+
+describe("EvidenceStore sdkVersion field", () => {
+  it("sdkVersion is a string or null (never undefined)", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "t1");
+    const records = await store.getRecords();
+    // sdkVersion may be null if package.json is not resolvable in the test env,
+    // but it must not be undefined — the field should always be present.
+    expect(records[0].sdkVersion === null || typeof records[0].sdkVersion === "string").toBe(true);
+    await store.close();
+  });
+
+  it("sdkVersion is consistent across multiple records", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
+    const records = await store.getRecords();
+    expect(records[0].sdkVersion).toBe(records[1].sdkVersion);
+    await store.close();
+  });
+
+  it("sdkVersion round-trips through store correctly", async () => {
+    // Directly inject a known version value to test the round-trip path
+    // bypassing module-level version resolution.
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "t1");
+    // Directly update the record in DuckDB to set a known sdk_version
+    const conn = (store as unknown as Record<string, unknown>)._conn as import("duckdb").Connection;
+    await new Promise<void>((resolve, reject) => {
+      conn.run("UPDATE evidence_records SET sdk_version = '1.2.3'", (err) => err ? reject(err) : resolve());
+    });
+    const records = await store.getRecords();
+    expect(records[0].sdkVersion).toBe("1.2.3");
+    await store.close();
+  });
+});
