@@ -14,7 +14,7 @@
   "enforcement_date": "2026-06-30",
   "original_enforcement_date": "2026-02-01",
   "delay_instrument": "SB 25B-004 (signed 2025-08-28)",
-  "codification": "CRS Title 6, Article 1, §§ 6-1-1701 et seq.",
+  "codification": "CRS Title 6, Article 1, \u00a7\u00a7 6-1-1701 et seq.",
   "enforcing_authority": "Colorado Attorney General (coag.gov/ai/)",
   "safe_harbor_frameworks": [
     "iso-42001",
@@ -35,184 +35,184 @@
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
-        "Written risk management policy for each high-risk AI system documented and approved (CRS §6-1-1702(2)(a))",
+        "Written risk management policy for each high-risk AI system documented and approved (CRS \u00a76-1-1702(2)(a))",
         "Risk management policy aligned with a recognized framework (ISO 42001, NIST AI RMF, or Colorado AG-designated equivalent) to support affirmative defense",
         "Policy covers: AI system purpose, risk identification process, mitigation measures, monitoring plan, and accountability structure",
-        "Developer documentation received and retained — model cards, dataset cards, or equivalent technical documentation provided by AI system developers (CRS §6-1-1702(3)(a))"
+        "Developer documentation received and retained \u2014 model cards, dataset cards, or equivalent technical documentation provided by AI system developers (CRS \u00a76-1-1702(3)(a))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(a) — Deployer risk management policy obligation"
+      "framework_reference": "CRS \u00a76-1-1702(2)(a) \u2014 Deployer risk management policy obligation"
     },
     "GOV-02": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
         "Named responsible individual or team for each high-risk AI system documented",
-        "Accountability chain for consequential AI decisions documented — deployer responsibility acknowledged",
-        "Developer-deployer relationship documented where applicable — records of developer documentation received per CRS §6-1-1702(3)(a)",
+        "Accountability chain for consequential AI decisions documented \u2014 deployer responsibility acknowledged",
+        "Developer-deployer relationship documented where applicable \u2014 records of developer documentation received per CRS \u00a76-1-1702(3)(a)",
         "Contact information for consumer AI inquiries designated and accessible (required in pre-decision consumer notice)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702 — Developer and deployer accountability obligations"
+      "framework_reference": "CRS \u00a76-1-1702 \u2014 Developer and deployer accountability obligations"
     },
     "GOV-03": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
         "Risk tolerance for each high-risk AI system defined and documented as part of risk management policy",
-        "Impact assessment conducted before deployment — must address: purpose, benefits, foreseeable risks, algorithmic discrimination risk, mitigation measures, post-deployment monitoring plan (CRS §6-1-1702(2)(b))",
+        "Impact assessment conducted before deployment \u2014 must address: purpose, benefits, foreseeable risks, algorithmic discrimination risk, mitigation measures, post-deployment monitoring plan (CRS \u00a76-1-1702(2)(b))",
         "Risk acceptance rationale documented for residual risks following mitigation",
-        "Algorithmic discrimination risk specifically assessed — analysis of whether AI system could cause unfair or discriminatory outcomes in the covered consequential decision domain"
+        "Algorithmic discrimination risk specifically assessed \u2014 analysis of whether AI system could cause unfair or discriminatory outcomes in the covered consequential decision domain"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(b) — Impact assessment obligation"
+      "framework_reference": "CRS \u00a76-1-1702(2)(b) \u2014 Impact assessment obligation"
     },
     "GOV-04": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Human oversight configuration documented — level of human review for consequential AI decisions",
-        "Pre-decision consumer notice documented and implemented: notice to consumer that a high-risk AI system is used, type of system, and contact information for inquiries (CRS §6-1-1702(2)(c)(I))",
+        "Human oversight configuration documented \u2014 level of human review for consequential AI decisions",
+        "Pre-decision consumer notice documented and implemented: notice to consumer that a high-risk AI system is used, type of system, and contact information for inquiries (CRS \u00a76-1-1702(2)(c)(I))",
         "Consumer notice delivered BEFORE the high-risk AI system makes the consequential decision",
-        "Website disclosure published listing all high-risk AI systems deployed, their purposes, and types of consequential decisions made (CRS §6-1-1702(2)(e))",
+        "Website disclosure published listing all high-risk AI systems deployed, their purposes, and types of consequential decisions made (CRS \u00a76-1-1702(2)(e))",
         "Note: Colorado consumer notice obligations go beyond AKSI's oversight configuration scope. Evidence must include actual notice delivery records, not just configuration documentation."
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(c)(I) and §6-1-1702(2)(e) — Consumer notice and website disclosure obligations"
+      "framework_reference": "CRS \u00a76-1-1702(2)(c)(I) and \u00a76-1-1702(2)(e) \u2014 Consumer notice and website disclosure obligations"
     },
     "ID-01": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
-        "Inventory of all high-risk AI systems deployed — includes: system name/description, consequential decision domain, deployment date, accountable owner",
-        "Inventory used as basis for website disclosure required under CRS §6-1-1702(2)(e)",
+        "Inventory of all high-risk AI systems deployed \u2014 includes: system name/description, consequential decision domain, deployment date, accountable owner",
+        "Inventory used as basis for website disclosure required under CRS \u00a76-1-1702(2)(e)",
         "Inventory updated when new high-risk AI systems are deployed or existing systems materially changed",
         "Consumer-accessible disclosure version maintained at public-facing URL"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(e) — Website disclosure obligation (requires enumeration of deployed high-risk AI systems)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(e) \u2014 Website disclosure obligation (requires enumeration of deployed high-risk AI systems)"
     },
     "ID-02": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
         "Third-party AI tools and model providers used in high-risk AI systems documented",
-        "Developer documentation received and retained — model cards, dataset documentation, known risks disclosed by developer",
+        "Developer documentation received and retained \u2014 model cards, dataset documentation, known risks disclosed by developer",
         "Note: Colorado places documentation obligations on developers to provide documentation to deployers. Deployer evidence requirement includes records of developer documentation received."
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(3)(a) — Developer documentation furnishing obligation"
+      "framework_reference": "CRS \u00a76-1-1702(3)(a) \u2014 Developer documentation furnishing obligation"
     },
     "ID-03": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
-        "Data inputs to high-risk AI systems documented — personal data types, sources, and classification",
-        "Training data documentation received from developer — dataset cards, bias assessments, known limitations",
-        "Personal data used in consequential decisions identified — supports consumer data correction right under CRS §6-1-1702(2)(c)(II)",
-        "Data accuracy controls documented — process for identifying and correcting inaccurate personal data used in AI decisions"
+        "Data inputs to high-risk AI systems documented \u2014 personal data types, sources, and classification",
+        "Training data documentation received from developer \u2014 dataset cards, bias assessments, known limitations",
+        "Personal data used in consequential decisions identified \u2014 supports consumer data correction right under CRS \u00a76-1-1702(2)(c)(II)",
+        "Data accuracy controls documented \u2014 process for identifying and correcting inaccurate personal data used in AI decisions"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(b) and §6-1-1702(2)(c)(II) — Impact assessment data documentation + consumer data correction"
+      "framework_reference": "CRS \u00a76-1-1702(2)(b) and \u00a76-1-1702(2)(c)(II) \u2014 Impact assessment data documentation + consumer data correction"
     },
     "ID-04": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Third-party AI system providers assessed — developer-furnished documentation reviewed as part of deployer due diligence",
-        "Developer risk disclosures received and documented — any developer-disclosed known or foreseeable risks of algorithmic discrimination",
+        "Third-party AI system providers assessed \u2014 developer-furnished documentation reviewed as part of deployer due diligence",
+        "Developer risk disclosures received and documented \u2014 any developer-disclosed known or foreseeable risks of algorithmic discrimination",
         "Note: Colorado creates a developer-to-deployer documentation handoff obligation. Deployer evidence should include records of documentation received from each AI developer, confirming the supply chain governance chain."
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(3)(a) — Developer documentation obligations; deployer due diligence"
+      "framework_reference": "CRS \u00a76-1-1702(3)(a) \u2014 Developer documentation obligations; deployer due diligence"
     },
     "ID-05": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
-        "Impact assessment completed before deployment of each high-risk AI system (CRS §6-1-1702(2)(b))",
+        "Impact assessment completed before deployment of each high-risk AI system (CRS \u00a76-1-1702(2)(b))",
         "Impact assessment covers: (a) intended purpose and benefits; (b) foreseeable risks and discrimination risk; (c) data inputs and quality; (d) mitigation measures; (e) post-deployment monitoring plan",
-        "Algorithmic discrimination risk specifically addressed in risk profile — analysis of whether system could produce disparate impacts in the covered consequential decision domain",
+        "Algorithmic discrimination risk specifically addressed in risk profile \u2014 analysis of whether system could produce disparate impacts in the covered consequential decision domain",
         "Impact assessment records retained and available for Colorado AG review on request"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(b) — Impact assessment obligation (equivalent to AKSI risk profiling)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(b) \u2014 Impact assessment obligation (equivalent to AKSI risk profiling)"
     },
     "PR-01": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Access controls for high-risk AI systems documented — part of the risk management program",
-        "Note: Colorado does not specify authentication standards; access control evidence contributes to the broader risk management program required under CRS §6-1-1702(2)(a)"
+        "Access controls for high-risk AI systems documented \u2014 part of the risk management program",
+        "Note: Colorado does not specify authentication standards; access control evidence contributes to the broader risk management program required under CRS \u00a76-1-1702(2)(a)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(a) — Risk management program (access controls implied)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(a) \u2014 Risk management program (access controls implied)"
     },
     "PR-02": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Scope enforcement for high-risk AI systems documented — system used only for declared consequential decision purpose",
+        "Scope enforcement for high-risk AI systems documented \u2014 system used only for declared consequential decision purpose",
         "Note: Colorado's prohibition on unauthorized use of consumer data in AI decisions is supported by scope enforcement controls"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702 — AI system use limited to declared purpose"
+      "framework_reference": "CRS \u00a76-1-1702 \u2014 AI system use limited to declared purpose"
     },
     "PR-03": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Tool and component provenance verified — part of impact assessment supply chain documentation",
+        "Tool and component provenance verified \u2014 part of impact assessment supply chain documentation",
         "Note: Colorado does not specify provenance standards; provenance evidence contributes to impact assessment documentation"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(b) — Impact assessment (provenance as data quality documentation)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(b) \u2014 Impact assessment (provenance as data quality documentation)"
     },
     "PR-04": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
         "Consumer personal data used in consequential decisions protected against unauthorized exposure",
-        "Consumer data correction mechanism implemented — process for consumers to identify and correct inaccurate personal data used in AI decisions (CRS §6-1-1702(2)(c)(II))",
+        "Consumer data correction mechanism implemented \u2014 process for consumers to identify and correct inaccurate personal data used in AI decisions (CRS \u00a76-1-1702(2)(c)(II))",
         "Data accuracy validation in place for personal data used in high-risk AI systems",
         "Records of consumer data correction requests and resolutions maintained"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(c)(II) — Consumer right to correct personal data"
+      "framework_reference": "CRS \u00a76-1-1702(2)(c)(II) \u2014 Consumer right to correct personal data"
     },
     "PR-05": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
-        "Audit logs maintained for consequential AI decisions — sufficient to reconstruct the basis for each decision",
-        "Impact assessment records retained — records of pre-deployment assessments and annual reviews",
-        "Adverse decision records maintained — basis for each adverse consequential decision documented for potential consumer appeal review",
-        "Consumer notice delivery records maintained — evidence that pre-decision and adverse-decision notices were provided"
+        "Audit logs maintained for consequential AI decisions \u2014 sufficient to reconstruct the basis for each decision",
+        "Impact assessment records retained \u2014 records of pre-deployment assessments and annual reviews",
+        "Adverse decision records maintained \u2014 basis for each adverse consequential decision documented for potential consumer appeal review",
+        "Consumer notice delivery records maintained \u2014 evidence that pre-decision and adverse-decision notices were provided"
       ],
       "threshold_adjustments": {
         "log_retention_days": 1825
       },
-      "framework_reference": "CRS §6-1-1702(2) — Documentation obligations; adverse decision records"
+      "framework_reference": "CRS \u00a76-1-1702(2) \u2014 Documentation obligations; adverse decision records"
     },
     "PR-06": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Material changes to high-risk AI systems documented — configuration change records supporting change-triggered re-assessment obligations",
+        "Material changes to high-risk AI systems documented \u2014 configuration change records supporting change-triggered re-assessment obligations",
         "Note: Colorado requires re-assessment on material changes; PR-06 configuration integrity monitoring provides the detection signal"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(b) — Impact assessment (re-assessment on material change implied)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(b) \u2014 Impact assessment (re-assessment on material change implied)"
     },
     "PR-07": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Personal data of Colorado consumers in transit encrypted — part of risk management program",
+        "Personal data of Colorado consumers in transit encrypted \u2014 part of risk management program",
         "Note: Colorado does not specify encryption standards; transport security contributes to overall risk management program"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(a) — Risk management program"
+      "framework_reference": "CRS \u00a76-1-1702(2)(a) \u2014 Risk management program"
     },
     "PR-08": {
       "applicable": true,
@@ -220,111 +220,111 @@
       "evidence_requirements": [
         "High-risk AI systems tested for robustness and discrimination risk before deployment",
         "Testing results documented as part of impact assessment",
-        "Note: Colorado impact assessment must cover foreseeable risks — adversarial input and manipulation testing is part of this"
+        "Note: Colorado impact assessment must cover foreseeable risks \u2014 adversarial input and manipulation testing is part of this"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(b) — Impact assessment (foreseeable risks including adversarial inputs)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(b) \u2014 Impact assessment (foreseeable risks including adversarial inputs)"
     },
     "DE-01": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
-        "Post-deployment monitoring implemented for each high-risk AI system — per monitoring plan in impact assessment (CRS §6-1-1702(2)(b))",
-        "Monitoring specifically covers algorithmic discrimination indicators — disparate impact metrics, error rate analysis by demographic group where feasible",
+        "Post-deployment monitoring implemented for each high-risk AI system \u2014 per monitoring plan in impact assessment (CRS \u00a76-1-1702(2)(b))",
+        "Monitoring specifically covers algorithmic discrimination indicators \u2014 disparate impact metrics, error rate analysis by demographic group where feasible",
         "Anomalous outcomes that could indicate discrimination escalated for human review",
-        "Monitoring results used as input to annual review (CRS §6-1-1702(2)(d))"
+        "Monitoring results used as input to annual review (CRS \u00a76-1-1702(2)(d))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(b) and §6-1-1702(2)(d) — Post-deployment monitoring and annual review"
+      "framework_reference": "CRS \u00a76-1-1702(2)(b) and \u00a76-1-1702(2)(d) \u2014 Post-deployment monitoring and annual review"
     },
     "DE-02": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Configuration drift detection for high-risk AI systems — material changes trigger re-assessment obligation",
+        "Configuration drift detection for high-risk AI systems \u2014 material changes trigger re-assessment obligation",
         "Note: Colorado requires ongoing monitoring; DE-02 drift detection supports the annual review and change-triggered re-assessment requirements"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(d) — Annual review obligation (material change detection supports re-assessment trigger)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(d) \u2014 Annual review obligation (material change detection supports re-assessment trigger)"
     },
     "DE-03": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
         "Compliance deviations from risk management policy tracked and remediated",
-        "Developer risk disclosures tracked — 90-day disclosure obligations monitored for receipt and response",
-        "Annual review compliance tracked — evidence of timely completion of each annual review",
-        "AG audit readiness — compliance deviation records available for Colorado AG examination"
+        "Developer risk disclosures tracked \u2014 90-day disclosure obligations monitored for receipt and response",
+        "Annual review compliance tracked \u2014 evidence of timely completion of each annual review",
+        "AG audit readiness \u2014 compliance deviation records available for Colorado AG examination"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702 — Ongoing compliance obligations"
+      "framework_reference": "CRS \u00a76-1-1702 \u2014 Ongoing compliance obligations"
     },
     "DE-04": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Impact assessment and audit log integrity protected — records tamper-evident",
+        "Impact assessment and audit log integrity protected \u2014 records tamper-evident",
         "Note: Colorado requires records to be available to the AG on request; evidence integrity controls support demonstrating that records have not been altered post-decision"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702 — Documentation integrity (implied by enforcement obligations)"
+      "framework_reference": "CRS \u00a76-1-1702 \u2014 Documentation integrity (implied by enforcement obligations)"
     },
     "RS-01": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
         "Automated response procedures for discrimination risk discovery documented",
-        "Developer 90-day disclosure workflow: if deployer discovers known or reasonably foreseeable risk of algorithmic discrimination, notification process to the Colorado AG and affected parties documented (CRS §6-1-1702(3)(b) — developer obligation; deployer should have internal notification trigger)",
-        "Note: Colorado's 90-day AG notification obligation applies explicitly to developers. Deployers should have a response protocol for when monitoring (DE-01) identifies potential discrimination — internal escalation and, if substantiated, AG notification process."
+        "Developer 90-day disclosure workflow: if deployer discovers known or reasonably foreseeable risk of algorithmic discrimination, notification process to the Colorado AG and affected parties documented (CRS \u00a76-1-1702(3)(b) \u2014 developer obligation; deployer should have internal notification trigger)",
+        "Note: Colorado's 90-day AG notification obligation applies explicitly to developers. Deployers should have a response protocol for when monitoring (DE-01) identifies potential discrimination \u2014 internal escalation and, if substantiated, AG notification process."
       ],
       "threshold_adjustments": {
         "discrimination_risk_notification_days": 90
       },
-      "framework_reference": "CRS §6-1-1702(3)(b) — 90-day developer disclosure to AG; deployer internal response"
+      "framework_reference": "CRS \u00a76-1-1702(3)(b) \u2014 90-day developer disclosure to AG; deployer internal response"
     },
     "RS-02": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
-        "Consumer appeal mechanism implemented for adverse consequential AI decisions (CRS §6-1-1702(2)(c)(III))",
-        "Adverse-decision notice provided to consumer: basis for decision, opportunity to correct personal data, opportunity to appeal (CRS §6-1-1702(2)(c))",
-        "Human review process documented for appeal pathway — AI-adverse decisions reviewed by qualified human on consumer request",
-        "Appeal response timeline defined and documented — consumer informed of outcome",
+        "Consumer appeal mechanism implemented for adverse consequential AI decisions (CRS \u00a76-1-1702(2)(c)(III))",
+        "Adverse-decision notice provided to consumer: basis for decision, opportunity to correct personal data, opportunity to appeal (CRS \u00a76-1-1702(2)(c))",
+        "Human review process documented for appeal pathway \u2014 AI-adverse decisions reviewed by qualified human on consumer request",
+        "Appeal response timeline defined and documented \u2014 consumer informed of outcome",
         "Records of consumer appeals and outcomes maintained"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(c)(II)-(III) — Consumer data correction and appeal obligation"
+      "framework_reference": "CRS \u00a76-1-1702(2)(c)(II)-(III) \u2014 Consumer data correction and appeal obligation"
     },
     "RS-03": {
       "applicable": true,
       "coverage": "full",
       "evidence_requirements": [
-        "Evidence of each consequential AI decision preserved — sufficient for AG review and consumer appeal",
-        "Developer-disclosed risk evidence retained — records of discrimination risk disclosures received from developers",
-        "Incident evidence for potential algorithmic discrimination events preserved — monitoring data, decision logs, and corrective action records",
-        "Records retained for minimum 5 years (1825 days) — AG enforcement actions may look back over multi-year periods"
+        "Evidence of each consequential AI decision preserved \u2014 sufficient for AG review and consumer appeal",
+        "Developer-disclosed risk evidence retained \u2014 records of discrimination risk disclosures received from developers",
+        "Incident evidence for potential algorithmic discrimination events preserved \u2014 monitoring data, decision logs, and corrective action records",
+        "Records retained for minimum 5 years (1825 days) \u2014 AG enforcement actions may look back over multi-year periods"
       ],
       "threshold_adjustments": {
         "retention_days": 1825
       },
-      "framework_reference": "CRS §6-1-1702 — Documentation and evidence obligations"
+      "framework_reference": "CRS \u00a76-1-1702 \u2014 Documentation and evidence obligations"
     },
     "RC-01": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Rollback capability for high-risk AI systems documented — ability to suspend or revert if discrimination risk confirmed",
+        "Rollback capability for high-risk AI systems documented \u2014 ability to suspend or revert if discrimination risk confirmed",
         "Note: Colorado does not specify technical rollback requirements; ability to suspend a discriminatory AI system and revert to prior version or manual process is an implied operational control"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CRS §6-1-1702(2)(a) — Risk management program (implied operational controls)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(a) \u2014 Risk management program (implied operational controls)"
     },
     "RC-02": {
       "applicable": true,
       "coverage": "partial",
       "evidence_requirements": [
-        "Annual review completed for each high-risk AI system — confirms system is not causing algorithmic discrimination (CRS §6-1-1702(2)(d))",
-        "Annual review documentation retained — methodology, findings, conclusions, and any remediation actions",
+        "Annual review completed for each high-risk AI system \u2014 confirms system is not causing algorithmic discrimination (CRS \u00a76-1-1702(2)(d))",
+        "Annual review documentation retained \u2014 methodology, findings, conclusions, and any remediation actions",
         "Post-adverse-finding review: where annual review identifies potential discrimination, root cause analysis and remediation documented",
         "Note: Colorado's annual review is PROACTIVE (calendar-triggered, not incident-triggered). AKSI RC-02 is framed as post-incident. Colorado overlay adds annual proactive review as distinct evidence requirement."
       ],
@@ -332,7 +332,7 @@
         "annual_review_required": true,
         "review_interval_days": 365
       },
-      "framework_reference": "CRS §6-1-1702(2)(d) — Annual review obligation (proactive, not incident-triggered)"
+      "framework_reference": "CRS \u00a76-1-1702(2)(d) \u2014 Annual review obligation (proactive, not incident-triggered)"
     }
   },
   "reporting_obligations": {
@@ -341,42 +341,153 @@
     "reporting_entity": "Colorado Attorney General (coag.gov/ai/). Developer obligation: disclose known or reasonably foreseeable algorithmic discrimination risks to AG and affected deployers within 90 days of discovery.",
     "developer_ag_notification_days": 90,
     "cure_period_days": 60,
-    "notes": "Colorado AG has exclusive enforcement authority — no private right of action. Civil penalties under Colorado Consumer Protection Act: up to $2,000 per violation, up to $500,000 per course of conduct. 60-day cure period applies (except imminent harm). AG rulemaking ongoing at coag.gov/ai/ — rules may clarify impact assessment methodology, consumer notice format, and documentation standards. Safe harbor: compliance with ISO 42001 or NIST AI RMF provides affirmative defense to algorithmic discrimination claims."
+    "notes": "Colorado AG has exclusive enforcement authority \u2014 no private right of action. Civil penalties under Colorado Consumer Protection Act: up to $2,000 per violation, up to $500,000 per course of conduct. 60-day cure period applies (except imminent harm). AG rulemaking ongoing at coag.gov/ai/ \u2014 rules may clarify impact assessment methodology, consumer notice format, and documentation standards. Safe harbor: compliance with ISO 42001 or NIST AI RMF provides affirmative defense to algorithmic discrimination claims."
   },
   "human_oversight_mandates": {
     "required": true,
-    "description": "Colorado requires a consumer appeal mechanism for adverse consequential AI decisions (CRS §6-1-1702(2)(c)(III)). This implicitly requires human review capacity for consumer appeals. Pre-decision consumer notice and adverse-decision notice obligations require documented oversight configuration. Annual review obligation requires human assessment of AI system outcomes.",
+    "description": "Colorado requires a consumer appeal mechanism for adverse consequential AI decisions (CRS \u00a76-1-1702(2)(c)(III)). This implicitly requires human review capacity for consumer appeals. Pre-decision consumer notice and adverse-decision notice obligations require documented oversight configuration. Annual review obligation requires human assessment of AI system outcomes.",
     "applies_to": "All high-risk AI systems making consequential decisions affecting Colorado consumers in covered domains"
   },
   "framework_mapping": {
-    "GOV-01": ["CRS §6-1-1702(2)(a)", "Risk management policy"],
-    "GOV-02": ["CRS §6-1-1702", "Developer and deployer accountability"],
-    "GOV-03": ["CRS §6-1-1702(2)(b)", "Impact assessment — risk section"],
-    "GOV-04": ["CRS §6-1-1702(2)(c)(I)", "§6-1-1702(2)(e)", "Consumer notice and website disclosure"],
-    "ID-01": ["CRS §6-1-1702(2)(e)", "Website disclosure (high-risk AI inventory)"],
-    "ID-02": ["CRS §6-1-1702(3)(a)", "Developer documentation furnishing"],
-    "ID-03": ["CRS §6-1-1702(2)(b)", "§6-1-1702(2)(c)(II)", "Impact assessment data + consumer data correction"],
-    "ID-04": ["CRS §6-1-1702(3)(a)", "Developer documentation and supply chain"],
-    "ID-05": ["CRS §6-1-1702(2)(b)", "Impact assessment (pre-deployment)"],
-    "PR-01": ["CRS §6-1-1702(2)(a)", "Risk management program"],
-    "PR-02": ["CRS §6-1-1702", "Purposeful use limitation"],
-    "PR-03": ["CRS §6-1-1702(2)(b)", "Impact assessment data provenance"],
-    "PR-04": ["CRS §6-1-1702(2)(c)(II)", "Consumer data correction right"],
-    "PR-05": ["CRS §6-1-1702(2)", "Documentation and audit obligations"],
-    "PR-06": ["CRS §6-1-1702(2)(b)", "Material change re-assessment"],
-    "PR-07": ["CRS §6-1-1702(2)(a)", "Risk management program"],
-    "PR-08": ["CRS §6-1-1702(2)(b)", "Impact assessment — foreseeable risks"],
-    "DE-01": ["CRS §6-1-1702(2)(b)", "§6-1-1702(2)(d)", "Monitoring plan + annual review"],
-    "DE-02": ["CRS §6-1-1702(2)(d)", "Annual review + change detection"],
-    "DE-03": ["CRS §6-1-1702", "Ongoing compliance obligations"],
-    "DE-04": ["CRS §6-1-1702", "Documentation integrity"],
-    "RS-01": ["CRS §6-1-1702(3)(b)", "90-day AG notification (developer)"],
-    "RS-02": ["CRS §6-1-1702(2)(c)(II)-(III)", "Consumer appeal mechanism"],
-    "RS-03": ["CRS §6-1-1702", "Evidence preservation obligations"],
-    "RC-01": ["CRS §6-1-1702(2)(a)", "Risk management program (operational controls)"],
-    "RC-02": ["CRS §6-1-1702(2)(d)", "Annual proactive review obligation"]
+    "GOV-01": [
+      "CRS \u00a76-1-1702(2)(a)",
+      "Risk management policy"
+    ],
+    "GOV-02": [
+      "CRS \u00a76-1-1702",
+      "Developer and deployer accountability"
+    ],
+    "GOV-03": [
+      "CRS \u00a76-1-1702(2)(b)",
+      "Impact assessment \u2014 risk section"
+    ],
+    "GOV-04": [
+      "CRS \u00a76-1-1702(2)(c)(I)",
+      "\u00a76-1-1702(2)(e)",
+      "Consumer notice and website disclosure"
+    ],
+    "ID-01": [
+      "CRS \u00a76-1-1702(2)(e)",
+      "Website disclosure (high-risk AI inventory)"
+    ],
+    "ID-02": [
+      "CRS \u00a76-1-1702(3)(a)",
+      "Developer documentation furnishing"
+    ],
+    "ID-03": [
+      "CRS \u00a76-1-1702(2)(b)",
+      "\u00a76-1-1702(2)(c)(II)",
+      "Impact assessment data + consumer data correction"
+    ],
+    "ID-04": [
+      "CRS \u00a76-1-1702(3)(a)",
+      "Developer documentation and supply chain"
+    ],
+    "ID-05": [
+      "CRS \u00a76-1-1702(2)(b)",
+      "Impact assessment (pre-deployment)"
+    ],
+    "PR-01": [
+      "CRS \u00a76-1-1702(2)(a)",
+      "Risk management program"
+    ],
+    "PR-02": [
+      "CRS \u00a76-1-1702",
+      "Purposeful use limitation"
+    ],
+    "PR-03": [
+      "CRS \u00a76-1-1702(2)(b)",
+      "Impact assessment data provenance"
+    ],
+    "PR-04": [
+      "CRS \u00a76-1-1702(2)(c)(II)",
+      "Consumer data correction right"
+    ],
+    "PR-05": [
+      "CRS \u00a76-1-1702(2)",
+      "Documentation and audit obligations"
+    ],
+    "PR-06": [
+      "CRS \u00a76-1-1702(2)(b)",
+      "Material change re-assessment"
+    ],
+    "PR-07": [
+      "CRS \u00a76-1-1702(2)(a)",
+      "Risk management program"
+    ],
+    "PR-08": [
+      "CRS \u00a76-1-1702(2)(b)",
+      "Impact assessment \u2014 foreseeable risks"
+    ],
+    "DE-01": [
+      "CRS \u00a76-1-1702(2)(b)",
+      "\u00a76-1-1702(2)(d)",
+      "Monitoring plan + annual review"
+    ],
+    "DE-02": [
+      "CRS \u00a76-1-1702(2)(d)",
+      "Annual review + change detection"
+    ],
+    "DE-03": [
+      "CRS \u00a76-1-1702",
+      "Ongoing compliance obligations"
+    ],
+    "DE-04": [
+      "CRS \u00a76-1-1702",
+      "Documentation integrity"
+    ],
+    "RS-01": [
+      "CRS \u00a76-1-1702(3)(b)",
+      "90-day AG notification (developer)"
+    ],
+    "RS-02": [
+      "CRS \u00a76-1-1702(2)(c)(II)-(III)",
+      "Consumer appeal mechanism"
+    ],
+    "RS-03": [
+      "CRS \u00a76-1-1702",
+      "Evidence preservation obligations"
+    ],
+    "RC-01": [
+      "CRS \u00a76-1-1702(2)(a)",
+      "Risk management program (operational controls)"
+    ],
+    "RC-02": [
+      "CRS \u00a76-1-1702(2)(d)",
+      "Annual proactive review obligation"
+    ]
   },
   "evidence_retention_minimum_days": 1825,
   "human_oversight_required": true,
-  "notes": "Colorado SB 24-205 (Consumer Protections for Artificial Intelligence Act) — first comprehensive US state AI governance law. Effective June 30, 2026 (delayed from February 1, 2026 by SB 25B-004, signed August 28, 2025). All 26 AKSI controls applicable; 15 full coverage, 11 partial. Triggered by DC-PII, DC-AI, DC-HEALTH, DC-FIN — covering the primary domains where AI systems make consequential decisions affecting Colorado consumers. Key AKSI evidence gaps addressed by this overlay: (1) GOV-04 consumer notice obligation — evidence requirements add consumer notice delivery records; (2) RC-02 annual proactive review — threshold adjustment adds annual_review_required:true and review_interval_days:365; (3) RS-01 90-day AG notification — threshold adjustment adds discrimination_risk_notification_days:90. Safe harbor: organizations running AKSI with iso-42001 or nist-ai-rmf overlays active are building toward Colorado's affirmative defense. v0.2 planned: incorporate AG rulemaking guidance on impact assessment methodology once published; clarify small business exemption thresholds."
+  "notes": "Colorado SB 24-205 (Consumer Protections for Artificial Intelligence Act) \u2014 first comprehensive US state AI governance law. Effective June 30, 2026 (delayed from February 1, 2026 by SB 25B-004, signed August 28, 2025). All 26 AKSI controls applicable; 15 full coverage, 11 partial. Triggered by DC-PII, DC-AI, DC-HEALTH, DC-FIN \u2014 covering the primary domains where AI systems make consequential decisions affecting Colorado consumers. Key AKSI evidence gaps addressed by this overlay: (1) GOV-04 consumer notice obligation \u2014 evidence requirements add consumer notice delivery records; (2) RC-02 annual proactive review \u2014 threshold adjustment adds annual_review_required:true and review_interval_days:365; (3) RS-01 90-day AG notification \u2014 threshold adjustment adds discrimination_risk_notification_days:90. Safe harbor: organizations running AKSI with iso-42001 or nist-ai-rmf overlays active are building toward Colorado's affirmative defense. v0.2 planned: incorporate AG rulemaking guidance on impact assessment methodology once published; clarify small business exemption thresholds.",
+  "evidence_requirements": {
+    "PR-02": [
+      "scope_limitation",
+      "purpose_defined"
+    ],
+    "PR-04": [
+      "data_categories",
+      "sensitive_data_handling"
+    ],
+    "PR-05": [
+      "processing_purpose",
+      "high_risk_ai_decision"
+    ],
+    "DE-01": [
+      "monitoring_plan",
+      "algorithmic_discrimination_check"
+    ],
+    "DE-02": [
+      "configuration_drift_detection",
+      "material_change_log"
+    ],
+    "GOV-01": [
+      "impact_assessment_completed",
+      "risk_management_policy"
+    ],
+    "GOV-02": [
+      "developer_deployer_disclosure",
+      "consumer_notification"
+    ]
+  }
 }
