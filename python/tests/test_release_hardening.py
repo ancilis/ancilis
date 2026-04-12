@@ -137,6 +137,63 @@ def test_pyproject_has_required_pypi_metadata():
     assert "Programming Language :: Python :: 3.13" in project["classifiers"]
 
 
+@pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")
+def test_dev_extra_includes_watch_dependencies_exercised_by_tests():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    extras = pyproject["project"]["optional-dependencies"]
+
+    assert set(extras["watch"]).issubset(set(extras["dev"]))
+
+
+def test_ci_typescript_examples_keeps_deterministic_tarball_name():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+
+    build_step = next(
+        step
+        for step in workflow["jobs"]["typescript-examples"]["steps"]
+        if step.get("name") == "Build SDK tarball"
+    )
+    assert "mv ancilis-*.tgz ancilis-0.1.0.tgz" not in build_step["run"]
+    assert "npm ci --include=dev" in build_step["run"]
+    assert "test -f ancilis-0.1.0.tgz" in build_step["run"]
+
+
+def test_ci_typescript_example_score_steps_tolerate_non_compliant_scan_exit():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+
+    score_steps = [
+        step
+        for step in workflow["jobs"]["typescript-examples"]["steps"]
+        if step.get("name", "").endswith("scan score")
+    ]
+    assert score_steps
+    for step in score_steps:
+        assert "npx ancilis scan --ci --config ancilis.yaml 2>&1 || true" in step["run"]
+
+
+def test_ci_typescript_example_setup_steps_include_dev_dependencies():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+
+    setup_steps = [
+        step
+        for step in workflow["jobs"]["typescript-examples"]["steps"]
+        if step.get("name", "").endswith("setup")
+    ]
+    assert setup_steps
+    for step in setup_steps:
+        assert step["run"] == "npm install --include=dev"
+
+
+def test_ci_typescript_example_fixtures_exist():
+    for example in ["minimal-quickstart-ts", "langchain-ts-chatbot"]:
+        example_dir = ROOT / "examples" / "typescript" / example
+
+        assert (example_dir / "package.json").exists()
+        assert (example_dir / "index.ts").exists()
+        assert (example_dir / "ancilis.yaml").exists()
+        assert not (example_dir / "package-lock.json").exists()
+
+
 def test_publish_script_cleans_dist_and_uploads_selected_artifacts():
     script = ROOT / "scripts" / "publish.sh"
 
