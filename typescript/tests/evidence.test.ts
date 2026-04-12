@@ -606,15 +606,26 @@ describe("EvidenceStore.latestSessionId", () => {
     await store.close();
   });
 
-  it("returns null when latest record has no session_id", async () => {
+  it("returns latest non-null session_id even when the most recent record has no session", async () => {
     const store = new EvidenceStore(makeConfig(), { inMemory: true });
     const e1 = makeEvaluation({ evaluationId: "e1" });
     e1.context = { sessionId: "sess-A" } as typeof e1.context;
     await store.store(e1, "tool1");
-    // Store a second record with no session_id (context undefined)
+    // Store a second record with no session_id — must not shadow sess-A
     const e2 = makeEvaluation({ evaluationId: "e2" });
     e2.context = undefined as typeof e2.context;
     await store.store(e2, "tool2");
+    const id = await store.latestSessionId();
+    // latestSessionId skips null-session rows; returns the latest non-null session
+    expect(id).toBe("sess-A");
+    await store.close();
+  });
+
+  it("returns null when no records have a non-null session_id", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const e1 = makeEvaluation({ evaluationId: "e1" });
+    e1.context = undefined as typeof e1.context;
+    await store.store(e1, "tool1");
     const id = await store.latestSessionId();
     expect(id).toBeNull();
     await store.close();

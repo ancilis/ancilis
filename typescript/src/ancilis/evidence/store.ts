@@ -410,7 +410,7 @@ export class EvidenceStore {
     return { valid: errors.length === 0, errors };
   }
 
-  async getSummary(options?: { since?: string }): Promise<Record<string, unknown>> {
+  async getSummary(options?: { since?: string; sessionId?: string }): Promise<Record<string, unknown>> {
     if (!this._initialized && !this._inMemory && !existsSync(this._dbPath)) {
       return {
         totalEvaluations: 0,
@@ -424,8 +424,17 @@ export class EvidenceStore {
     }
 
     await this.ensureInitialized();
-    const whereClause = options?.since ? " WHERE timestamp >= ?" : "";
-    const params = options?.since ? [options.since] : [];
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    if (options?.since) {
+      conditions.push("timestamp >= ?");
+      params.push(options.since);
+    }
+    if (options?.sessionId !== undefined) {
+      conditions.push("session_id = ?");
+      params.push(options.sessionId);
+    }
+    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
 
     const totalRows = await allAsync(
       this._conn!,
@@ -550,15 +559,19 @@ export class EvidenceStore {
 
   async latestSessionId(): Promise<string | null> {
     await this.ensureInitialized();
-    const tenantFilter = this._tenantId ? "WHERE tenant_id = ?" : "";
-    const params = this._tenantId ? [this._tenantId] : [];
+    const conditions = ["session_id IS NOT NULL"];
+    const params: unknown[] = [];
+    if (this._tenantId) {
+      conditions.push("tenant_id = ?");
+      params.push(this._tenantId);
+    }
     const rows = await allAsync(
       this._conn!,
-      `SELECT session_id FROM evidence_records ${tenantFilter} ORDER BY timestamp DESC, seq_id DESC LIMIT 1`,
+      `SELECT session_id FROM evidence_records WHERE ${conditions.join(" AND ")} ORDER BY timestamp DESC, seq_id DESC LIMIT 1`,
       params,
     );
     const row = (rows as Array<Record<string, unknown>>)[0];
-    return row ? (row.session_id as string | null) : null;
+    return row ? (row.session_id as string) : null;
   }
 
   async reset(): Promise<number> {
