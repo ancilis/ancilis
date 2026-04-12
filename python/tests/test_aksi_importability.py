@@ -153,3 +153,60 @@ class TestEngineConstructorValidatesConfig:
         result = engine.evaluate(action)
         assert result.decision in ("ALLOW", "BLOCK")
         assert len(result.control_results) > 0
+
+
+class TestEvaluatorRootImportability:
+    """Verify all 9 new evaluators are importable from the root evaluators package."""
+
+    def test_pr06_config_baseline_importable(self) -> None:
+        from ancilis.engine.evaluators import PR06ConfigBaselineEvaluator  # noqa: F401
+        assert PR06ConfigBaselineEvaluator is not None
+
+    def test_pr07_transport_importable(self) -> None:
+        from ancilis.engine.evaluators import PR07TransportEvaluator  # noqa: F401
+        assert PR07TransportEvaluator is not None
+
+    def test_pr08_input_importable(self) -> None:
+        from ancilis.engine.evaluators import PR08InputEvaluator  # noqa: F401
+        assert PR08InputEvaluator is not None
+
+    def test_gov01_policy_importable(self) -> None:
+        from ancilis.engine.evaluators import GOV01PolicyEvaluator  # noqa: F401
+        assert GOV01PolicyEvaluator is not None
+
+    def test_gov02_ownership_importable(self) -> None:
+        from ancilis.engine.evaluators import GOV02OwnershipEvaluator  # noqa: F401
+        assert GOV02OwnershipEvaluator is not None
+
+    def test_gov03_risk_tolerance_importable(self) -> None:
+        from ancilis.engine.evaluators import GOV03RiskToleranceEvaluator  # noqa: F401
+        assert GOV03RiskToleranceEvaluator is not None
+
+    def test_de02_config_drift_importable(self) -> None:
+        from ancilis.engine.evaluators import DE02ConfigDriftEvaluator  # noqa: F401
+        assert DE02ConfigDriftEvaluator is not None
+
+    def test_de04_integrity_importable(self) -> None:
+        from ancilis.engine.evaluators import DE04IntegrityEvaluator  # noqa: F401
+        assert DE04IntegrityEvaluator is not None
+
+    def test_id01_inventory_importable(self) -> None:
+        from ancilis.engine.evaluators import ID01InventoryEvaluator  # noqa: F401
+        assert ID01InventoryEvaluator is not None
+
+    def test_all_new_evaluators_in_dunder_all(self) -> None:
+        """__all__ in evaluators package lists all 9 new evaluators."""
+        import ancilis.engine.evaluators as evs
+        new_evaluators = [
+            "PR06ConfigBaselineEvaluator",
+            "PR07TransportEvaluator",
+            "PR08InputEvaluator",
+            "GOV01PolicyEvaluator",
+            "GOV02OwnershipEvaluator",
+            "GOV03RiskToleranceEvaluator",
+            "DE02ConfigDriftEvaluator",
+            "DE04IntegrityEvaluator",
+            "ID01InventoryEvaluator",
+        ]
+        for name in new_evaluators:
+            assert name in evs.__all__, f"{name} missing from evaluators.__all__"
