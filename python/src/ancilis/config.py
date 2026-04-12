@@ -9,6 +9,8 @@ from typing import Any, cast
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from ancilis.errors import config_invalid
+
 from ancilis._shared import shared_path
 
 # Resolve shared/ directory from packaged assets
@@ -247,7 +249,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
         if isinstance(controls, dict):
             for key in controls:
                 if key not in VALID_CONTROL_IDS:
-                    raise ValueError(f"Unknown control ID in security.controls: '{key}'")
+                    raise config_invalid(f"Unknown control ID in security.controls: '{key}'")
 
     # Validate my_agent_handles types
     taxonomy = load_taxonomy()
@@ -256,7 +258,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     if isinstance(my_agent_handles, list):
         for dt in my_agent_handles:
             if dt not in valid_types:
-                raise ValueError(
+                raise config_invalid(
                     f"Unknown data type in my_agent_handles: '{dt}'. "
                     f"Valid types: {', '.join(sorted(valid_types))}"
                 )
