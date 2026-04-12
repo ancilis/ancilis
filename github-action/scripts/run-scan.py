@@ -78,8 +78,11 @@ def run_scan(overlay: str) -> dict[str, Any]:
         }
     """
     # Try JSON output first (--ci flag)
+    cmd = ["ancilis", "scan", "--ci"]
+    if overlay:
+        cmd.extend(["--overlay", overlay])
     result = subprocess.run(
-        ["ancilis", "scan", "--ci"],
+        cmd,
         capture_output=True,
         text=True,
     )
