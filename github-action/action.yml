@@ -1,0 +1,65 @@
+name: Ancilis Posture Gate
+description: Run ancilis scan on PRs, post posture results, and block merge when score falls below threshold.
+author: Ancilis
+
+inputs:
+  overlay:
+    description: Compliance overlay name (e.g. financial, fedramp, hipaa)
+    required: false
+    default: financial
+  threshold:
+    description: Minimum posture score (0-100) required to pass
+    required: false
+    default: '70'
+  api-key:
+    description: ANCILIS_API_KEY for authenticated scans
+    required: false
+    default: ''
+  fail-on-error:
+    description: Fail the check if ancilis scan encounters an error
+    required: false
+    default: 'true'
+  post-comment:
+    description: Post posture summary as a PR comment
+    required: false
+    default: 'true'
+
+outputs:
+  score:
+    description: Posture score (0-100)
+    value: ${{ steps.scan.outputs.score }}
+  passed:
+    description: Whether the posture gate passed ('true' or 'false')
+    value: ${{ steps.scan.outputs.passed }}
+  summary:
+    description: One-line posture summary
+    value: ${{ steps.scan.outputs.summary }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install ancilis
+      shell: bash
+      run: pip install --quiet ancilis
+
+    - name: Run posture scan
+      id: scan
+      shell: bash
+      run: python ${{ github.action_path }}/scripts/run-scan.py
+      env:
+        ANCILIS_API_KEY: ${{ inputs.api-key }}
+        INPUT_OVERLAY: ${{ inputs.overlay }}
+        INPUT_THRESHOLD: ${{ inputs.threshold }}
+        INPUT_FAIL_ON_ERROR: ${{ inputs.fail-on-error }}
+        INPUT_POST_COMMENT: ${{ inputs.post-comment }}
+        GITHUB_TOKEN: ${{ github.token }}
+        ANCILIS_NO_UPDATE_CHECK: '1'
+
+branding:
+  icon: shield
+  color: blue
