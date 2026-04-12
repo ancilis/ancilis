@@ -505,3 +505,128 @@ class TestFilePersistence:
         valid, errors = store2.verify_chain()
         assert valid is True
         store2.close()
+
+
+# --- Session Isolation (ANC-537) ---
+
+
+class TestSessionIsolation:
+    """Verify that multi-run evidence accumulation is properly scoped by session."""
+
+    def test_latest_session_id_returns_most_recent(self):
+        """latest_session_id() returns the session from the most recently stored record."""
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        ev1 = make_evaluation(evaluation_id="e1")
+        ev1.session_id = "sess-run-1"
+        ev1.timestamp = "2025-01-15T10:00:00Z"
+        ev2 = make_evaluation(evaluation_id="e2")
+        ev2.session_id = "sess-run-2"
+        ev2.timestamp = "2025-01-15T11:00:00Z"  # later timestamp
+
+        store.store(ev1, tool_name="t1")
+        store.store(ev2, tool_name="t2")
+
+        assert store.latest_session_id() == "sess-run-2"
+        store.close()
+
+    def test_latest_session_id_skips_null_sessions(self):
+        """latest_session_id() must skip records with session_id=NULL.
+
+        This prevents dep-scanner records (which have no session) from poisoning
+        the lookup and causing subsequent scans to return all-time evidence.
+        """
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        # First: a real middleware session record (earlier timestamp)
+        ev_agent = make_evaluation(evaluation_id="e1")
+        ev_agent.session_id = "sess-agent-run"
+        ev_agent.timestamp = "2025-01-15T10:00:00Z"
+        store.store(ev_agent, tool_name="read_file")
+
+        # Then: a dep-scanner record with no session (LATER timestamp — simulates dep scan after agent run)
+        ev_dep = make_evaluation(evaluation_id="e2")
+        ev_dep.session_id = None
+        ev_dep.timestamp = "2025-01-15T10:05:00Z"
+        store.store(ev_dep, tool_name="dependency-scanner")
+
+        # Should return the agent session, not None from the dep-scanner record
+        assert store.latest_session_id() == "sess-agent-run"
+        store.close()
+
+    def test_latest_session_id_empty_store(self):
+        """latest_session_id() returns None when the store is empty."""
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        assert store.latest_session_id() is None
+        store.close()
+
+    def test_latest_session_id_all_null_sessions(self):
+        """latest_session_id() returns None when all records have session_id=NULL."""
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        ev = make_evaluation(evaluation_id="e1")
+        ev.session_id = None
+        store.store(ev, tool_name="dep-scanner")
+
+        assert store.latest_session_id() is None
+        store.close()
+
+    def test_two_sessions_are_independently_scoped(self):
+        """get_summary with session_id only returns evidence from that session."""
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        # Session 1: 3 passing records
+        for i in range(3):
+            ev = make_evaluation(evaluation_id=f"run1-e{i}", decision="ALLOW")
+            ev.session_id = "sess-run-1"
+            store.store(ev, tool_name="t1")
+
+        # Session 2: 2 records, one with BLOCK
+        ev_ok = make_evaluation(evaluation_id="run2-e1", decision="ALLOW")
+        ev_ok.session_id = "sess-run-2"
+        ev_block = make_evaluation(evaluation_id="run2-e2", decision="BLOCK")
+        ev_block.session_id = "sess-run-2"
+        store.store(ev_ok, tool_name="t1")
+        store.store(ev_block, tool_name="t2")
+
+        summary1 = store.get_summary(session_id="sess-run-1")
+        summary2 = store.get_summary(session_id="sess-run-2")
+
+        assert summary1["total_evaluations"] == 3
+        assert summary1["decisions"] == {"ALLOW": 3}
+
+        assert summary2["total_evaluations"] == 2
+        assert summary2["decisions"]["BLOCK"] == 1
+        store.close()
+
+    def test_reset_clears_all_sessions(self):
+        """reset() deletes all records and hash chain restarts from genesis."""
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        for i in range(3):
+            ev = make_evaluation(evaluation_id=f"e{i}")
+            ev.session_id = f"sess-{i}"
+            store.store(ev, tool_name="t1")
+
+        assert store.count() == 3
+        deleted = store.reset()
+        assert deleted == 3
+        assert store.count() == 0
+        assert store.latest_session_id() is None
+
+        # Chain should be valid after reset (empty = valid)
+        valid, errors = store.verify_chain()
+        assert valid is True
+
+        # New records after reset link from genesis
+        from ancilis.evidence.chain import GENESIS_SEED
+        ev_new = make_evaluation(evaluation_id="post-reset")
+        record = store.store(ev_new, tool_name="t1")
+        assert record.previous_hash == GENESIS_SEED
+        store.close()
