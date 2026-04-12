@@ -133,10 +133,10 @@ def _submit(action: Any) -> None:
     """Submit to Ancilis engine. Never raises."""
     try:
         from ancilis.config import load_config
-        from ancilis.engine.engine import ControlEngine
+        from ancilis.engine.engine import Engine
 
         config = load_config()
-        engine = ControlEngine(config)
+        engine = Engine(config)
         engine.evaluate(action)
     except Exception:  # noqa: BLE001
         pass
