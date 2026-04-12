@@ -49,6 +49,17 @@ def doctor(config_path: str | None, db_path: str | None) -> None:
         failures += 1
         lines.append(f"[FAIL] assets: {exc}")
 
+    try:
+        from ancilis.engine.engine import Engine as _Engine
+        from ancilis.config import AncilisConfig, AgentConfig, resolve_config
+        _probe_config = config if config is not None else resolve_config(AncilisConfig(agent=AgentConfig(name="probe")))
+        _engine = _Engine(_probe_config)
+        _eval_count = len(_engine._evaluators)
+        _eval_ids = ", ".join(sorted(_engine._evaluators.keys()))
+        lines.append(f"[OK] engine: {_eval_count} evaluators active ({_eval_ids})")
+    except Exception as exc:
+        lines.append(f"[WARN] engine: could not probe evaluator count ({exc})")
+
     if config is not None:
         store = EvidenceStore(config, db_path=db_path)
         try:
