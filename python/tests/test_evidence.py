@@ -545,12 +545,11 @@ class TestDetectedDataTypesStore:
         store.store(ev, tool_name="t1")
 
         # Simulate an old row by directly patching _row_to_record with a short row
-        from ancilis.evidence.store import EvidenceStore as ES
         short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
                      "agent", "tool", "ALLOW", "audit",
                      "[]", "[]", "[]", "[]",
                      "hash", "prev", 1.0, None, None)  # no detected_data_types column
-        rec = ES._row_to_record(short_row)
+        rec = EvidenceStore._row_to_record(short_row)
         assert rec.detected_data_types == []
         store.close()
 
@@ -585,13 +584,12 @@ class TestSdkVersionStore:
 
     def test_sdk_version_missing_column_returns_none(self):
         """Records loaded from a row without sdk_version column return None."""
-        from ancilis.evidence.store import EvidenceStore as ES
         # 20-element row: all columns up to detected_data_types, no sdk_version
         short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
                      "agent", "tool", "ALLOW", "audit",
                      "[]", "[]", "[]", "[]",
                      "hash", "prev", 1.0, None, None, "[]")  # 20 cols, no sdk_version
-        rec = ES._row_to_record(short_row)
+        rec = EvidenceStore._row_to_record(short_row)
         assert rec.sdk_version is None
 
     def test_sdk_version_migration_adds_column(self, tmp_path):
@@ -676,13 +674,12 @@ class TestClassificationContextStore:
 
     def test_classification_context_missing_column_returns_empty_dict(self):
         """Records loaded from a row without classification_context column return {}."""
-        from ancilis.evidence.store import EvidenceStore as ES
         # 21-element row: all columns up to sdk_version, no classification_context
         short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
                      "agent", "tool", "ALLOW", "audit",
                      "[]", "[]", "[]", "[]",
                      "hash", "prev", 1.0, None, None, "[]", "0.1.0")  # 21 cols
-        rec = ES._row_to_record(short_row)
+        rec = EvidenceStore._row_to_record(short_row)
         assert rec.classification_context == {}
 
     def test_classification_context_migration_adds_column(self, tmp_path):

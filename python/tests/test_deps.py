@@ -11,7 +11,6 @@ import pytest
 
 from ancilis.config import ControlStatus, ResolvedConfig
 from ancilis.deps.manifest import Dependency, Manifest, ManifestDetector
-from ancilis.deps.manifest import Dependency
 from ancilis.deps.osv import OSVClient, Vuln, _cvss_to_severity, _extract_severity, _extract_fixed_version
 from ancilis.deps.scanner import DependencyScanner
 

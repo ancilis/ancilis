@@ -415,10 +415,10 @@ def test_local_server_scopes_to_latest_session(tmp_path: Path) -> None:
     import importlib.util
     import sys as _sys
 
-    LOCAL_SERVER_PATH = ROOT / "examples" / "demo" / "local_server.py"
-    assert LOCAL_SERVER_PATH.exists()
+    local_server_path = ROOT / "examples" / "demo" / "local_server.py"
+    assert local_server_path.exists()
 
-    spec = importlib.util.spec_from_file_location("examples.demo.local_server", LOCAL_SERVER_PATH)
+    spec = importlib.util.spec_from_file_location("examples.demo.local_server", local_server_path)
     assert spec is not None and spec.loader is not None
     ls_mod = importlib.util.module_from_spec(spec)
     _sys.modules[spec.name] = ls_mod
@@ -488,8 +488,8 @@ def test_local_server_session_attribute_is_set_on_handler_class(tmp_path: Path) 
     import importlib.util
     import sys as _sys
 
-    LOCAL_SERVER_PATH = ROOT / "examples" / "demo" / "local_server.py"
-    spec = importlib.util.spec_from_file_location("examples.demo.local_server2", LOCAL_SERVER_PATH)
+    local_server_path = ROOT / "examples" / "demo" / "local_server.py"
+    spec = importlib.util.spec_from_file_location("examples.demo.local_server2", local_server_path)
     assert spec is not None and spec.loader is not None
     ls_mod = importlib.util.module_from_spec(spec)
     _sys.modules[spec.name] = ls_mod

@@ -77,8 +77,8 @@ def _mock_session(text: str = "OK") -> AsyncMock:
     @dataclass
     class MockCallToolResult:
         content: list[Any] = field(default_factory=list)
-        isError: bool = False
-        structuredContent: Any = None
+        isError: bool = False  # noqa: N815
+        structuredContent: Any = None  # noqa: N815
         meta: Any = None
 
     @dataclass

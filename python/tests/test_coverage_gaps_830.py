@@ -56,9 +56,11 @@ def _make_config() -> ResolvedConfig:
 class TestSharedModule:
     def test_source_tree_shared_root_raises_when_no_shared_dir(self) -> None:
         """_source_tree_shared_root raises FileNotFoundError when no 'shared/' ancestor found."""
-        with patch("pathlib.Path.is_dir", return_value=False):
-            with pytest.raises(FileNotFoundError, match="Could not locate shared/"):
-                _source_tree_shared_root()
+        with (
+            patch("pathlib.Path.is_dir", return_value=False),
+            pytest.raises(FileNotFoundError, match="Could not locate shared/"),
+        ):
+            _source_tree_shared_root()
 
     def test_shared_path_context_enter_exit(self) -> None:
         """shared_path_context yields a real path and cleans up."""
@@ -215,8 +217,8 @@ class TestDoctorCoverage:
         cfg = _make_config_file(MINIMAL_YAML, tmp_path)
         db = tmp_path / "evidence.db"
         runner = CliRunner()
-        with patch("ancilis.cli.doctor.EvidenceStore") as MockStore:
-            instance = MockStore.return_value
+        with patch("ancilis.cli.doctor.EvidenceStore") as mock_store_cls:
+            instance = mock_store_cls.return_value
             instance.db_path = str(db)
             # Make the write probe fail
             instance.get_summary.side_effect = PermissionError("no write access")
@@ -343,7 +345,7 @@ class TestScanCoverage:
             }
         ]
 
-        with patch("ancilis.cli.scan.DependencyScanner") as MockScanner:
+        with patch("ancilis.cli.scan.DependencyScanner") as mock_scanner_cls:
             mock_eval = MagicMock()
             mock_cr = MagicMock()
             mock_cr.result = "FAIL"
@@ -351,7 +353,7 @@ class TestScanCoverage:
             mock_cr.remediation_hint = "Upgrade to lodash>=4.17.21"
             mock_cr.evidence_data = {}
             mock_eval.control_results = [mock_cr]
-            MockScanner.return_value.scan.return_value = [mock_eval]
+            mock_scanner_cls.return_value.scan.return_value = [mock_eval]
 
             result = runner.invoke(cli, ["scan", "--config", str(cfg), "--db", str(db)])
 
@@ -363,7 +365,7 @@ class TestScanCoverage:
         db = tmp_path / "evidence.db"
         runner = CliRunner()
 
-        with patch("ancilis.cli.scan.DependencyScanner") as MockScanner:
+        with patch("ancilis.cli.scan.DependencyScanner") as mock_scanner_cls:
             mock_eval = MagicMock()
             mock_cr = MagicMock()
             mock_cr.result = "FLAG"
@@ -371,7 +373,7 @@ class TestScanCoverage:
             mock_cr.remediation_hint = None
             mock_cr.evidence_data = {}
             mock_eval.control_results = [mock_cr]
-            MockScanner.return_value.scan.return_value = [mock_eval]
+            mock_scanner_cls.return_value.scan.return_value = [mock_eval]
 
             result = runner.invoke(cli, ["scan", "--ci", "--config", str(cfg), "--db", str(db)])
 
@@ -384,7 +386,7 @@ class TestScanCoverage:
         db = tmp_path / "evidence.db"
         runner = CliRunner()
 
-        with patch("ancilis.cli.scan.DependencyScanner") as MockScanner:
+        with patch("ancilis.cli.scan.DependencyScanner") as mock_scanner_cls:
             mock_eval = MagicMock()
             mock_cr = MagicMock()
             mock_cr.result = "PASS"
@@ -392,7 +394,7 @@ class TestScanCoverage:
             mock_cr.remediation_hint = None
             mock_cr.evidence_data = {}
             mock_eval.control_results = [mock_cr]
-            MockScanner.return_value.scan.return_value = [mock_eval]
+            mock_scanner_cls.return_value.scan.return_value = [mock_eval]
 
             result = runner.invoke(cli, ["scan", "--ci", "--config", str(cfg), "--db", str(db)])
 
@@ -405,7 +407,7 @@ class TestScanCoverage:
         db = tmp_path / "evidence.db"
         runner = CliRunner()
 
-        with patch("ancilis.cli.scan.DependencyScanner") as MockScanner:
+        with patch("ancilis.cli.scan.DependencyScanner") as mock_scanner_cls:
             mock_eval = MagicMock()
             mock_cr = MagicMock()
             mock_cr.result = "SKIP"
@@ -413,7 +415,7 @@ class TestScanCoverage:
             mock_cr.remediation_hint = None
             mock_cr.evidence_data = {}
             mock_eval.control_results = [mock_cr]
-            MockScanner.return_value.scan.return_value = [mock_eval]
+            mock_scanner_cls.return_value.scan.return_value = [mock_eval]
 
             result = runner.invoke(cli, ["scan", "--ci", "--config", str(cfg), "--db", str(db)])
 
