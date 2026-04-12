@@ -511,6 +511,20 @@ class TestBackwardCompatibility:
         # This should work via __getattr__
         assert "MCPActionProducer" in ancilis.__all__
 
+    def test_producers_package_lazy_mcp_import(self):
+        """ancilis.producers.__getattr__ returns MCPActionProducer on package attribute access."""
+        import ancilis.producers as producers_pkg
+
+        cls = getattr(producers_pkg, "MCPActionProducer")
+        assert cls.__name__ == "MCPActionProducer"
+
+    def test_producers_package_unknown_attribute_raises(self):
+        """ancilis.producers.__getattr__ raises AttributeError for unknown names."""
+        import ancilis.producers as producers_pkg
+
+        with pytest.raises(AttributeError, match="has no attribute"):
+            getattr(producers_pkg, "NonExistentProducer")
+
 
 # --- Fix 2: Double-Prefix Prevention ---
 
