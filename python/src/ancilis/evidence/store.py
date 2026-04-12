@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     output_summary VARCHAR,
     tenant_id VARCHAR,
     detected_data_types JSON NOT NULL DEFAULT '[]',
-    sdk_version VARCHAR
+    sdk_version VARCHAR,
+    classification_context JSON NOT NULL DEFAULT '{}'
 );
 """
 
@@ -80,15 +81,15 @@ INSERT INTO evidence_records (
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
-    detected_data_types, sdk_version
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    detected_data_types, sdk_version, classification_context
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_COLUMNS = """
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary,
-tenant_id, detected_data_types, sdk_version
+tenant_id, detected_data_types, sdk_version, classification_context
 """
 
 
@@ -165,6 +166,10 @@ class EvidenceStore:
         if "sdk_version" not in columns:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN sdk_version VARCHAR"
+            )
+        if "classification_context" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN classification_context JSON DEFAULT '{}'"
             )
 
     @property
@@ -258,6 +263,12 @@ class EvidenceStore:
         except Exception:  # noqa: BLE001 — best-effort, never breaks evidence writes
             _sdk_ver = None
 
+        # Build classification_context from config metadata
+        classification_context: dict[str, Any] = {}
+        llm_provider = getattr(self._config, "llm_provider", None)
+        if llm_provider:
+            classification_context["llm_provider"] = llm_provider
+
         record = EvidenceRecord(
             record_id=record_id,
             evaluation_id=evaluation.evaluation_id,
@@ -279,6 +290,7 @@ class EvidenceStore:
             tenant_id=self._tenant_id,
             detected_data_types=detected_data_types,
             sdk_version=_sdk_ver,
+            classification_context=classification_context,
         )
 
         self._connection.execute(INSERT_SQL, [
@@ -302,6 +314,7 @@ class EvidenceStore:
             record.tenant_id,
             json.dumps(record.detected_data_types),
             record.sdk_version,
+            json.dumps(record.classification_context),
         ])
 
         self._maybe_trigger_drift_check()
@@ -629,11 +642,15 @@ class EvidenceStore:
         session_id, source_type, tool_name, decision, mode, control_results,
         active_overlays, data_classifications, active_certifications,
         record_hash, previous_hash, total_duration_ms, output_summary,
-        tenant_id, detected_data_types, sdk_version
+        tenant_id, detected_data_types, sdk_version, classification_context
         """
         raw_detected = row[19] if len(row) > 19 else None
         detected_data_types: list[str] = (
             json.loads(raw_detected) if isinstance(raw_detected, str) else (raw_detected or [])
+        )
+        raw_ctx = row[21] if len(row) > 21 else None
+        classification_context: dict[str, Any] = (
+            json.loads(raw_ctx) if isinstance(raw_ctx, str) else (raw_ctx or {})
         )
         return EvidenceRecord(
             record_id=row[1],
@@ -656,4 +673,5 @@ class EvidenceStore:
             tenant_id=row[18] if len(row) > 18 else None,
             detected_data_types=detected_data_types,
             sdk_version=row[20] if len(row) > 20 else None,
+            classification_context=classification_context,
         )
