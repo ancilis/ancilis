@@ -73,18 +73,48 @@ class ComplianceConfig(BaseModel):
     evidence: EvidenceConfig = Field(default_factory=EvidenceConfig)
 
 
+class CliConfig(BaseModel):
+    update_check: bool = True
+    update_check_interval: int = 86400  # seconds
+
+
+_VALID_SEVERITY_THRESHOLDS = {"critical", "high", "medium", "low"}
+
+
+class ScanDepsConfig(BaseModel):
+    enabled: bool = True
+    severity_threshold: str = "high"
+    ignore: list[str] = Field(default_factory=list)
+
+    @field_validator("severity_threshold")
+    @classmethod
+    def validate_severity_threshold(cls, v: str) -> str:
+        if v not in _VALID_SEVERITY_THRESHOLDS:
+            raise ValueError(
+                f"scan.dependencies.severity_threshold must be one of: "
+                f"{', '.join(sorted(_VALID_SEVERITY_THRESHOLDS))}"
+            )
+        return v
+
+
+class ScanConfig(BaseModel):
+    dependencies: ScanDepsConfig = Field(default_factory=ScanDepsConfig)
+
+
 class AncilisConfig(BaseModel):
     agent: AgentConfig
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     my_agent_handles: list[str] = Field(default_factory=list)
     certification_targets: list[str] = Field(default_factory=list)
     compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
+    cli: CliConfig = Field(default_factory=CliConfig)
+    scan: ScanConfig = Field(default_factory=ScanConfig)
 
     @model_validator(mode="before")
     @classmethod
     def warn_unknown_keys(cls, values: Any) -> Any:
         if isinstance(values, dict):
-            known = {"agent", "security", "my_agent_handles", "certification_targets", "compliance"}
+            known = {"agent", "security", "my_agent_handles", "certification_targets", "compliance", "cli", "scan"}
             unknown = set(values.keys()) - known
             if unknown:
                 # Store warnings for later reporting
@@ -195,6 +225,10 @@ class ResolvedConfig:
         self.active_certifications: list[str] = []
         # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
         self.overlay_requirements: dict[str, dict[str, Any]] = {}
+        # Dependency scan config
+        self.scan_dependencies_enabled: bool = True
+        self.scan_dependencies_severity_threshold: str = "high"
+        self.scan_dependencies_ignore: list[str] = []
 
 
 # --- Config Parser ---
@@ -249,6 +283,9 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     result.mode = config.security.mode
     result.warnings = warnings or []
     result.tools_allowed = list(config.security.tools.allowed)
+    result.scan_dependencies_enabled = config.scan.dependencies.enabled
+    result.scan_dependencies_severity_threshold = config.scan.dependencies.severity_threshold
+    result.scan_dependencies_ignore = list(config.scan.dependencies.ignore)
     result.tools_blocked = list(config.security.tools.blocked)
     result.scope_max_actions_per_minute = config.security.scope.max_actions_per_minute
     result.scope_allowed_destinations = list(config.security.scope.allowed_destinations)
