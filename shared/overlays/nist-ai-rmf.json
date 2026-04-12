@@ -46,8 +46,8 @@
     "GOV-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Organizational teams are committed to a culture that considers and communicates AI risk — training records, awareness programs, escalation culture documented (GOVERN 1.3)",
-        "AI risk management function reviewed and updated on an ongoing basis — evidence of periodic review cycle (GOVERN 2.1)",
+        "Organizational teams are committed to a culture that considers and communicates AI risk \u2014 training records, awareness programs, escalation culture documented (GOVERN 1.3)",
+        "AI risk management function reviewed and updated on an ongoing basis \u2014 evidence of periodic review cycle (GOVERN 2.1)",
         "Risk management function tailored to the specific organization's AI use cases, sectors, and risk tolerance (GOVERN 2.2)",
         "Roles and responsibilities for AI risk management documented and assigned per AI lifecycle stage"
       ],
@@ -59,7 +59,7 @@
       "evidence_requirements": [
         "Context established for AI risk assessment including intended purpose, deployment context, and affected populations (GOVERN 1.1, MAP 1.1)",
         "Risk assessment considers likelihood of unintended consequences from AI agent decisions and actions (MAP 1.5)",
-        "AI risk tolerance levels defined and documented at organizational level — machine-readable parameters preferred (GOVERN 1.6)",
+        "AI risk tolerance levels defined and documented at organizational level \u2014 machine-readable parameters preferred (GOVERN 1.6)",
         "Risk assessment process documented and repeatable; applied before initial deployment and on material changes"
       ],
       "threshold_adjustments": {},
@@ -69,9 +69,9 @@
       "applicable": true,
       "evidence_requirements": [
         "Organizational teams document the risks and potential impacts of AI technology they design, develop, deploy, evaluate, and use (GOVERN 1.4)",
-        "Human oversight mechanisms configured and tested — rationale visibility, confidence signals, intervention capability (GOVERN 1.2, GOVERN 6.2)",
+        "Human oversight mechanisms configured and tested \u2014 rationale visibility, confidence signals, intervention capability (GOVERN 1.2, GOVERN 6.2)",
         "Policies and procedures in place to address emergency situations including AI system abuse, security incidents, and unexpected behavior (GOVERN 1.5)",
-        "Human escalation decision log — records of HITL interventions for AI actions above risk tolerance threshold"
+        "Human escalation decision log \u2014 records of HITL interventions for AI actions above risk tolerance threshold"
       ],
       "threshold_adjustments": {},
       "framework_reference": "GOVERN 1.2, GOVERN 1.4, GOVERN 1.5, GOVERN 6.2"
@@ -80,7 +80,7 @@
       "applicable": true,
       "evidence_requirements": [
         "Context established for AI risk assessment including inventory of all AI systems and their intended purposes (MAP 1.1)",
-        "Likelihood and nature of unintended consequences assessed for each registered agent — documented per agent risk profile (MAP 1.5)",
+        "Likelihood and nature of unintended consequences assessed for each registered agent \u2014 documented per agent risk profile (MAP 1.5)",
         "Agent registry serves as AI system inventory evidence under AI RMF mapping function",
         "Registration records include deployment context, intended use, data types processed, and human oversight configuration"
       ],
@@ -90,10 +90,10 @@
     "ID-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Organizational processes consider the impacts of AI systems on people, processes, and planet — tool and MCP registry contributes to this (MAP 3.5)",
+        "Organizational processes consider the impacts of AI systems on people, processes, and planet \u2014 tool and MCP registry contributes to this (MAP 3.5)",
         "Third-party AI components (models, tools, MCP servers, agent cards) inventoried with provenance and trust evaluation",
         "Changes to AI system components (new tools, updated models) re-evaluated for risk impact before deployment",
-        "Registry of AI components serves as MAP function evidence — component-level risk visibility"
+        "Registry of AI components serves as MAP function evidence \u2014 component-level risk visibility"
       ],
       "threshold_adjustments": {},
       "framework_reference": "MAP 3.5"
@@ -102,7 +102,7 @@
       "applicable": true,
       "evidence_requirements": [
         "Likelihood of unintended consequences assessed with specific attention to data sensitivity and classification (MAP 1.5)",
-        "Data classification drives overlay activation — machine-readable classification tags serve as AI RMF context establishment evidence",
+        "Data classification drives overlay activation \u2014 machine-readable classification tags serve as AI RMF context establishment evidence",
         "Data context documented as part of AI system context establishment for risk assessment purposes",
         "Classification audit trail demonstrating that all data processed by agents is tagged and validated"
       ],
@@ -114,7 +114,7 @@
       "evidence_requirements": [
         "Likelihood of unintended consequences from third-party AI components assessed, including supply chain risks (MAP 5.1)",
         "Third-party entity risks documented including AI-generated data or systems (MAP 1.6)",
-        "Supplier/third-party AI risk assessment records — provenance verification, trust evaluation",
+        "Supplier/third-party AI risk assessment records \u2014 provenance verification, trust evaluation",
         "Contractual and technical controls for third-party AI components align with AI RMF supply chain risk management guidance"
       ],
       "threshold_adjustments": {},
@@ -134,7 +134,7 @@
     "PR-01": {
       "applicable": true,
       "evidence_requirements": [
-        "Processes for decommissioning and phasing out AI systems safely established — agent retirement and credential revocation procedures (GOVERN 1.7)",
+        "Processes for decommissioning and phasing out AI systems safely established \u2014 agent retirement and credential revocation procedures (GOVERN 1.7)",
         "Authentication configuration records demonstrating that identity controls align with AI RMF accountability requirements",
         "Credential lifecycle management aligned with GOVERN function accountability chains",
         "Agent identity records support accountability attribution per AI RMF GOVERN 1.2 requirements"
@@ -145,7 +145,7 @@
     "PR-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Risks or impacts from third-party entities, including AI-generated data or systems, are documented — scope enforcement prevents unauthorized third-party data access (MAP 1.6)",
+        "Risks or impacts from third-party entities, including AI-generated data or systems, are documented \u2014 scope enforcement prevents unauthorized third-party data access (MAP 1.6)",
         "Permission scope configuration records demonstrating least-privilege enforcement",
         "Scope enforcement logs demonstrating that AI agent actions are bounded to authorized scope",
         "Scope definition reviewed when third-party components or data sources change"
@@ -156,7 +156,7 @@
     "PR-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Scientific findings, user needs, and contextual factors informing deployment identified — including data access authorization context (MAP 2.2)",
+        "Scientific findings, user needs, and contextual factors informing deployment identified \u2014 including data access authorization context (MAP 2.2)",
         "Access control configuration records demonstrating authorization enforcement per defined scope",
         "Data access logs demonstrating that agents access only authorized data stores and APIs",
         "Access control aligned with risk tolerance parameters established in GOVERN function"
@@ -170,7 +170,7 @@
         "Scientific findings and contextual factors informing data retention and disposal practices (MAP 2.2)",
         "Data retention and disposal records demonstrate alignment with risk minimization principles",
         "Data labeling and classification records support AI system transparency and accountability",
-        "Disposal procedures documented and tested — irreversible disposal verified for high-sensitivity data"
+        "Disposal procedures documented and tested \u2014 irreversible disposal verified for high-sensitivity data"
       ],
       "threshold_adjustments": {},
       "framework_reference": "MAP 2.2"
@@ -178,9 +178,9 @@
     "PR-05": {
       "applicable": true,
       "evidence_requirements": [
-        "Test sets and evaluation methods reflect anticipated deployment contexts — audit log quality validated against expected evidence generation (MEASURE 2.1)",
-        "Audit logs serve as primary MEASURE function evidence — each log record links agent action to control evaluation result",
-        "Log completeness and integrity verified — missing or tampered logs would undermine MEASURE function",
+        "Test sets and evaluation methods reflect anticipated deployment contexts \u2014 audit log quality validated against expected evidence generation (MEASURE 2.1)",
+        "Audit logs serve as primary MEASURE function evidence \u2014 each log record links agent action to control evaluation result",
+        "Log completeness and integrity verified \u2014 missing or tampered logs would undermine MEASURE function",
         "Audit trail supports AI trustworthiness assessment by independent evaluators and auditors"
       ],
       "threshold_adjustments": {},
@@ -190,7 +190,7 @@
       "applicable": true,
       "evidence_requirements": [
         "Risks from third-party entities and AI-generated configuration changes documented and controlled (MAP 1.6)",
-        "Configuration integrity baseline serves as MEASURE function baseline — drift from baseline indicates potential AI system trustworthiness degradation",
+        "Configuration integrity baseline serves as MEASURE function baseline \u2014 drift from baseline indicates potential AI system trustworthiness degradation",
         "Configuration change records demonstrate that AI system behaves as designed and deployed (GOVERN 1.4)",
         "Integrity monitoring alerts feed into MANAGE function for timely response"
       ],
@@ -202,7 +202,7 @@
       "evidence_requirements": [
         "Scientific findings and contextual factors informing transmission security for AI agent communications (MAP 2.2)",
         "Transport security configuration records demonstrate that AI agent communication channels are protected",
-        "Encryption enforcement aligned with data classification and risk tolerance — higher-sensitivity data requires stronger encryption",
+        "Encryption enforcement aligned with data classification and risk tolerance \u2014 higher-sensitivity data requires stronger encryption",
         "Channel security contributes to AI system reliability and trustworthiness assessment under MEASURE function"
       ],
       "threshold_adjustments": {},
@@ -214,7 +214,7 @@
         "AI system development supported by teams with knowledge of context including input manipulation risks (MAP 2.3)",
         "Input validation configuration records demonstrating defense against prompt injection and adversarial inputs",
         "Validation testing records demonstrate that input handling aligns with intended AI system behavior",
-        "Injection prevention directly supports AI trustworthiness — adversarial input is a primary threat to reliable AI agent behavior"
+        "Injection prevention directly supports AI trustworthiness \u2014 adversarial input is a primary threat to reliable AI agent behavior"
       ],
       "threshold_adjustments": {},
       "framework_reference": "MAP 2.3"
@@ -257,7 +257,7 @@
       "evidence_requirements": [
         "The risk or impact of AI system actions evaluated through evidence integrity monitoring (MEASURE 2.6)",
         "Evidence integrity verification records demonstrate that compliance record chain cannot be tampered with",
-        "Integrity monitoring supports AI accountability — tamper-evident evidence records are foundational for AI trustworthiness",
+        "Integrity monitoring supports AI accountability \u2014 tamper-evident evidence records are foundational for AI trustworthiness",
         "Integrity alerts feed into incident response chain for MANAGE function"
       ],
       "threshold_adjustments": {},
@@ -268,7 +268,7 @@
       "evidence_requirements": [
         "Post-deployment AI risks and incidents addressed based on feedback, monitoring, and evaluation (MANAGE 4.1)",
         "Incident response records demonstrate systematic response to AI system trustworthiness failures",
-        "Response actions documented with root cause analysis — supports MANAGE 4.1 ongoing improvement",
+        "Response actions documented with root cause analysis \u2014 supports MANAGE 4.1 ongoing improvement",
         "Incident classification distinguishes AI-specific failure modes from general security incidents"
       ],
       "threshold_adjustments": {},
@@ -277,9 +277,9 @@
     "RS-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Measurable improvements or remediations achieved following AI incidents — documented and verified (MANAGE 4.2)",
+        "Measurable improvements or remediations achieved following AI incidents \u2014 documented and verified (MANAGE 4.2)",
         "Human escalation records demonstrate that AI system failures trigger appropriate human intervention",
-        "Escalation outcomes documented — response effectiveness measured against AI RMF MANAGE 4.2 improvement criteria",
+        "Escalation outcomes documented \u2014 response effectiveness measured against AI RMF MANAGE 4.2 improvement criteria",
         "Human-AI collaboration protocols align with GOVERN 6.2 requirements for accountable oversight"
       ],
       "threshold_adjustments": {},
@@ -291,7 +291,7 @@
         "Responses to identified risks communicated to relevant stakeholders and authorized personnel (MANAGE 4.3)",
         "Forensic investigation records support MANAGE 4.3 risk communication requirements",
         "Investigation findings documented in format suitable for AI trustworthiness reporting",
-        "Threat intelligence integrated into incident analysis — supports MAP 1.5 unintended consequence assessment"
+        "Threat intelligence integrated into incident analysis \u2014 supports MAP 1.5 unintended consequence assessment"
       ],
       "threshold_adjustments": {},
       "framework_reference": "MANAGE 4.3"
@@ -299,7 +299,7 @@
     "RC-01": {
       "applicable": true,
       "evidence_requirements": [
-        "Deployed AI systems regularly reviewed and updated based on operational experience — rollback capability supports this (MANAGE 4.4)",
+        "Deployed AI systems regularly reviewed and updated based on operational experience \u2014 rollback capability supports this (MANAGE 4.4)",
         "Rollback target records demonstrate ability to restore AI system to known-good state",
         "Recovery testing records demonstrate rollback capability functions as designed",
         "Rollback capability directly supports AI system trustworthiness by enabling rapid response to failure"
@@ -310,10 +310,10 @@
     "RC-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Deployed AI systems regularly reviewed — post-incident improvement cycle documented (MANAGE 4.4)",
+        "Deployed AI systems regularly reviewed \u2014 post-incident improvement cycle documented (MANAGE 4.4)",
         "Post-incident reviews produce documented improvements to AI system design, controls, or operational procedures",
         "Improvement cycle records demonstrate systematic learning from AI system failures",
-        "Lessons learned integrated into GOVERN function — policy and procedure updates documented"
+        "Lessons learned integrated into GOVERN function \u2014 policy and procedure updates documented"
       ],
       "threshold_adjustments": {},
       "framework_reference": "MANAGE 4.4"
@@ -417,5 +417,6 @@
   },
   "evidence_retention_minimum_days": 1095,
   "human_oversight_required": true,
-  "notes": "NIST AI RMF v1.0 (January 2023) is a voluntary framework but increasingly referenced in federal procurement requirements and executive orders on AI. The framework uses four functions (GOVERN, MAP, MEASURE, MANAGE) rather than NIST CSF's IDENTIFY/PROTECT/DETECT/RESPOND/RECOVER structure. GOVERN is foundational — without GOVERN controls (GOV-01 through GOV-04), the MAP/MEASURE/MANAGE functions cannot operate effectively. AKSI controls map most densely to MAP (context establishment and risk identification) and MEASURE (performance measurement and evaluation) functions. The MANAGE function maps to AKSI's RS and RC controls. This overlay is always-on because AI RMF applies to all AI system deployments regardless of data classification. Federal deployments should also reference NIST AI RMF Playbook and sector-specific profiles (NIST AI RMF Financial Services Profile, etc.) which may impose additional specificity."
+  "notes": "NIST AI RMF v1.0 (January 2023) is a voluntary framework but increasingly referenced in federal procurement requirements and executive orders on AI. The framework uses four functions (GOVERN, MAP, MEASURE, MANAGE) rather than NIST CSF's IDENTIFY/PROTECT/DETECT/RESPOND/RECOVER structure. GOVERN is foundational \u2014 without GOVERN controls (GOV-01 through GOV-04), the MAP/MEASURE/MANAGE functions cannot operate effectively. AKSI controls map most densely to MAP (context establishment and risk identification) and MEASURE (performance measurement and evaluation) functions. The MANAGE function maps to AKSI's RS and RC controls. This overlay is always-on because AI RMF applies to all AI system deployments regardless of data classification. Federal deployments should also reference NIST AI RMF Playbook and sector-specific profiles (NIST AI RMF Financial Services Profile, etc.) which may impose additional specificity.",
+  "evidence_requirements": {}
 }
