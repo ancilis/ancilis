@@ -4,13 +4,24 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { basename } from "node:path";
+import { randomUUID } from "node:crypto";
 import { loadConfig } from "../config/index.js";
 import type { ResolvedConfig } from "../config/index.js";
 import { EvidenceStore } from "../evidence/store.js";
 import { parsePeriod } from "../report/generator.js";
 import { sharedPathFrom } from "../shared-path.js";
+import { scanDependencies } from "../dependencies/index.js";
+import type { VulnerabilityFinding } from "../dependencies/index.js";
+import type { EvaluationResult, ControlResult } from "../engine/result.js";
 
 const CONTROLS_DIR = sharedPathFrom(import.meta.url, "controls");
+
+const SEVERITY_ORDER: Record<string, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+};
 
 export interface ScanOptions {
   ci?: boolean;
@@ -19,6 +30,8 @@ export interface ScanOptions {
   session?: string;
   latest?: boolean;
   period?: string;
+  /** Override project directory for dependency scanning (default: process.cwd()) */
+  projectDir?: string;
 }
 
 function loadControlDefs(): Map<string, Record<string, unknown>> {
@@ -100,7 +113,7 @@ function printNextSteps(out: (m: string) => void): void {
   out("  npx ancilis scan --ci           — JSON output for CI/CD pipelines");
 }
 
-interface ControlResult {
+interface ControlResult2 {
   id: string;
   name: string;
   status: "pass" | "fail" | "skip";
@@ -108,6 +121,78 @@ interface ControlResult {
   failures: number;
   flags: number;
 }
+
+// ---------------------------------------------------------------------------
+// Severity threshold helpers
+// ---------------------------------------------------------------------------
+
+type SeverityLevel = "critical" | "high" | "medium" | "low";
+
+/** Returns true if `severity` is at or above `threshold` (more severe). */
+function atOrAboveThreshold(severity: SeverityLevel, threshold: SeverityLevel): boolean {
+  return (SEVERITY_ORDER[severity] ?? 3) <= (SEVERITY_ORDER[threshold] ?? 3);
+}
+
+// ---------------------------------------------------------------------------
+// Evidence generation for dependency scan
+// ---------------------------------------------------------------------------
+
+function buildDepEvaluationResult(
+  config: ResolvedConfig,
+  findings: VulnerabilityFinding[],
+  depCount: number,
+  osvError: string | null,
+  violatingFindings: VulnerabilityFinding[],
+): EvaluationResult {
+  const hasFail = violatingFindings.length > 0;
+
+  const controlResult: ControlResult = {
+    controlId: "PR-03",
+    controlName: "Provenance",
+    result: hasFail ? "FAIL" : "PASS",
+    detail: osvError
+      ? `Dependency scan: OSV.dev lookup unavailable — ${osvError}`
+      : hasFail
+        ? `Dependency scan: ${violatingFindings.length} violation(s) at/above threshold`
+        : `Dependency scan: no violations in ${depCount} dependencies`,
+    evidenceData: {
+      component_count: depCount,
+      vulnerability_count: findings.length,
+      severity_threshold: config.scanDependenciesSeverityThreshold,
+      ignore_list: config.scanDependenciesIgnore,
+      findings: findings.slice(0, 100).map(f => ({
+        cve_id: f.cveId,
+        package: f.packageName,
+        version: f.installedVersion,
+        severity: f.severity,
+        cvss_score: f.cvssScore,
+        fixed_version: f.fixedVersion,
+        summary: f.summary,
+      })),
+      osv_error: osvError,
+    },
+    durationMs: 0,
+  };
+
+  return {
+    evaluationId: randomUUID(),
+    actionId: `dep-scan-${randomUUID().replace(/-/g, "").slice(0, 8)}`,
+    timestamp: new Date().toISOString(),
+    agentId: config.agentName,
+    sourceType: "dependency_scan",
+    mode: config.mode as "audit" | "enforce",
+    controlResults: [controlResult],
+    decision: hasFail ? "BLOCK" : "ALLOW",
+    decisionReason: "Dependency vulnerability scan",
+    activeOverlays: [...config.activeOverlays.keys()],
+    dataClassifications: [],
+    totalDurationMs: 0,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Main handler
+// ---------------------------------------------------------------------------
 
 export async function handleScan(options: ScanOptions, io?: { stdout(m: string): void; stderr(m: string): void }): Promise<number> {
   const out = (msg: string): void => {
@@ -144,7 +229,7 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
     const controlDefs = loadControlDefs();
     const enabled = [...config.controls.values()].filter(c => c.enabled).sort((a, b) => a.controlId.localeCompare(b.controlId));
 
-    const controlResults: ControlResult[] = [];
+    const controlResults: ControlResult2[] = [];
     let passingCount = 0;
     let failingCount = 0;
     let skippedCount = 0;
@@ -183,16 +268,108 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
       anyFailing = true;
     }
 
+    // -----------------------------------------------------------------------
+    // Dependency scan
+    // -----------------------------------------------------------------------
+    interface DepScanSummary {
+      status: "ok" | "violations" | "no_manifests" | "osv_error" | "disabled";
+      findings: VulnerabilityFinding[];
+      violatingFindings: VulnerabilityFinding[];
+      componentCount: number;
+      osvError: string | null;
+    }
+
+    let depSummary: DepScanSummary = {
+      status: "no_manifests",
+      findings: [],
+      violatingFindings: [],
+      componentCount: 0,
+      osvError: null,
+    };
+
+    if (config.scanDependenciesEnabled) {
+      const projectDir = options.projectDir ?? process.cwd();
+      const depResult = await scanDependencies(projectDir);
+      const threshold = config.scanDependenciesSeverityThreshold;
+      const ignoreSet = new Set(config.scanDependenciesIgnore);
+
+      if (depResult.manifestPath === null) {
+        depSummary = { status: "no_manifests", findings: [], violatingFindings: [], componentCount: 0, osvError: null };
+      } else if (depResult.osvError !== null) {
+        depSummary = {
+          status: "osv_error",
+          findings: [],
+          violatingFindings: [],
+          componentCount: depResult.dependencies.length,
+          osvError: depResult.osvError,
+        };
+      } else {
+        const activeFindings = depResult.vulnerabilities.filter(f => !ignoreSet.has(f.cveId));
+        const violating = activeFindings.filter(f => atOrAboveThreshold(f.severity, threshold));
+
+        if (violating.length > 0) {
+          anyFailing = true;
+        }
+
+        depSummary = {
+          status: violating.length > 0 ? "violations" : "ok",
+          findings: activeFindings,
+          violatingFindings: violating,
+          componentCount: depResult.dependencies.length,
+          osvError: null,
+        };
+      }
+
+      // Generate and store evidence record (PR-03)
+      const depEval = buildDepEvaluationResult(
+        config,
+        depSummary.findings,
+        depSummary.componentCount,
+        depSummary.osvError,
+        depSummary.violatingFindings,
+      );
+      try {
+        await store.store(depEval, "dependency-scanner");
+      } catch { /* evidence store errors are non-fatal */ }
+    } else {
+      depSummary = { status: "disabled", findings: [], violatingFindings: [], componentCount: 0, osvError: null };
+    }
+
     const posture = anyFailing ? "non_compliant" : "compliant";
     const exitCode = anyFailing ? 1 : 0;
 
     if (options.ci) {
+      // Sort findings by severity for CI output
+      const sortedFindings = [...depSummary.findings].sort(
+        (a, b) => (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3),
+      );
+
+      const depCiSection = config.scanDependenciesEnabled
+        ? {
+            status: depSummary.status,
+            component_count: depSummary.componentCount,
+            severity_threshold: config.scanDependenciesSeverityThreshold,
+            violation_count: depSummary.violatingFindings.length,
+            total_findings: depSummary.findings.length,
+            findings: sortedFindings.map(f => ({
+              cve_id: f.cveId,
+              package: f.packageName,
+              installed_version: f.installedVersion,
+              severity: f.severity,
+              cvss_score: f.cvssScore,
+              fixed_version: f.fixedVersion,
+              summary: f.summary,
+            })),
+          }
+        : { status: "disabled" };
+
       const output = {
         version: "0.1.0",
         agent: config.agentName,
         mode: config.mode,
         timestamp: new Date().toISOString(),
         controls: controlResults,
+        dependencies: depCiSection,
         summary: {
           total_controls: enabled.length,
           passing: passingCount,
@@ -222,6 +399,31 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
           if (ctrl.failures > 0) detail += `, ${ctrl.failures} failures`;
           if (ctrl.flags > 0) detail += `, ${ctrl.flags} flags`;
           lines.push(`  ${mark} ${ctrl.name} \u2014 ${ctrl.status} (${detail})`);
+        }
+      }
+
+      // DEPENDENCIES section
+      if (config.scanDependenciesEnabled) {
+        lines.push("");
+        if (depSummary.status === "no_manifests") {
+          lines.push("DEPENDENCIES  No dependency manifests detected (skipped)");
+        } else if (depSummary.status === "osv_error") {
+          lines.push("DEPENDENCIES  Vulnerability lookup unavailable (OSV.dev timeout)");
+        } else if (depSummary.status === "ok") {
+          lines.push(`DEPENDENCIES  No vulnerabilities found (${depSummary.componentCount} packages scanned)`);
+        } else if (depSummary.status === "violations") {
+          const violationCount = depSummary.violatingFindings.length;
+          lines.push(`DEPENDENCIES (${violationCount} issue${violationCount === 1 ? "" : "s"} found)`);
+
+          // Sort findings: violations first (by severity), then remainder
+          const sorted = [...depSummary.violatingFindings].sort(
+            (a, b) => (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3),
+          );
+          for (const f of sorted) {
+            const sev = f.severity.toUpperCase().padEnd(8);
+            const fix = f.fixedVersion ? ` (upgrade to \u2265${f.fixedVersion})` : "";
+            lines.push(`  ${sev} ${f.packageName} ${f.installedVersion} \u2014 ${f.cveId}${fix}`);
+          }
         }
       }
 

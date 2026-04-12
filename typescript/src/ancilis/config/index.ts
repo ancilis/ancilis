@@ -51,6 +51,16 @@ const ComplianceConfigSchema = z.object({
   evidence: EvidenceConfigSchema,
 }).default({});
 
+const ScanDependenciesConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  severity_threshold: z.enum(["critical", "high", "medium", "low"]).default("high"),
+  ignore: z.array(z.string()).default([]),
+}).default({});
+
+const ScanConfigSchema = z.object({
+  dependencies: ScanDependenciesConfigSchema,
+}).default({});
+
 const AncilisConfigSchema = z.object({
   agent: z.object({
     name: z.string().min(1, "agent.name must be a non-empty string"),
@@ -61,6 +71,7 @@ const AncilisConfigSchema = z.object({
   my_agent_handles: z.array(z.string()).default([]),
   certification_targets: z.array(z.string()).default([]),
   compliance: ComplianceConfigSchema,
+  scan: ScanConfigSchema,
 });
 
 type AncilisConfig = z.infer<typeof AncilisConfigSchema>;
@@ -180,6 +191,9 @@ export interface ResolvedConfig {
   scopeAllowedDestinations: string[];
   scopeBlockedDestinations: string[];
   activeCertifications: string[];
+  scanDependenciesEnabled: boolean;
+  scanDependenciesSeverityThreshold: "critical" | "high" | "medium" | "low";
+  scanDependenciesIgnore: string[];
 }
 
 // --- Validation ---
@@ -188,7 +202,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
   const warnings: string[] = [];
 
   // Check for unknown top-level keys
-  const knownKeys = new Set(["agent", "security", "my_agent_handles", "certification_targets", "compliance"]);
+  const knownKeys = new Set(["agent", "security", "my_agent_handles", "certification_targets", "compliance", "scan"]);
   for (const key of Object.keys(raw)) {
     if (!knownKeys.has(key)) {
       warnings.push(`Unknown top-level key: '${key}'`);
@@ -264,6 +278,9 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
     scopeAllowedDestinations: [...config.security.scope.allowed_destinations],
     scopeBlockedDestinations: [...config.security.scope.blocked_destinations],
     activeCertifications: [],
+    scanDependenciesEnabled: config.scan.dependencies.enabled,
+    scanDependenciesSeverityThreshold: config.scan.dependencies.severity_threshold,
+    scanDependenciesIgnore: [...config.scan.dependencies.ignore],
   };
 
   const controlDefs = loadControlDefinitions();
