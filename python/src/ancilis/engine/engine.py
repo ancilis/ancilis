@@ -13,13 +13,16 @@ from ancilis.engine.evaluators.pr01_identity import PR01IdentityEvaluator
 from ancilis.engine.evaluators.pr02_scope import PR02ScopeEvaluator, RateTracker
 from ancilis.engine.evaluators.pr03_provenance import PR03ProvenanceEvaluator
 from ancilis.engine.evaluators.pr04_exposure import PR04ExposureEvaluator
+from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
+from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
+from ancilis.engine.evaluators.gov01_policy import GOV01PolicyEvaluator
 from ancilis.engine.registry import ToolRegistry
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.controls.pr05_audit import PR05AuditEvaluator
 from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow
 
 # Controls that have evaluators
-EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"}
+EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01", "PR-07", "PR-08", "GOV-01"}
 
 
 class Engine:
@@ -42,6 +45,9 @@ class Engine:
             "PR-04": PR04ExposureEvaluator(),
             "PR-05": PR05AuditEvaluator(),
             "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
+            "PR-07": PR07TransportEvaluator(),
+            "PR-08": PR08InputEvaluator(),
+            "GOV-01": GOV01PolicyEvaluator(),
         }
 
     def evaluate(self, action: Action) -> EvaluationResult:
