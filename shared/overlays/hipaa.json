@@ -1,14 +1,21 @@
 {
   "id": "hipaa",
   "name": "HIPAA Security Rule",
-  "version": "0.2",
+  "version": "0.3",
   "trigger_type": "data_classification",
-  "triggered_by": ["DC-PHI"],
+  "triggered_by": [
+    "DC-PHI"
+  ],
   "description": "Healthcare data protection overlay. Activated by health_records or patient_data declarations. Covers the HIPAA Security Rule (45 CFR Part 164) requirements for electronic protected health information (ePHI).",
   "jurisdiction": "us",
   "enforcement_date": "2003-04-20",
-  "triggered_by_classifications": ["DC-PHI"],
-  "applicable_data_types": ["health_records", "patient_data"],
+  "triggered_by_classifications": [
+    "DC-PHI"
+  ],
+  "applicable_data_types": [
+    "health_records",
+    "patient_data"
+  ],
   "controls": {
     "GOV-01": {
       "applicable": true,
@@ -165,32 +172,37 @@
     "PR-06": {
       "applicable": true,
       "evidence_requirements": [
-        "Facility access controls to limit physical access to electronic information systems containing ePHI (164.310(a))",
-        "Physical access policies — facility security plan, access control and validation, maintenance records (164.310(a)(2))",
-        "Physical safeguards for workstations used to access ePHI (164.310(c))"
+        "Security measures implemented to reduce risks to ePHI to a reasonable and appropriate level — configuration baseline is part of that risk reduction (164.308(a)(1)(ii)(B))",
+        "Integrity controls implemented — electronic mechanisms corroborate that agent configuration, loaded tool set, and active policy bindings have not been altered or destroyed in an unauthorized manner (164.312(c)(1))",
+        "Audit logs of configuration changes — records of who changed agent configuration and when, reviewable under information system activity review (164.308(a)(1)(ii)(D))",
+        "Malicious software protection in place — configuration-tampering malware detected and reported (164.308(a)(5)(ii)(B))",
+        "Note: HIPAA has no specific 'configuration integrity' standard; 164.308(a)(1)(ii)(B) and 164.312(c)(1) are the closest applicable provisions for agent runtime configuration verification"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "164.310(a), 164.310(b)"
+      "framework_reference": "164.308(a)(1)(ii)(B), 164.312(c)(1)"
     },
     "PR-07": {
       "applicable": true,
       "evidence_requirements": [
-        "Workstation use policies specify proper functions, manner of use, and physical surroundings (164.310(b))",
-        "Workstation security measures to restrict access to authorized users and deter casual unauthorized viewing (164.310(c))",
-        "Remote access to ePHI systems requires appropriate safeguards"
+        "Transmission security implemented — technical security measures guard against unauthorized access to ePHI transmitted over electronic communications networks (164.312(e)(1))",
+        "Encryption of ePHI in transit (addressable) — mechanism to encrypt ePHI whenever reasonable and appropriate, including agent-to-API, agent-to-MCP-server, and agent-to-data-store channels (164.312(e)(2)(ii))",
+        "Integrity controls for ePHI in transit (addressable) — mechanisms to corroborate ePHI has not been altered without detection while in transit (164.312(e)(2)(i))",
+        "TLS/mTLS configuration records — documentation of cipher suites, certificate management, and encryption enforcement for all channels carrying ePHI",
+        "Note: HIPAA 164.312(e)(2)(ii) marks encryption as 'addressable' not 'required' — covered entities must implement or document why encryption is not reasonable and appropriate"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "164.310(b), 164.310(c)"
+      "framework_reference": "164.312(e)(1), 164.312(e)(2)(ii)"
     },
     "PR-08": {
       "applicable": true,
       "evidence_requirements": [
-        "Hardware and electronic media disposal procedure — ePHI removed before disposal (164.310(d)(2)(i))",
-        "Media re-use procedure — ePHI removed from media before it is available for re-use (164.310(d)(2)(ii))",
-        "Accountability for hardware and electronic media containing ePHI — movement records maintained (164.310(d)(2)(iii))"
+        "Electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized manner — integrity controls implemented (164.312(c)(1))",
+        "Input validation procedures in place for all systems receiving or processing ePHI — malformed or malicious inputs rejected before reaching ePHI stores (164.312(c)(1))",
+        "Error correction capability for ePHI integrity (addressable) — procedures to detect and correct data corruption (164.312(c)(2))",
+        "Audit of injection and manipulation attempts against ePHI systems — logs reviewed for unauthorized input patterns (164.312(b))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "164.310(d)"
+      "framework_reference": "164.312(c)(1), 164.312(c)(2)"
     },
     "DE-01": {
       "applicable": true,
@@ -286,56 +298,148 @@
   "control_adjustments": {
     "PR-01": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["session_id", "access_purpose"],
+      "additional_evidence_fields": [
+        "session_id",
+        "access_purpose"
+      ],
       "regulatory_citation": "HIPAA 164.312(d) - Person or entity authentication"
     },
     "PR-02": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["minimum_necessary_justification"],
+      "additional_evidence_fields": [
+        "minimum_necessary_justification"
+      ],
       "regulatory_citation": "HIPAA 164.502(b) - Minimum necessary standard"
     },
     "PR-04": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["phi_categories_detected", "encryption_status"],
+      "additional_evidence_fields": [
+        "phi_categories_detected",
+        "encryption_status"
+      ],
       "regulatory_citation": "HIPAA 164.312(e)(1) - Transmission security"
     },
     "PR-05": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["access_type", "phi_accessed"],
+      "additional_evidence_fields": [
+        "access_type",
+        "phi_accessed"
+      ],
       "regulatory_citation": "HIPAA 164.312(b) - Audit controls"
     }
   },
   "evidence_requirements": {
-    "PR-04": ["transmission_destination", "classification_at_time_of_call", "block_reason"],
-    "PR-05": ["log_completeness", "retention_compliance"]
+    "PR-04": [
+      "transmission_destination",
+      "classification_at_time_of_call",
+      "block_reason"
+    ],
+    "PR-05": [
+      "log_completeness",
+      "retention_compliance"
+    ]
   },
   "framework_mapping": {
-    "GOV-01": ["164.308(a)(1)", "164.308(a)(2)"],
-    "GOV-02": ["164.308(a)(3)", "164.308(a)(5)"],
-    "GOV-03": ["164.308(a)(1)(ii)(A)", "164.308(a)(1)(ii)(B)"],
-    "GOV-04": ["164.308(a)(7)", "164.308(a)(8)"],
-    "ID-01": ["164.308(a)(1)", "164.310(d)"],
-    "ID-02": ["164.308(b)", "164.504(e)"],
-    "ID-03": ["164.310(d)(2)", "164.316(b)(2)"],
-    "ID-04": ["164.308(b)(1)", "164.504(e)"],
-    "ID-05": ["164.308(a)(3)"],
-    "PR-01": ["164.312(a)", "164.312(d)"],
-    "PR-02": ["164.312(a)(1)", "164.308(a)(3)", "164.502(b)"],
-    "PR-03": ["164.312(c)"],
-    "PR-04": ["164.312(e)(1)", "164.312(e)(2)"],
-    "PR-05": ["164.312(b)", "164.316(b)(2)"],
-    "PR-06": ["164.310(a)", "164.310(b)"],
-    "PR-07": ["164.310(b)", "164.310(c)"],
-    "PR-08": ["164.310(d)"],
-    "DE-01": ["164.308(a)(5)(ii)(B)", "164.308(a)(6)"],
-    "DE-02": ["164.308(a)(1)(ii)(D)", "164.308(a)(5)(ii)(C)"],
-    "DE-03": ["164.308(a)(5)"],
-    "DE-04": ["164.308(a)(1)(ii)"],
-    "RS-01": ["164.308(a)(6)"],
-    "RS-02": ["164.308(a)(6)(ii)"],
-    "RS-03": ["164.402", "164.404", "164.408", "164.414"],
-    "RC-01": ["164.308(a)(7)"],
-    "RC-02": ["164.308(a)(7)(ii)(A)", "164.308(a)(7)(ii)(B)"]
+    "GOV-01": [
+      "164.308(a)(1)",
+      "164.308(a)(2)"
+    ],
+    "GOV-02": [
+      "164.308(a)(3)",
+      "164.308(a)(5)"
+    ],
+    "GOV-03": [
+      "164.308(a)(1)(ii)(A)",
+      "164.308(a)(1)(ii)(B)"
+    ],
+    "GOV-04": [
+      "164.308(a)(7)",
+      "164.308(a)(8)"
+    ],
+    "ID-01": [
+      "164.308(a)(1)",
+      "164.310(d)"
+    ],
+    "ID-02": [
+      "164.308(b)",
+      "164.504(e)"
+    ],
+    "ID-03": [
+      "164.310(d)(2)",
+      "164.316(b)(2)"
+    ],
+    "ID-04": [
+      "164.308(b)(1)",
+      "164.504(e)"
+    ],
+    "ID-05": [
+      "164.308(a)(3)"
+    ],
+    "PR-01": [
+      "164.312(a)",
+      "164.312(d)"
+    ],
+    "PR-02": [
+      "164.312(a)(1)",
+      "164.308(a)(3)",
+      "164.502(b)"
+    ],
+    "PR-03": [
+      "164.312(c)"
+    ],
+    "PR-04": [
+      "164.312(e)(1)",
+      "164.312(e)(2)"
+    ],
+    "PR-05": [
+      "164.312(b)",
+      "164.316(b)(2)"
+    ],
+    "PR-06": [
+      "164.310(a)",
+      "164.310(b)"
+    ],
+    "PR-07": [
+      "164.310(b)",
+      "164.310(c)"
+    ],
+    "PR-08": [
+      "164.312(c)(1)",
+      "164.312(c)(2)"
+    ],
+    "DE-01": [
+      "164.308(a)(5)(ii)(B)",
+      "164.308(a)(6)"
+    ],
+    "DE-02": [
+      "164.308(a)(1)(ii)(D)",
+      "164.308(a)(5)(ii)(C)"
+    ],
+    "DE-03": [
+      "164.308(a)(5)"
+    ],
+    "DE-04": [
+      "164.308(a)(1)(ii)"
+    ],
+    "RS-01": [
+      "164.308(a)(6)"
+    ],
+    "RS-02": [
+      "164.308(a)(6)(ii)"
+    ],
+    "RS-03": [
+      "164.402",
+      "164.404",
+      "164.408",
+      "164.414"
+    ],
+    "RC-01": [
+      "164.308(a)(7)"
+    ],
+    "RC-02": [
+      "164.308(a)(7)(ii)(A)",
+      "164.308(a)(7)(ii)(B)"
+    ]
   },
   "reporting_obligations": {
     "breach_notification_hours": 1440,

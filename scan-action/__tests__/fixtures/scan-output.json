@@ -1,0 +1,65 @@
+{
+  "version": "0.1.0",
+  "agent": "demo-agent",
+  "mode": "audit",
+  "timestamp": "2026-04-09T00:00:00.000Z",
+  "controls": [
+    {
+      "id": "PR-01",
+      "name": "Tool Authentication",
+      "status": "pass",
+      "evaluations": 12,
+      "failures": 0,
+      "flags": 0
+    },
+    {
+      "id": "PR-02",
+      "name": "Least Privilege",
+      "status": "pass",
+      "evaluations": 8,
+      "failures": 0,
+      "flags": 2
+    },
+    {
+      "id": "PR-03",
+      "name": "Input Validation",
+      "status": "fail",
+      "evaluations": 10,
+      "failures": 3,
+      "flags": 0
+    },
+    {
+      "id": "PR-04",
+      "name": "Output Sanitization",
+      "status": "pass",
+      "evaluations": 6,
+      "failures": 0,
+      "flags": 0
+    },
+    {
+      "id": "PR-05",
+      "name": "Rate Limiting",
+      "status": "skip",
+      "evaluations": 0,
+      "failures": 0,
+      "flags": 0
+    },
+    {
+      "id": "DE-01",
+      "name": "Data Exfiltration",
+      "status": "pass",
+      "evaluations": 15,
+      "failures": 0,
+      "flags": 0
+    }
+  ],
+  "summary": {
+    "total_controls": 6,
+    "passing": 4,
+    "failing": 1,
+    "skipped": 1,
+    "total_evaluations": 51
+  },
+  "posture": "non_compliant",
+  "exit_code": 1
+}

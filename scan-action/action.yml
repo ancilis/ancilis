@@ -1,0 +1,61 @@
+name: 'Ancilis Scan'
+description: 'AI agent security posture scanning for pull requests'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  overlays:
+    description: 'Comma-separated overlay profiles (e.g. financial,soc2). Defaults to auto-detect.'
+    required: false
+    default: ''
+  fail-on:
+    description: 'Minimum severity to fail the check. Options: critical, high, medium, low, none.'
+    required: false
+    default: 'none'
+  report-format:
+    description: 'PR comment format. Options: markdown, minimal, off.'
+    required: false
+    default: 'markdown'
+  upload-sarif:
+    description: 'Write SARIF results to a temp file and set output path for github/codeql-action/upload-sarif.'
+    required: false
+    default: 'false'
+  upload-evidence:
+    description: 'Upload evidence to Ancilis platform.'
+    required: false
+    default: 'false'
+  platform-url:
+    description: 'Ancilis platform API endpoint (required if upload-evidence is true).'
+    required: false
+    default: ''
+  platform-token:
+    description: 'Ancilis platform API token (use GitHub secrets).'
+    required: false
+    default: ''
+  python-version:
+    description: 'Python version to use for ancilis installation.'
+    required: false
+    default: '3.11'
+  ancilis-version:
+    description: 'Ancilis SDK version to install. Defaults to latest stable.'
+    required: false
+    default: 'ancilis'
+
+outputs:
+  posture:
+    description: 'Posture result: compliant or non_compliant'
+  exit-code:
+    description: 'Scan exit code (0=pass, 1=fail based on fail-on threshold)'
+  controls-passing:
+    description: 'Number of passing controls'
+  controls-failing:
+    description: 'Number of failing controls'
+  scan-json:
+    description: 'Raw scan JSON output from ancilis scan --ci'
+  sarif-path:
+    description: 'Path to SARIF file (set when upload-sarif is true)'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
