@@ -1,7 +1,7 @@
 {
   "id": "hipaa",
   "name": "HIPAA Security Rule",
-  "version": "0.3",
+  "version": "0.4",
   "trigger_type": "data_classification",
   "triggered_by": [
     "DC-PHI"
@@ -22,7 +22,9 @@
       "evidence_requirements": [
         "Formal security management process implemented — policies and procedures to prevent, detect, contain, and correct security violations (164.308(a)(1))",
         "Privacy and Security Officer assigned with defined responsibilities (164.308(a)(2))",
-        "Security policies reviewed and updated periodically"
+        "Security policies reviewed and updated periodically",
+        "Business associate agreements in place for all third-party agents and AI services accessing ePHI — HITECH §13401 makes BAs directly liable for HIPAA Security Rule violations (42 U.S.C. §17934)",
+        "BA agreements updated post-HITECH to reflect direct liability and expanded audit and enforcement obligations (42 U.S.C. §17931)"
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.308(a)(1), 164.308(a)(2)"
@@ -239,7 +241,9 @@
       "evidence_requirements": [
         "Audit log integrity maintained — logs cannot be altered or deleted by unauthorized persons",
         "Vulnerability management for systems containing ePHI — patches applied in timely manner",
-        "Penetration testing and security assessments performed as part of risk analysis (164.308(a)(1)(ii)(A))"
+        "Penetration testing and security assessments performed as part of risk analysis (164.308(a)(1)(ii)(A))",
+        "Audit controls sufficient to comply with HHS audit program under HITECH §13411 — evidence records demonstrate ability to respond to HHS compliance audit within required timeframes",
+        "HITECH increased civil penalties documented in risk treatment: Tier 1 (unknowing violation) $100-$50,000/violation; Tier 4 (willful neglect, uncorrected) $50,000/violation up to $1.5M annual cap (42 U.S.C. §17941)"
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.308(a)(1)(ii)"
@@ -249,10 +253,12 @@
       "evidence_requirements": [
         "Security incident response procedures — response and reporting procedures for suspected and known security incidents (164.308(a)(6)(ii))",
         "Incident documentation — actions taken, outcomes, and lessons learned",
-        "Workforce trained on incident identification and reporting procedures"
+        "Workforce trained on incident identification and reporting procedures",
+        "Breach notification procedures comply with HITECH Breach Notification Rule (42 U.S.C. §17932): affected individuals notified without unreasonable delay and within 60 days of discovery; HHS notified; media notification for breaches affecting 500+ in a state (45 CFR §164.404-414)",
+        "Breach risk assessment performed using 4-factor test (nature/extent of PHI, who accessed, whether ePHI was acquired/viewed, extent to which risk mitigated) to determine if breach notification required (45 CFR §164.402)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "164.308(a)(6)"
+      "framework_reference": "164.308(a)(6), 42 U.S.C. §17932"
     },
     "RS-02": {
       "applicable": true,
