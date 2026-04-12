@@ -517,3 +517,67 @@ describe("Overlay Data Integrity", () => {
     }
   });
 });
+
+// --- parsePeriod ---
+
+import { parsePeriod } from "../src/ancilis/report/generator.js";
+
+describe("parsePeriod", () => {
+  it("parses day suffix", () => {
+    expect(parsePeriod("7d")).toBe(7 * 86400000);
+    expect(parsePeriod("30d")).toBe(30 * 86400000);
+    expect(parsePeriod("1d")).toBe(86400000);
+  });
+
+  it("parses hour suffix", () => {
+    expect(parsePeriod("24h")).toBe(24 * 3600000);
+    expect(parsePeriod("1h")).toBe(3600000);
+  });
+
+  it("defaults to 30 days for unknown suffix", () => {
+    expect(parsePeriod("unknown")).toBe(30 * 86400000);
+    expect(parsePeriod("")).toBe(30 * 86400000);
+    expect(parsePeriod("2w")).toBe(30 * 86400000);
+  });
+});
+
+// --- DE-01 evaluateWithRate coverage ---
+
+describe("DE-01 evaluateWithRate extra paths", () => {
+  it("no-baseline returns PASS", () => {
+    const evaluator = new DE01BaselineEvaluator();
+    const result = evaluator.evaluateWithRate(makeAction({ tool: { name: "tool-a" } }), makeConfig(), 10.0);
+    expect(result.result).toBe("PASS");
+    expect(result.evidenceData.baseline_established).toBe(false);
+  });
+
+  it("normal rate and known tool returns PASS", () => {
+    const baseline: BaselineWindow = { toolCalls: Array(10).fill("tool-a"), callCount: 10, windowMinutes: 10 };
+    const evaluator = new DE01BaselineEvaluator(baseline);
+    // rate = 1.0 calls/min (same as baseline), no spike, no new tool
+    const result = evaluator.evaluateWithRate(makeAction({ tool: { name: "tool-a" } }), makeConfig(), 1.0);
+    expect(result.result).toBe("PASS");
+    const flags = result.evidenceData.deviation_flags as Array<{ type: string }>;
+    expect(flags.length).toBe(0);
+  });
+
+  it("setBaseline replaces window", () => {
+    const evaluator = new DE01BaselineEvaluator();
+    expect(evaluator.baseline.callCount).toBe(0);
+    const newWindow: BaselineWindow = { toolCalls: ["tool-x"], callCount: 5, windowMinutes: 2 };
+    evaluator.setBaseline(newWindow);
+    expect(evaluator.baseline.callCount).toBe(5);
+    expect(evaluator.baseline.toolCalls).toEqual(["tool-x"]);
+  });
+
+  it("new tool + rate below spike threshold returns FLAG without frequency_spike", () => {
+    const baseline: BaselineWindow = { toolCalls: Array(10).fill("tool-a"), callCount: 10, windowMinutes: 10 };
+    const evaluator = new DE01BaselineEvaluator(baseline);
+    // New tool, but rate is 1.0 (same as baseline 1.0 calls/min)
+    const result = evaluator.evaluateWithRate(makeAction({ tool: { name: "brand-new-tool" } }), makeConfig(), 1.0);
+    expect(result.result).toBe("FLAG");
+    const flags = result.evidenceData.deviation_flags as Array<{ type: string }>;
+    expect(flags.some(f => f.type === "new_tool")).toBe(true);
+    expect(flags.some(f => f.type === "frequency_spike")).toBe(false);
+  });
+});
