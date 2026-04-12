@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     output_summary VARCHAR,
     tenant_id VARCHAR,
     detected_data_types JSON NOT NULL DEFAULT '[]',
-    sdk_version VARCHAR
+    sdk_version VARCHAR,
+    classification_context JSON NOT NULL DEFAULT '{}'
 );
 `;
 
@@ -53,15 +54,15 @@ INSERT INTO evidence_records (
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
-    detected_data_types, sdk_version
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    detected_data_types, sdk_version, classification_context
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 `;
 
 const SELECT_COLUMNS = `
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
-detected_data_types, sdk_version
+detected_data_types, sdk_version, classification_context
 `;
 
 function execAsync(conn: duckdb.Connection, sql: string): Promise<void> {
@@ -105,6 +106,7 @@ export class EvidenceStore {
   private _db: duckdb.Database | null = null;
   private _conn: duckdb.Connection | null = null;
   private _certifications: string[];
+  private _llmProvider: string | null;
   private _initialized: Promise<void> | null = null;
   private _dbPath: string;
   private _inMemory: boolean;
@@ -112,6 +114,7 @@ export class EvidenceStore {
 
   constructor(config: ResolvedConfig, options?: { dbPath?: string; inMemory?: boolean; tenantId?: string }) {
     this._certifications = [...(config.activeCertifications ?? [])];
+    this._llmProvider = config.llmProvider ?? null;
     this._inMemory = options?.inMemory ?? false;
     this._tenantId = options?.tenantId;
 
@@ -161,6 +164,9 @@ export class EvidenceStore {
       }
       if (!names.has("sdk_version")) {
         await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN sdk_version VARCHAR");
+      }
+      if (!names.has("classification_context")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN classification_context JSON DEFAULT '{}'");
       }
     })();
 
@@ -232,6 +238,11 @@ export class EvidenceStore {
     });
     const recordHash = computeHash(canon);
 
+    const classificationContext: Record<string, unknown> = {};
+    if (this._llmProvider) {
+      classificationContext.llm_provider = this._llmProvider;
+    }
+
     const record: EvidenceRecord = {
       recordId,
       evaluationId: evaluation.evaluationId,
@@ -253,6 +264,7 @@ export class EvidenceStore {
       tenantId: this._tenantId ?? null,
       detectedDataTypes: [...(evaluation.detectedDataTypes ?? [])],
       sdkVersion: _sdkVersion ?? null,
+      classificationContext,
     };
 
     await runAsync(this._conn!, INSERT_SQL, [
@@ -276,6 +288,7 @@ export class EvidenceStore {
       record.tenantId ?? null,
       JSON.stringify(record.detectedDataTypes ?? []),
       record.sdkVersion ?? null,
+      JSON.stringify(record.classificationContext ?? {}),
     ]);
 
     return record;
@@ -603,6 +616,7 @@ export class EvidenceStore {
       tenantId: (row.tenant_id as string | null | undefined) ?? null,
       detectedDataTypes: (parseJson(row.detected_data_types) ?? []) as string[],
       sdkVersion: (row.sdk_version as string | null | undefined) ?? null,
+      classificationContext: (parseJson(row.classification_context) ?? {}) as Record<string, unknown>,
     };
   }
 }

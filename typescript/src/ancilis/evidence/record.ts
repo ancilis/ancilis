@@ -21,4 +21,5 @@ export interface EvidenceRecord {
   tenantId?: string | null;
   detectedDataTypes?: string[];
   sdkVersion?: string | null;
+  classificationContext?: Record<string, unknown>;
 }
