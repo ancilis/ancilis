@@ -38,8 +38,8 @@ print(f"search_web -> {result}")
 result = send_reply("Here are the top compliance frameworks for AI agents.")
 print(f"send_reply -> {result}")
 
-summary = evidence.get_summary()
-print(f"\nEvidence: {summary['total_evaluations']} records, "
+summary = evidence.get_summary(session_id=producer.session_id)
+print(f"\nEvidence: {summary['total_evaluations']} records this run, "
       f"chain {'intact' if summary['chain_valid'] else 'BROKEN'}")
 print("\nRun `ancilis scan` to see your compliance posture.")
 

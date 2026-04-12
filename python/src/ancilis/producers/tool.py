@@ -70,6 +70,12 @@ class ToolActionProducer:
         self._engine = engine
         self._registry = registry or engine.registry
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
+        self._session_id: str = str(uuid.uuid4())
+
+    @property
+    def session_id(self) -> str:
+        """Unique identifier for this producer instance (one per agent run)."""
+        return self._session_id
 
     @property
     def producer_type(self) -> ProducerType:
@@ -106,7 +112,7 @@ class ToolActionProducer:
             action_type="tool_call",
             tool=ToolInfo(name=tool_name, description_hash=entry.description_hash if entry else None),
             parameters=ActionParameters(raw=payload, parameter_hash=param_hash),
-            context=ActionContext(data_classifications=dc_codes, active_overlays=list(self._config.active_overlays.keys())),
+            context=ActionContext(data_classifications=dc_codes, active_overlays=list(self._config.active_overlays.keys()), session_id=self._session_id),
             producer_type=self.producer_type.value,
             producer_version=self.producer_version,
         )
