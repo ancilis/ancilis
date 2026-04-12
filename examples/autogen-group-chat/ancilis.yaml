@@ -1,0 +1,15 @@
+agent:
+  name: autogen-group-chat
+certification_targets:
+  - aiuc-1
+my_agent_handles:
+  - personal_info
+  - financial_records
+mode: audit
+security:
+  tools:
+    allowed:
+      - search_research
+      - analyze_findings
+      - compile_report
+      - notify_stakeholder

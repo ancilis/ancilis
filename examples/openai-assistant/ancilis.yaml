@@ -1,0 +1,11 @@
+agent:
+  name: openai-assistant
+my_agent_handles:
+  - health_records
+  - personal_info
+mode: audit
+security:
+  tools:
+    allowed:
+      - http:POST:api.openai.com
+      - http:GET:api.openai.com
