@@ -1,5 +1,35 @@
 /** Ancilis — runtime policy enforcement for AI agents. */
 
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, parse } from "node:path";
+import { packageRootFrom } from "./shared-path.js";
+
+function packageJsonPathFrom(importMetaUrl: string): string {
+  let current = packageRootFrom(importMetaUrl);
+  const { root } = parse(current);
+
+  while (true) {
+    const candidate = join(current, "package.json");
+    if (existsSync(candidate)) return candidate;
+    if (current === root) throw new Error(`Could not locate package.json from ${importMetaUrl}`);
+    current = dirname(current);
+  }
+}
+
+function readPackageVersion(): string {
+  try {
+    const pkg = JSON.parse(
+      readFileSync(packageJsonPathFrom(import.meta.url), "utf-8"),
+    ) as { version?: unknown };
+    if (typeof pkg.version === "string" && pkg.version.length > 0) return pkg.version;
+  } catch {
+    // Keep root imports usable in unusual test/build contexts without package metadata.
+  }
+  return "0.0.0";
+}
+
+export const __version__ = readPackageVersion();
+
 export { loadConfig, formatResolvedConfig } from "./config/index.js";
 export type { ResolvedConfig, ControlStatus, OverlayActivation, UnavailableOverlay, LoadConfigOptions } from "./config/index.js";
 

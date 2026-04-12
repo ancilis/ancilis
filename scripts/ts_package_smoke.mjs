@@ -25,7 +25,7 @@ try {
     [
       "--input-type=module",
       "-e",
-      "const mod = await import('ancilis'); if (!mod.loadConfig || !mod.AncilisMiddleware) process.exit(1); console.log('ts-package-ok');",
+      "import { createRequire } from 'node:module'; const mod = await import('ancilis'); const pkg = createRequire(import.meta.url)('ancilis/package.json'); if (!mod.loadConfig || !mod.AncilisMiddleware || mod.__version__ !== pkg.version) process.exit(1); console.log('ts-package-ok');",
     ],
     { cwd: temp, stdio: "inherit" },
   );

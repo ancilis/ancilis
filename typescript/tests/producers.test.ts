@@ -2,7 +2,7 @@
  * Tests for protocol-agnostic producers.
  */
 
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -38,6 +38,11 @@ function makeConfig(options: {
 }
 
 describe("package exports", () => {
+  it("exports the package version from the TypeScript package root", () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as { version: string };
+    expect(ancilis.__version__).toBe(pkg.version);
+  });
+
   it("exports the producer APIs from the TypeScript package root", () => {
     const root = ancilis as Record<string, unknown>;
     expect(ancilis.CLIActionProducer).toBeDefined();
