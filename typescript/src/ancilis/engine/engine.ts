@@ -12,6 +12,9 @@ import { PR02ScopeEvaluator } from "./evaluators/pr02-scope.js";
 import type { RateTracker } from "./evaluators/pr02-scope.js";
 import { PR03ProvenanceEvaluator } from "./evaluators/pr03-provenance.js";
 import { PR04ExposureEvaluator } from "./evaluators/pr04-exposure.js";
+import { PR07TransportEvaluator } from "./evaluators/pr07-transport.js";
+import { PR08InputEvaluator } from "./evaluators/pr08-input.js";
+import { GOV01PolicyEvaluator } from "./evaluators/gov01-policy.js";
 import { PR05AuditEvaluator } from "../controls/pr05Audit.js";
 import { DE01BaselineEvaluator } from "../controls/de01Baseline.js";
 import type { BaselineWindow } from "../controls/de01Baseline.js";
@@ -51,6 +54,9 @@ export class Engine {
       ["PR-03", new PR03ProvenanceEvaluator(this.registry)],
       ["PR-04", new PR04ExposureEvaluator()],
       ["PR-05", new PR05AuditEvaluator()],
+      ["PR-07", new PR07TransportEvaluator()],
+      ["PR-08", new PR08InputEvaluator()],
+      ["GOV-01", new GOV01PolicyEvaluator()],
       ["DE-01", new DE01BaselineEvaluator(options?.baselineWindow)],
     ]);
   }

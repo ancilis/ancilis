@@ -112,6 +112,10 @@ def _print_human_summary(
 @click.option("--session", "session_id", default=None, help="Scope to a specific session ID")
 @click.option("--latest/--all", "use_latest", default=True, help="Show latest session (default) or all sessions")
 @click.option("--period", default="24h", help="Evidence window (e.g. 1h, 24h, 7d)")
+@click.option("--watch", "watch_mode", is_flag=True, help="Watch for file changes and re-evaluate posture in real-time")
+@click.option("--debounce", default=2.0, type=float, show_default=True, help="Seconds to wait after last change before re-scanning (watch mode)")
+@click.option("--clear", "clear_screen", is_flag=True, help="Clear terminal on each re-scan (watch mode)")
+@click.option("--producers", "producers_filter", default=None, help="Comma-separated producers to re-evaluate (watch mode)")
 def scan(
     ci: bool,
     config_path: str | None,
@@ -119,11 +123,38 @@ def scan(
     session_id: str | None,
     use_latest: bool,
     period: str,
+    watch_mode: bool,
+    debounce: float,
+    clear_screen: bool,
+    producers_filter: str | None,
 ) -> None:
     """Evaluate evidence posture and return pass/fail for CI/CD pipelines."""
     config = _load_config_safe(config_path)
     if config is None:
         config = _default_config()
+
+    if watch_mode:
+        from ancilis.cli.watch import WatchRunner
+        since = _period_to_since(period)
+        if session_id is None:
+            temp_store = EvidenceStore(config, db_path=db_path)
+            try:
+                session_id = temp_store.latest_session_id()
+            finally:
+                temp_store.close()
+        producers = [p.strip() for p in producers_filter.split(",")] if producers_filter else None
+        runner = WatchRunner(
+            config=config,
+            db_path=db_path,
+            debounce=debounce,
+            clear=clear_screen,
+            watch_dir=Path.cwd(),
+            producers=producers,
+            since=since,
+            session_id=session_id,
+        )
+        runner.run()
+        return
 
     store = EvidenceStore(config, db_path=db_path)
     try:

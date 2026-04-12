@@ -12,6 +12,7 @@ from click.testing import CliRunner
 
 from ancilis.cli.main import cli
 from ancilis.config import load_config
+from ancilis.errors import ConfigError
 from ancilis.engine.engine import Engine
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.tool import BlockedActionError, ToolActionProducer
@@ -48,7 +49,7 @@ class TestConfigBadPaths:
 
     def test_unknown_data_type(self) -> None:
         """Unrecognized data type produces actionable error."""
-        with pytest.raises(ValueError, match="Unknown data type"):
+        with pytest.raises(ConfigError, match="Unknown data type"):
             load_config(raw={"agent": {"name": "test"}, "my_agent_handles": ["unicorn_data"]})
 
     def test_invalid_mode(self) -> None:
@@ -58,7 +59,7 @@ class TestConfigBadPaths:
 
     def test_unknown_control_override(self) -> None:
         """Unknown control ID in overrides raises ValueError."""
-        with pytest.raises(ValueError, match="Unknown control ID"):
+        with pytest.raises(ConfigError, match="Unknown control ID"):
             load_config(raw={
                 "agent": {"name": "test"},
                 "security": {"controls": {"FAKE-99": {"enabled": True}}},
