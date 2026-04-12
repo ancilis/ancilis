@@ -3,11 +3,12 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { approveTool, formatStatus, handleEvidence, handleScan, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
+import { approveTool, formatStatus, handleEvidence, handleScan, runDoctor, runReport, validateAndFormat, WatchRunner, runConnect } from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
 import type { EvidenceSummary } from "./ancilis/report/index.js";
+import { parsePeriod as parsePeriodMs } from "./ancilis/report/generator.js";
 import { packageRootFrom } from "./ancilis/shared-path.js";
 
 interface CliIo {
@@ -33,13 +34,14 @@ function usage(): string {
     "  ancilis status [--verbose] [--config <path>] [--db <path>]",
     "  ancilis config validate [--config <path>]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
-    "  ancilis scan [--period <window>] [--ci] [--config <path>] [--db <path>]",
+    "  ancilis scan [--period <window>] [--ci] [--config <path>] [--db <path>] [--watch] [--debounce <seconds>] [--clear] [--producers <list>]",
     "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
     "  ancilis baseline list [--overlay <id>] [--config <path>] [--db <path>]",
     "  ancilis baseline drift [--id <baseline-id>] [--overlay <id>] [--format terminal|json] [--config <path>] [--db <path>]",
     "  ancilis evidence sessions [--config <path>] [--db <path>]",
     "  ancilis evidence reset [--config <path>] [--db <path>] [--yes]",
     "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--config <path>] [--db <path>] [--agent-id <id>]",
+    "  ancilis connect",
     "  ancilis --version",
   ].join("\n");
 }
@@ -351,14 +353,43 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
         return await handleBaseline(rest, io);
       case "evidence":
         return await handleEvidence(rest, io);
+      case "connect": {
+        const result = await runConnect(rest, io);
+        return result.ok ? 0 : 1;
+      }
       case "scan": {
-        const knownFlags = ["--ci", "--config", "--db", "--period", "--session", "--latest", "--all"];
+        const knownFlags = ["--ci", "--config", "--db", "--period", "--session", "--latest", "--all", "--watch", "--debounce", "--clear", "--producers"];
         const unknown = rest.filter(a => a.startsWith("--") && !knownFlags.includes(a));
         if (unknown.length > 0) throw new Error(`Unknown scan flag: ${unknown[0]}`);
         const ci = rest.includes("--ci");
+        const watch = rest.includes("--watch");
+        const clear = rest.includes("--clear");
         const configIdx = rest.indexOf("--config");
         const dbIdx = rest.indexOf("--db");
         const periodIdx = rest.indexOf("--period");
+        const debounceIdx = rest.indexOf("--debounce");
+        const producersIdx = rest.indexOf("--producers");
+
+        if (watch) {
+          const configPath = configIdx !== -1 ? rest[configIdx + 1] : undefined;
+          const config = loadConfig(configPath !== undefined ? { path: configPath } : {});
+          const debounce = debounceIdx !== -1 ? parseFloat(rest[debounceIdx + 1] ?? "2") : 2;
+          const producers = producersIdx !== -1 ? (rest[producersIdx + 1] ?? "").split(",").filter(Boolean) : undefined;
+          const period = periodIdx !== -1 ? (rest[periodIdx + 1] ?? "24h") : "24h";
+          const since = new Date(Date.now() - parsePeriodMs(period)).toISOString();
+          const runner = new WatchRunner({
+            config,
+            dbPath: dbIdx !== -1 ? rest[dbIdx + 1] : undefined,
+            debounce,
+            clear,
+            watchDir: process.cwd(),
+            producers,
+            since,
+          });
+          await runner.run();
+          return 0;
+        }
+
         return await handleScan({
           ci,
           config: configIdx !== -1 ? rest[configIdx + 1] : undefined,
