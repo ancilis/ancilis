@@ -25,6 +25,11 @@
           "type": "string",
           "default": "",
           "description": "Human owner for accountability"
+        },
+        "llm_provider": {
+          "type": ["string", "null"],
+          "default": null,
+          "description": "LLM provider identifier (e.g. openai, anthropic, aws-bedrock). Stored in evidence classification_context for platform discovery."
         }
       }
     },
