@@ -25,6 +25,7 @@ class AgentConfig(BaseModel):
     name: str
     description: str = ""
     owner: str = ""
+    llm_provider: str | None = None
 
     @field_validator("name")
     @classmethod
@@ -193,6 +194,7 @@ class ResolvedConfig:
         self.scope_allowed_destinations: list[str] = []
         self.scope_blocked_destinations: list[str] = []
         self.active_certifications: list[str] = []
+        self.llm_provider: str | None = None
         # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
         self.overlay_requirements: dict[str, dict[str, Any]] = {}
 
@@ -246,6 +248,7 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     result = ResolvedConfig()
     result.agent_name = config.agent.name
     result.agent_owner = config.agent.owner
+    result.llm_provider = config.agent.llm_provider
     result.mode = config.security.mode
     result.warnings = warnings or []
     result.tools_allowed = list(config.security.tools.allowed)

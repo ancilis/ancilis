@@ -610,3 +610,92 @@ class TestSdkVersionStore:
         import ancilis
         assert records[0].sdk_version == ancilis.__version__
         store.close()
+
+
+# --- classification_context store round-trip (ANC-738) ---
+
+
+class TestClassificationContextStore:
+    """Store round-trip for classification_context field (llm_provider capture)."""
+
+    def test_no_llm_provider_yields_empty_context(self):
+        """classification_context is empty dict when no llm_provider in config."""
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        records = store.get_records()
+        assert records[0].classification_context == {}
+        store.close()
+
+    def test_llm_provider_captured_in_context(self):
+        """llm_provider from config appears in classification_context."""
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        records = store.get_records()
+        assert records[0].classification_context == {"llm_provider": "openai"}
+        store.close()
+
+    def test_classification_context_round_trips(self):
+        """classification_context survives a write-then-read cycle."""
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "anthropic/claude-3"}})
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        store.store(make_evaluation(evaluation_id="eval-002"), tool_name="t2")
+        records = store.get_records()
+        assert records[0].classification_context == {"llm_provider": "anthropic/claude-3"}
+        assert records[1].classification_context == {"llm_provider": "anthropic/claude-3"}
+        store.close()
+
+    def test_classification_context_missing_column_returns_empty_dict(self):
+        """Records loaded from a row without classification_context column return {}."""
+        from ancilis.evidence.store import EvidenceStore as ES
+        # 21-element row: all columns up to sdk_version, no classification_context
+        short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
+                     "agent", "tool", "ALLOW", "audit",
+                     "[]", "[]", "[]", "[]",
+                     "hash", "prev", 1.0, None, None, "[]", "0.1.0")  # 21 cols
+        rec = ES._row_to_record(short_row)
+        assert rec.classification_context == {}
+
+    def test_classification_context_migration_adds_column(self, tmp_path):
+        """ALTER TABLE migration adds classification_context to an existing store."""
+        import duckdb
+        db_file = str(tmp_path / "old.duckdb")
+        # Create a legacy store without classification_context column
+        conn = duckdb.connect(db_file)
+        conn.execute("CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1")
+        conn.execute("""
+            CREATE TABLE evidence_records (
+                seq_id BIGINT DEFAULT nextval('evidence_seq'),
+                record_id VARCHAR PRIMARY KEY,
+                evaluation_id VARCHAR NOT NULL,
+                timestamp VARCHAR NOT NULL,
+                agent_id VARCHAR NOT NULL,
+                session_id VARCHAR,
+                source_type VARCHAR NOT NULL,
+                tool_name VARCHAR NOT NULL,
+                decision VARCHAR NOT NULL,
+                mode VARCHAR NOT NULL,
+                control_results JSON NOT NULL,
+                active_overlays JSON NOT NULL,
+                data_classifications JSON NOT NULL,
+                active_certifications JSON NOT NULL,
+                record_hash VARCHAR NOT NULL,
+                previous_hash VARCHAR NOT NULL,
+                total_duration_ms DOUBLE NOT NULL,
+                output_summary VARCHAR,
+                tenant_id VARCHAR,
+                detected_data_types JSON NOT NULL DEFAULT '[]',
+                sdk_version VARCHAR
+            )
+        """)
+        conn.close()
+
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, db_path=db_file)
+        store.store(make_evaluation(), tool_name="migrated-tool")
+        records = store.get_records()
+        assert len(records) == 1
+        assert records[0].classification_context == {"llm_provider": "openai"}
+        store.close()

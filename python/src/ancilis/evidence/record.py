@@ -28,3 +28,4 @@ class EvidenceRecord:
     session_id: str | None = None
     tenant_id: str | None = None
     sdk_version: str | None = None
+    classification_context: dict[str, Any] = field(default_factory=dict)
