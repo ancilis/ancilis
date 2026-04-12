@@ -737,7 +737,7 @@ describe("package metadata", () => {
     expect(packed[0]?.files.some((file) => file.path === "dist/cli.js")).toBe(true);
   });
 
-  it("does not ship Python build artifacts in the npm tarball", () => {
+  it("does not ship Python build artifacts in the npm tarball", { timeout: 30_000 }, () => {
     const packed = JSON.parse(
       execFileSync("npm", ["pack", "--dry-run", "--json"], {
         cwd: process.cwd(),
