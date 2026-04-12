@@ -94,11 +94,13 @@ export class EvidenceStore {
   private _dbPath: string;
   private _inMemory: boolean;
   private _tenantId: string | undefined;
+  private _configAgentId: string | null;
 
   constructor(config: ResolvedConfig, options?: { dbPath?: string; inMemory?: boolean; tenantId?: string }) {
     this._certifications = [...(config.activeCertifications ?? [])];
     this._inMemory = options?.inMemory ?? false;
     this._tenantId = options?.tenantId;
+    this._configAgentId = config.agentId ?? null;
 
     if (this._inMemory) {
       this._dbPath = ":memory:";
@@ -177,6 +179,7 @@ export class EvidenceStore {
     await this.ensureInitialized();
     const recordId = randomUUID();
     const previousHash = await this.getLastHash();
+    const agentId = this._configAgentId ?? evaluation.agentId;
 
     const controlResultsData = evaluation.controlResults.map(cr => ({
       control_id: cr.controlId,
@@ -190,7 +193,7 @@ export class EvidenceStore {
     const canon = canonicalPayload({
       evaluationId: evaluation.evaluationId,
       timestamp: evaluation.timestamp,
-      agentId: evaluation.agentId,
+      agentId,
       sourceType: evaluation.sourceType ?? "agent",
       toolName,
       decision: evaluation.decision,
@@ -210,7 +213,7 @@ export class EvidenceStore {
       recordId,
       evaluationId: evaluation.evaluationId,
       timestamp: evaluation.timestamp,
-      agentId: evaluation.agentId,
+      agentId,
       sourceType: evaluation.sourceType ?? "agent",
       toolName,
       decision: evaluation.decision,
@@ -479,6 +482,44 @@ export class EvidenceStore {
   async run(sql: string, params: unknown[] = []): Promise<void> {
     await this.ensureInitialized();
     return runAsync(this._conn!, sql, params);
+  }
+
+  async listSessions(): Promise<Array<{ sessionId: string; count: number; firstSeen: string; lastSeen: string }>> {
+    await this.ensureInitialized();
+    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
+    const rows = await allAsync(
+      this._conn!,
+      `SELECT agent_id as session_id, COUNT(*)::INTEGER as count, MIN(timestamp) as first_seen, MAX(timestamp) as last_seen FROM evidence_records${whereClause} GROUP BY agent_id ORDER BY MAX(timestamp) DESC`,
+      params,
+    );
+    return rows.map((row) => {
+      const r = row as Record<string, unknown>;
+      return {
+        sessionId: r.session_id as string,
+        count: r.count as number,
+        firstSeen: r.first_seen as string,
+        lastSeen: r.last_seen as string,
+      };
+    });
+  }
+
+  async reset(): Promise<number> {
+    await this.ensureInitialized();
+    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
+    const countRows = await allAsync(
+      this._conn!,
+      `SELECT COUNT(*)::INTEGER as cnt FROM evidence_records${whereClause}`,
+      params,
+    );
+    const count = (countRows[0] as Record<string, unknown>).cnt as number;
+    if (this._tenantId) {
+      await runAsync(this._conn!, "DELETE FROM evidence_records WHERE tenant_id = ?", [this._tenantId]);
+    } else {
+      await execAsync(this._conn!, "DELETE FROM evidence_records");
+    }
+    return count;
   }
 
   async purgeBefore(beforeTimestamp: string): Promise<number> {

@@ -35,6 +35,7 @@ class CheckResult:
     detail: str
     fix_hint: str = ""
     verbose_detail: str = ""
+    error_code: str = ""  # ANCILIS error code, e.g. "E001"
 
 
 @dataclass
@@ -135,6 +136,7 @@ def check_python_version(config: ResolvedConfig | None, verbose: bool) -> CheckR
         detail=f"{version_str} (>=3.9 required)",
         fix_hint="Install Python 3.9+ from https://www.python.org/downloads/",
         verbose_detail=f"Full version: {sys.version}",
+        error_code="E010",
     )
 
 
@@ -173,6 +175,7 @@ def check_config(
                 "  Then run: ancilis doctor"
             ),
             verbose_detail=str(exc),
+            error_code="E002",
         )
 
 
@@ -205,6 +208,7 @@ def check_overlay(config: ResolvedConfig | None, verbose: bool) -> CheckResult:
                 label="Overlay",
                 detail=f"overlay(s) not found: {', '.join(unavailable)}",
                 fix_hint="Check overlay IDs in ancilis.yaml against available overlays",
+                error_code="E003",
             )
 
         overlay_names = sorted(active.keys())
@@ -267,6 +271,7 @@ def check_platform_connectivity(config: ResolvedConfig | None, verbose: bool) ->
             detail=f"could not reach {url} — check network",
             fix_hint="Check your network connection or platform URL in ~/.ancilis/platform.json",
             verbose_detail=str(exc),
+            error_code="E001",
         )
     except Exception as exc:
         return CheckResult(
@@ -410,6 +415,7 @@ def check_evidence_cache(
             label="Evidence cache",
             detail=f"{cache_dir} is not writable",
             fix_hint=f"Run: chmod 700 {cache_dir}",
+            error_code="E004",
         )
     except Exception as exc:
         return CheckResult(
@@ -698,7 +704,8 @@ def _format_human(report: DoctorReport, verbose: bool) -> str:
     for check in report.checks:
         icon = _STATUS_ICONS[check.status]
         colored_icon = _color(icon, _STATUS_COLORS[check.status])
-        lines.append(f"{colored_icon} {check.label}: {check.detail}")
+        code_suffix = f"  [ANCILIS-{check.error_code}]" if check.error_code and check.status == CheckStatus.FAIL else ""
+        lines.append(f"{colored_icon} {check.label}: {check.detail}{code_suffix}")
         if verbose and check.verbose_detail:
             for vline in check.verbose_detail.splitlines():
                 lines.append(f"    {vline}")

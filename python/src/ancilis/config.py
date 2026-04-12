@@ -9,6 +9,8 @@ from typing import Any, cast
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from ancilis.errors import config_invalid
+
 from ancilis._shared import shared_path
 
 # Resolve shared/ directory from packaged assets
@@ -25,6 +27,7 @@ class AgentConfig(BaseModel):
     name: str
     description: str = ""
     owner: str = ""
+    agent_id: str | None = None
 
     @field_validator("name")
     @classmethod
@@ -208,6 +211,7 @@ class ResolvedConfig:
     def __init__(self) -> None:
         self.agent_name: str = ""
         self.agent_owner: str = ""
+        self.agent_id: str | None = None
         self.mode: str = "audit"
         self.controls: dict[str, ControlStatus] = {}
         self.data_classifications: dict[str, list[str]] = {}  # data_type -> [DC codes]
@@ -245,7 +249,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
         if isinstance(controls, dict):
             for key in controls:
                 if key not in VALID_CONTROL_IDS:
-                    raise ValueError(f"Unknown control ID in security.controls: '{key}'")
+                    raise config_invalid(f"Unknown control ID in security.controls: '{key}'")
 
     # Validate my_agent_handles types
     taxonomy = load_taxonomy()
@@ -254,7 +258,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     if isinstance(my_agent_handles, list):
         for dt in my_agent_handles:
             if dt not in valid_types:
-                raise ValueError(
+                raise config_invalid(
                     f"Unknown data type in my_agent_handles: '{dt}'. "
                     f"Valid types: {', '.join(sorted(valid_types))}"
                 )
@@ -280,6 +284,7 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     result = ResolvedConfig()
     result.agent_name = config.agent.name
     result.agent_owner = config.agent.owner
+    result.agent_id = config.agent.agent_id
     result.mode = config.security.mode
     result.warnings = warnings or []
     result.tools_allowed = list(config.security.tools.allowed)
