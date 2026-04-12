@@ -319,6 +319,24 @@
       "framework_reference": "MANAGE 4.4"
     }
   },
+  "evidence_requirements": {
+    "PR-01": [
+      "role_documentation",
+      "accountability_assignment"
+    ],
+    "PR-02": [
+      "risk_context_scope",
+      "bias_risk_tracking"
+    ],
+    "PR-03": [
+      "model_provenance",
+      "training_data_lineage"
+    ],
+    "PR-05": [
+      "audit_trail_completeness",
+      "traceability_record"
+    ]
+  },
   "framework_mapping": {
     "GOV-01": [
       "GOVERN 1.1",

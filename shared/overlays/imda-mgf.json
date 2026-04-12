@@ -309,6 +309,24 @@
       "framework_reference": "MGF Areas 1+3 — continuous improvement and post-incident learning"
     }
   },
+  "evidence_requirements": {
+    "PR-01": [
+      "agent_identity",
+      "human_oversight_role"
+    ],
+    "PR-02": [
+      "purpose_limitation",
+      "human_involvement_decision"
+    ],
+    "PR-04": [
+      "data_classification",
+      "personal_data_governance"
+    ],
+    "PR-05": [
+      "stakeholder_communication_log",
+      "audit_trail_completeness"
+    ]
+  },
   "reporting_obligations": {
     "breach_notification_hours": null,
     "assessment_type": "Voluntary self-assessment. No mandatory certification or third-party audit required by MGF itself. Organizations may voluntarily use AI Verify (IMDA's AI testing toolkit) for self-assessment against MGF dimensions. MAS TRM companion overlay applies separate mandatory reporting for Singapore financial institutions.",
@@ -322,32 +340,110 @@
     "applies_to": "Consequential AI decisions — those affecting individuals' rights, safety, financial interests, or significant life decisions"
   },
   "framework_mapping": {
-    "GOV-01": ["MGF Area 1 §2.1", "Internal Governance Structures"],
-    "GOV-02": ["MGF Area 1 §2.2", "Accountability and Competence"],
-    "GOV-03": ["MGF Area 1 §2.3", "AI Risk Assessment"],
-    "GOV-04": ["MGF Area 2 §3.1-3.3", "Human Oversight Classification"],
-    "ID-01": ["MGF Area 1 (implied)", "Governance Accountability"],
-    "ID-02": ["MGF Area 3 §4.3", "Vendor Management"],
-    "ID-03": ["MGF Area 3 §4.1", "Data Governance"],
-    "ID-04": ["MGF Area 3 §4.3", "Third-Party AI Component Risk"],
-    "ID-05": ["MGF Areas 1+2", "Risk-Driven Oversight Selection"],
-    "PR-01": ["MGF Area 3 (implied)", "Operations Access Controls"],
-    "PR-02": ["MGF Area 3 (implied)", "Minimal Access Principle"],
-    "PR-03": ["MGF Area 3 §4.3", "AI System Integrity"],
-    "PR-04": ["MGF Area 3 §4.1", "PDPC Data Protection in AI"],
-    "PR-05": ["MGF Areas 1+4", "Accountability Audit Trail"],
-    "PR-06": ["MGF Area 3", "Configuration Integrity"],
-    "PR-07": ["MGF Area 3 (implied)", "Data Security in Operations"],
-    "PR-08": ["MGF Area 3 §4.2", "Robustness Testing"],
-    "DE-01": ["MGF Area 3 §4.2", "Model Monitoring"],
-    "DE-02": ["MGF Area 3 (implied)", "Change Detection"],
-    "DE-03": ["MGF Area 1", "Governance Audit"],
-    "DE-04": ["MGF Areas 1+4", "Audit Integrity"],
-    "RS-01": ["MGF Area 3 §4.4", "Incident Response"],
-    "RS-02": ["MGF Areas 2+4", "Human Escalation and Contestation"],
-    "RS-03": ["MGF Area 3 §4.4", "Incident Evidence"],
-    "RC-01": ["MGF Area 3 §4.4", "Model Rollback"],
-    "RC-02": ["MGF Areas 1+3", "Post-Incident Review and Continuous Improvement"]
+    "GOV-01": [
+      "MGF Area 1 §2.1",
+      "Internal Governance Structures"
+    ],
+    "GOV-02": [
+      "MGF Area 1 §2.2",
+      "Accountability and Competence"
+    ],
+    "GOV-03": [
+      "MGF Area 1 §2.3",
+      "AI Risk Assessment"
+    ],
+    "GOV-04": [
+      "MGF Area 2 §3.1-3.3",
+      "Human Oversight Classification"
+    ],
+    "ID-01": [
+      "MGF Area 1 (implied)",
+      "Governance Accountability"
+    ],
+    "ID-02": [
+      "MGF Area 3 §4.3",
+      "Vendor Management"
+    ],
+    "ID-03": [
+      "MGF Area 3 §4.1",
+      "Data Governance"
+    ],
+    "ID-04": [
+      "MGF Area 3 §4.3",
+      "Third-Party AI Component Risk"
+    ],
+    "ID-05": [
+      "MGF Areas 1+2",
+      "Risk-Driven Oversight Selection"
+    ],
+    "PR-01": [
+      "MGF Area 3 (implied)",
+      "Operations Access Controls"
+    ],
+    "PR-02": [
+      "MGF Area 3 (implied)",
+      "Minimal Access Principle"
+    ],
+    "PR-03": [
+      "MGF Area 3 §4.3",
+      "AI System Integrity"
+    ],
+    "PR-04": [
+      "MGF Area 3 §4.1",
+      "PDPC Data Protection in AI"
+    ],
+    "PR-05": [
+      "MGF Areas 1+4",
+      "Accountability Audit Trail"
+    ],
+    "PR-06": [
+      "MGF Area 3",
+      "Configuration Integrity"
+    ],
+    "PR-07": [
+      "MGF Area 3 (implied)",
+      "Data Security in Operations"
+    ],
+    "PR-08": [
+      "MGF Area 3 §4.2",
+      "Robustness Testing"
+    ],
+    "DE-01": [
+      "MGF Area 3 §4.2",
+      "Model Monitoring"
+    ],
+    "DE-02": [
+      "MGF Area 3 (implied)",
+      "Change Detection"
+    ],
+    "DE-03": [
+      "MGF Area 1",
+      "Governance Audit"
+    ],
+    "DE-04": [
+      "MGF Areas 1+4",
+      "Audit Integrity"
+    ],
+    "RS-01": [
+      "MGF Area 3 §4.4",
+      "Incident Response"
+    ],
+    "RS-02": [
+      "MGF Areas 2+4",
+      "Human Escalation and Contestation"
+    ],
+    "RS-03": [
+      "MGF Area 3 §4.4",
+      "Incident Evidence"
+    ],
+    "RC-01": [
+      "MGF Area 3 §4.4",
+      "Model Rollback"
+    ],
+    "RC-02": [
+      "MGF Areas 1+3",
+      "Post-Incident Review and Continuous Improvement"
+    ]
   },
   "evidence_retention_minimum_days": 1095,
   "human_oversight_required": true,

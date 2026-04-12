@@ -317,6 +317,24 @@
       "framework_reference": "A.5.27, A.6.3"
     }
   },
+  "evidence_requirements": {
+    "PR-01": [
+      "identity_verification_result",
+      "access_control_policy"
+    ],
+    "PR-03": [
+      "change_management_ticket",
+      "version_verification"
+    ],
+    "PR-04": [
+      "data_classification",
+      "encryption_status"
+    ],
+    "PR-05": [
+      "audit_trail_completeness",
+      "log_retention_compliance"
+    ]
+  },
   "framework_mapping": {
     "GOV-01": [
       "A.5.1"
