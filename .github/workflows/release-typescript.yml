@@ -57,8 +57,12 @@ jobs:
           sha256sum "$TARBALL" > release-artifacts/SHA256SUMS
           echo "sha256=$(sha256sum "$TARBALL" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           cat release-artifacts/SHA256SUMS
+      - name: Dry-run publish
+        run: npm publish release-artifacts/*.tgz --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ancilis-typescript-package
           path: |

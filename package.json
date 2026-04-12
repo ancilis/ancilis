@@ -1,6 +1,6 @@
 {
   "name": "ancilis",
-  "version": "0.1.0-preview.1",
+  "version": "0.1.0",
   "description": "TypeScript SDK for Ancilis runtime evaluation and policy enforcement",
   "type": "module",
   "main": "./dist/ancilis/index.js",
@@ -20,7 +20,7 @@
     "dist/**/*.d.ts",
     "dist/**/*.js.map",
     "dist/**/*.d.ts.map",
-    "shared",
+    "shared/**/*.json",
     "README.md",
     "LICENSE"
   ],

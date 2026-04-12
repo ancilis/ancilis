@@ -140,7 +140,7 @@ describe("publish configuration", () => {
 
     const verifyJob = workflow.jobs?.verify_typescript_release;
     const verifyUses = verifyJob?.steps?.flatMap((step) => (step.uses ? [step.uses] : [])) ?? [];
-    expect(verifyUses).toContain("actions/upload-artifact@v6");
+    expect(verifyUses).toContain("actions/upload-artifact@v7");
 
     const publishJob = workflow.jobs?.publish_typescript;
     const publishUses = publishJob?.steps?.flatMap((step) => (step.uses ? [step.uses] : [])) ?? [];
