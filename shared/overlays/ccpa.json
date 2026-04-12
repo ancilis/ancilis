@@ -1,21 +1,29 @@
 {
   "id": "ccpa",
   "name": "CCPA/CPRA",
-  "version": "0.2",
+  "version": "0.3",
   "trigger_type": "data_classification",
-  "triggered_by": ["DC-PII"],
+  "triggered_by": [
+    "DC-PII",
+    "DC-MINOR"
+  ],
   "description": "California Consumer Privacy Act (as amended by California Privacy Rights Act) overlay. Activated by personal information declarations. Covers consumer rights (access, deletion, correction, opt-out), business obligations (notice, purpose limitation, data minimization), service provider requirements, sensitive personal information handling, and automated decision-making disclosures.",
   "jurisdiction": "us-ca",
   "enforcement_date": "2020-01-01",
-  "triggered_by_classifications": ["DC-PII"],
-  "applicable_data_types": ["personal_info"],
+  "triggered_by_classifications": [
+    "DC-PII"
+  ],
+  "applicable_data_types": [
+    "personal_info"
+  ],
   "controls": {
     "GOV-01": {
       "applicable": true,
       "evidence_requirements": [
         "Privacy policies implemented demonstrating compliance with CCPA/CPRA obligations (§1798.130(a)(5))",
         "Policies updated at least every 12 months and posted at point of collection (§1798.130(a)(5))",
-        "Designated methods for consumers to submit requests documented (§1798.130(a))"
+        "Designated methods for consumers to submit requests documented (§1798.130(a))",
+        "When DC-MINOR applies: Affirmative opt-in consent from parent or guardian for consumers under 13 (CCPA §1798.120(c)); opt-in consent from consumer aged 13-15 before personal information sold or shared (§1798.120(c))"
       ],
       "threshold_adjustments": {},
       "framework_reference": "§1798.130(a)(5), §1798.155"
@@ -35,7 +43,8 @@
       "evidence_requirements": [
         "Risk assessments performed for processing that presents significant risk to consumer privacy (CPRA §1798.185(a)(15))",
         "Risk assessments weigh benefits of processing against potential risks to consumer rights",
-        "Risk assessment documentation maintained and submitted to CPPA upon request"
+        "Risk assessment documentation maintained and submitted to CPPA upon request",
+        "When DC-MINOR applies: Risk assessment documents heightened protection obligations — children's personal information subject to stricter opt-in requirements and prohibition on sale/sharing without affirmative authorization (§1798.120)"
       ],
       "threshold_adjustments": {},
       "framework_reference": "§1798.185(a)(15)"
@@ -118,7 +127,8 @@
       "evidence_requirements": [
         "Purpose limitation applied — PI used only for purposes disclosed at or before collection (§1798.100(a))",
         "Secondary use prohibition — no further processing incompatible with disclosed purposes without additional notice (§1798.100(a))",
-        "Sensitive Personal Information use limited to purposes authorized by consumer or necessary for disclosed purpose (§1798.121)"
+        "Sensitive Personal Information use limited to purposes authorized by consumer or necessary for disclosed purpose (§1798.121)",
+        "When DC-MINOR applies: Permission scope configured to enforce prohibition on selling or sharing personal information of consumers under 16 without required opt-in consent; age verification mechanism in place or conservative assumption applied"
       ],
       "threshold_adjustments": {
         "threshold": "strict",
@@ -283,52 +293,136 @@
   "control_adjustments": {
     "GOV-04": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["consumer_rights_methods", "response_timeline"],
+      "additional_evidence_fields": [
+        "consumer_rights_methods",
+        "response_timeline"
+      ],
       "regulatory_citation": "CCPA §§1798.100-1798.135 - Consumer rights"
     },
     "PR-02": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["purpose_limitation", "spi_use_limitation"],
+      "additional_evidence_fields": [
+        "purpose_limitation",
+        "spi_use_limitation"
+      ],
       "regulatory_citation": "CCPA §1798.100(a) - Purpose limitation"
     },
     "PR-05": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["consumer_request_records", "processing_purpose"],
+      "additional_evidence_fields": [
+        "consumer_request_records",
+        "processing_purpose"
+      ],
       "regulatory_citation": "CCPA §1798.130 - Recordkeeping requirements"
     }
   },
   "evidence_requirements": {
-    "GOV-04": ["consumer_rights_methods", "response_timeline"],
-    "PR-02": ["purpose_limitation", "spi_use_limitation"],
-    "PR-05": ["consumer_request_records", "processing_purpose"]
+    "GOV-04": [
+      "consumer_rights_methods",
+      "response_timeline"
+    ],
+    "PR-02": [
+      "purpose_limitation",
+      "spi_use_limitation"
+    ],
+    "PR-05": [
+      "consumer_request_records",
+      "processing_purpose"
+    ]
   },
   "framework_mapping": {
-    "GOV-01": ["§1798.130(a)(5)", "§1798.155"],
-    "GOV-02": ["§1798.100", "§1798.199.40"],
-    "GOV-03": ["§1798.185(a)(15)"],
-    "GOV-04": ["§§1798.100–1798.135"],
-    "ID-01": ["§1798.110", "§1798.115"],
-    "ID-02": ["§1798.140(ag)"],
-    "ID-03": ["§1798.100(c)", "§1798.100(d)"],
-    "ID-04": ["§1798.115"],
-    "ID-05": ["§1798.115", "§1798.120"],
-    "PR-01": ["§1798.150"],
-    "PR-02": ["§1798.100(a)", "§1798.121"],
-    "PR-03": ["§1798.100(c)", "§1798.106"],
-    "PR-04": ["§1798.150", "§1798.140(m)"],
-    "PR-05": ["§1798.130", "§1798.185(a)(15)"],
-    "PR-06": ["§1798.150"],
-    "PR-07": ["§1798.150"],
-    "PR-08": ["§1798.105"],
-    "DE-01": ["§1798.150", "Cal. Civ. Code §1798.82"],
-    "DE-02": ["§1798.150", "§1798.185(a)(15)"],
-    "DE-03": ["§1798.150", "§1798.185(a)(16)"],
-    "DE-04": ["§1798.185(a)(15)"],
-    "RS-01": ["Cal. Civ. Code §1798.82"],
-    "RS-02": ["Cal. Civ. Code §1798.82", "§1798.199.40"],
-    "RS-03": ["Cal. Civ. Code §1798.82(d)"],
-    "RC-01": ["§1798.150"],
-    "RC-02": ["§1798.150", "§1798.185(a)(15)"]
+    "GOV-01": [
+      "§1798.130(a)(5)",
+      "§1798.155"
+    ],
+    "GOV-02": [
+      "§1798.100",
+      "§1798.199.40"
+    ],
+    "GOV-03": [
+      "§1798.185(a)(15)"
+    ],
+    "GOV-04": [
+      "§§1798.100–1798.135"
+    ],
+    "ID-01": [
+      "§1798.110",
+      "§1798.115"
+    ],
+    "ID-02": [
+      "§1798.140(ag)"
+    ],
+    "ID-03": [
+      "§1798.100(c)",
+      "§1798.100(d)"
+    ],
+    "ID-04": [
+      "§1798.115"
+    ],
+    "ID-05": [
+      "§1798.115",
+      "§1798.120"
+    ],
+    "PR-01": [
+      "§1798.150"
+    ],
+    "PR-02": [
+      "§1798.100(a)",
+      "§1798.121"
+    ],
+    "PR-03": [
+      "§1798.100(c)",
+      "§1798.106"
+    ],
+    "PR-04": [
+      "§1798.150",
+      "§1798.140(m)"
+    ],
+    "PR-05": [
+      "§1798.130",
+      "§1798.185(a)(15)"
+    ],
+    "PR-06": [
+      "§1798.150"
+    ],
+    "PR-07": [
+      "§1798.150"
+    ],
+    "PR-08": [
+      "§1798.105"
+    ],
+    "DE-01": [
+      "§1798.150",
+      "Cal. Civ. Code §1798.82"
+    ],
+    "DE-02": [
+      "§1798.150",
+      "§1798.185(a)(15)"
+    ],
+    "DE-03": [
+      "§1798.150",
+      "§1798.185(a)(16)"
+    ],
+    "DE-04": [
+      "§1798.185(a)(15)"
+    ],
+    "RS-01": [
+      "Cal. Civ. Code §1798.82"
+    ],
+    "RS-02": [
+      "Cal. Civ. Code §1798.82",
+      "§1798.199.40"
+    ],
+    "RS-03": [
+      "Cal. Civ. Code §1798.82(d)"
+    ],
+    "RC-01": [
+      "§1798.150"
+    ],
+    "RC-02": [
+      "§1798.150",
+      "§1798.185(a)(15)"
+    ]
   },
   "reporting_obligations": {
     "breach_notification_hours": null,
