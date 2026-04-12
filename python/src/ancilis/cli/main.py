@@ -18,8 +18,16 @@ from ancilis.cli.init import init
 
 @click.group()
 @click.version_option(version="0.1.0", prog_name="ancilis")
-def cli() -> None:
+@click.option("--no-update-check", is_flag=True, default=False, hidden=True,
+              help="Suppress update check.")
+@click.pass_context
+def cli(ctx: click.Context, no_update_check: bool) -> None:
     """Ancilis — runtime policy enforcement for AI agents."""
+    ctx.ensure_object(dict)
+    ctx.obj["no_update_check"] = no_update_check
+    ctx.params["no_update_check"] = no_update_check
+    from ancilis.cli.version_check import check_and_notify
+    check_and_notify(ctx)
 
 
 cli.add_command(status)

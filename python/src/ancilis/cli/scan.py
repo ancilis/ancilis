@@ -180,17 +180,31 @@ def scan(
         # Dependency vulnerability scan (DE-01)
         dep_items: list[dict[str, Any]] = []
         dep_any_failing = False
-        for eval_result in DependencyScanner(config).scan():
-            for cr in eval_result.control_results:
-                dep_item: dict[str, Any] = {"result": cr.result, "detail": cr.detail}
-                if cr.remediation_hint:
-                    dep_item["remediation"] = cr.remediation_hint
-                if cr.evidence_data:
-                    dep_item["evidence"] = cr.evidence_data
-                dep_items.append(dep_item)
-                if cr.result == "FAIL":
-                    dep_any_failing = True
-                    any_failing = True
+        _ignore_set = set(config.scan_dependencies_ignore)
+        _threshold = config.scan_dependencies_severity_threshold
+        _severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+        _threshold_rank = _severity_order.get(_threshold, 1)
+
+        if config.scan_dependencies_enabled:
+            for eval_result in DependencyScanner(config).scan():
+                store.store(eval_result, "dependency-scanner")
+                for cr in eval_result.control_results:
+                    # Filter out CVE IDs from the ignore list
+                    vuln_id = (cr.evidence_data or {}).get("vuln_id", "")
+                    if vuln_id and vuln_id in _ignore_set:
+                        continue
+                    dep_item: dict[str, Any] = {"result": cr.result, "detail": cr.detail}
+                    if cr.remediation_hint:
+                        dep_item["remediation"] = cr.remediation_hint
+                    if cr.evidence_data:
+                        dep_item["evidence"] = cr.evidence_data
+                    dep_items.append(dep_item)
+                    # Apply severity threshold: FAIL result + severity at/above threshold
+                    if cr.result == "FAIL":
+                        sev = ((cr.evidence_data or {}).get("severity") or "high").lower()
+                        if _severity_order.get(sev, 1) <= _threshold_rank:
+                            dep_any_failing = True
+                            any_failing = True
 
         dep_posture = "skip"
         if dep_items:
