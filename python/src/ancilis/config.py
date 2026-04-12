@@ -25,6 +25,7 @@ class AgentConfig(BaseModel):
     name: str
     description: str = ""
     owner: str = ""
+    agent_id: str | None = None
 
     @field_validator("name")
     @classmethod
@@ -208,6 +209,7 @@ class ResolvedConfig:
     def __init__(self) -> None:
         self.agent_name: str = ""
         self.agent_owner: str = ""
+        self.agent_id: str | None = None
         self.mode: str = "audit"
         self.controls: dict[str, ControlStatus] = {}
         self.data_classifications: dict[str, list[str]] = {}  # data_type -> [DC codes]
@@ -280,6 +282,7 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     result = ResolvedConfig()
     result.agent_name = config.agent.name
     result.agent_owner = config.agent.owner
+    result.agent_id = config.agent.agent_id
     result.mode = config.security.mode
     result.warnings = warnings or []
     result.tools_allowed = list(config.security.tools.allowed)

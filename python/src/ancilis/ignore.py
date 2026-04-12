@@ -42,7 +42,7 @@ class IgnoreFilter:
                 "Install it with: pip install ancilis[watch]"
             ) from e
         combined = list(DEFAULT_PATTERNS) + (patterns or [])
-        self._spec = pathspec.PathSpec.from_lines("gitwildmatch", combined)
+        self._spec = pathspec.PathSpec.from_lines("gitignore", combined)
 
     @classmethod
     def from_file(cls, project_root: Path) -> "IgnoreFilter":
