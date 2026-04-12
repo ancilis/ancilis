@@ -335,6 +335,48 @@ class TestEvidenceStore:
         assert store.count() == 1
         store.close()
 
+    def test_config_agent_id_overrides_evaluation_agent_id(self):
+        config = make_config(agent={"name": "test-agent", "agent_id": "00000000-0000-0000-0000-000000000001"})
+        store = EvidenceStore(config, in_memory=True)
+
+        ev = make_evaluation(agent_id="eval-agent")
+        record = store.store(ev, tool_name="t1")
+        assert record.agent_id == "00000000-0000-0000-0000-000000000001"
+        store.close()
+
+    def test_config_agent_id_null_uses_evaluation_agent_id(self):
+        config = make_config()
+        assert config.agent_id is None
+        store = EvidenceStore(config, in_memory=True)
+
+        ev = make_evaluation(agent_id="eval-agent")
+        record = store.store(ev, tool_name="t1")
+        assert record.agent_id == "eval-agent"
+        store.close()
+
+    def test_config_agent_id_persisted_and_queryable(self):
+        config = make_config(agent={"name": "test-agent", "agent_id": "00000000-0000-0000-0000-000000000002"})
+        store = EvidenceStore(config, in_memory=True)
+
+        store.store(make_evaluation(evaluation_id="e1"), tool_name="t1")
+        store.store(make_evaluation(evaluation_id="e2"), tool_name="t2")
+
+        records = store.get_records(agent_id="00000000-0000-0000-0000-000000000002")
+        assert len(records) == 2
+        assert all(r.agent_id == "00000000-0000-0000-0000-000000000002" for r in records)
+        store.close()
+
+    def test_config_agent_id_in_hash_chain(self):
+        """Hash chain includes config agent_id — tampering is detectable."""
+        config = make_config(agent={"name": "test-agent", "agent_id": "00000000-0000-0000-0000-000000000003"})
+        store = EvidenceStore(config, in_memory=True)
+
+        store.store(make_evaluation(evaluation_id="e1"), tool_name="t1")
+        valid, errors = store.verify_chain()
+        assert valid is True
+        assert errors == []
+        store.close()
+
 
 # --- Summary ---
 

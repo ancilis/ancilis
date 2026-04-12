@@ -124,13 +124,96 @@ function printNextSteps(out: (m: string) => void): void {
   out("  npx ancilis scan --ci           — JSON output for CI/CD pipelines");
 }
 
-interface ControlResult2 {
+export interface ControlResult2 {
   id: string;
   name: string;
   status: "pass" | "fail" | "skip";
   evaluations: number;
   failures: number;
   flags: number;
+}
+
+// ---------------------------------------------------------------------------
+// Shared evaluation pass (used by handleScan and WatchRunner)
+// ---------------------------------------------------------------------------
+
+export interface EvaluationSummary {
+  controlResults: ControlResult2[];
+  posture: "compliant" | "non_compliant";
+  totalEvals: number;
+}
+
+/** Run one posture pass; opens+closes its own EvidenceStore. */
+export async function runEvaluation(
+  config: ResolvedConfig,
+  opts: { since: string; db?: string; runDepScan?: boolean },
+): Promise<EvaluationSummary> {
+  const store = new EvidenceStore(config, opts.db !== undefined ? { dbPath: opts.db } : undefined);
+  try {
+    const rawSummary = await store.getSummary({ since: opts.since });
+    const summary = rawSummary as Record<string, unknown>;
+
+    const totalEvaluations = (summary.totalEvaluations as number | undefined) ?? 0;
+    const controlStats = (summary.controlPassRates as Record<string, Record<string, number>> | undefined) ?? {};
+    const decisions = (summary.decisions as Record<string, number> | undefined) ?? {};
+
+    const controlDefs = loadControlDefs();
+    const enabled = [...config.controls.values()].filter(c => c.enabled).sort((a, b) => a.controlId.localeCompare(b.controlId));
+
+    const controlResults: ControlResult2[] = [];
+    let anyFailing = false;
+
+    for (const cs of enabled) {
+      const cdef = controlDefs.get(cs.controlId) ?? {};
+      const displayName = (cdef.display_name as string | undefined) ?? cs.name;
+      const stats = controlStats[cs.controlId] ?? {};
+      const failures = (stats.FAIL ?? 0) + (stats.ERROR ?? 0);
+      const flags = stats.FLAG ?? 0;
+      const totalEvals = Object.values(stats).reduce((acc, v) => acc + v, 0);
+
+      let ctrlStatus: "pass" | "fail" | "skip";
+      if (totalEvals === 0) {
+        ctrlStatus = "skip";
+      } else if (failures > 0) {
+        ctrlStatus = "fail";
+        anyFailing = true;
+      } else {
+        ctrlStatus = "pass";
+      }
+      controlResults.push({ id: cs.controlId, name: displayName, status: ctrlStatus, evaluations: totalEvals, failures, flags });
+    }
+
+    const normalizedDecisions: Record<string, number> = {};
+    for (const [k, v] of Object.entries(decisions)) {
+      normalizedDecisions[k.trim().toUpperCase()] = v;
+    }
+    if ((normalizedDecisions.BLOCK ?? 0) > 0) {
+      anyFailing = true;
+    }
+
+    if (opts.runDepScan && config.scanDependenciesEnabled) {
+      const projectDir = process.cwd();
+      const depResult = await scanDependencies(projectDir);
+      const threshold = config.scanDependenciesSeverityThreshold;
+      const ignoreSet = new Set(config.scanDependenciesIgnore);
+
+      if (depResult.manifestPath !== null && depResult.osvError === null) {
+        const activeFindings = depResult.vulnerabilities.filter(f => !ignoreSet.has(f.cveId));
+        const violating = activeFindings.filter(f => atOrAboveThreshold(f.severity, threshold));
+        const depEval = buildDepEvaluationResult(config, activeFindings, depResult.dependencies.length, null, violating);
+        try { await store.store(depEval, "dependency-scanner"); } catch { /* non-fatal */ }
+        if (violating.length > 0) anyFailing = true;
+      }
+    }
+
+    return {
+      controlResults,
+      posture: anyFailing ? "non_compliant" : "compliant",
+      totalEvals: totalEvaluations,
+    };
+  } finally {
+    await store.close();
+  }
 }
 
 // ---------------------------------------------------------------------------

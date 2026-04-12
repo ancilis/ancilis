@@ -83,3 +83,24 @@ export type {
   ToolInvocation,
   ToolWrapOptions,
 } from "./producers/index.js";
+
+export {
+  AncilisError,
+  AncilisWarning,
+  ConnectionError,
+  ConfigError,
+  OverlayNotFoundError,
+  StorageError,
+  AuthError,
+  RateLimitError,
+  ScanError,
+  UnsupportedFileError,
+  UploadError,
+  VersionError,
+  warnNoOverlays,
+  warnSdkUpdate,
+  warnStoreSize,
+  red,
+  yellow,
+  blue,
+} from "./errors.js";

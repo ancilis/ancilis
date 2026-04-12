@@ -150,6 +150,7 @@ export class CycloneDxImporter {
       activeOverlays: [],
       dataClassifications: [],
       totalDurationMs: 0,
+      context: { sessionId: this.agentId },
     };
   }
 
@@ -214,6 +215,7 @@ export class CycloneDxImporter {
       activeOverlays: [],
       dataClassifications: [],
       totalDurationMs: 0,
+      context: { sessionId: this.agentId },
     };
   }
 }

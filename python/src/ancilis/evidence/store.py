@@ -223,6 +223,7 @@ class EvidenceStore:
         record_id = str(uuid.uuid4())
         previous_hash = self._get_last_hash()
         session_id = getattr(evaluation, "session_id", None)
+        agent_id = getattr(self._config, "agent_id", None) or evaluation.agent_id
 
         control_results_data = [
             {
@@ -239,7 +240,7 @@ class EvidenceStore:
         canon = canonical_payload(
             evaluation_id=evaluation.evaluation_id,
             timestamp=evaluation.timestamp,
-            agent_id=evaluation.agent_id,
+            agent_id=agent_id,
             source_type=evaluation.source_type,
             tool_name=tool_name,
             decision=evaluation.decision,
@@ -273,7 +274,7 @@ class EvidenceStore:
             record_id=record_id,
             evaluation_id=evaluation.evaluation_id,
             timestamp=evaluation.timestamp,
-            agent_id=evaluation.agent_id,
+            agent_id=agent_id,
             source_type=evaluation.source_type,
             tool_name=tool_name,
             decision=_normalize_decision_key(evaluation.decision),

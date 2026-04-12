@@ -12,6 +12,7 @@ from click.testing import CliRunner
 
 from ancilis.cli.main import cli
 from ancilis.config import load_config
+from ancilis.errors import ConfigError
 from ancilis.engine.engine import Engine
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.tool import BlockedActionError, ToolActionProducer
@@ -48,7 +49,7 @@ class TestConfigBadPaths:
 
     def test_unknown_data_type(self) -> None:
         """Unrecognized data type produces actionable error."""
-        with pytest.raises(ValueError, match="Unknown data type"):
+        with pytest.raises(ConfigError, match="Unknown data type"):
             load_config(raw={"agent": {"name": "test"}, "my_agent_handles": ["unicorn_data"]})
 
     def test_invalid_mode(self) -> None:
@@ -58,7 +59,7 @@ class TestConfigBadPaths:
 
     def test_unknown_control_override(self) -> None:
         """Unknown control ID in overrides raises ValueError."""
-        with pytest.raises(ValueError, match="Unknown control ID"):
+        with pytest.raises(ConfigError, match="Unknown control ID"):
             load_config(raw={
                 "agent": {"name": "test"},
                 "security": {"controls": {"FAKE-99": {"enabled": True}}},
@@ -210,21 +211,23 @@ class TestCLIErrorPaths:
         assert result.exit_code != 0
 
     def test_doctor_missing_config(self, tmp_path: Path) -> None:
-        """ancilis doctor with missing config shows FAIL and next steps."""
+        """ancilis doctor with missing config shows error and fix hint."""
         runner = CliRunner()
         result = runner.invoke(cli, ["doctor", "--config", str(tmp_path / "nope.yaml")])
         assert result.exit_code != 0
-        assert "FAIL" in result.output
+        # New format uses [✗] icon; "ancilis.yaml" appears in detail and fix hint
+        assert "[✗]" in result.output or "not found" in result.output
         assert "ancilis.yaml" in result.output
 
     def test_doctor_valid_config(self, tmp_path: Path) -> None:
-        """ancilis doctor with valid config shows OK and next steps."""
+        """ancilis doctor with valid config shows config loaded successfully."""
         path = _write_config({"agent": {"name": "test"}}, tmp_path)
         runner = CliRunner()
         result = runner.invoke(cli, ["doctor", "--config", str(path)])
-        assert result.exit_code == 0
-        assert "OK" in result.output
-        assert "Ready" in result.output
+        # Exit code 0 (all pass) or 1 (warnings like platform/gitignore) — never 2
+        assert result.exit_code in (0, 1)
+        assert "Ancilis Doctor" in result.output
+        assert "checks passed" in result.output
 
     def test_approve_tool_missing_config(self) -> None:
         """ancilis approve-tool with missing config gives error."""

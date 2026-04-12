@@ -7,6 +7,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { sharedPathFrom } from "../shared-path.js";
+import { ConfigError } from "../errors.js";
 
 // Resolve shared/ directory relative to the installed package root
 const SHARED_DIR = sharedPathFrom(import.meta.url);
@@ -18,6 +19,8 @@ const CLASSIFICATIONS_FILE = join(SHARED_DIR, "classifications", "taxonomy.json"
 // --- Zod Schemas ---
 
 const VALID_CONTROL_IDS = ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"] as const;
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ControlOverrideSchema = z.object({
   enabled: z.boolean().default(true),
@@ -66,6 +69,7 @@ const AncilisConfigSchema = z.object({
     name: z.string().min(1, "agent.name must be a non-empty string"),
     description: z.string().default(""),
     owner: z.string().default(""),
+    agent_id: z.string().regex(UUID_REGEX, "agent.agent_id must be a valid UUID").optional(),
     llm_provider: z.string().nullable().default(null),
   }),
   security: SecurityConfigSchema,
@@ -176,6 +180,7 @@ export interface UnavailableOverlay {
 
 export interface ResolvedConfig {
   agentName: string;
+  agentId: string | null;
   agentOwner: string;
   mode: string;
   controls: Map<string, ControlStatus>;
@@ -219,7 +224,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
       const validIds = new Set<string>(VALID_CONTROL_IDS);
       for (const key of Object.keys(controls)) {
         if (!validIds.has(key)) {
-          throw new Error(`Unknown control ID in security.controls: '${key}'`);
+          throw new ConfigError(`Unknown control ID in security.controls: '${key}'`);
         }
       }
     }
@@ -232,7 +237,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
   if (Array.isArray(dataHandling)) {
     for (const dt of dataHandling) {
       if (!validTypes.has(dt)) {
-        throw new Error(
+        throw new ConfigError(
           `Unknown data type in my_agent_handles: '${dt}'. ` +
           `Valid types: ${[...validTypes].sort().join(", ")}`
         );
@@ -264,6 +269,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
 function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfig {
   const result: ResolvedConfig = {
     agentName: config.agent.name,
+    agentId: config.agent.agent_id ?? null,
     agentOwner: config.agent.owner,
     mode: config.security.mode,
     controls: new Map(),
@@ -442,7 +448,7 @@ export function loadConfig(options: LoadConfigOptions = {}): ResolvedConfig {
     const content = readFileSync(options.path, "utf-8");
     configDict = (parseYaml(content) ?? {}) as Record<string, unknown>;
   } else {
-    throw new Error("No config path or raw config provided");
+    throw new ConfigError("No config path or raw config provided");
   }
 
   const { config, warnings } = validateConfig(configDict);

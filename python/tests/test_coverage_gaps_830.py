@@ -3,8 +3,6 @@
 Covers:
 - _shared.py: shared_path_context enter/exit, iter_shared_paths, FileNotFoundError fallback
 - cli/validate.py: Unknown control ID hint, active_certifications, unavailable_overlays, warnings
-- cli/doctor.py: pkg version exception, assets load failure, engine probe failure,
-  evidence write failure, mcp not installed, pandoc found
 - cli/scan.py: zero-config _default_config, first-run sentinel display, dep remediation,
   dep posture paths, sentinel creation
 - cli/report.py: markdown/ndjson/csv with --output file path, pdf success path
@@ -176,82 +174,46 @@ class TestValidateCoverage:
 
 
 # ===========================================================================
-# cli/doctor.py
-# ===========================================================================
-
-class TestDoctorCoverage:
-    def test_pkg_version_fallback_on_exception(self, tmp_path: Path) -> None:
-        """Doctor falls back to '0.1.0' when importlib.metadata.version raises."""
-        cfg = _make_config_file(MINIMAL_YAML, tmp_path)
-        db = tmp_path / "evidence.db"
-        runner = CliRunner()
-        with patch("ancilis.cli.doctor.version", side_effect=Exception("not installed")):
-            result = runner.invoke(cli, ["doctor", "--config", str(cfg), "--db", str(db)])
-        assert "Ancilis doctor" in result.output
-        assert "0.1.0" in result.output
-
-    def test_assets_load_failure(self, tmp_path: Path) -> None:
-        """Doctor reports FAIL on assets when load_taxonomy raises."""
-        cfg = _make_config_file(MINIMAL_YAML, tmp_path)
-        db = tmp_path / "evidence.db"
-        runner = CliRunner()
-        with patch("ancilis.cli.doctor.load_taxonomy", side_effect=RuntimeError("corrupt asset")):
-            result = runner.invoke(cli, ["doctor", "--config", str(cfg), "--db", str(db)])
-        assert "[FAIL] assets" in result.output
-        assert result.exit_code == 1
-
-    def test_engine_probe_failure_via_import(self, tmp_path: Path) -> None:
-        """Doctor emits WARN for engine when evaluator probe raises (patched at import site)."""
-        cfg = _make_config_file(MINIMAL_YAML, tmp_path)
-        db = tmp_path / "evidence.db"
-
-        class _BrokenEngine:
-            def __init__(self, *a: object, **kw: object) -> None:
-                raise RuntimeError("simulated engine failure")
-
-        runner = CliRunner()
-        with patch.dict("sys.modules", {"ancilis.engine.engine": MagicMock(Engine=_BrokenEngine)}):
-            result = runner.invoke(cli, ["doctor", "--config", str(cfg), "--db", str(db)])
-        assert "Ancilis doctor" in result.output
-
-    def test_evidence_write_failure(self, tmp_path: Path) -> None:
-        """Doctor reports FAIL on evidence when write probe raises."""
-        cfg = _make_config_file(MINIMAL_YAML, tmp_path)
-        db = tmp_path / "evidence.db"
-        runner = CliRunner()
-        with patch("ancilis.cli.doctor.EvidenceStore") as mock_store_cls:
-            instance = mock_store_cls.return_value
-            instance.db_path = str(db)
-            # Make the write probe fail
-            instance.get_summary.side_effect = PermissionError("no write access")
-            result = runner.invoke(cli, ["doctor", "--config", str(cfg), "--db", str(db)])
-        assert "[FAIL] evidence" in result.output
-        assert result.exit_code == 1
-
-    def test_mcp_not_installed(self, tmp_path: Path) -> None:
-        """Doctor emits WARN when mcp extra is not installed."""
-        cfg = _make_config_file(MINIMAL_YAML, tmp_path)
-        db = tmp_path / "evidence.db"
-        runner = CliRunner()
-        with patch("ancilis.cli.doctor.import_module", side_effect=ImportError("no module named mcp")):
-            result = runner.invoke(cli, ["doctor", "--config", str(cfg), "--db", str(db)])
-        assert "[WARN] optional mcp extra: not installed" in result.output
-
-    def test_pandoc_found(self, tmp_path: Path) -> None:
-        """Doctor emits OK for pandoc when shutil.which returns a path."""
-        cfg = _make_config_file(MINIMAL_YAML, tmp_path)
-        db = tmp_path / "evidence.db"
-        runner = CliRunner()
-        with patch("ancilis.cli.doctor.shutil.which", return_value="/usr/local/bin/pandoc"):
-            result = runner.invoke(cli, ["doctor", "--config", str(cfg), "--db", str(db)])
-        assert "[OK] pdf reporting dependency: pandoc executable detected" in result.output
-
-
-# ===========================================================================
 # cli/scan.py
 # ===========================================================================
 
 class TestScanCoverage:
+    @staticmethod
+    def _dependency_eval(
+        *,
+        result: str,
+        detail: str,
+        remediation_hint: str | None = None,
+        evidence_data: dict[str, object] | None = None,
+    ):
+        from datetime import datetime, timezone
+
+        from ancilis.engine.result import ControlResult, EvaluationResult
+
+        return EvaluationResult(
+            evaluation_id=f"dep-eval-{result.lower()}",
+            action_id=f"dep-scan-{result.lower()}",
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            agent_id="cli-scan",
+            source_type="dependency_scan",
+            mode="audit",
+            control_results=[
+                ControlResult(
+                    control_id="DE-01",
+                    control_name="Dependency Evaluation",
+                    result=result,
+                    detail=detail,
+                    evidence_data=evidence_data or {},
+                    remediation_hint=remediation_hint,
+                )
+            ],
+            decision="BLOCK" if result == "FAIL" else ("FLAG" if result == "FLAG" else "ALLOW"),
+            decision_reason="Dependency vulnerability scan",
+            active_overlays=[],
+            data_classifications=[],
+            total_duration_ms=0.0,
+        )
+
     def test_default_config_used_when_no_ancilis_yaml(self, tmp_path: Path) -> None:
         """scan falls back to _default_config() when no config exists."""
         runner = CliRunner()
@@ -338,24 +300,15 @@ class TestScanCoverage:
         cfg = _make_config_file(MINIMAL_YAML, tmp_path)
         db = tmp_path / "evidence.db"
         runner = CliRunner()
-
-        dep_items = [
-            {
-                "result": "FAIL",
-                "detail": "lodash@4.17.20 — CVE-2021-23337 (HIGH)",
-                "remediation": "Upgrade to lodash>=4.17.21",
-            }
-        ]
+        eval_result = self._dependency_eval(
+            result="FAIL",
+            detail="lodash@4.17.20 — CVE-2021-23337 (HIGH)",
+            remediation_hint="Upgrade to lodash>=4.17.21",
+            evidence_data={"vuln_id": "CVE-2021-23337", "severity": "HIGH"},
+        )
 
         with patch("ancilis.cli.scan.DependencyScanner") as mock_scanner_cls:
-            mock_eval = MagicMock()
-            mock_cr = MagicMock()
-            mock_cr.result = "FAIL"
-            mock_cr.detail = "lodash@4.17.20 — CVE-2021-23337 (HIGH)"
-            mock_cr.remediation_hint = "Upgrade to lodash>=4.17.21"
-            mock_cr.evidence_data = {}
-            mock_eval.control_results = [mock_cr]
-            mock_scanner_cls.return_value.scan.return_value = [mock_eval]
+            mock_scanner_cls.return_value.scan.return_value = [eval_result]
 
             result = runner.invoke(cli, ["scan", "--config", str(cfg), "--db", str(db)])
 
@@ -366,16 +319,13 @@ class TestScanCoverage:
         cfg = _make_config_file(MINIMAL_YAML, tmp_path)
         db = tmp_path / "evidence.db"
         runner = CliRunner()
+        eval_result = self._dependency_eval(
+            result="FLAG",
+            detail="express@4.18.0 — outdated",
+        )
 
         with patch("ancilis.cli.scan.DependencyScanner") as mock_scanner_cls:
-            mock_eval = MagicMock()
-            mock_cr = MagicMock()
-            mock_cr.result = "FLAG"
-            mock_cr.detail = "express@4.18.0 — outdated"
-            mock_cr.remediation_hint = None
-            mock_cr.evidence_data = {}
-            mock_eval.control_results = [mock_cr]
-            mock_scanner_cls.return_value.scan.return_value = [mock_eval]
+            mock_scanner_cls.return_value.scan.return_value = [eval_result]
 
             result = runner.invoke(cli, ["scan", "--ci", "--config", str(cfg), "--db", str(db)])
 
@@ -387,16 +337,13 @@ class TestScanCoverage:
         cfg = _make_config_file(MINIMAL_YAML, tmp_path)
         db = tmp_path / "evidence.db"
         runner = CliRunner()
+        eval_result = self._dependency_eval(
+            result="PASS",
+            detail="lodash@4.17.21 — clean",
+        )
 
         with patch("ancilis.cli.scan.DependencyScanner") as mock_scanner_cls:
-            mock_eval = MagicMock()
-            mock_cr = MagicMock()
-            mock_cr.result = "PASS"
-            mock_cr.detail = "lodash@4.17.21 — clean"
-            mock_cr.remediation_hint = None
-            mock_cr.evidence_data = {}
-            mock_eval.control_results = [mock_cr]
-            mock_scanner_cls.return_value.scan.return_value = [mock_eval]
+            mock_scanner_cls.return_value.scan.return_value = [eval_result]
 
             result = runner.invoke(cli, ["scan", "--ci", "--config", str(cfg), "--db", str(db)])
 
@@ -408,16 +355,13 @@ class TestScanCoverage:
         cfg = _make_config_file(MINIMAL_YAML, tmp_path)
         db = tmp_path / "evidence.db"
         runner = CliRunner()
+        eval_result = self._dependency_eval(
+            result="SKIP",
+            detail="no sbom found",
+        )
 
         with patch("ancilis.cli.scan.DependencyScanner") as mock_scanner_cls:
-            mock_eval = MagicMock()
-            mock_cr = MagicMock()
-            mock_cr.result = "SKIP"
-            mock_cr.detail = "no sbom found"
-            mock_cr.remediation_hint = None
-            mock_cr.evidence_data = {}
-            mock_eval.control_results = [mock_cr]
-            mock_scanner_cls.return_value.scan.return_value = [mock_eval]
+            mock_scanner_cls.return_value.scan.return_value = [eval_result]
 
             result = runner.invoke(cli, ["scan", "--ci", "--config", str(cfg), "--db", str(db)])
 

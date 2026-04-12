@@ -112,6 +112,10 @@ def _print_human_summary(
 @click.option("--session", "session_id", default=None, help="Scope to a specific session ID")
 @click.option("--latest/--all", "use_latest", default=True, help="Show latest session (default) or all sessions")
 @click.option("--period", default="24h", help="Evidence window (e.g. 1h, 24h, 7d)")
+@click.option("--watch", "watch_mode", is_flag=True, help="Watch for file changes and re-evaluate posture in real-time")
+@click.option("--debounce", default=2.0, type=float, show_default=True, help="Seconds to wait after last change before re-scanning (watch mode)")
+@click.option("--clear", "clear_screen", is_flag=True, help="Clear terminal on each re-scan (watch mode)")
+@click.option("--producers", "producers_filter", default=None, help="Comma-separated producers to re-evaluate (watch mode)")
 def scan(
     ci: bool,
     config_path: str | None,
@@ -119,11 +123,38 @@ def scan(
     session_id: str | None,
     use_latest: bool,
     period: str,
+    watch_mode: bool,
+    debounce: float,
+    clear_screen: bool,
+    producers_filter: str | None,
 ) -> None:
     """Evaluate evidence posture and return pass/fail for CI/CD pipelines."""
     config = _load_config_safe(config_path)
     if config is None:
         config = _default_config()
+
+    if watch_mode:
+        from ancilis.cli.watch import WatchRunner
+        since = _period_to_since(period)
+        if session_id is None:
+            temp_store = EvidenceStore(config, db_path=db_path)
+            try:
+                session_id = temp_store.latest_session_id()
+            finally:
+                temp_store.close()
+        producers = [p.strip() for p in producers_filter.split(",")] if producers_filter else None
+        runner = WatchRunner(
+            config=config,
+            db_path=db_path,
+            debounce=debounce,
+            clear=clear_screen,
+            watch_dir=Path.cwd(),
+            producers=producers,
+            since=since,
+            session_id=session_id,
+        )
+        runner.run()
+        return
 
     store = EvidenceStore(config, db_path=db_path)
     try:
@@ -180,17 +211,31 @@ def scan(
         # Dependency vulnerability scan (DE-01)
         dep_items: list[dict[str, Any]] = []
         dep_any_failing = False
-        for eval_result in DependencyScanner(config).scan():
-            for cr in eval_result.control_results:
-                dep_item: dict[str, Any] = {"result": cr.result, "detail": cr.detail}
-                if cr.remediation_hint:
-                    dep_item["remediation"] = cr.remediation_hint
-                if cr.evidence_data:
-                    dep_item["evidence"] = cr.evidence_data
-                dep_items.append(dep_item)
-                if cr.result == "FAIL":
-                    dep_any_failing = True
-                    any_failing = True
+        _ignore_set = set(config.scan_dependencies_ignore)
+        _threshold = config.scan_dependencies_severity_threshold
+        _severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+        _threshold_rank = _severity_order.get(_threshold, 1)
+
+        if config.scan_dependencies_enabled:
+            for eval_result in DependencyScanner(config).scan():
+                store.store(eval_result, "dependency-scanner")
+                for cr in eval_result.control_results:
+                    # Filter out CVE IDs from the ignore list
+                    vuln_id = (cr.evidence_data or {}).get("vuln_id", "")
+                    if vuln_id and vuln_id in _ignore_set:
+                        continue
+                    dep_item: dict[str, Any] = {"result": cr.result, "detail": cr.detail}
+                    if cr.remediation_hint:
+                        dep_item["remediation"] = cr.remediation_hint
+                    if cr.evidence_data:
+                        dep_item["evidence"] = cr.evidence_data
+                    dep_items.append(dep_item)
+                    # Apply severity threshold: FAIL result + severity at/above threshold
+                    if cr.result == "FAIL":
+                        sev = ((cr.evidence_data or {}).get("severity") or "high").lower()
+                        if _severity_order.get(sev, 1) <= _threshold_rank:
+                            dep_any_failing = True
+                            any_failing = True
 
         dep_posture = "skip"
         if dep_items:

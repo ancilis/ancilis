@@ -10,6 +10,7 @@ import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ancilis._shared import shared_path
+from ancilis.errors import config_invalid
 
 # Resolve shared/ directory from packaged assets
 SHARED_DIR = shared_path()
@@ -25,6 +26,7 @@ class AgentConfig(BaseModel):
     name: str
     description: str = ""
     owner: str = ""
+    agent_id: str | None = None
     llm_provider: str | None = None
 
     @field_validator("name")
@@ -74,18 +76,56 @@ class ComplianceConfig(BaseModel):
     evidence: EvidenceConfig = Field(default_factory=EvidenceConfig)
 
 
+class CliConfig(BaseModel):
+    update_check: bool = True
+    update_check_interval: int = 86400
+
+
+_VALID_SEVERITY_THRESHOLDS = {"critical", "high", "medium", "low"}
+
+
+class ScanDepsConfig(BaseModel):
+    enabled: bool = True
+    severity_threshold: str = "high"
+    ignore: list[str] = Field(default_factory=list)
+
+    @field_validator("severity_threshold")
+    @classmethod
+    def validate_severity_threshold(cls, v: str) -> str:
+        if v not in _VALID_SEVERITY_THRESHOLDS:
+            raise ValueError(
+                "scan.dependencies.severity_threshold must be one of: "
+                f"{', '.join(sorted(_VALID_SEVERITY_THRESHOLDS))}"
+            )
+        return v
+
+
+class ScanConfig(BaseModel):
+    dependencies: ScanDepsConfig = Field(default_factory=ScanDepsConfig)
+
+
 class AncilisConfig(BaseModel):
     agent: AgentConfig
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     my_agent_handles: list[str] = Field(default_factory=list)
     certification_targets: list[str] = Field(default_factory=list)
     compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
+    cli: CliConfig = Field(default_factory=CliConfig)
+    scan: ScanConfig = Field(default_factory=ScanConfig)
 
     @model_validator(mode="before")
     @classmethod
     def warn_unknown_keys(cls, values: Any) -> Any:
         if isinstance(values, dict):
-            known = {"agent", "security", "my_agent_handles", "certification_targets", "compliance"}
+            known = {
+                "agent",
+                "security",
+                "my_agent_handles",
+                "certification_targets",
+                "compliance",
+                "cli",
+                "scan",
+            }
             unknown = set(values.keys()) - known
             if unknown:
                 # Store warnings for later reporting
@@ -179,6 +219,7 @@ class ResolvedConfig:
     def __init__(self) -> None:
         self.agent_name: str = ""
         self.agent_owner: str = ""
+        self.agent_id: str | None = None
         self.mode: str = "audit"
         self.controls: dict[str, ControlStatus] = {}
         self.data_classifications: dict[str, list[str]] = {}  # data_type -> [DC codes]
@@ -197,6 +238,10 @@ class ResolvedConfig:
         self.llm_provider: str | None = None
         # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
         self.overlay_requirements: dict[str, dict[str, Any]] = {}
+        # Dependency scan config
+        self.scan_dependencies_enabled: bool = True
+        self.scan_dependencies_severity_threshold: str = "high"
+        self.scan_dependencies_ignore: list[str] = []
 
 
 # --- Config Parser ---
@@ -213,7 +258,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
         if isinstance(controls, dict):
             for key in controls:
                 if key not in VALID_CONTROL_IDS:
-                    raise ValueError(f"Unknown control ID in security.controls: '{key}'")
+                    raise config_invalid(f"Unknown control ID in security.controls: '{key}'")
 
     # Validate my_agent_handles types
     taxonomy = load_taxonomy()
@@ -222,7 +267,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     if isinstance(my_agent_handles, list):
         for dt in my_agent_handles:
             if dt not in valid_types:
-                raise ValueError(
+                raise config_invalid(
                     f"Unknown data type in my_agent_handles: '{dt}'. "
                     f"Valid types: {', '.join(sorted(valid_types))}"
                 )
@@ -248,10 +293,14 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     result = ResolvedConfig()
     result.agent_name = config.agent.name
     result.agent_owner = config.agent.owner
+    result.agent_id = config.agent.agent_id
     result.llm_provider = config.agent.llm_provider
     result.mode = config.security.mode
     result.warnings = warnings or []
     result.tools_allowed = list(config.security.tools.allowed)
+    result.scan_dependencies_enabled = config.scan.dependencies.enabled
+    result.scan_dependencies_severity_threshold = config.scan.dependencies.severity_threshold
+    result.scan_dependencies_ignore = list(config.scan.dependencies.ignore)
     result.tools_blocked = list(config.security.tools.blocked)
     result.scope_max_actions_per_minute = config.security.scope.max_actions_per_minute
     result.scope_allowed_destinations = list(config.security.scope.allowed_destinations)

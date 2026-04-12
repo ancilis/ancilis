@@ -16,6 +16,7 @@ import { PR05AuditEvaluator } from "../controls/pr05Audit.js";
 import { PR06ConfigBaselineEvaluator } from "../controls/pr06ConfigBaseline.js";
 import { PR07TransportEvaluator } from "../controls/pr07Transport.js";
 import { PR08InputEvaluator } from "../controls/pr08Input.js";
+import { GOV01PolicyEvaluator } from "./evaluators/gov01-policy.js";
 import { DE01BaselineEvaluator } from "../controls/de01Baseline.js";
 import type { BaselineWindow } from "../controls/de01Baseline.js";
 import { ToolRegistry } from "./registry.js";
@@ -57,6 +58,7 @@ export class Engine {
       ["PR-06", new PR06ConfigBaselineEvaluator()],
       ["PR-07", new PR07TransportEvaluator()],
       ["PR-08", new PR08InputEvaluator()],
+      ["GOV-01", new GOV01PolicyEvaluator()],
       ["DE-01", new DE01BaselineEvaluator(options?.baselineWindow)],
     ]);
   }
