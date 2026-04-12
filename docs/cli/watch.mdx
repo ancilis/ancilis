@@ -1,0 +1,118 @@
+---
+title: "ancilis scan --watch"
+description: "Watch for file changes and re-evaluate posture in real-time during development."
+---
+
+## Overview
+
+Watch mode (`ancilis scan --watch`) starts a long-running process that monitors your project directory for file changes and automatically re-runs posture evaluation after a configurable debounce window. It's designed for development workflows where you want live compliance feedback as you iterate on agent code.
+
+```bash
+ancilis scan --watch [OPTIONS]
+```
+
+<Note>
+Watch mode requires the `watchdog` package: `pip install ancilis[watch]`
+</Note>
+
+## Flags
+
+All standard `scan` flags are available, plus:
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--watch` | flag | — | Enable watch mode |
+| `--debounce` | float | `2.0` | Seconds to wait after last file change before re-scanning |
+| `--clear` | flag | `false` | Clear the terminal before each re-scan output |
+| `--producers` | string | all | Comma-separated producer names to re-evaluate on change |
+| `--period` | string | `24h` | Evidence window passed to each evaluation |
+| `--session` | string | latest | Session ID to scope evaluations to |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | default | Path to evidence database |
+
+## Change Detection
+
+Watch mode maps changed files to producer types automatically:
+
+| Changed File | Triggers |
+|-------------|----------|
+| `requirements.txt`, `pyproject.toml`, `setup.py`, `Pipfile` | `dependency` re-scan |
+| `.duckdb`, `.db` files | `evidence` re-evaluation |
+| All other files | Full re-evaluation |
+
+## Examples
+
+**Start watch mode with defaults**
+```bash
+ancilis scan --watch
+```
+
+```
+Ancilis watch — my-agent
+  Watching /workspace/my-agent for changes (debounce: 2.0s)
+
+Ancilis scan — my-agent
+  Mode:    audit
+  Posture: compliant
+
+  ✓ PR-01 (Identity & Authorization) — pass (42 evals)
+  ✓ PR-02 (Scope Confinement) — pass
+```
+
+**Clear screen on each re-scan (clean output for terminal dashboards)**
+```bash
+ancilis scan --watch --clear
+```
+
+**Faster debounce for rapid iteration**
+```bash
+ancilis scan --watch --debounce 0.5
+```
+
+**Watch with only dependency re-scan on manifest changes**
+```bash
+ancilis scan --watch --producers dependency
+```
+
+**Exit watch mode**
+
+Press `Ctrl+C`. The session summary is printed before exiting:
+
+```
+Watch session complete: 8 scans over 14m32s
+Final posture: compliant
+```
+
+## How Debounce Works
+
+After a file change is detected, watch mode waits `--debounce` seconds for additional changes to settle before triggering a re-scan. This prevents rapid consecutive scans during bulk saves.
+
+```
+File saved → debounce timer starts (2s) → re-scan triggered
+File saved → File saved → debounce resets → one re-scan triggered
+```
+
+## Producer Filtering
+
+Use `--producers` to limit which change types trigger a re-evaluation:
+
+```bash
+# Only re-scan when dependency manifests change
+ancilis scan --watch --producers dependency
+
+# Re-scan on evidence DB changes or any file change
+ancilis scan --watch --producers evidence,all
+```
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `watchdog is required for watch mode` | `pip install ancilis[watch]` |
+| No changes detected | Check that you're editing files under the watch directory |
+| Rapid repeat scans | Increase `--debounce` to reduce scan frequency |
+
+## Related
+
+- [ancilis scan](/cli/scan) — standard (non-watch) scan reference
+- [ancilis status](/cli/status) — one-shot posture check

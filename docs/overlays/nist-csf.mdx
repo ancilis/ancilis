@@ -1,0 +1,147 @@
+---
+title: "NIST Cybersecurity Framework Overlay"
+description: "AKSI compliance overlay for AI agents aligned to the NIST Cybersecurity Framework (CSF 2.0)."
+---
+
+## Overview
+
+The `nist-csf` overlay maps AKSI control evidence to the NIST Cybersecurity Framework (CSF) 2.0 functions and categories. CSF is the most widely adopted cybersecurity framework in the US private sector and provides the foundation for many other compliance programs including FedRAMP, CMMC, and sector-specific regulations.
+
+**Use this overlay when your agent:**
+- Operates within an organization using NIST CSF as its security framework
+- Needs to demonstrate cybersecurity risk management to enterprise customers
+- Is part of a broader NIST CSF implementation program
+- Requires alignment with a framework that maps to multiple other standards
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - nist-csf
+```
+
+---
+
+## NIST CSF 2.0 Functions
+
+CSF 2.0 organizes controls into six functions:
+
+| Function | Abbreviation | Purpose |
+|----------|-------------|---------|
+| Govern | GV | Establish risk strategy and accountability |
+| Identify | ID | Understand assets and risks |
+| Protect | PR | Implement safeguards |
+| Detect | DE | Identify cybersecurity events |
+| Respond | RS | Take action after detection |
+| Recover | RC | Restore capabilities after incidents |
+
+---
+
+## Control Mapping
+
+| AKSI Control | CSF Function | CSF Category | Subcategory Examples |
+|-------------|-------------|-------------|---------------------|
+| **PR-01** (Identity & Auth) | Protect | Identity Management & Access Control (PR.AA) | PR.AA-01, PR.AA-02, PR.AA-05 |
+| **PR-02** (Scope Confinement) | Protect | Identity Management & Access Control (PR.AA) | PR.AA-03, PR.AA-05 |
+| **PR-03** (Tool Provenance) | Protect / Detect | Platform Security (PR.PS); Continuous Monitoring (DE.CM) | PR.PS-01, DE.CM-01, DE.CM-03 |
+| **PR-04** (Data Exposure) | Protect | Data Security (PR.DS) | PR.DS-01, PR.DS-02, PR.DS-10 |
+| **PR-05** (Audit Trail) | Detect / Identify | Adverse Event Analysis (DE.AE); Improvement (ID.IM) | DE.AE-02, DE.AE-03, DE.AE-06 |
+| **DE-01** (Dependencies) | Identify | Risk Assessment (ID.RA) | ID.RA-01, ID.RA-07 |
+
+---
+
+## Evidence Requirements
+
+### PR-01 — Identity & Authorization (PR.AA)
+- PR.AA-01: Identities and credentials for authorized users, services, and hardware are managed
+- PR.AA-02: Identities are proofed and bound to credentials
+- Agent access permissions reviewed periodically
+
+### PR-02 — Scope Confinement (PR.AA)
+- PR.AA-03: Users, services, and hardware are authenticated
+- PR.AA-05: Access permissions and authorizations are managed
+- Agent operates with least-privilege permissions (least functionality)
+
+### PR-03 — Tool Provenance (PR.PS, DE.CM)
+- PR.PS-01: Configuration management practices are established
+- DE.CM-01: Networks and network services are monitored
+- DE.CM-03: Personnel activity and technology usage are monitored
+
+### PR-04 — Data Exposure (PR.DS)
+- PR.DS-01: Data-at-rest is protected
+- PR.DS-02: Data-in-transit is protected
+- PR.DS-10: Data are managed throughout their life cycle
+
+### PR-05 — Audit Trail (DE.AE)
+- DE.AE-02: Potentially adverse events are analyzed to better characterize them
+- DE.AE-03: Information is correlated from multiple sources
+- DE.AE-06: Information on adverse events is provided to authorized staff and tools
+
+### DE-01 — Dependency Vulnerabilities (ID.RA)
+- ID.RA-01: Vulnerabilities in assets are identified, validated, and recorded
+- ID.RA-07: Changes and exceptions are managed, assessed for risk impact, recorded, and tracked
+
+---
+
+## Example Configuration
+
+```yaml
+agent:
+  name: enterprise-ops-agent
+  description: "Enterprise operational automation agent"
+
+security:
+  mode: audit
+
+compliance:
+  overlays:
+    - nist-csf
+  evidence:
+    retention_days: 365
+
+scan:
+  dependencies:
+    enabled: true
+    severity_threshold: high
+```
+
+---
+
+## Posture Output
+
+```bash
+ancilis report --format terminal --period 30d
+```
+
+```
+Ancilis Posture Report — enterprise-ops-agent
+Period: last 30 days  |  Overlay: NIST Cybersecurity Framework 2.0
+
+Control              CSF Function/Category           Status    Evals
+────────────────────────────────────────────────────────────────────
+Identity & Auth      Protect: PR.AA                  ✓ pass    42
+Scope Confinement    Protect: PR.AA                  ✓ pass    38
+Tool Provenance      Protect/Detect: PR.PS, DE.CM    ✓ pass    29
+Data Exposure        Protect: PR.DS                  ✓ pass    55
+Audit Trail          Detect: DE.AE                   ✓ pass    80
+Dependencies (DE-01) Identify: ID.RA                 ✓ pass    —
+
+Posture: COMPLIANT
+NIST CSF 2.0: evidence present across all six functions
+Govern (GV): configuration and accountability controls active
+Identify (ID): risk assessment evidence present
+Protect (PR): access control, data security, platform security active
+Detect (DE): monitoring and anomaly detection active
+```
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [FedRAMP Overlay](/overlays/fedramp) — builds on NIST SP 800-53 (CSF-aligned)
+- [Reading Reports](/overlays/reading-reports)

@@ -1,0 +1,311 @@
+---
+title: "Testing Module"
+description: "ancilis.testing — compliance test utilities, fixtures, assertion helpers, and pre-built scenarios."
+---
+
+## Overview
+
+`ancilis.testing` provides everything you need to write unit and integration tests for agent compliance — without hitting the platform API, DuckDB files, or running a full scan.
+
+```bash
+pip install ancilis[testing]
+```
+
+```python
+from ancilis.testing import (
+    MockEvidenceStore,
+    FakeProducer,
+    ComplianceScenarios,
+    ScanResult,
+    assert_control_passes,
+    assert_control_fails,
+    assert_control_flags,
+    assert_posture_above,
+    assert_decision_allows,
+    assert_decision_blocks,
+    make_action,
+    make_test_config,
+)
+```
+
+---
+
+## pytest Fixtures
+
+Register fixtures automatically via the `ancilis` pytest plugin (included in `ancilis[testing]`). No import needed — fixtures are auto-registered via entry points.
+
+| Fixture | Type | Description |
+|---------|------|-------------|
+| `ancilis_scan` | `ScanResult` | ScanResult from a default evaluation |
+| `ancilis_store` | `MockEvidenceStore` | In-memory evidence store, closed after test |
+| `ancilis_overlay` | `str` | Active overlay name from `pytest.ini` |
+
+**Configure the overlay in `pytest.ini`:**
+```ini
+[pytest]
+ancilis_overlay = financial
+```
+
+**Example with fixtures:**
+```python
+def test_identity_control(ancilis_scan):
+    assert_control_passes(ancilis_scan, "PR-01")
+
+def test_store_records(ancilis_store):
+    assert ancilis_store.record_count() == 0
+
+def test_overlay_active(ancilis_overlay):
+    assert ancilis_overlay == "financial"
+```
+
+---
+
+## Assertion Helpers
+
+All assertion helpers accept either a `ScanResult` or a raw `EvaluationResult`.
+
+### `assert_control_passes(scan, control_id)`
+
+Assert that the named control evaluated to `PASS`.
+
+```python
+from ancilis.testing import assert_control_passes, ComplianceScenarios
+
+scenario = ComplianceScenarios.financial_compliant()
+assert_control_passes(scenario, "PR-01")
+assert_control_passes(scenario, "PR-02")
+```
+
+**Raises:** `AssertionError` with context on failure:
+```
+AssertionError: Expected control 'PR-01' to PASS but got 'FAIL'.
+  Detail: Agent identity missing.
+  Evidence: {'agent_id': None, 'verification_result': 'failed'}
+```
+
+### `assert_control_fails(scan, control_id)`
+
+Assert that the named control evaluated to `FAIL` or `ERROR`.
+
+```python
+from ancilis.testing import assert_control_fails, ComplianceScenarios
+
+scenario = ComplianceScenarios.missing_identity()
+assert_control_fails(scenario, "PR-01")
+```
+
+### `assert_control_flags(scan, control_id)`
+
+Assert that the named control raised a `FLAG` (deviation detected but not blocking).
+
+```python
+from ancilis.testing import assert_control_flags
+
+assert_control_flags(scan, "DE-01")
+```
+
+### `assert_posture_above(scan, threshold)`
+
+Assert that the overall pass rate (excluding `SKIP`) is above `threshold`.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `scan` | `ScanResult \| EvaluationResult` | Result to evaluate |
+| `threshold` | `float` | Required minimum score in `[0.0, 1.0]` |
+
+```python
+from ancilis.testing import assert_posture_above, ComplianceScenarios
+
+scenario = ComplianceScenarios.financial_compliant()
+assert_posture_above(scenario, 0.80)   # 80% pass rate required
+assert_posture_above(scenario, 1.0)    # all controls must pass
+```
+
+### `assert_decision_allows(scan)`
+
+Assert that the evaluation decision is `ALLOW`.
+
+```python
+assert_decision_allows(scan)
+```
+
+### `assert_decision_blocks(scan)`
+
+Assert that the evaluation decision is `BLOCK` (requires `mode: enforce` in config).
+
+```python
+assert_decision_blocks(scan)
+```
+
+---
+
+## `ComplianceScenarios`
+
+Pre-built `ScanResult` objects for common compliance states. All scenarios work fully offline — no API, no DuckDB.
+
+### Available Scenarios
+
+| Method | Description |
+|--------|-------------|
+| `financial_compliant()` | All controls PASS, financial overlay active |
+| `missing_identity()` | PR-01 FAIL — agent identity missing |
+
+```python
+from ancilis.testing import ComplianceScenarios
+
+# All controls passing
+scenario = ComplianceScenarios.financial_compliant()
+assert scenario.score == 1.0
+
+# PR-01 failing
+scenario = ComplianceScenarios.missing_identity()
+assert scenario.score < 1.0
+```
+
+**`ScanResult.score`** is the pass rate across all scored controls (0.0–1.0, SKIP excluded).
+
+---
+
+## `MockEvidenceStore`
+
+In-memory evidence store for tests — no DuckDB file, resets between tests.
+
+```python
+from ancilis.testing import MockEvidenceStore
+
+store = MockEvidenceStore()
+
+# Store a result
+store.store(evaluation_result, tool_name="test_tool")
+
+# Query
+summary = store.get_summary()
+records = store.get_records()
+count = store.record_count()
+
+# Session management
+session_id = store.latest_session_id()
+sessions = store.list_sessions()
+
+# Reset (also called automatically when used as fixture)
+store.reset()
+```
+
+---
+
+## `FakeProducer`
+
+Produces `EvaluationResult` objects from controlled inputs without running a real agent.
+
+```python
+from ancilis.testing import FakeProducer, make_test_config
+
+config = make_test_config(mode="enforce")
+producer = FakeProducer(config)
+
+# Emit a passing evaluation
+result = producer.emit_pass("query_database")
+assert result.decision == "ALLOW"
+
+# Emit a failing evaluation
+result = producer.emit_fail("delete_file", control_id="PR-02")
+assert result.decision == "BLOCK"  # in enforce mode
+```
+
+---
+
+## Helper Functions
+
+### `make_action()`
+
+Build a minimal `Action` object for use in control evaluator tests.
+
+```python
+from ancilis.testing import make_action
+
+action = make_action(
+    tool_name="send_email",
+    parameters={"to": "user@example.com", "subject": "Report"},
+    agent_id="my-agent",
+)
+```
+
+### `make_test_config()`
+
+Build a minimal `ResolvedConfig` for tests without reading any file.
+
+```python
+from ancilis.testing import make_test_config
+
+config = make_test_config(
+    agent_name="test-agent",
+    mode="audit",      # audit | enforce
+    overlay="glba",    # optional — activates overlay
+)
+```
+
+---
+
+## Full Example
+
+```python
+# test_compliance.py
+import pytest
+from ancilis.testing import (
+    MockEvidenceStore,
+    FakeProducer,
+    ComplianceScenarios,
+    assert_control_passes,
+    assert_control_fails,
+    assert_posture_above,
+    assert_decision_allows,
+    make_test_config,
+)
+
+def test_financial_overlay_all_controls_pass():
+    scenario = ComplianceScenarios.financial_compliant()
+    for control_id in ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"]:
+        assert_control_passes(scenario, control_id)
+    assert_posture_above(scenario, 1.0)
+
+def test_missing_identity_fails_pr01():
+    scenario = ComplianceScenarios.missing_identity()
+    assert_control_fails(scenario, "PR-01")
+    # Other controls still pass
+    assert_control_passes(scenario, "PR-02")
+
+def test_enforce_mode_blocks_on_failure():
+    config = make_test_config(mode="enforce")
+    producer = FakeProducer(config)
+    result = producer.emit_fail("delete_file", control_id="PR-02")
+    assert result.decision == "BLOCK"
+
+def test_store_records_evidence():
+    config = make_test_config()
+    store = MockEvidenceStore()
+    producer = FakeProducer(config)
+
+    ev = producer.emit_pass("query_database")
+    store.store(ev, tool_name="query_database")
+
+    summary = store.get_summary()
+    assert summary["total_evaluations"] == 1
+    store.reset()
+
+@pytest.fixture
+def my_store():
+    store = MockEvidenceStore()
+    yield store
+    store.reset()
+
+def test_with_fixture(my_store):
+    assert my_store.record_count() == 0
+```
+
+---
+
+## Related
+
+- [Python SDK Reference](/sdk/python) — producer and store API
+- [TypeScript SDK Reference](/sdk/typescript) — TypeScript equivalent
+- [ancilis scan](/cli/scan) — run a full scan against real evidence

@@ -1,0 +1,426 @@
+---
+title: "TypeScript SDK Reference"
+description: "Complete reference for the Ancilis TypeScript SDK — producers, evidence store, configuration, and activation."
+---
+
+## Installation
+
+```bash
+npm install ancilis
+# or
+yarn add ancilis
+```
+
+**Requirements:** Node.js ≥ 18, TypeScript ≥ 4.7
+
+---
+
+## Configuration
+
+### `loadConfig()`
+
+Load and validate `ancilis.yaml` into a `ResolvedConfig` object.
+
+```typescript
+import { loadConfig } from "ancilis";
+
+const config = await loadConfig();                          // auto-detect
+const config = await loadConfig({ path: "ancilis.yaml" }); // explicit path
+```
+
+**`LoadConfigOptions`**
+
+```typescript
+interface LoadConfigOptions {
+  path?: string;   // explicit path to ancilis.yaml
+  raw?: object;    // inline config object (testing)
+}
+```
+
+### `ancilis.yaml` Schema
+
+Same schema as the Python SDK — see the [Python SDK reference](/sdk/python#configuration) for the full schema. TypeScript `loadConfig()` reads the same `ancilis.yaml` file format.
+
+---
+
+## Producers
+
+### `ToolActionProducer` — JavaScript functions
+
+```typescript
+import { ToolActionProducer, wrapTool, tool, loadConfig } from "ancilis";
+import { Engine } from "ancilis";
+import { EvidenceStore } from "ancilis";
+
+const config = await loadConfig();
+const engine = new Engine(config);
+const store = new EvidenceStore(config);
+const producer = new ToolActionProducer(config, engine, { evidenceStore: store });
+
+// Decorator-style via tool()
+const queryDatabase = tool(producer)(
+  async (sql: string, database: string): Promise<Record<string, unknown>> => {
+    return await db.execute(sql);
+  },
+  { toolName: "query_database" }
+);
+
+const result = await queryDatabase("SELECT * FROM users LIMIT 10", "reports");
+```
+
+**`wrapTool()`**
+
+```typescript
+import { wrapTool } from "ancilis";
+
+const wrapped = wrapTool(originalFn, producer, { toolName: "shell_execute" });
+const result = await wrapped("ls", "-la");
+```
+
+**`evaluateAndExecute()`**
+
+```typescript
+import { evaluateAndExecute } from "ancilis";
+
+const result = await evaluateAndExecute({
+  fn: executeShellCommand,
+  producer,
+  args: ["ls", "-la"],
+  toolName: "shell_execute",
+});
+// result.blocked: boolean
+// result.evaluation: EvaluationResult
+```
+
+**Handling blocked actions**
+
+```typescript
+import { BlockedActionError } from "ancilis";
+
+try {
+  await queryDatabase(sql, db);
+} catch (e) {
+  if (e instanceof BlockedActionError) {
+    console.error(e.message);
+    // "Ancilis [blocked]: Action 'query_database' blocked — scope violation."
+  }
+}
+```
+
+### `HTTPActionProducer` — HTTP/REST calls
+
+```typescript
+import { HTTPActionProducer } from "ancilis";
+import type { HTTPObservation } from "ancilis";
+
+const producer = new HTTPActionProducer(config, engine, { evidenceStore: store });
+
+const observation: HTTPObservation = {
+  method: "POST",
+  url: "https://api.example.com/transfer",
+  headers: { Authorization: "Bearer ..." },
+  body: { amount: 1000, to: "acct_123" },
+};
+const result = await producer.observe(observation);
+```
+
+### `MCPActionProducer` — MCP tool calls
+
+```typescript
+import { MCPActionProducer, AncilisMiddleware } from "ancilis";
+import type { McpClientLike } from "ancilis";
+
+// Middleware approach (recommended)
+const middleware = new AncilisMiddleware(config, { evidenceStore: store });
+
+// Direct MCP producer
+const mcpProducer = new MCPActionProducer(config, engine, {
+  mcpClient: yourMcpClient,
+  evidenceStore: store,
+});
+```
+
+### `CLIActionProducer` — subprocess commands
+
+```typescript
+import { CLIActionProducer } from "ancilis";
+import type { CLIInvocation } from "ancilis";
+
+const producer = new CLIActionProducer(config, engine, { evidenceStore: store });
+
+const invocation: CLIInvocation = {
+  command: ["git", "push", "origin", "main"],
+  cwd: "/workspace/project",
+};
+const result = await producer.observe(invocation);
+// result.blocked: boolean
+```
+
+### `AncilisMiddleware` — MCP server middleware
+
+```typescript
+import { AncilisMiddleware } from "ancilis";
+import type { AncilisMiddlewareOptions } from "ancilis";
+
+const options: AncilisMiddlewareOptions = {
+  evidenceStore: store,
+  mode: "audit",  // override ancilis.yaml mode
+};
+const middleware = new AncilisMiddleware(config, options);
+
+// Attach to your MCP server
+server.use(middleware.handler());
+```
+
+---
+
+## Evidence Store
+
+### `EvidenceStore`
+
+```typescript
+import { EvidenceStore, loadConfig } from "ancilis";
+
+const config = await loadConfig();
+const store = new EvidenceStore(config);
+// Custom path:
+const store = new EvidenceStore(config, { dbPath: "/custom/evidence.duckdb" });
+```
+
+**Key methods:**
+
+```typescript
+// Store an evaluation result
+await store.store(evaluationResult, { toolName: "my_tool" });
+
+// Get summary statistics
+const summary = await store.getSummary({
+  since: "2026-04-01T00:00:00Z",
+  sessionId: "sess_abc",
+});
+// { totalEvaluations: 42, controlPassRates: {...}, decisions: {...} }
+
+// Get individual records
+const records = await store.getRecords({ since: ..., sessionId: ..., limit: 100 });
+
+// Session management
+const sessionId = await store.latestSessionId();
+const sessions = await store.listSessions();
+
+// Reset (clears all evidence, restarts hash chain)
+const count = await store.reset();
+
+// Always close
+await store.close();
+```
+
+### Hash Chain
+
+```typescript
+import { GENESIS_SEED, canonicalPayload, computeHash } from "ancilis";
+
+// Verify integrity
+const summary = await store.getSummary();
+const chainValid: boolean = summary.chainValid;
+```
+
+### `EvidenceRecord`
+
+```typescript
+import type { EvidenceRecord } from "ancilis";
+
+const record: EvidenceRecord = {
+  recordId: "uuid",
+  evaluationId: "uuid",
+  timestamp: "2026-04-12T10:00:00Z",
+  agentId: "my-agent",
+  sessionId: "sess_abc",
+  toolName: "query_database",
+  decision: "ALLOW",    // "ALLOW" | "BLOCK" | "FLAG" | "PASS" | "FAIL"
+  hash: "sha256...",
+  prevHash: "sha256...",
+};
+```
+
+---
+
+## Activation & Overlays
+
+### `ActivationResolver`
+
+```typescript
+import { ActivationResolver, loadConfig } from "ancilis";
+
+const config = await loadConfig();
+const resolver = new ActivationResolver(config);
+const resolved = resolver.resolve();
+// resolved.activeControls: string[]
+// resolved.activeOverlays: Map<string, OverlayActivation>
+```
+
+### Control IDs
+
+| ID | Name |
+|----|------|
+| `PR-01` | Identity & Authorization |
+| `PR-02` | Scope Confinement |
+| `PR-03` | Output Integrity |
+| `PR-04` | Prompt Security |
+| `PR-05` | Audit Trail & Baseline |
+| `DE-01` | Dependency Vulnerabilities |
+
+### Load Definitions
+
+```typescript
+import {
+  loadControlDefinitions,
+  loadOverlayProfiles,
+  loadCertificationProfile,
+  BASELINE_CONTROLS,
+  EXTENDED_CONTROLS,
+} from "ancilis";
+
+const controls = loadControlDefinitions();    // all control metadata
+const overlays = loadOverlayProfiles();       // all overlay profiles
+const soc2 = loadCertificationProfile("soc2-type2");
+```
+
+---
+
+## Reporting
+
+### `ReportGenerator`
+
+```typescript
+import { ReportGenerator, renderTerminal, renderMarkdown, renderCsv } from "ancilis";
+
+const generator = new ReportGenerator(config, store);
+const reportData = await generator.generate({
+  period: "30d",
+  reportFormat: "terminal",
+  sessionId: "sess_abc",
+});
+
+// Render outputs
+const terminal = renderTerminal(reportData);
+const markdown = renderMarkdown(reportData);
+const csv = renderCsv(records);
+const ndjson = renderNdjson(records);
+```
+
+---
+
+## `BaselineManager`
+
+```typescript
+import { BaselineManager } from "ancilis";
+
+const manager = new BaselineManager(config, store);
+const baseline = await manager.capture({ sessionId: "sess_abc", label: "pre-deploy" });
+const report = await manager.diff({ baselineId: baseline.id });
+```
+
+---
+
+## Importers
+
+### `SarifImporter`
+
+```typescript
+import { SarifImporter } from "ancilis";
+
+const importer = new SarifImporter({ agentId: "sast-scan" });
+const evaluations = await importer.parse("results.sarif");
+for (const ev of evaluations) {
+  await store.store(ev, { toolName: "sast" });
+}
+```
+
+### `CycloneDxImporter`
+
+```typescript
+import { CycloneDxImporter } from "ancilis";
+
+const importer = new CycloneDxImporter({ agentId: "sbom-scan" });
+const evaluations = await importer.parse("sbom.cdx.json");
+```
+
+---
+
+## `DependencyScanner`
+
+```typescript
+import { DependencyScanner, loadConfig } from "ancilis";
+
+const config = await loadConfig();
+const scanner = new DependencyScanner(config);
+
+for await (const evaluation of scanner.scan()) {
+  for (const result of evaluation.controlResults) {
+    console.log(result.result, result.detail);
+  }
+}
+```
+
+---
+
+## Error Types
+
+| Class | When Thrown |
+|-------|-------------|
+| `BlockedActionError` | Tool call blocked in `enforce` mode |
+| `ConfigError` | `ancilis.yaml` invalid or not found |
+| `OverlayNotFoundError` | Overlay ID not recognized |
+| `StorageError` | DuckDB I/O error |
+| `AuthError` | Platform API authentication failure |
+
+```typescript
+import {
+  BlockedActionError,
+  ConfigError,
+  OverlayNotFoundError,
+  StorageError,
+  AncilisError,
+} from "ancilis";
+```
+
+---
+
+## Side-by-Side Examples
+
+<CodeGroup>
+```python Python
+from ancilis import load_config, ToolActionProducer, tool, EvidenceStore
+from ancilis.engine.engine import Engine
+
+config = load_config()
+engine = Engine(config)
+store = EvidenceStore(config)
+producer = ToolActionProducer(config, engine, evidence_store=store)
+
+@tool(producer)
+def send_email(to: str, subject: str, body: str) -> bool:
+    return email_client.send(to, subject, body)
+
+result = send_email("user@example.com", "Report", "See attached.")
+```
+
+```typescript TypeScript
+import { loadConfig, ToolActionProducer, tool, EvidenceStore } from "ancilis";
+import { Engine } from "ancilis";
+
+const config = await loadConfig();
+const engine = new Engine(config);
+const store = new EvidenceStore(config);
+const producer = new ToolActionProducer(config, engine, { evidenceStore: store });
+
+const sendEmail = tool(producer)(
+  async (to: string, subject: string, body: string): Promise<boolean> => {
+    return await emailClient.send(to, subject, body);
+  },
+  { toolName: "send_email" }
+);
+
+const result = await sendEmail("user@example.com", "Report", "See attached.");
+```
+</CodeGroup>

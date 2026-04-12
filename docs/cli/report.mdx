@@ -1,0 +1,103 @@
+---
+title: "ancilis report"
+description: "Generate a posture report in terminal, markdown, PDF, CSV, or NDJSON format."
+---
+
+## Overview
+
+`ancilis report` generates a formatted compliance posture report from collected evidence. Supports human-readable terminal output, markdown, PDF, CSV, and machine-readable NDJSON formats for audit export.
+
+```bash
+ancilis report [OPTIONS]
+ancilis report generate [OPTIONS]  # explicit subcommand (identical behavior)
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--format`, `-f` | choice | `terminal` | Output format: `terminal`, `markdown`, `pdf`, `aiuc1-readiness`, `ndjson`, `csv` |
+| `--period` | string | `30d` | Reporting period — e.g. `7d`, `30d`, `90d`, `365d` |
+| `--output`, `-o` | path | stdout | Output file path (required for `pdf`) |
+| `--session` | string | latest | Scope to a specific session ID |
+| `--latest` / `--all` | flag | `--latest` | Use latest session (default) or all sessions |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | default | Path to evidence database |
+
+## Output Formats
+
+| Format | Description | Best For |
+|--------|-------------|----------|
+| `terminal` | Color-coded table for human review | Development, quick checks |
+| `markdown` | GitHub-flavored markdown | PR comments, wiki uploads |
+| `pdf` | PDF via WeasyPrint (falls back to markdown if unavailable) | Formal audit packages |
+| `aiuc1-readiness` | Markdown formatted for AKSI UC-1 readiness reviews | Certification prep |
+| `ndjson` | One evidence record per line | Log pipelines, SIEM ingestion |
+| `csv` | Spreadsheet-compatible evidence export | Audit spreadsheets |
+
+## Examples
+
+**Terminal report (default)**
+```bash
+ancilis report
+```
+
+```
+Ancilis Posture Report — my-agent
+Period: last 30 days  |  Mode: audit
+
+Control              Status    Evals   Failures   Flags
+─────────────────────────────────────────────────────
+Identity & Auth      ✓ pass    42      0          0
+Scope Confinement    ✓ pass    38      0          2
+Output Integrity     ✓ pass    55      0          0
+Prompt Security      ✓ pass    31      0          0
+Audit Trail          ✓ pass    80      0          0
+Dependencies (DE-01) ✓ pass    —       0          0
+
+Posture: COMPLIANT  |  Total evaluations: 246
+```
+
+**Markdown report to file**
+```bash
+ancilis report --format markdown --output report.md --period 7d
+```
+
+**PDF report for auditors**
+```bash
+ancilis report --format pdf --output ancilis-report-q1.pdf --period 90d
+```
+
+**NDJSON export to stdout**
+```bash
+ancilis report --format ndjson --period 30d | jq '.control_id'
+```
+
+**CSV export**
+```bash
+ancilis report --format csv --output evidence-export.csv --all
+```
+
+**Scope report to a specific session**
+```bash
+ancilis report --session sess_20260412_abc123 --format markdown
+```
+
+**30-day readiness report**
+```bash
+ancilis report --format aiuc1-readiness --period 30d --output readiness.md
+```
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `ancilis.yaml not found` | Pass `--config path/to/ancilis.yaml` or run from project root |
+| `No evidence found` | Run your agent with Ancilis middleware to collect evidence |
+| PDF falls back to markdown | Install WeasyPrint: `pip install ancilis[pdf]` |
+
+## Related
+
+- [ancilis scan](/cli/scan) — evaluate posture with CI exit codes
+- [ancilis status](/cli/status) — quick single-line posture view
+- [Evidence and reporting guide](/evidence-and-reporting) — full reporting workflow

@@ -1,0 +1,131 @@
+---
+title: "CCPA / CPRA Overlay"
+description: "AKSI compliance overlay for AI agents handling California consumer data."
+---
+
+## Overview
+
+The `ccpa` overlay maps AKSI control evidence to the California Consumer Privacy Act (CCPA) and its amendment, the California Privacy Rights Act (CPRA). It covers agents that collect, process, or sell personal information of California residents, or that assist businesses subject to CCPA compliance obligations.
+
+**Use this overlay when your agent:**
+- Processes personal information of California residents
+- Assists with consumer data requests (access, deletion, opt-out)
+- Operates within a business subject to CCPA thresholds
+- Handles sensitive personal information as defined by CPRA
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - ccpa
+```
+
+**Data classification trigger** — auto-activates when your agent handles data classified as `pii` or `consumer-data`:
+```yaml
+my_agent_handles:
+  - pii
+```
+
+---
+
+## CCPA/CPRA At a Glance
+
+| Provision | Description | Agent Relevance |
+|-----------|-------------|-----------------|
+| §1798.100 | Right to Know | Agent must not prevent consumers from knowing what data is collected |
+| §1798.105 | Right to Delete | Agent must be able to execute deletion requests |
+| §1798.120 | Right to Opt-Out | Agent must honor sale/sharing opt-out signals |
+| §1798.150 | Private Right of Action | Data breach from reasonable security failure triggers liability |
+| CPRA §1798.185 | Sensitive Personal Information | Additional restrictions on processing SPI |
+
+---
+
+## Control Mapping
+
+| AKSI Control | CCPA/CPRA Provision | Description |
+|-------------|---------------------|-------------|
+| **PR-01** (Identity & Auth) | §1798.100 — Right to Know | Agent identity verified; consumer data processing logged with agent ID |
+| **PR-02** (Scope Confinement) | §1798.120 — Opt-Out Enforcement | Agent confined to permitted data uses; opt-out signals respected |
+| **PR-03** (Tool Provenance) | §1798.140(ad) — Service Provider | Third-party tool use documented and limited to contracted purposes |
+| **PR-04** (Data Exposure) | §1798.150 — Reasonable Security | No unauthorized disclosure of personal or sensitive personal information |
+| **PR-05** (Audit Trail) | §1798.185 — CPRA Regulations | Complete audit trail for consumer data processing activities |
+| **DE-01** (Dependencies) | §1798.150 — Reasonable Security | Dependency vulnerabilities that could expose consumer data flagged |
+
+---
+
+## Evidence Requirements
+
+### PR-02 — Scope Confinement (Opt-Out Compliance)
+- Agent does not process data for sale or cross-context behavioral advertising after opt-out
+- Data flows limited to purposes disclosed at collection
+- Agent scope does not include secondary use without re-consent
+
+### PR-04 — Data Exposure (Reasonable Security)
+- Personal information not exposed without authorization (§1798.150 private right of action trigger)
+- Sensitive personal information (SPI) processed only for permitted purposes per CPRA §1798.121
+- Encryption standards applied to PI at rest and in transit
+
+### PR-05 — Audit Trail (Consumer Rights Support)
+- Complete record of agent interactions with consumer data
+- Evidence supports responding to Right to Know requests (§1798.100)
+- Deletion request execution can be verified through audit trail (§1798.105)
+
+---
+
+## Example Configuration
+
+```yaml
+agent:
+  name: customer-data-agent
+  description: "Agent for customer data processing and support workflows"
+
+security:
+  mode: enforce
+
+compliance:
+  overlays:
+    - ccpa
+
+scan:
+  dependencies:
+    enabled: true
+    severity_threshold: high
+```
+
+---
+
+## Posture Output
+
+```bash
+ancilis report --format terminal --period 30d
+```
+
+```
+Ancilis Posture Report — customer-data-agent
+Period: last 30 days  |  Overlay: CCPA / CPRA
+
+Control              CCPA Provision                  Status    Evals
+────────────────────────────────────────────────────────────────────
+Identity & Auth      §1798.100 (Right to Know)       ✓ pass    42
+Scope Confinement    §1798.120 (Opt-Out)              ✓ pass    38
+Tool Provenance      §1798.140 (Service Provider)     ✓ pass    29
+Data Exposure        §1798.150 (Reasonable Security)  ✓ pass    55
+Audit Trail          §1798.185 (Audit Requirements)   ✓ pass    80
+Dependencies (DE-01) §1798.150 (Security)             ✓ pass    —
+
+Posture: COMPLIANT
+CCPA/CPRA: reasonable security evidence present
+Consumer rights support: audit trail verifiable
+```
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Financial Services Overlay](/overlays/financial) — for agents handling financial PII
+- [Reading Reports](/overlays/reading-reports)

@@ -1,0 +1,127 @@
+---
+title: "ancilis doctor"
+description: "Run 10 diagnostic checks for configuration, connectivity, and environment health."
+---
+
+## Overview
+
+`ancilis doctor` runs a suite of checks to validate your Ancilis setup: Python version, SDK version, config file, overlays, platform connectivity, API key, evidence cache, producers, gitignore, and dependency conflicts. Use it after `ancilis init` or whenever `ancilis scan` behaves unexpectedly.
+
+```bash
+ancilis doctor [OPTIONS]
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent>.duckdb` | Path to evidence database |
+| `--verbose`, `-v` | flag | `false` | Show full diagnostic details per check |
+| `--json` | flag | `false` | Machine-readable JSON output |
+| `--fix` | flag | `false` | Auto-fix common issues (gitignore entry, cache directory) |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All checks pass |
+| `1` | One or more warnings |
+| `2` | One or more errors |
+
+## Checks Run
+
+| Check | What It Verifies |
+|-------|-----------------|
+| `sdk_version` | Installed version vs latest on PyPI |
+| `python_version` | Python ≥ 3.9 |
+| `config` | `ancilis.yaml` loadable and valid |
+| `overlay` | Configured overlays exist and are valid |
+| `platform_connectivity` | Platform API reachable |
+| `api_key` | API key present and accepted by platform |
+| `evidence_cache` | `~/.ancilis/` writable; warns if > 500 MB |
+| `producers` | Configured framework packages importable |
+| `gitignore` | `.ancilis/` excluded from git |
+| `dependency_conflicts` | Pydantic v2+ and DuckDB ≥ 0.10.0 |
+
+## Examples
+
+**Basic health check**
+```bash
+ancilis doctor
+```
+
+```
+Ancilis Doctor
+==============
+
+[✓] SDK version: 0.1.0 (latest)
+[✓] Python version: 3.11.4 (>=3.9 required)
+[✓] Configuration: ancilis.yaml loaded for agent 'my-agent' in audit mode
+[✓] Overlay: soc2 (1 active)
+[!] Platform API: not connected (platform.json not found)
+[!] API key: not configured (platform.json not found)
+[✓] Evidence cache: /Users/you/.ancilis (0.2 MB, writable)
+[✓] Producer: all configured producer frameworks available
+[✓] Git: .ancilis/ is in .gitignore
+[✓] Dependencies: no known conflicts detected
+
+8 checks passed, 2 warnings
+
+To fix issues:
+  • Run: ancilis login  to connect to the Ancilis platform
+  • Run: ancilis login  to set up API authentication
+```
+
+**Verbose output with full diagnostic details**
+```bash
+ancilis doctor --verbose
+```
+
+**Auto-fix common issues**
+```bash
+ancilis doctor --fix
+# Adds .ancilis/ to .gitignore, creates ~/.ancilis/ if missing
+```
+
+**JSON output for automation**
+```bash
+ancilis doctor --json
+```
+
+```json
+{
+  "version": "0.1.0",
+  "checks": [
+    { "name": "sdk_version", "status": "pass", "detail": "0.1.0 (latest)" },
+    { "name": "python_version", "status": "pass", "detail": "3.11.4 (>=3.9 required)" },
+    { "name": "config", "status": "pass", "detail": "ancilis.yaml loaded for agent 'my-agent' in audit mode" }
+  ],
+  "summary": { "passed": 8, "warnings": 2, "errors": 0 },
+  "exit_code": 1
+}
+```
+
+## Error Codes
+
+| Code | Check | Meaning |
+|------|-------|---------|
+| `ANCILIS-E001` | `platform_connectivity` | Platform API unreachable — check network |
+| `ANCILIS-E002` | `config` | `ancilis.yaml` not found or invalid |
+| `ANCILIS-E003` | `overlay` | Overlay ID not found |
+| `ANCILIS-E004` | `evidence_cache` | `~/.ancilis/` not writable — run `chmod 700 ~/.ancilis` |
+| `ANCILIS-E010` | `python_version` | Python < 3.9 — upgrade required |
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `ancilis.yaml not found or invalid` | Run `ancilis init` to create a config |
+| `overlay(s) not found` | Check overlay IDs against supported list in `ancilis init` |
+| `platform API unreachable` | Run `ancilis login` or check your network |
+| `SDK version outdated` | `pip install --upgrade ancilis` |
+
+## Related
+
+- [ancilis init](/cli/init) — create initial config
+- [ancilis scan](/cli/scan) — run after doctor confirms setup

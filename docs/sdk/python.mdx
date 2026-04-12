@@ -1,0 +1,408 @@
+---
+title: "Python SDK Reference"
+description: "Complete reference for the Ancilis Python SDK — producers, evidence store, configuration, and activation."
+---
+
+## Installation
+
+```bash
+pip install ancilis
+```
+
+**Optional extras:**
+
+| Extra | Installs | Use When |
+|-------|----------|----------|
+| `ancilis[langchain]` | LangChain integration | Using LangChain agents |
+| `ancilis[watch]` | watchdog | Using `ancilis scan --watch` |
+| `ancilis[pdf]` | WeasyPrint | Generating PDF reports |
+| `ancilis[testing]` | pytest fixtures | Writing compliance tests |
+| `ancilis[all]` | All extras | Full installation |
+
+**Requirements:** Python ≥ 3.9, pydantic ≥ 2.0, duckdb ≥ 0.10.0
+
+---
+
+## Configuration
+
+### `load_config()`
+
+Load and validate `ancilis.yaml` into a `ResolvedConfig` object.
+
+```python
+from ancilis import load_config
+
+config = load_config()                          # auto-detect ancilis.yaml
+config = load_config(path="path/to/ancilis.yaml")  # explicit path
+```
+
+### `ancilis.yaml` Schema
+
+```yaml
+agent:
+  name: my-agent          # required — identifier shown in reports
+  description: ""         # optional
+  owner: ""               # optional
+  agent_id: null          # optional — platform agent ID
+
+security:
+  mode: audit             # audit | enforce
+                          # audit: log violations; enforce: block them
+  controls:
+    PR-01:
+      enabled: true       # per-control enable/disable
+  tools:
+    allowed: []           # tool names always permitted
+    blocked: []           # tool names always blocked
+  scope:
+    max_actions_per_minute: null
+    allowed_destinations: []
+    blocked_destinations: []
+
+my_agent_handles: []      # framework type hints (e.g. [langchain])
+
+certification_targets: [] # e.g. [soc2-type2]
+
+compliance:
+  overlays: []            # compliance overlays (e.g. [glba, fedramp])
+  evidence:
+    storage: local
+    retention_days: 365
+
+cli:
+  update_check: true
+  update_check_interval: 86400  # seconds
+
+scan:
+  dependencies:
+    enabled: true
+    severity_threshold: high  # critical | high | medium | low
+    ignore: []                # CVE IDs to suppress
+```
+
+---
+
+## Producers
+
+Producers are the integration points between your agent framework and Ancilis. They intercept tool calls, evaluate them against active controls, store evidence, and optionally block execution.
+
+### `ToolActionProducer` — Python functions / tools
+
+Wraps Python callables. Two usage patterns:
+
+**Decorator pattern**
+```python
+from ancilis import tool, load_config, ToolActionProducer
+from ancilis.engine.engine import Engine
+from ancilis.evidence.store import EvidenceStore
+
+config = load_config()
+engine = Engine(config)
+store = EvidenceStore(config)
+producer = ToolActionProducer(config, engine, evidence_store=store)
+
+@tool(producer)
+def query_database(sql: str, database: str) -> dict:
+    """Query the reporting database."""
+    return db.execute(sql)
+
+# Call normally — Ancilis intercepts, evaluates, stores evidence
+result = query_database("SELECT * FROM users LIMIT 10", "reports")
+```
+
+**`wrap_tool()` for existing functions**
+```python
+from ancilis import wrap_tool
+
+original_fn = lambda sql, db: execute(sql, db)
+wrapped = wrap_tool(original_fn, producer, tool_name="query_database")
+result = wrapped("SELECT ...", "reports")
+```
+
+**`evaluate_and_execute()`**
+```python
+from ancilis import evaluate_and_execute
+
+result = evaluate_and_execute(
+    func=execute_shell_command,
+    producer=producer,
+    args=["ls", "-la"],
+    kwargs={},
+    tool_name="shell_execute",
+)
+# result.blocked is True if the action was blocked in enforce mode
+```
+
+**Handling blocked actions**
+```python
+from ancilis import BlockedActionError
+
+try:
+    result = query_database(sql, db)
+except BlockedActionError as e:
+    print(e.display_message)
+    # "Ancilis [blocked]: Action 'query_database' blocked — scope violation."
+```
+
+### `HTTPActionProducer` — HTTP/REST calls
+
+Records outbound HTTP requests as evidence.
+
+```python
+from ancilis import HTTPActionProducer, HTTPObservation
+
+producer = HTTPActionProducer(config, engine, evidence_store=store)
+
+observation = HTTPObservation(
+    method="POST",
+    url="https://api.example.com/transfer",
+    headers={"Authorization": "Bearer ..."},
+    body={"amount": 1000, "to": "acct_123"},
+)
+result = producer.observe(observation)
+```
+
+### `MCPActionProducer` — MCP tool calls
+
+Intercepts MCP (Model Context Protocol) tool calls.
+
+```python
+from ancilis import MCPActionProducer, AncilisMiddleware
+
+# Middleware integration (recommended)
+middleware = AncilisMiddleware(config=config, evidence_store=store)
+
+# Use as MCP client wrapper
+mcp_producer = MCPActionProducer(config, engine, mcp_client=your_mcp_client)
+```
+
+### `CLIActionProducer` — subprocess / shell commands
+
+Records shell command invocations as evidence.
+
+```python
+from ancilis import CLIActionProducer, CLIInvocation
+
+producer = CLIActionProducer(config, engine, evidence_store=store)
+
+invocation = CLIInvocation(
+    command=["git", "push", "origin", "main"],
+    cwd="/workspace/project",
+    env={},
+)
+result = producer.observe(invocation)
+# result.blocked: bool
+# result.evaluation: EvaluationResult
+```
+
+### `AncilisMiddleware` — MCP server middleware
+
+Drop-in middleware for MCP servers. Wraps all tool calls transparently.
+
+```python
+from ancilis import AncilisMiddleware, load_config
+
+config = load_config()
+middleware = AncilisMiddleware(config=config)
+
+# In your MCP server setup:
+server.add_middleware(middleware)
+```
+
+---
+
+## Evidence Store
+
+### `EvidenceStore`
+
+DuckDB-backed store with SHA-256 hash chain integrity. Evidence is stored per-agent, per-project in `~/.ancilis/{agent}-{cwd_hash}/evidence.duckdb`.
+
+```python
+from ancilis import EvidenceStore, load_config
+
+config = load_config()
+store = EvidenceStore(config)
+# Custom path:
+store = EvidenceStore(config, db_path="/custom/path/evidence.duckdb")
+```
+
+**Key methods:**
+
+```python
+# Store an evaluation result
+store.store(evaluation_result, tool_name="my_tool")
+
+# Get summary statistics
+summary = store.get_summary(since="2026-04-01T00:00:00Z", session_id="sess_abc")
+# Returns: {"total_evaluations": 42, "control_pass_rates": {...}, "decisions": {...}}
+
+# Get individual records
+records = store.get_records(since=..., session_id=..., limit=100)
+
+# Session management
+session_id = store.latest_session_id()  # most recent session
+sessions = store.list_sessions()        # all sessions with counts
+
+# Reset (clears all evidence, restarts hash chain from genesis)
+n = store.reset()  # returns count of deleted records
+
+# Always close when done
+store.close()
+```
+
+### Hash Chain
+
+Every evidence record is chained with SHA-256. The chain ensures tamper-evidence: modifying or deleting any record breaks chain verification.
+
+```python
+from ancilis.evidence import GENESIS_SEED, canonical_payload, compute_hash
+
+# The genesis block hash (first record's prev_hash)
+print(GENESIS_SEED)  # "ancilis-genesis-0"
+
+# Verify chain integrity
+summary = store.get_summary()
+chain_valid = summary.get("chain_valid", True)
+```
+
+### `EvidenceRecord`
+
+```python
+from ancilis import EvidenceRecord
+
+record = EvidenceRecord(
+    record_id="uuid",
+    evaluation_id="uuid",
+    timestamp="2026-04-12T10:00:00Z",
+    agent_id="my-agent",
+    session_id="sess_abc",
+    tool_name="query_database",
+    decision="ALLOW",    # ALLOW | BLOCK | FLAG | PASS | FAIL
+    hash="sha256...",
+    prev_hash="sha256...",
+)
+```
+
+---
+
+## Activation & Overlays
+
+### `ActivationResolver`
+
+Resolves which controls and overlays are active based on config, data classifications, and certification targets.
+
+```python
+from ancilis.activation import ActivationResolver
+from ancilis import load_config
+
+config = load_config()
+resolver = ActivationResolver(config)
+resolved = resolver.resolve()
+# resolved.active_controls: list of active control IDs
+# resolved.active_overlays: dict[overlay_id, OverlayActivation]
+```
+
+### Control IDs
+
+| ID | Name |
+|----|------|
+| `PR-01` | Identity & Authorization |
+| `PR-02` | Scope Confinement |
+| `PR-03` | Output Integrity |
+| `PR-04` | Prompt Security |
+| `PR-05` | Audit Trail & Baseline |
+| `DE-01` | Dependency Vulnerabilities |
+
+### Overlay Activation in `ancilis.yaml`
+
+```yaml
+# Explicit overlay activation
+compliance:
+  overlays:
+    - glba
+    - fedramp
+
+# Certification-driven activation
+certification_targets:
+  - soc2-type2
+```
+
+---
+
+## `BaselineManager`
+
+Track behavioral baselines and detect drift over time.
+
+```python
+from ancilis import BaselineManager, load_config
+from ancilis import EvidenceStore
+
+config = load_config()
+store = EvidenceStore(config)
+manager = BaselineManager(config, store)
+
+# Capture a baseline
+baseline = manager.capture(session_id="sess_abc", label="pre-deploy")
+
+# Compare current state to baseline
+report = manager.diff(baseline_id=baseline.id)
+print(report.drift_summary)
+```
+
+---
+
+## `DependencyScanner`
+
+Scan project dependencies for known CVEs via OSV.
+
+```python
+from ancilis import DependencyScanner, load_config
+
+config = load_config()
+scanner = DependencyScanner(config)
+
+for evaluation in scanner.scan():
+    for result in evaluation.control_results:
+        print(result.result, result.detail)
+        # PASS | FAIL | FLAG | SKIP
+```
+
+---
+
+## Importers
+
+### `SarifImporter`
+
+```python
+from ancilis.importers.sarif import SarifImporter
+
+importer = SarifImporter(agent_id="sast-scan")
+evaluations = importer.parse("results.sarif")
+for ev in evaluations:
+    store.store(ev, tool_name="sast")
+```
+
+### `CycloneDxImporter`
+
+```python
+from ancilis.importers.cyclonedx import CycloneDxImporter
+
+importer = CycloneDxImporter(agent_id="sbom-scan")
+evaluations = importer.parse("sbom.cdx.json")
+```
+
+---
+
+## Error Types
+
+| Exception | When Raised |
+|-----------|-------------|
+| `BlockedActionError` | Tool call blocked in `enforce` mode |
+| `ConfigError` | `ancilis.yaml` invalid or not found |
+| `OverlayNotFoundError` | Overlay ID not recognized |
+| `StorageError` | DuckDB I/O error |
+| `AuthError` | Platform API authentication failure |
+
+```python
+from ancilis import BlockedActionError, ConfigError, OverlayNotFoundError
+```
