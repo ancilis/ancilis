@@ -26,7 +26,7 @@ DEMO_CONFIG_PATH = Path(__file__).parent.parent.parent / "examples" / "demo" / "
 # All 6 evaluator control IDs that must appear in every evaluation
 EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"}
 
-VALID_RESULTS = {"PASS", "FAIL", "SKIP", "ERROR"}
+VALID_RESULTS = {"PASS", "FAIL", "FLAG", "SKIP", "ERROR"}
 
 
 def _make_action(

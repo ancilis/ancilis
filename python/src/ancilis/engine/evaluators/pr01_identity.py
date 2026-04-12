@@ -46,7 +46,7 @@ class PR01IdentityEvaluator:
                 duration_ms=(time.perf_counter() - start) * 1000,
             )
 
-        if config.agent_owner and action.agent_owner != config.agent_owner:
+        if config.agent_owner and action.agent_owner is not None and action.agent_owner != config.agent_owner:
             return ControlResult(
                 control_id=self.control_id,
                 control_name=self.control_name,

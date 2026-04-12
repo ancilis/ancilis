@@ -67,7 +67,7 @@ def _mock_session(
 
 
 def _config(**overrides):
-    raw = {"agent": {"name": "test-agent"}}
+    raw = {"agent": {"name": "test-agent", "owner": "test-owner"}}
     raw.update(overrides)
     return load_config(raw=raw)
 

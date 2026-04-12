@@ -30,7 +30,7 @@ def _make_config_file(data: dict[str, Any], tmpdir: Path) -> Path:
 
 
 def _minimal_config() -> dict[str, Any]:
-    return {"agent": {"name": "test-agent"}}
+    return {"agent": {"name": "test-agent", "owner": "test-owner"}}
 
 
 def _make_action(tool_name: str = "read_file", agent_id: str = "test-agent") -> Action:

@@ -1,5 +1,6 @@
 agent:
   name: finance-demo-agent
+  owner: finance-team
 my_agent_handles:
   - financial_records
   - personal_info
