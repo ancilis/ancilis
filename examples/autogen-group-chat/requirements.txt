@@ -1,2 +1,5 @@
 ancilis>=0.1.0,<0.2.0
-pyautogen>=0.2.0,<0.4.0
+# pyautogen — install separately for live AutoGen integration:
+#   pip install "pyautogen>=0.4.0"  (Python 3.13+)
+#   or: pip install "autogen-agentchat>=0.2"
+# Not required for the Ancilis simulation demo.

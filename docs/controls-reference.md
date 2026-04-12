@@ -2,7 +2,7 @@
 
 Ancilis evaluates agent actions against the AI & Agent Key Security Indicators (AKSI) framework — 26 controls organized by [NIST CSF 2.0](https://www.nist.gov/cyberframework) functions. Every control activates by default as part of the baseline. Overlays and certification targets can adjust thresholds (standard → strict) but never disable baseline controls.
 
-Six controls have runtime evaluators in the current SDK (PR-01 through PR-05, DE-01). The remaining 20 are defined, mapped to regulations, and included in posture reports — their runtime evaluators are on the roadmap.
+Nine controls have runtime evaluators in the current SDK (PR-01 through PR-08, DE-01). The remaining 17 are defined, mapped to regulations, and included in posture reports — their runtime evaluators are on the roadmap.
 
 ## How controls work
 
