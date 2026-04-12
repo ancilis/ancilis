@@ -463,3 +463,66 @@ class TestFilePersistence:
         valid, errors = store2.verify_chain()
         assert valid is True
         store2.close()
+
+
+# --- detected_data_types store round-trip (ANC-716) ---
+
+
+class TestDetectedDataTypesStore:
+    """Store round-trip for detected_data_types field."""
+
+    def _make_eval_with_detected(self, dc_codes: list[str]) -> EvaluationResult:
+        ev = make_evaluation()
+        ev.detected_data_types = dc_codes
+        return ev
+
+    def test_empty_list_round_trips(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        ev = self._make_eval_with_detected([])
+        store.store(ev, tool_name="scan-tool")
+        records = store.get_records()
+        assert records[0].detected_data_types == []
+        store.close()
+
+    def test_dc_codes_round_trip(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        ev = self._make_eval_with_detected(["DC-PII", "DC-CHD"])
+        store.store(ev, tool_name="scan-tool")
+        records = store.get_records()
+        assert records[0].detected_data_types == ["DC-PII", "DC-CHD"]
+        store.close()
+
+    def test_multiple_records_independent(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(self._make_eval_with_detected(["DC-PII"]), tool_name="t1")
+
+        ev2 = make_evaluation(evaluation_id="eval-002")
+        ev2.detected_data_types = ["DC-IP"]
+        store.store(ev2, tool_name="t2")
+
+        records = store.get_records()
+        assert records[0].detected_data_types == ["DC-PII"]
+        assert records[1].detected_data_types == ["DC-IP"]
+        store.close()
+
+    def test_missing_column_returns_empty_list(self):
+        """Records loaded without detected_data_types column default to []."""
+        import duckdb
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        ev = make_evaluation()
+        ev.detected_data_types = ["DC-PHI"]
+        store.store(ev, tool_name="t1")
+
+        # Simulate an old row by directly patching _row_to_record with a short row
+        from ancilis.evidence.store import EvidenceStore as ES
+        short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
+                     "agent", "tool", "ALLOW", "audit",
+                     "[]", "[]", "[]", "[]",
+                     "hash", "prev", 1.0, None, None)  # no detected_data_types column
+        rec = ES._row_to_record(short_row)
+        assert rec.detected_data_types == []
+        store.close()

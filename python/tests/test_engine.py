@@ -400,3 +400,58 @@ class TestDecisionEngine:
         assert "pci-dss-v4" in result.active_overlays
         assert "DC-CHD" in result.data_classifications
         assert result.total_duration_ms >= 0
+
+
+# --- detected_data_types (ANC-716) ---
+
+
+class TestDetectedDataTypes:
+    """Engine extraction of PR-04 patterns → DC codes."""
+
+    def _make_action_with_pii(self) -> "Action":
+        return _make_action(
+            params={"text": "SSN: 123-45-6789, email: foo@bar.com"},
+        )
+
+    def test_no_patterns_yields_empty_list(self):
+        config = _make_config()
+        action = _make_action(params={"msg": "hello world"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert result.detected_data_types == []
+
+    def test_ssn_maps_to_dc_pii(self):
+        config = _make_config()
+        action = _make_action(params={"data": "123-45-6789"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert "DC-PII" in result.detected_data_types
+
+    def test_email_maps_to_dc_pii(self):
+        config = _make_config()
+        action = _make_action(params={"to": "user@example.com"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert "DC-PII" in result.detected_data_types
+
+    def test_credit_card_maps_to_dc_chd(self):
+        config = _make_config()
+        action = _make_action(params={"card": "4111111111111111"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert "DC-CHD" in result.detected_data_types
+
+    def test_api_key_maps_to_dc_ip(self):
+        config = _make_config()
+        action = _make_action(params={"key": "sk-" + "a" * 40})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert "DC-IP" in result.detected_data_types
+
+    def test_multiple_pattern_types_deduped(self):
+        """Multiple patterns mapping to same DC code should produce one entry."""
+        config = _make_config()
+        action = _make_action(params={"data": "123-45-6789 foo@bar.com 555-867-5309"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert result.detected_data_types.count("DC-PII") == 1

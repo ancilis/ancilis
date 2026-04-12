@@ -32,5 +32,6 @@ class EvaluationResult:
     decision_reason: str = ""
     active_overlays: list[str] = field(default_factory=list)
     data_classifications: list[str] = field(default_factory=list)
+    detected_data_types: list[str] = field(default_factory=list)
     total_duration_ms: float = 0.0
     session_id: str | None = None
