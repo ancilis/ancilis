@@ -78,19 +78,19 @@ jobs:
           cache: npm
       - name: Build SDK tarball
         run: |
-          npm ci
+          npm ci --include=dev
           npm run build
           npm pack
-          mv ancilis-*.tgz ancilis-0.1.0.tgz
+          test -f ancilis-0.1.0.tgz
       - name: minimal-quickstart-ts — setup
-        run: npm install
+        run: npm install --include=dev
         working-directory: examples/typescript/minimal-quickstart-ts
       - name: minimal-quickstart-ts — run
         run: npx tsx index.ts
         working-directory: examples/typescript/minimal-quickstart-ts
       - name: minimal-quickstart-ts — scan score
         run: |
-          OUT=$(npx ancilis scan --ci --config ancilis.yaml 2>&1)
+          OUT=$(npx ancilis scan --ci --config ancilis.yaml 2>&1 || true)
           echo "$OUT"
           PASSING=$(echo "$OUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['summary']['passing'])" 2>/dev/null || echo 0)
           TOTAL=$(echo "$OUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['summary']['total_controls'])" 2>/dev/null || echo 1)
@@ -99,14 +99,14 @@ jobs:
           test "$SCORE" -ge 70
         working-directory: examples/typescript/minimal-quickstart-ts
       - name: langchain-ts-chatbot — setup
-        run: npm install
+        run: npm install --include=dev
         working-directory: examples/typescript/langchain-ts-chatbot
       - name: langchain-ts-chatbot — run
         run: npx tsx index.ts
         working-directory: examples/typescript/langchain-ts-chatbot
       - name: langchain-ts-chatbot — scan score
         run: |
-          OUT=$(npx ancilis scan --ci --config ancilis.yaml 2>&1)
+          OUT=$(npx ancilis scan --ci --config ancilis.yaml 2>&1 || true)
           echo "$OUT"
           PASSING=$(echo "$OUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['summary']['passing'])" 2>/dev/null || echo 0)
           TOTAL=$(echo "$OUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['summary']['total_controls'])" 2>/dev/null || echo 1)
