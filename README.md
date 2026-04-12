@@ -213,7 +213,7 @@ Honest about what this is and isn't:
 - **HTTP is explicit wrapping, not universal interception.** Ancilis does not monkey-patch `requests`, `httpx`, or `aiohttp`. The HTTPActionProducer wraps calls you explicitly pass to it.
 - **Evidence integrity depends on protecting the DB.** The hash chain detects tampering after the fact. It doesn't prevent an attacker with host access from replacing the entire database.
 - **No GUI. No SaaS platform.** Ancilis is an SDK and CLI. The evidence store is local.
-- **Controls without evaluators are recorded as SKIP.** 6 of 26 controls have runtime evaluators today (PR-01 through PR-05, DE-01). The others are defined in the control taxonomy and appear in reports but produce SKIP results until evaluators are implemented.
+- **Controls without evaluators are recorded as SKIP.** 9 of 26 controls have runtime evaluators today (PR-01 through PR-08, DE-01). The others are defined in the control taxonomy and appear in reports but produce SKIP results until evaluators are implemented.
 - **Overlay depth varies.** SOC 2 maps all 26 controls. HIPAA and GDPR map 6 controls each. PCI-DSS maps 6 controls. All overlays are functional and produce compliance posture — deeper mapping is planned.
 - **PDF export requires pandoc and xelatex.** Without them, PDF falls back to markdown output.
 
