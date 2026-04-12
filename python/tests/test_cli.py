@@ -393,6 +393,8 @@ class TestDoctor:
         assert "Ancilis doctor" in result.output
         assert "[OK] config:" in result.output
         assert "[OK] assets:" in result.output
+        assert "[OK] engine:" in result.output
+        assert "evaluators active" in result.output
         assert "[OK] evidence:" in result.output
 
     def test_doctor_fails_on_missing_config(self, tmp_path: Path) -> None:
