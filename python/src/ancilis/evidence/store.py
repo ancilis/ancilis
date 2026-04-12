@@ -69,7 +69,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     total_duration_ms DOUBLE NOT NULL,
     output_summary VARCHAR,
     tenant_id VARCHAR,
-    detected_data_types JSON NOT NULL DEFAULT '[]'
+    detected_data_types JSON NOT NULL DEFAULT '[]',
+    sdk_version VARCHAR
 );
 """
 
@@ -79,15 +80,15 @@ INSERT INTO evidence_records (
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
-    detected_data_types
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    detected_data_types, sdk_version
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_COLUMNS = """
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary,
-tenant_id, detected_data_types
+tenant_id, detected_data_types, sdk_version
 """
 
 
@@ -160,6 +161,10 @@ class EvidenceStore:
         if "detected_data_types" not in columns:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN detected_data_types JSON DEFAULT '[]'"
+            )
+        if "sdk_version" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN sdk_version VARCHAR"
             )
 
     @property
@@ -248,6 +253,11 @@ class EvidenceStore:
 
         detected_data_types = list(getattr(evaluation, "detected_data_types", None) or [])
 
+        try:
+            from ancilis import __version__ as _sdk_ver
+        except Exception:  # noqa: BLE001 — best-effort, never breaks evidence writes
+            _sdk_ver = None
+
         record = EvidenceRecord(
             record_id=record_id,
             evaluation_id=evaluation.evaluation_id,
@@ -268,6 +278,7 @@ class EvidenceStore:
             session_id=session_id,
             tenant_id=self._tenant_id,
             detected_data_types=detected_data_types,
+            sdk_version=_sdk_ver,
         )
 
         self._connection.execute(INSERT_SQL, [
@@ -290,6 +301,7 @@ class EvidenceStore:
             record.output_summary,
             record.tenant_id,
             json.dumps(record.detected_data_types),
+            record.sdk_version,
         ])
 
         self._maybe_trigger_drift_check()
@@ -617,7 +629,7 @@ class EvidenceStore:
         session_id, source_type, tool_name, decision, mode, control_results,
         active_overlays, data_classifications, active_certifications,
         record_hash, previous_hash, total_duration_ms, output_summary,
-        tenant_id, detected_data_types
+        tenant_id, detected_data_types, sdk_version
         """
         raw_detected = row[19] if len(row) > 19 else None
         detected_data_types: list[str] = (
@@ -643,4 +655,5 @@ class EvidenceStore:
             session_id=row[5] if len(row) > 5 else None,
             tenant_id=row[18] if len(row) > 18 else None,
             detected_data_types=detected_data_types,
+            sdk_version=row[20] if len(row) > 20 else None,
         )

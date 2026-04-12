@@ -27,3 +27,4 @@ class EvidenceRecord:
     output_summary: str | None = None
     session_id: str | None = None
     tenant_id: str | None = None
+    sdk_version: str | None = None
