@@ -313,3 +313,313 @@ describe("Securities MNPI — Report", () => {
     expect(output).toContain("Securities Markets");
   });
 });
+
+// ===== FedRAMP Overlay =====
+
+describe("FedRAMP — Profile", () => {
+  it("fedramp profile loads", () => {
+    const profiles = loadOverlayProfiles();
+    expect(profiles.has("fedramp")).toBe(true);
+  });
+
+  it("fedramp metadata matches federal activation", () => {
+    const profile = loadOverlayProfiles().get("fedramp")!;
+    expect(profile.trigger_type).toBe("data_classification");
+    expect((profile.triggered_by as string[])).toContain("DC-FCI");
+    expect((profile.triggered_by as string[])).toContain("DC-GOV");
+    expect((profile.applicable_data_types as string[])).toContain("federal_contract");
+    expect((profile.applicable_data_types as string[])).toContain("fedramp_system");
+  });
+
+  it("fedramp framework mapping covers all AKSI controls", () => {
+    const profile = loadOverlayProfiles().get("fedramp")!;
+    const mappingKeys = new Set(Object.keys(profile.framework_mapping as Record<string, unknown>));
+    for (const ctrl of ALL_AKSI_CONTROLS) {
+      expect(mappingKeys.has(ctrl)).toBe(true);
+    }
+  });
+
+  it("fedramp active controls reference NIST 800-53 Rev 5 and FedRAMP Moderate", () => {
+    const profile = loadOverlayProfiles().get("fedramp")!;
+    const controls = profile.controls as Record<string, Record<string, string>>;
+    for (const controlId of ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"]) {
+      const reference = controls[controlId].framework_reference;
+      expect(reference).toContain("NIST SP 800-53 Rev 5");
+      expect(reference).toContain("FedRAMP Moderate");
+    }
+  });
+
+  it("fedramp sets strict thresholds for all active controls", () => {
+    const profile = loadOverlayProfiles().get("fedramp")!;
+    const adjustments = profile.control_adjustments as Record<string, Record<string, string>>;
+    for (const controlId of ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"]) {
+      expect(adjustments[controlId].threshold_adjustment).toBe("strict");
+    }
+  });
+
+  it("fedramp evidence fields do not overlap with cmmc-l2", () => {
+    const profiles = loadOverlayProfiles();
+    const fedrampFields = new Set<string>();
+    const cmmcFields = new Set<string>();
+    for (const fields of Object.values(
+      (profiles.get("fedramp")!.evidence_requirements as Record<string, string[]>),
+    )) {
+      fields.forEach(f => fedrampFields.add(f));
+    }
+    for (const fields of Object.values(
+      (profiles.get("cmmc-l2")!.evidence_requirements as Record<string, string[]>),
+    )) {
+      fields.forEach(f => cmmcFields.add(f));
+    }
+    const overlap = [...fedrampFields].filter(f => cmmcFields.has(f));
+    expect(overlap).toHaveLength(0);
+  });
+
+  it("fedramp breach notification is 1 hour", () => {
+    const profile = loadOverlayProfiles().get("fedramp")!;
+    const obligations = profile.reporting_obligations as Record<string, unknown>;
+    expect(obligations.breach_notification_hours).toBe(1);
+  });
+
+  it("fedramp evidence retention minimum is 1095 days", () => {
+    const profile = loadOverlayProfiles().get("fedramp")!;
+    expect(profile.evidence_retention_minimum_days).toBe(1095);
+  });
+});
+
+describe("FedRAMP — Taxonomy", () => {
+  it("DC-FCI taxonomy entry is active and linked to fedramp", () => {
+    const taxonomy = loadTaxonomy();
+    const classifications = taxonomy.classifications as Array<Record<string, unknown>>;
+    const fci = classifications.find(e => e.code === "DC-FCI")!;
+    expect(fci.overlay_status).toBe("active");
+    expect((fci.overlays as string[])).toContain("fedramp");
+  });
+
+  it("DC-GOV taxonomy entry is active and linked to fedramp", () => {
+    const taxonomy = loadTaxonomy();
+    const classifications = taxonomy.classifications as Array<Record<string, unknown>>;
+    const gov = classifications.find(e => e.code === "DC-GOV")!;
+    expect(gov.overlay_status).toBe("active");
+    expect((gov.overlays as string[])).toContain("fedramp");
+  });
+});
+
+describe("FedRAMP — Resolver", () => {
+  it("federal_contract activates fedramp with DC-FCI and strict controls", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["federal_contract"] });
+    expect(spec.activeOverlays).toContain("fedramp");
+    expect(spec.dataClassifications).toContain("DC-FCI");
+    expect(spec.controlThresholds["PR-01"]).toBe("strict");
+    expect(spec.controlThresholds["PR-05"]).toBe("strict");
+    expect((spec.evidenceRequirements["PR-01"] ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("fedramp_system activates fedramp via DC-FCI", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["fedramp_system"] });
+    expect(spec.dataClassifications).toContain("DC-FCI");
+    expect(spec.activeOverlays).toContain("fedramp");
+  });
+
+  it("government_system activates fedramp via DC-GOV", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["government_system"] });
+    expect(spec.dataClassifications).toContain("DC-GOV");
+    expect(spec.activeOverlays).toContain("fedramp");
+  });
+
+  it("government_system activates both fedramp and cmmc-l2", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["government_system"] });
+    expect(spec.activeOverlays).toContain("fedramp");
+    expect(spec.activeOverlays).toContain("cmmc-l2");
+  });
+});
+
+describe("FedRAMP — Config", () => {
+  it("federal_contract config activates fedramp and is not in unavailable", () => {
+    const resolved = loadConfig({
+      raw: { agent: { name: "fedramp-agent" }, my_agent_handles: ["federal_contract"] },
+    });
+    expect(resolved.activeOverlays.has("fedramp")).toBe(true);
+    expect(resolved.unavailableOverlays.some(u => u.overlayId === "fedramp")).toBe(false);
+  });
+
+  it("federal_contract config sets retention to at least 1095 days", () => {
+    const resolved = loadConfig({
+      raw: { agent: { name: "fedramp-agent" }, my_agent_handles: ["federal_contract"] },
+    });
+    expect(resolved.evidenceRetentionDays).toBeGreaterThanOrEqual(1095);
+  });
+});
+
+describe("FedRAMP — Validate", () => {
+  let dir: string;
+  beforeEach(() => { dir = tmpDir(); });
+  afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
+
+  it("config validate surfaces FedRAMP overlay name", () => {
+    const path = writeConfig(dir, {
+      agent: { name: "fedramp-agent" },
+      my_agent_handles: ["federal_contract"],
+    });
+    const { valid, message } = validateAndFormat(path);
+    expect(valid).toBe(true);
+    expect(message).toContain("FedRAMP");
+  });
+});
+
+describe("FedRAMP — Report", () => {
+  it("report includes fedramp compliance section", () => {
+    const config = loadConfig({
+      raw: { agent: { name: "fedramp-agent" }, my_agent_handles: ["federal_contract"] },
+    });
+    const report = new ReportGenerator(config, populatedSummary()).generate();
+    expect(
+      report.complianceSections.some(s => s.overlayId === "fedramp"),
+    ).toBe(true);
+  });
+
+  it("terminal output includes FedRAMP overlay name", () => {
+    const config = loadConfig({
+      raw: { agent: { name: "fedramp-agent" }, my_agent_handles: ["federal_contract"] },
+    });
+    const report = new ReportGenerator(config, populatedSummary()).generate();
+    const output = renderTerminal(report);
+    expect(output).toContain("FedRAMP");
+  });
+});
+
+// ===== GLBA / Financial Services Overlay =====
+
+describe("GLBA Financial — Profile", () => {
+  it("glba profile loads", () => {
+    const profiles = loadOverlayProfiles();
+    expect(profiles.has("glba")).toBe(true);
+  });
+
+  it("glba metadata matches financial activation", () => {
+    const profile = loadOverlayProfiles().get("glba")!;
+    expect(profile.trigger_type).toBe("data_classification");
+    expect((profile.triggered_by as string[])).toContain("DC-FIN");
+    expect((profile.applicable_data_types as string[])).toContain("financial_data");
+    expect((profile.applicable_data_types as string[])).toContain("financial_records");
+  });
+
+  it("glba framework mapping covers all AKSI controls", () => {
+    const profile = loadOverlayProfiles().get("glba")!;
+    const mappingKeys = new Set(Object.keys(profile.framework_mapping as Record<string, unknown>));
+    for (const ctrl of ALL_AKSI_CONTROLS) {
+      expect(mappingKeys.has(ctrl)).toBe(true);
+    }
+  });
+
+  it("glba active controls reference GLBA, SOX, and DORA", () => {
+    const profile = loadOverlayProfiles().get("glba")!;
+    const controls = profile.controls as Record<string, Record<string, string>>;
+    for (const controlId of ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"]) {
+      const reference = controls[controlId].framework_reference;
+      expect(reference).toContain("314.4");
+      expect(reference).toContain("SOX");
+      expect(reference).toContain("DORA");
+    }
+  });
+
+  it("glba sets strict thresholds for financial high-risk controls", () => {
+    const profile = loadOverlayProfiles().get("glba")!;
+    const adjustments = profile.control_adjustments as Record<string, Record<string, string>>;
+    for (const controlId of ["PR-01", "PR-02", "PR-04", "PR-05", "DE-01"]) {
+      expect(adjustments[controlId].threshold_adjustment).toBe("strict");
+    }
+  });
+
+  it("glba evidence retention minimum is 2555 days", () => {
+    const profile = loadOverlayProfiles().get("glba")!;
+    expect(profile.evidence_retention_minimum_days).toBe(2555);
+  });
+});
+
+describe("GLBA Financial — Taxonomy", () => {
+  it("DC-FIN taxonomy entry is active and linked to glba", () => {
+    const taxonomy = loadTaxonomy();
+    const classifications = taxonomy.classifications as Array<Record<string, unknown>>;
+    const fin = classifications.find(e => e.code === "DC-FIN")!;
+    expect(fin.overlay_status).toBe("active");
+    expect((fin.overlays as string[])).toContain("glba");
+  });
+});
+
+describe("GLBA Financial — Resolver", () => {
+  it("financial_data activates glba and soc2 with strict controls", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["financial_data"] });
+    expect(spec.activeOverlays).toContain("glba");
+    expect(spec.activeOverlays).toContain("soc2");
+    expect(spec.dataClassifications).toContain("DC-FIN");
+    expect(spec.controlThresholds["PR-01"]).toBe("strict");
+    expect(spec.controlThresholds["PR-05"]).toBe("strict");
+  });
+
+  it("financial_records activates glba via DC-FIN", () => {
+    const resolver = new ActivationResolver();
+    const spec = resolver.resolve({ dataHandling: ["financial_records"] });
+    expect(spec.dataClassifications).toContain("DC-FIN");
+    expect(spec.activeOverlays).toContain("glba");
+  });
+});
+
+describe("GLBA Financial — Config", () => {
+  it("financial_data config activates glba and is not in unavailable", () => {
+    const resolved = loadConfig({
+      raw: { agent: { name: "fin-agent" }, my_agent_handles: ["financial_data"] },
+    });
+    expect(resolved.activeOverlays.has("glba")).toBe(true);
+    expect(resolved.unavailableOverlays.some(u => u.overlayId === "glba")).toBe(false);
+  });
+
+  it("financial_data config sets retention to 2555 days", () => {
+    const resolved = loadConfig({
+      raw: { agent: { name: "fin-agent" }, my_agent_handles: ["financial_data"] },
+    });
+    expect(resolved.evidenceRetentionDays).toBe(2555);
+  });
+});
+
+describe("GLBA Financial — Validate", () => {
+  let dir: string;
+  beforeEach(() => { dir = tmpDir(); });
+  afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
+
+  it("config validate surfaces Financial Services overlay name", () => {
+    const path = writeConfig(dir, {
+      agent: { name: "fin-agent" },
+      my_agent_handles: ["financial_data"],
+    });
+    const { valid, message } = validateAndFormat(path);
+    expect(valid).toBe(true);
+    expect(message).toContain("Financial Services");
+  });
+});
+
+describe("GLBA Financial — Report", () => {
+  it("report includes glba compliance section", () => {
+    const config = loadConfig({
+      raw: { agent: { name: "fin-agent" }, my_agent_handles: ["financial_data"] },
+    });
+    const report = new ReportGenerator(config, populatedSummary()).generate();
+    expect(
+      report.complianceSections.some(s => s.overlayId === "glba"),
+    ).toBe(true);
+  });
+
+  it("terminal output includes Financial Services overlay name", () => {
+    const config = loadConfig({
+      raw: { agent: { name: "fin-agent" }, my_agent_handles: ["financial_data"] },
+    });
+    const report = new ReportGenerator(config, populatedSummary()).generate();
+    const output = renderTerminal(report);
+    expect(output).toContain("Financial Services");
+  });
+});
