@@ -1,0 +1,185 @@
+name: TypeScript SDK Release
+
+# Artifact-bound release pipeline — the tarball produced in `build` is the
+# exact artifact verified in `verify` and published in `publish`.  No rebuild,
+# no repack between stages.
+#
+# Tag convention:  ts-v<semver>  (e.g. ts-v0.1.0)
+# This decouples TypeScript releases from Python releases (python uses py-v*).
+
+on:
+  push:
+    tags: ['ts-v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — build and verify but skip publish'
+        type: boolean
+        default: false
+
+# ────────────────────────────────────────────────────────────────
+# Job 1: BUILD
+#   Compile, test, pack once, hash, upload as workflow artifact.
+# ────────────────────────────────────────────────────────────────
+jobs:
+  build:
+    name: Build & pack tarball
+    runs-on: ubuntu-latest
+    outputs:
+      tarball: ${{ steps.pack.outputs.tarball }}
+      sha256: ${{ steps.hash.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Verify tag matches package.json version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#ts-v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+          echo "Version check passed: $PKG_VERSION"
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Pack tarball
+        id: pack
+        run: |
+          mkdir -p release-dist
+          npm pack --json --pack-destination release-dist > release-dist/pack.json
+          TARBALL=$(node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            const [{ filename }] = JSON.parse(readFileSync('release-dist/pack.json', 'utf8'));
+            console.log(filename);
+          ")
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          echo "Packed: $TARBALL"
+
+      - name: Compute SHA-256
+        id: hash
+        run: |
+          cd release-dist
+          sha256sum "${{ steps.pack.outputs.tarball }}" > SHA256SUMS
+          echo "sha256=$(sha256sum "${{ steps.pack.outputs.tarball }}" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "Checksum:"
+          cat SHA256SUMS
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-sdk-tarball
+          path: |
+            release-dist/*.tgz
+            release-dist/SHA256SUMS
+          retention-days: 30
+          if-no-files-found: error
+
+# ────────────────────────────────────────────────────────────────
+# Job 2: VERIFY
+#   Download the exact artifact, re-verify checksum, install from
+#   tarball (not from source), run full smoke suite + TS type check.
+# ────────────────────────────────────────────────────────────────
+  verify:
+    name: Verify artifact
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ts-sdk-tarball
+          path: ./release-dist
+
+      - name: Verify SHA-256 checksum
+        run: |
+          cd release-dist
+          sha256sum -c SHA256SUMS
+          echo "Checksum verified ✓"
+
+      - name: Run smoke tests (install from tarball)
+        run: |
+          TARBALL=$(ls release-dist/*.tgz)
+          bash typescript/scripts/smoke-test.sh "$TARBALL"
+
+      - name: TypeScript type-check against installed package
+        run: |
+          TARBALL=$(ls release-dist/*.tgz)
+          VERIFY_DIR=$(mktemp -d)
+          cd "$VERIFY_DIR"
+          npm init -y
+          npm install "$OLDPWD/$TARBALL"
+          npm install typescript@latest
+          # Verify type exports compile under strict mode
+          cat > check.ts <<'EOF'
+          import type { Engine, AncilisMiddleware, EvidenceStore, ReportGenerator } from 'ancilis';
+          import type { CLIActionProducer, HTTPActionProducer, ToolActionProducer } from 'ancilis';
+          import type { BaselineManager } from 'ancilis';
+          // If this file compiles, the .d.ts exports are correct
+          const _: [Engine, AncilisMiddleware, EvidenceStore, ReportGenerator, CLIActionProducer, HTTPActionProducer, ToolActionProducer, BaselineManager] = undefined as any;
+          EOF
+          npx tsc --noEmit --strict --moduleResolution node16 --module node16 check.ts
+          echo "TypeScript type check passed ✓"
+          cd -
+          rm -rf "$VERIFY_DIR"
+
+# ────────────────────────────────────────────────────────────────
+# Job 3: PUBLISH
+#   Downloads the verified artifact (never rebuilds), verifies
+#   checksum one final time, then publishes with SLSA provenance.
+#   Gated by the `npm-publish` GitHub environment (manual approval).
+# ────────────────────────────────────────────────────────────────
+  publish:
+    name: Publish to npm
+    needs: verify
+    if: >-
+      startsWith(github.ref, 'refs/tags/ts-v') &&
+      github.event.inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: npm-publish
+      url: https://www.npmjs.com/package/ancilis
+    permissions:
+      id-token: write   # Required for npm --provenance (SLSA attestation)
+      contents: read
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ts-sdk-tarball
+          path: ./release-dist
+
+      - name: Verify SHA-256 checksum (final gate)
+        run: |
+          cd release-dist
+          sha256sum -c SHA256SUMS
+          echo "Final checksum verified ✓  — publishing this exact artifact"
+
+      - name: Publish verified tarball
+        # CRITICAL: publish the artifact, never `npm publish .`
+        run: npm publish ./release-dist/*.tgz --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
