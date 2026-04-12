@@ -35,7 +35,10 @@ def _load_mappings() -> dict[str, str]:
     try:
         with open(_MAPPING_PATH) as f:
             data = json.load(f)
-        return data.get("mappings", {})
+        mappings = data.get("mappings", {})
+        if isinstance(mappings, dict):
+            return {str(k): str(v) for k, v in mappings.items()}
+        return {}
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Any
 
 from ancilis.dependencies.detector import Dependency
 
@@ -46,7 +47,7 @@ class CycloneDxBom:
     metadata: CycloneDxMetadata
     components: list[CycloneDxComponent] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dictionary."""
         return {
             "bomFormat": self.bom_format,

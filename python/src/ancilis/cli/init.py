@@ -134,11 +134,11 @@ def _prompt_framework_selection() -> str:
     click.echo("Select agent framework:")
     for i, fw in enumerate(choices, 1):
         click.echo(f"  {i}. {fw}")
-    return click.prompt(
+    return str(click.prompt(
         "Framework",
         default="generic",
         type=click.Choice(choices, case_sensitive=False),
-    )
+    ))
 
 
 def _prompt_overlay_selection() -> str:
@@ -146,7 +146,7 @@ def _prompt_overlay_selection() -> str:
     for i, ol in enumerate(_AVAILABLE_OVERLAYS, 1):
         click.echo(f"  {i:2d}. {ol}")
     click.echo("  [none] — skip overlay selection")
-    return click.prompt("Select overlay", default="soc2")
+    return str(click.prompt("Select overlay", default="soc2"))
 
 
 def _generate_env_example(target: Path) -> None:

@@ -17,9 +17,9 @@ if sys.version_info >= (3, 11):
     import tomllib
 else:
     try:
-        import tomllib  # type: ignore[import]
+        import tomllib
     except ImportError:
-        tomllib = None  # type: ignore[assignment]
+        tomllib = None
 
 
 @dataclass

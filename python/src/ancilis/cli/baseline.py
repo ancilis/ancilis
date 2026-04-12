@@ -4,14 +4,21 @@ from __future__ import annotations
 
 import json
 import sys
+from typing import TYPE_CHECKING
 
 import click
 
 from ancilis.config import load_config
 from ancilis.evidence.store import EvidenceStore
 
+if TYPE_CHECKING:
+    from ancilis.baselines.manager import BaselineManager
 
-def _make_manager(config_path: str | None, db_path: str | None):  # type: ignore[return]
+
+def _make_manager(
+    config_path: str | None,
+    db_path: str | None,
+) -> tuple[BaselineManager, EvidenceStore]:
     from ancilis.baselines.manager import BaselineManager
     from ancilis.config import ResolvedConfig
 
