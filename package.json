@@ -13,6 +13,10 @@
       "import": "./dist/ancilis/index.js",
       "types": "./dist/ancilis/index.d.ts"
     },
+    "./testing": {
+      "import": "./dist/ancilis/testing/index.js",
+      "types": "./dist/ancilis/testing/index.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "files": [

@@ -34,6 +34,19 @@ export type { ReportData, EvidenceSummary, RenderPdfOptions, RenderPdfResult } f
 export { BaselineManager } from "./baselines/index.js";
 export type { Baseline, ControlSnapshot, ControlDrift, DriftReport, DriftSummary, EvidenceDelta } from "./baselines/index.js";
 
+export { MockEvidenceStore, FakeProducer, ScanResult as ComplianceScanResult, ComplianceScenarios } from "./testing/index.js";
+export {
+  assertControlPasses,
+  assertControlFails,
+  assertControlFlags,
+  assertPostureAbove,
+  assertDecisionAllows,
+  assertDecisionBlocks,
+  makeTestConfig,
+  makeAction,
+} from "./testing/index.js";
+export type { MakeTestConfigOptions, MakeActionOptions } from "./testing/index.js";
+
 export { SarifImporter } from "./importers/sarif.js";
 export { CycloneDxImporter } from "./importers/cyclonedx.js";
 
