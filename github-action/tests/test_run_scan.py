@@ -197,6 +197,33 @@ def test_run_scan_parses_ci_json(monkeypatch: pytest.MonkeyPatch) -> None:
     assert result["controls"][1]["verdict"] == "FAIL"
 
 
+def test_run_scan_passes_overlay_to_cli(monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_proc = MagicMock()
+    mock_proc.returncode = 0
+    mock_proc.stdout = _SAMPLE_CI_JSON
+    mock_proc.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_proc) as mock_run:
+        run_scan_mod.run_scan("fedramp")
+
+    args = mock_run.call_args[0][0]
+    assert "--overlay" in args
+    assert "fedramp" in args
+
+
+def test_run_scan_no_overlay_omits_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    mock_proc = MagicMock()
+    mock_proc.returncode = 0
+    mock_proc.stdout = _SAMPLE_CI_JSON
+    mock_proc.stderr = ""
+
+    with patch("subprocess.run", return_value=mock_proc) as mock_run:
+        run_scan_mod.run_scan("")
+
+    args = mock_run.call_args[0][0]
+    assert "--overlay" not in args
+
+
 def test_run_scan_text_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     mock_proc = MagicMock()
     mock_proc.returncode = 1
