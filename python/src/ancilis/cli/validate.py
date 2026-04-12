@@ -6,6 +6,7 @@ import click
 import yaml  # type: ignore[import-untyped]
 
 from ancilis.config import VALID_CONTROL_IDS, load_config, load_taxonomy
+from ancilis.errors import ConfigError
 
 
 VALID_CERT_TARGETS = ["aiuc-1"]
@@ -19,7 +20,7 @@ def _validate_and_format(config_path: str | None) -> tuple[bool, str]:
         resolved = load_config(path=config_path) if config_path else load_config()
     except FileNotFoundError:
         return False, "\u2717 Config not found\n  No ancilis.yaml found in current directory.\n  Create one with: agent.name set to your agent's name."
-    except ValueError as e:
+    except (ValueError, ConfigError) as e:
         msg = str(e)
         lines.append("\u2717 Config invalid")
         lines.append(f"  {msg}")
