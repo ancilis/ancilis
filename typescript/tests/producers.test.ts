@@ -514,6 +514,28 @@ describe("ToolActionProducer", () => {
     expect((await store.getRecords())[0]?.toolName).toBe("tool:payments.refund");
   });
 
+  it("awaits async tool return values before returning execution results", async () => {
+    const config = makeConfig({ mode: "audit" });
+    const store = new EvidenceStore(config, { inMemory: true });
+    const producer = new ToolActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      store,
+    );
+
+    const result = await producer.execute(
+      async (paymentId: string): Promise<string> => `refunded:${paymentId}`,
+      "runtime-agent",
+      ["pay_123"],
+      undefined,
+      "tool:payments.refund_async",
+    );
+
+    expect(result.returnValue).toBe("refunded:pay_123");
+    expect(await store.count()).toBe(1);
+  });
+
   it("stores evidence before throwing for blocked tool execution", async () => {
     const config = makeConfig({ mode: "enforce", toolsBlocked: ["payments.refund"] });
     const store = new EvidenceStore(config, { inMemory: true });

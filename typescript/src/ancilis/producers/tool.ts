@@ -182,12 +182,12 @@ export class ToolActionProducer {
   }
 
   async execute<R = unknown>(
-    fn: (...args: unknown[]) => R,
+    fn: (...args: unknown[]) => R | Promise<R>,
     agentName: string,
     args?: unknown[],
     kwargs?: Record<string, unknown>,
     toolName?: string,
-  ): Promise<ToolExecutionResult<R>> {
+  ): Promise<ToolExecutionResult<Awaited<R>>> {
     const [action, evaluation] = await this.evaluate(fn as AnyFn, agentName, args, kwargs, toolName);
     if (evaluation.decision === "BLOCK") {
       throw new BlockedActionError(action.tool.name, evaluation);
@@ -196,17 +196,17 @@ export class ToolActionProducer {
     if (kwargs && Object.keys(kwargs).length > 0) {
       callArgs.push(kwargs);
     }
-    const returnValue = fn(...callArgs);
+    const returnValue = await fn(...callArgs);
     return { action, evaluation, blocked: false, returnValue };
   }
 
   wrapTool<R>(
-    fn: (...args: unknown[]) => R,
+    fn: (...args: unknown[]) => R | Promise<R>,
     agentName?: string,
     toolName?: string,
-  ): (...args: unknown[]) => Promise<R> {
+  ): (...args: unknown[]) => Promise<Awaited<R>> {
     const self = this;
-    return async (...args: unknown[]): Promise<R> => {
+    return async (...args: unknown[]): Promise<Awaited<R>> => {
       const resolvedAgent = agentName ?? self._config.agentName;
       const result = await self.execute(fn, resolvedAgent, args, undefined, toolName);
       return result.returnValue;
@@ -215,21 +215,21 @@ export class ToolActionProducer {
 }
 
 export function wrapTool<R>(
-  fn: (...args: unknown[]) => R,
+  fn: (...args: unknown[]) => R | Promise<R>,
   options: ToolWrapOptions,
-): (...args: unknown[]) => Promise<R> {
+): (...args: unknown[]) => Promise<Awaited<R>> {
   return options.producer.wrapTool(fn, options.agentName, options.toolName);
 }
 
 export function tool<R>(
   options: ToolWrapOptions,
-): (fn: (...args: unknown[]) => R) => (...args: unknown[]) => Promise<R> {
+): (fn: (...args: unknown[]) => R | Promise<R>) => (...args: unknown[]) => Promise<Awaited<R>> {
   return (fn) => options.producer.wrapTool(fn, options.agentName, options.toolName);
 }
 
 export function evaluateAndExecute<R>(
-  fn: (...args: unknown[]) => R,
+  fn: (...args: unknown[]) => R | Promise<R>,
   options: EvaluateAndExecuteOptions,
-): Promise<ToolExecutionResult<R>> {
+): Promise<ToolExecutionResult<Awaited<R>>> {
   return options.producer.execute(fn, options.agentName, options.args, options.kwargs, options.toolName);
 }
