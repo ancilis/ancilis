@@ -58,7 +58,7 @@ class BaselineManager:
         conn.execute(_CREATE_BASELINES_IDX_AGENT_ACTIVE)
         conn.execute(_CREATE_BASELINES_IDX_AGENT_OVERLAY)
 
-    def _conn(self):  # type: ignore[return]
+    def _conn(self) -> Any:
         return self._store._connection
 
     def _agent_id(self) -> str:

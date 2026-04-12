@@ -43,7 +43,7 @@ def _pass_rate(stats: dict[str, Any]) -> float:
     total = stats["total"]
     if total == 0:
         return 1.0
-    return stats["pass"] / total
+    return float(stats["pass"]) / float(total)
 
 
 def _dominant_result(stats: dict[str, Any]) -> str:

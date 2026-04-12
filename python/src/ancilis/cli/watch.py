@@ -6,7 +6,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from ancilis.config import ResolvedConfig, load_control_definitions
 from ancilis.deps.scanner import DependencyScanner
@@ -14,13 +14,22 @@ from ancilis.evidence.store import EvidenceStore
 from ancilis.ignore import IgnoreFilter
 
 try:
-    from watchdog.events import FileSystemEvent, FileSystemEventHandler
-    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEvent, FileSystemEventHandler as _FileSystemEventHandler
+    from watchdog.observers import Observer as _Observer
 except ImportError as e:
     raise ImportError(
         "watchdog is required for watch mode. "
         "Install it with: pip install ancilis[watch]"
     ) from e
+
+Observer = cast(Any, _Observer)
+
+if TYPE_CHECKING:
+    class _FileSystemEventHandlerBase:
+        def __init__(self) -> None:
+            pass
+else:
+    _FileSystemEventHandlerBase = _FileSystemEventHandler
 
 # Dependency manifest filenames — changes here trigger a dep re-scan
 _DEP_MANIFEST_NAMES = frozenset({
@@ -118,7 +127,7 @@ def _run_evaluation(
     return control_results, posture, total_evaluations
 
 
-class _DebounceHandler(FileSystemEventHandler):
+class _DebounceHandler(_FileSystemEventHandlerBase):
     """Collects filesystem events; caller drains them after debounce window."""
 
     def __init__(self, ignore_filter: IgnoreFilter, project_root: Path) -> None:

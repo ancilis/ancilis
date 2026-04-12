@@ -6,6 +6,7 @@ import json
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
+from typing import Any
 
 from ancilis.deps.manifest import Dependency
 
@@ -34,7 +35,7 @@ def _cvss_to_severity(score: float) -> str:
     return "LOW"
 
 
-def _extract_severity(vuln_data: dict) -> str:
+def _extract_severity(vuln_data: dict[str, Any]) -> str:
     """Map OSV vulnerability data to a severity string."""
     for sev in vuln_data.get("severity", []):
         score_type = sev.get("type", "")
@@ -44,15 +45,16 @@ def _extract_severity(vuln_data: dict) -> str:
                 return _cvss_to_severity(float(score_str))
             except ValueError:
                 pass
-    db_sev = vuln_data.get("database_specific", {}).get("severity", "")
-    if db_sev:
+    db_specific = vuln_data.get("database_specific", {})
+    db_sev = db_specific.get("severity", "") if isinstance(db_specific, dict) else ""
+    if isinstance(db_sev, str) and db_sev:
         upper = db_sev.upper()
         if upper in ("CRITICAL", "HIGH", "MEDIUM", "LOW"):
             return upper
     return "LOW"
 
 
-def _extract_fixed_version(vuln_data: dict, pkg_name: str) -> str | None:
+def _extract_fixed_version(vuln_data: dict[str, Any], pkg_name: str) -> str | None:
     """Return the earliest fixed version from affected ranges, or None."""
     for affected in vuln_data.get("affected", []):
         if affected.get("package", {}).get("name", "").lower() != pkg_name.lower():
@@ -60,12 +62,12 @@ def _extract_fixed_version(vuln_data: dict, pkg_name: str) -> str | None:
         for rng in affected.get("ranges", []):
             for event in rng.get("events", []):
                 fixed = event.get("fixed")
-                if fixed:
+                if isinstance(fixed, str) and fixed:
                     return fixed
     return None
 
 
-def _affected_summary(vuln_data: dict) -> str:
+def _affected_summary(vuln_data: dict[str, Any]) -> str:
     """Build a concise affected-versions string (max 3 ranges)."""
     parts: list[str] = []
     for affected in vuln_data.get("affected", []):
