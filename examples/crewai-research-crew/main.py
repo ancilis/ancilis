@@ -17,10 +17,16 @@ from pathlib import Path
 
 from ancilis import ToolActionProducer, load_config
 from ancilis.engine import Engine
-from ancilis.evidence.store import EvidenceStore
+from ancilis.evidence.store import EvidenceStore, _agent_db_path
 
 # --- Shared Ancilis setup ---
 config = load_config(path=Path(__file__).parent / "ancilis.yaml")
+
+# Reset evidence for a clean demo run each time main.py is executed
+_db_path = _agent_db_path(config.agent_name)
+if _db_path.exists():
+    _db_path.unlink()
+
 engine = Engine(config)
 evidence = EvidenceStore(config)
 producer = ToolActionProducer(config=config, engine=engine, evidence_store=evidence)
@@ -28,6 +34,7 @@ producer = ToolActionProducer(config=config, engine=engine, evidence_store=evide
 print(f"Crew: {config.agent_name}")
 print(f"Mode: {config.mode}")
 print(f"SOC 2 overlay: {'soc2' in (config.active_overlays or {})}")
+print(f"AIUC-1 active: {'aiuc-1' in (config.active_certifications or [])}")
 print()
 
 
