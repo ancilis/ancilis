@@ -20,7 +20,7 @@
     "GOV-01": {
       "applicable": true,
       "evidence_requirements": [
-        "Formal security management process implemented \u2014 policies and procedures to prevent, detect, contain, and correct security violations (164.308(a)(1))",
+        "Formal security management process implemented — policies and procedures to prevent, detect, contain, and correct security violations (164.308(a)(1))",
         "Privacy and Security Officer assigned with defined responsibilities (164.308(a)(2))",
         "Security policies reviewed and updated periodically"
       ],
@@ -30,7 +30,7 @@
     "GOV-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Workforce security procedures implemented \u2014 authorization, supervision, termination (164.308(a)(3))",
+        "Workforce security procedures implemented — authorization, supervision, termination (164.308(a)(3))",
         "Security awareness and training program for all workforce members (164.308(a)(5))",
         "Sanctions policy for workforce members who fail to comply with security policies (164.308(a)(1)(ii)(C))"
       ],
@@ -40,7 +40,7 @@
     "GOV-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Risk analysis conducted \u2014 accurate and thorough assessment of potential risks and vulnerabilities to ePHI (164.308(a)(1)(ii)(A))",
+        "Risk analysis conducted — accurate and thorough assessment of potential risks and vulnerabilities to ePHI (164.308(a)(1)(ii)(A))",
         "Risk management process implemented to reduce risks to a reasonable and appropriate level (164.308(a)(1)(ii)(B))",
         "Risk analysis updated when environment or operations changes"
       ],
@@ -79,7 +79,7 @@
     "ID-03": {
       "applicable": true,
       "evidence_requirements": [
-        "ePHI identified and classified within systems \u2014 data classification maintained (164.308(a)(1)(ii)(A))",
+        "ePHI identified and classified within systems — data classification maintained (164.308(a)(1)(ii)(A))",
         "Retention policy for ePHI documentation (state laws may require longer than 6 years from creation or last effective date)",
         "Media disposal and re-use procedures ensure ePHI not accessible after disposal (164.310(d)(2))"
       ],
@@ -99,7 +99,7 @@
     "ID-05": {
       "applicable": true,
       "evidence_requirements": [
-        "Workforce clearance procedure \u2014 authorization process for access to ePHI based on job function (164.308(a)(3)(ii)(B))",
+        "Workforce clearance procedure — authorization process for access to ePHI based on job function (164.308(a)(3)(ii)(B))",
         "Termination procedures include immediate revocation of ePHI access (164.308(a)(3)(ii)(C))",
         "Access rights reviewed when workforce members change roles"
       ],
@@ -116,20 +116,20 @@
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "HIPAA 164.312(d) mandates person or entity authentication \u2014 all access to ePHI must be authenticated"
+        "reason": "HIPAA 164.312(d) mandates person or entity authentication — all access to ePHI must be authenticated"
       },
       "framework_reference": "164.312(a), 164.312(d)"
     },
     "PR-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Minimum necessary standard applied \u2014 access limited to what is reasonably necessary to accomplish intended purpose (164.502(b))",
+        "Minimum necessary standard applied — access limited to what is reasonably necessary to accomplish intended purpose (164.502(b))",
         "Policies identifying persons or classes of persons who need ePHI access and minimum necessary amount (164.514(d)(2))",
         "Role-based access controls enforce minimum necessary in automated systems"
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "HIPAA 164.502(b) minimum necessary standard \u2014 scope violations involving ePHI require strict enforcement"
+        "reason": "HIPAA 164.502(b) minimum necessary standard — scope violations involving ePHI require strict enforcement"
       },
       "framework_reference": "164.502(b), 164.514(d)"
     },
@@ -138,7 +138,7 @@
       "evidence_requirements": [
         "Electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized manner (164.312(c)(1))",
         "Error correction mechanism for ePHI integrity (addressable) (164.312(c)(2))",
-        "Data provenance tracked \u2014 source and handling history of ePHI documented"
+        "Data provenance tracked — source and handling history of ePHI documented"
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.312(c)"
@@ -147,12 +147,12 @@
       "applicable": true,
       "evidence_requirements": [
         "Technical security measures to guard against unauthorized access to ePHI transmitted over electronic communications networks (164.312(e)(1))",
-        "Encryption of ePHI in transit (addressable) \u2014 must encrypt whenever deemed reasonable and appropriate (164.312(e)(2)(ii))",
+        "Encryption of ePHI in transit (addressable) — must encrypt whenever deemed reasonable and appropriate (164.312(e)(2)(ii))",
         "Integrity controls to ensure ePHI is not improperly modified during transmission (164.312(e)(2)(i))"
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "HIPAA 164.312(e) transmission security \u2014 ePHI transmitted over networks must be protected from interception"
+        "reason": "HIPAA 164.312(e) transmission security — ePHI transmitted over networks must be protected from interception"
       },
       "framework_reference": "164.312(e)(1), 164.312(e)(2)"
     },
@@ -165,37 +165,41 @@
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "HIPAA 164.312(b) audit controls \u2014 activity in ePHI systems must be recorded and reviewable"
+        "reason": "HIPAA 164.312(b) audit controls — activity in ePHI systems must be recorded and reviewable"
       },
       "framework_reference": "164.312(b), 164.316(b)(2)"
     },
     "PR-06": {
       "applicable": true,
       "evidence_requirements": [
-        "Facility access controls to limit physical access to electronic information systems containing ePHI (164.310(a))",
-        "Physical access policies \u2014 facility security plan, access control and validation, maintenance records (164.310(a)(2))",
-        "Physical safeguards for workstations used to access ePHI (164.310(c))"
+        "Security measures implemented to reduce risks to ePHI to a reasonable and appropriate level — configuration baseline is part of that risk reduction (164.308(a)(1)(ii)(B))",
+        "Integrity controls implemented — electronic mechanisms corroborate that agent configuration, loaded tool set, and active policy bindings have not been altered or destroyed in an unauthorized manner (164.312(c)(1))",
+        "Audit logs of configuration changes — records of who changed agent configuration and when, reviewable under information system activity review (164.308(a)(1)(ii)(D))",
+        "Malicious software protection in place — configuration-tampering malware detected and reported (164.308(a)(5)(ii)(B))",
+        "Note: HIPAA has no specific 'configuration integrity' standard; 164.308(a)(1)(ii)(B) and 164.312(c)(1) are the closest applicable provisions for agent runtime configuration verification"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "164.310(a), 164.310(b)"
+      "framework_reference": "164.308(a)(1)(ii)(B), 164.312(c)(1)"
     },
     "PR-07": {
       "applicable": true,
       "evidence_requirements": [
-        "Workstation use policies specify proper functions, manner of use, and physical surroundings (164.310(b))",
-        "Workstation security measures to restrict access to authorized users and deter casual unauthorized viewing (164.310(c))",
-        "Remote access to ePHI systems requires appropriate safeguards"
+        "Transmission security implemented — technical security measures guard against unauthorized access to ePHI transmitted over electronic communications networks (164.312(e)(1))",
+        "Encryption of ePHI in transit (addressable) — mechanism to encrypt ePHI whenever reasonable and appropriate, including agent-to-API, agent-to-MCP-server, and agent-to-data-store channels (164.312(e)(2)(ii))",
+        "Integrity controls for ePHI in transit (addressable) — mechanisms to corroborate ePHI has not been altered without detection while in transit (164.312(e)(2)(i))",
+        "TLS/mTLS configuration records — documentation of cipher suites, certificate management, and encryption enforcement for all channels carrying ePHI",
+        "Note: HIPAA 164.312(e)(2)(ii) marks encryption as 'addressable' not 'required' — covered entities must implement or document why encryption is not reasonable and appropriate"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "164.310(b), 164.310(c)"
+      "framework_reference": "164.312(e)(1), 164.312(e)(2)(ii)"
     },
     "PR-08": {
       "applicable": true,
       "evidence_requirements": [
-        "Electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized manner \u2014 integrity controls implemented (164.312(c)(1))",
-        "Input validation procedures in place for all systems receiving or processing ePHI \u2014 malformed or malicious inputs rejected before reaching ePHI stores (164.312(c)(1))",
-        "Error correction capability for ePHI integrity (addressable) \u2014 procedures to detect and correct data corruption (164.312(c)(2))",
-        "Audit of injection and manipulation attempts against ePHI systems \u2014 logs reviewed for unauthorized input patterns (164.312(b))"
+        "Electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized manner — integrity controls implemented (164.312(c)(1))",
+        "Input validation procedures in place for all systems receiving or processing ePHI — malformed or malicious inputs rejected before reaching ePHI stores (164.312(c)(1))",
+        "Error correction capability for ePHI integrity (addressable) — procedures to detect and correct data corruption (164.312(c)(2))",
+        "Audit of injection and manipulation attempts against ePHI systems — logs reviewed for unauthorized input patterns (164.312(b))"
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.312(c)(1), 164.312(c)(2)"
@@ -205,7 +209,7 @@
       "evidence_requirements": [
         "Security incident procedures to address suspected or known security incidents (164.308(a)(6))",
         "Identification and response capability for security incidents affecting ePHI",
-        "Malicious software protection \u2014 protection from and reporting procedures for malicious software (164.308(a)(5)(ii)(B))"
+        "Malicious software protection — protection from and reporting procedures for malicious software (164.308(a)(5)(ii)(B))"
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.308(a)(5)(ii)(B), 164.308(a)(6)"
@@ -213,8 +217,8 @@
     "DE-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Information system activity review \u2014 regular review of audit logs, access reports, and security incident tracking (164.308(a)(1)(ii)(D))",
-        "Log-in monitoring \u2014 procedures to monitor log-in attempts and report discrepancies (164.308(a)(5)(ii)(C))",
+        "Information system activity review — regular review of audit logs, access reports, and security incident tracking (164.308(a)(1)(ii)(D))",
+        "Log-in monitoring — procedures to monitor log-in attempts and report discrepancies (164.308(a)(5)(ii)(C))",
         "Evaluation to determine extent to which current security policies and procedures meet requirements (164.308(a)(8))"
       ],
       "threshold_adjustments": {},
@@ -223,9 +227,9 @@
     "DE-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Anomalous access pattern detection \u2014 unusual ePHI access volumes, after-hours access, access from unexpected locations",
+        "Anomalous access pattern detection — unusual ePHI access volumes, after-hours access, access from unexpected locations",
         "Malicious software protection including detection and containment procedures (164.308(a)(5)(ii)(B))",
-        "Password management procedures \u2014 creation, change, and safeguarding of passwords (164.308(a)(5)(ii)(D))"
+        "Password management procedures — creation, change, and safeguarding of passwords (164.308(a)(5)(ii)(D))"
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.308(a)(5)"
@@ -233,8 +237,8 @@
     "DE-04": {
       "applicable": true,
       "evidence_requirements": [
-        "Audit log integrity maintained \u2014 logs cannot be altered or deleted by unauthorized persons",
-        "Vulnerability management for systems containing ePHI \u2014 patches applied in timely manner",
+        "Audit log integrity maintained — logs cannot be altered or deleted by unauthorized persons",
+        "Vulnerability management for systems containing ePHI — patches applied in timely manner",
         "Penetration testing and security assessments performed as part of risk analysis (164.308(a)(1)(ii)(A))"
       ],
       "threshold_adjustments": {},
@@ -243,8 +247,8 @@
     "RS-01": {
       "applicable": true,
       "evidence_requirements": [
-        "Security incident response procedures \u2014 response and reporting procedures for suspected and known security incidents (164.308(a)(6)(ii))",
-        "Incident documentation \u2014 actions taken, outcomes, and lessons learned",
+        "Security incident response procedures — response and reporting procedures for suspected and known security incidents (164.308(a)(6)(ii))",
+        "Incident documentation — actions taken, outcomes, and lessons learned",
         "Workforce trained on incident identification and reporting procedures"
       ],
       "threshold_adjustments": {},
@@ -263,9 +267,9 @@
     "RS-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Breach notification rule compliance \u2014 breach of unsecured ePHI reported to affected individuals within 60 days of discovery (164.404)",
-        "Breach notification to HHS Secretary \u2014 breaches affecting 500+ individuals reported to HHS (164.408)",
-        "Breach risk assessment \u2014 four-factor test to determine if PHI compromise has occurred (164.402)"
+        "Breach notification rule compliance — breach of unsecured ePHI reported to affected individuals within 60 days of discovery (164.404)",
+        "Breach notification to HHS Secretary — breaches affecting 500+ individuals reported to HHS (164.408)",
+        "Breach risk assessment — four-factor test to determine if PHI compromise has occurred (164.402)"
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.402, 164.404, 164.408, 164.414"
@@ -273,9 +277,9 @@
     "RC-01": {
       "applicable": true,
       "evidence_requirements": [
-        "Contingency plan \u2014 data backup, disaster recovery, emergency mode, and testing/revision procedures (164.308(a)(7))",
-        "Applications and data criticality analysis \u2014 prioritization of ePHI systems for recovery (164.308(a)(7)(ii)(E))",
-        "Emergency mode operation plan \u2014 procedures for continued ePHI access during emergencies (164.308(a)(7)(ii)(C))"
+        "Contingency plan — data backup, disaster recovery, emergency mode, and testing/revision procedures (164.308(a)(7))",
+        "Applications and data criticality analysis — prioritization of ePHI systems for recovery (164.308(a)(7)(ii)(E))",
+        "Emergency mode operation plan — procedures for continued ePHI access during emergencies (164.308(a)(7)(ii)(C))"
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.308(a)(7)"
@@ -283,8 +287,8 @@
     "RC-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Data backup plan \u2014 exact retrievable copy of ePHI created before movement of equipment (164.308(a)(7)(ii)(A))",
-        "Disaster recovery plan \u2014 procedures to restore lost data and resume operations (164.308(a)(7)(ii)(B))",
+        "Data backup plan — exact retrievable copy of ePHI created before movement of equipment (164.308(a)(7)(ii)(A))",
+        "Disaster recovery plan — procedures to restore lost data and resume operations (164.308(a)(7)(ii)(B))",
         "Backup and recovery procedures tested at defined intervals"
       ],
       "threshold_adjustments": {},

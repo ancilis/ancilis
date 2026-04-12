@@ -1,7 +1,7 @@
 {
   "id": "eu-ai-act",
   "name": "EU AI Act",
-  "version": "0.3",
+  "version": "0.4",
   "trigger_type": "data_classification",
   "triggered_by": [
     "DC-AI",
@@ -16,15 +16,18 @@
       "applicable": true,
       "evidence_requirements": [
         "Risk management system established and maintained throughout AI system lifecycle (Art.9.1)",
-        "Quality management system ensuring compliance with AI Act requirements (Art.17)"
+        "Quality management system ensuring compliance with AI Act requirements (Art.17)",
+        "GPAI model technical documentation prepared per Annex XI — model architecture, training methodology, training data summary (Art.53(1)(a))",
+        "GPAI training data policy summary maintained including measures for copyright compliance (Art.53(1)(b))",
+        "GPAI model card or equivalent publicly available — provider identity, model capabilities and limitations (Art.53(2))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "Art.9, Art.17"
+      "framework_reference": "Art.9, Art.17, Art.53"
     },
     "GOV-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Deployer obligations documented \u2014 monitoring, human oversight, and reporting responsibilities assigned (Art.26)",
+        "Deployer obligations documented — monitoring, human oversight, and reporting responsibilities assigned (Art.26)",
         "Provider and deployer responsibilities clearly delineated"
       ],
       "threshold_adjustments": {},
@@ -34,10 +37,13 @@
       "applicable": true,
       "evidence_requirements": [
         "Risk management system identifies and analyzes known and foreseeable risks (Art.9.2)",
-        "Residual risks communicated to deployers with appropriate mitigation measures (Art.9.3)"
+        "Residual risks communicated to deployers with appropriate mitigation measures (Art.9.3)",
+        "GPAI systemic risk assessment performed if model trained with >10^25 FLOPs or designated by Commission (Art.55(1)(a))",
+        "Adversarial testing (red-teaming) conducted to identify and mitigate systemic risks — internal or trusted third-party (Art.55(1)(b)+(c))",
+        "Incident and corrective action tracking established for GPAI models with systemic risk (Art.55(1)(d))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "Art.9.2, Art.9.3"
+      "framework_reference": "Art.9.2, Art.9.3, Art.55"
     },
     "GOV-04": {
       "applicable": true,
@@ -49,7 +55,7 @@
       ],
       "threshold_adjustments": {
         "threshold": "strict",
-        "reason": "Art.14 mandates human oversight for high-risk AI systems \u2014 human overseers must be able to understand, interpret, and override"
+        "reason": "Art.14 mandates human oversight for high-risk AI systems — human overseers must be able to understand, interpret, and override"
       },
       "framework_reference": "Art.14"
     },
@@ -76,10 +82,12 @@
       "evidence_requirements": [
         "Training, validation, and testing datasets documented with data governance measures (Art.10)",
         "Data quality criteria defined and verified (Art.10.2)",
-        "Bias examination and mitigation measures documented (Art.10.2f)"
+        "Bias examination and mitigation measures documented (Art.10.2f)",
+        "GPAI training data documentation: types of data used, sourcing methodology, and data filtering criteria (Art.53(1)(c))",
+        "Copyright opt-out reservation honored in training data selection per Directive 2019/790 Art.4(3) (Art.53(1)(b))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "Art.10"
+      "framework_reference": "Art.10, Art.53(1)(b)+(c)"
     },
     "ID-04": {
       "applicable": true,
@@ -95,7 +103,7 @@
       "evidence_requirements": [
         "Risk assessment identifying known and foreseeable risks of AI system (Art.9.2)",
         "Risk classification determination documented (Art.6, Art.7)",
-        "Note: Risk classification is an operator determination \u2014 Ancilis provides evidence but cannot classify risk level for the operator"
+        "Note: Risk classification is an operator determination — Ancilis provides evidence but cannot classify risk level for the operator"
       ],
       "threshold_adjustments": {},
       "framework_reference": "Art.6, Art.7, Art.9.2"
@@ -213,7 +221,7 @@
     "DE-04": {
       "applicable": true,
       "evidence_requirements": [
-        "Log integrity verified \u2014 automatic logging records not tampered with (Art.12)",
+        "Log integrity verified — automatic logging records not tampered with (Art.12)",
         "Traceability of AI system operation maintained"
       ],
       "threshold_adjustments": {},
@@ -241,10 +249,12 @@
       "applicable": true,
       "evidence_requirements": [
         "Serious incident evidence preserved and reported to market surveillance authorities (Art.73)",
-        "Technical documentation available for inspection (Art.18)"
+        "Technical documentation available for inspection (Art.18)",
+        "Serious incidents involving GPAI models with systemic risk reported to the AI Office (Art.55(1)(b)) — distinct from Art.73 reporting to national market surveillance authorities for high-risk AI systems",
+        "Corrective measures adopted and communicated to AI Office and downstream providers/deployers affected by GPAI incident (Art.55(1)(c))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "Art.18, Art.73"
+      "framework_reference": "Art.18, Art.73, Art.55(1)(b)"
     },
     "RC-01": {
       "applicable": true,
@@ -281,7 +291,7 @@
         "ai_system_id",
         "risk_classification"
       ],
-      "regulatory_citation": "EU AI Act Art.16, Art.50 \u2014 Provider obligations and transparency"
+      "regulatory_citation": "EU AI Act Art.16, Art.50 — Provider obligations and transparency"
     },
     "PR-05": {
       "threshold_adjustment": "strict",
@@ -290,7 +300,7 @@
         "human_oversight_status",
         "risk_level"
       ],
-      "regulatory_citation": "EU AI Act Art.12 \u2014 Automatic record-keeping"
+      "regulatory_citation": "EU AI Act Art.12 — Automatic record-keeping"
     },
     "DE-01": {
       "threshold_adjustment": "strict",
@@ -299,7 +309,7 @@
         "drift_indicators",
         "bias_indicators"
       ],
-      "regulatory_citation": "EU AI Act Art.9.2, Art.72 \u2014 Risk management and post-market monitoring"
+      "regulatory_citation": "EU AI Act Art.9.2, Art.72 — Risk management and post-market monitoring"
     },
     "GOV-04": {
       "threshold_adjustment": "strict",
@@ -307,7 +317,7 @@
         "human_oversight_mode",
         "override_capability_verified"
       ],
-      "regulatory_citation": "EU AI Act Art.14 \u2014 Human oversight for high-risk AI systems"
+      "regulatory_citation": "EU AI Act Art.14 — Human oversight for high-risk AI systems"
     }
   },
   "evidence_requirements": {
@@ -427,5 +437,5 @@
   },
   "evidence_retention_minimum_days": 3650,
   "human_oversight_required": true,
-  "notes": "EU AI Act is the first regulation directly governing AI agent behavior. Enforcement phases: prohibited AI practices (Feb 2025), GPAI model obligations (Aug 2025), high-risk AI system obligations (Aug 2026). This overlay enforces strict monitoring, logging, and human oversight. Risk classification is an operator determination \u2014 Ancilis provides the evidence package but cannot classify risk level for the operator."
+  "notes": "EU AI Act is the first regulation directly governing AI agent behavior. Enforcement phases: prohibited AI practices (Feb 2025), GPAI model obligations (Aug 2025), high-risk AI system obligations (Aug 2026). This overlay enforces strict monitoring, logging, and human oversight. Risk classification is an operator determination — Ancilis provides the evidence package but cannot classify risk level for the operator."
 }
