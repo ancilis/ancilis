@@ -25,7 +25,14 @@
         "Access review evidence shows dormant, orphaned, or over-privileged identities are removed before continued CUI access"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 AC.L2-3.1.1, AC.L2-3.1.2, IA.L2-3.5.1, IA.L2-3.5.2; NIST SP 800-171 Rev. 3 03.01.01, 03.01.02, 03.05.01, 03.05.02, 03.05.03"
+      "framework_reference": "CMMC Level 2 AC.L2-3.1.1, AC.L2-3.1.2, IA.L2-3.5.1, IA.L2-3.5.2; NIST SP 800-171 Rev. 3 03.01.01, 03.01.02, 03.05.01, 03.05.02, 03.05.03",
+      "regulatory_mappings": {
+        "cmmc": [
+          "AC.L2-3.1.1",
+          "IA.L2-3.5.1",
+          "IA.L2-3.5.2"
+        ]
+      }
     },
     "PR-02": {
       "applicable": true,
@@ -35,7 +42,14 @@
         "Boundary and session restrictions prevent unauthorized transactions, functions, or external system use in CUI workflows"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 AC.L2-3.1.3, AC.L2-3.1.5, AC.L2-3.1.7, AC.L2-3.1.20; NIST SP 800-171 Rev. 3 03.01.03, 03.01.05, 03.01.07, 03.01.12"
+      "framework_reference": "CMMC Level 2 AC.L2-3.1.3, AC.L2-3.1.5, AC.L2-3.1.7, AC.L2-3.1.20; NIST SP 800-171 Rev. 3 03.01.03, 03.01.05, 03.01.07, 03.01.12",
+      "regulatory_mappings": {
+        "cmmc": [
+          "AC.L2-3.1.3",
+          "AC.L2-3.1.5",
+          "AC.L2-3.1.7"
+        ]
+      }
     },
     "PR-03": {
       "applicable": true,
@@ -45,7 +59,15 @@
         "Unauthorized software, configuration drift, and unapproved component changes are detected and remediated before production use"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.2, CM.L2-3.4.3, CM.L2-3.4.4; NIST SP 800-171 Rev. 3 03.04.01, 03.04.02, 03.04.03, 03.04.04"
+      "framework_reference": "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.2, CM.L2-3.4.3, CM.L2-3.4.4; NIST SP 800-171 Rev. 3 03.04.01, 03.04.02, 03.04.03, 03.04.04",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CM.L2-3.4.1",
+          "CM.L2-3.4.2",
+          "CM.L2-3.4.3",
+          "CM.L2-3.4.4"
+        ]
+      }
     },
     "PR-04": {
       "applicable": true,
@@ -55,7 +77,15 @@
         "Media handling and export controls document how CUI is labeled, transmitted, retained, and sanitized across agent workflows"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 SC.L2-3.13.8, SC.L2-3.13.11, MP.L2-3.8.1, MP.L2-3.8.2; NIST SP 800-171 Rev. 3 03.13.08, 03.13.11, 03.08.01, 03.08.02"
+      "framework_reference": "CMMC Level 2 SC.L2-3.13.8, SC.L2-3.13.11, MP.L2-3.8.1, MP.L2-3.8.2; NIST SP 800-171 Rev. 3 03.13.08, 03.13.11, 03.08.01, 03.08.02",
+      "regulatory_mappings": {
+        "cmmc": [
+          "SC.L2-3.13.8",
+          "SC.L2-3.13.11",
+          "MP.L2-3.8.1",
+          "MP.L2-3.8.2"
+        ]
+      }
     },
     "PR-05": {
       "applicable": true,
@@ -65,7 +95,15 @@
         "Log review procedures show anomalies, failed access attempts, and administrative changes are investigated and retained for assessment"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 AU.L2-3.3.1, AU.L2-3.3.2, AU.L2-3.3.8, AU.L2-3.3.9; NIST SP 800-171 Rev. 3 03.03.01, 03.03.02, 03.03.08, 03.03.09"
+      "framework_reference": "CMMC Level 2 AU.L2-3.3.1, AU.L2-3.3.2, AU.L2-3.3.8, AU.L2-3.3.9; NIST SP 800-171 Rev. 3 03.03.01, 03.03.02, 03.03.08, 03.03.09",
+      "regulatory_mappings": {
+        "cmmc": [
+          "AU.L2-3.3.1",
+          "AU.L2-3.3.2",
+          "AU.L2-3.3.8",
+          "AU.L2-3.3.9"
+        ]
+      }
     },
     "DE-01": {
       "applicable": true,
@@ -75,7 +113,15 @@
         "Incident response exercises and post-incident records demonstrate lessons learned and follow-through on corrective actions"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, IR.L2-3.6.3, SI.L2-3.14.6; NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06"
+      "framework_reference": "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, IR.L2-3.6.3, SI.L2-3.14.6; NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06",
+      "regulatory_mappings": {
+        "cmmc": [
+          "IR.L2-3.6.1",
+          "IR.L2-3.6.2",
+          "IR.L2-3.6.3",
+          "SI.L2-3.14.6"
+        ]
+      }
     },
     "GOV-01": {
       "applicable": true,
@@ -85,7 +131,12 @@
         "SSP scope includes AI agent components, automated workflows, and their CUI data flows with documented safeguard rationale"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.1; NIST SP 800-171 Rev. 3 03.12.01, 03.12.03"
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.1; NIST SP 800-171 Rev. 3 03.12.01, 03.12.03",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CA.L2-3.12.1"
+        ]
+      }
     },
     "GOV-02": {
       "applicable": true,
@@ -95,7 +146,12 @@
         "Personnel handling CUI have signed security agreements and completed role-specific CUI handling training per PS.L2-3.9.1 / 03.09.01"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.2, PS.L2-3.9.1; NIST SP 800-171 Rev. 3 03.12.02, 03.12.05, 03.09.01"
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.2, PS.L2-3.9.1; NIST SP 800-171 Rev. 3 03.12.02, 03.12.05, 03.09.01",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CA.L2-3.12.2"
+        ]
+      }
     },
     "GOV-03": {
       "applicable": true,
@@ -105,7 +161,13 @@
         "Risk assessment outputs used to update SSP safeguards and prioritize POA&M items; documented linkage between risk findings and control decisions"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 RA.L2-3.11.1, RA.L2-3.11.2; NIST SP 800-171 Rev. 3 03.11.01, 03.11.02"
+      "framework_reference": "CMMC Level 2 RA.L2-3.11.1, RA.L2-3.11.2; NIST SP 800-171 Rev. 3 03.11.01, 03.11.02",
+      "regulatory_mappings": {
+        "cmmc": [
+          "RA.L2-3.11.1",
+          "RA.L2-3.11.2"
+        ]
+      }
     },
     "GOV-04": {
       "applicable": true,
@@ -115,7 +177,11 @@
         "Designated security oversight role documented in SSP with responsibility for monitoring automated system behavior in CUI environments per 03.15.02"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.3; NIST SP 800-171 Rev. 3 03.12.03, 03.12.04, 03.15.02"
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.3; NIST SP 800-171 Rev. 3 03.12.03, 03.12.04, 03.15.02",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "No dedicated CMMC L2 practice for human oversight mandate; governance documentation expectation addressed closest by CA.L2-3.12.3 (plans of action). NIST SP 800-171 Rev 3 03.15.02, 03.15.03 added post-CMMC L2 finalization."
+      }
     },
     "ID-01": {
       "applicable": true,
@@ -125,7 +191,13 @@
         "Inventory updated when components are added, changed, or decommissioned; AI agent components (models, tools, integrations) explicitly enumerated"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.7; NIST SP 800-171 Rev. 3 03.04.01, 03.04.10"
+      "framework_reference": "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.7; NIST SP 800-171 Rev. 3 03.04.01, 03.04.10",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CM.L2-3.4.1",
+          "CM.L2-3.4.7"
+        ]
+      }
     },
     "ID-02": {
       "applicable": true,
@@ -135,7 +207,13 @@
         "Firewall or boundary protection rule sets reviewed to confirm only authorized data flows traverse CUI system boundaries; reviews documented"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 SC.L2-3.13.1, SC.L2-3.13.3; NIST SP 800-171 Rev. 3 03.13.01, 03.13.03"
+      "framework_reference": "CMMC Level 2 SC.L2-3.13.1, SC.L2-3.13.3; NIST SP 800-171 Rev. 3 03.13.01, 03.13.03",
+      "regulatory_mappings": {
+        "cmmc": [
+          "SC.L2-3.13.1",
+          "SC.L2-3.13.3"
+        ]
+      }
     },
     "ID-03": {
       "applicable": true,
@@ -145,7 +223,13 @@
         "Data handling procedures govern AI agent access to CUI \u2014 scope of CUI ingested, stored in context, and retained after session is documented and controlled"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 MP.L2-3.8.1, MP.L2-3.8.4; NIST SP 800-171 Rev. 3 03.08.01, 03.08.04"
+      "framework_reference": "CMMC Level 2 MP.L2-3.8.1, MP.L2-3.8.4; NIST SP 800-171 Rev. 3 03.08.01, 03.08.04",
+      "regulatory_mappings": {
+        "cmmc": [
+          "MP.L2-3.8.1",
+          "MP.L2-3.8.4"
+        ]
+      }
     },
     "ID-04": {
       "applicable": true,
@@ -155,7 +239,11 @@
         "Third-party risk assessments or equivalent supplier reviews conducted for vendors with CUI system access; results documented per 03.16.03"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 supplier-risk expectation; NIST SP 800-171 Rev. 3 03.16.01, 03.16.03"
+      "framework_reference": "CMMC Level 2 supplier-risk expectation; NIST SP 800-171 Rev. 3 03.16.01, 03.16.03",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "CMMC L2 has no dedicated supply-chain risk management practices (SR domain). NIST SP 800-171 Rev 3 03.16.x (supply chain) was added after CMMC L2 finalization. Out-of-scope for direct CMMC L2 practice mapping."
+      }
     },
     "ID-05": {
       "applicable": true,
@@ -165,7 +253,13 @@
         "Continuous vulnerability monitoring includes AI agent components and external model/service dependencies; monitoring cadence documented per 03.11.05"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 RA.L2-3.11.1, RA.L2-3.11.3; NIST SP 800-171 Rev. 3 03.11.01, 03.11.03, 03.11.05"
+      "framework_reference": "CMMC Level 2 RA.L2-3.11.1, RA.L2-3.11.3; NIST SP 800-171 Rev. 3 03.11.01, 03.11.03, 03.11.05",
+      "regulatory_mappings": {
+        "cmmc": [
+          "RA.L2-3.11.1",
+          "RA.L2-3.11.3"
+        ]
+      }
     },
     "PR-06": {
       "applicable": true,
@@ -175,7 +269,13 @@
         "Output filtering configuration verified to prevent AI agent responses from exfiltrating CUI beyond the authorized access boundary; filter rules documented"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CM.L2-3.4.6, CM.L2-3.4.7; NIST SP 800-171 Rev. 3 03.04.06, 03.04.07"
+      "framework_reference": "CMMC Level 2 CM.L2-3.4.6, CM.L2-3.4.7; NIST SP 800-171 Rev. 3 03.04.06, 03.04.07",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CM.L2-3.4.6",
+          "CM.L2-3.4.7"
+        ]
+      }
     },
     "PR-07": {
       "applicable": true,
@@ -185,7 +285,13 @@
         "AI agent context and memory management minimizes CUI retention \u2014 session data purged consistent with data minimization obligations and CUI handling policies"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 SC.L2-3.13.5, SC.L2-3.13.8; NIST SP 800-171 Rev. 3 03.13.05, 03.13.08, 03.13.11"
+      "framework_reference": "CMMC Level 2 SC.L2-3.13.5, SC.L2-3.13.8; NIST SP 800-171 Rev. 3 03.13.05, 03.13.08, 03.13.11",
+      "regulatory_mappings": {
+        "cmmc": [
+          "SC.L2-3.13.5",
+          "SC.L2-3.13.8"
+        ]
+      }
     },
     "PR-08": {
       "applicable": true,
@@ -195,7 +301,13 @@
         "Input sanitization and validation applied to all external inputs entering CUI processing workflows; validation rules cover prompt injection attack patterns (03.14.06)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 SI.L2-3.14.2, SI.L2-3.14.5; NIST SP 800-171 Rev. 3 03.14.02, 03.14.05, 03.14.06"
+      "framework_reference": "CMMC Level 2 SI.L2-3.14.2, SI.L2-3.14.5; NIST SP 800-171 Rev. 3 03.14.02, 03.14.05, 03.14.06",
+      "regulatory_mappings": {
+        "cmmc": [
+          "SI.L2-3.14.2",
+          "SI.L2-3.14.5"
+        ]
+      }
     },
     "DE-02": {
       "applicable": true,
@@ -205,7 +317,12 @@
         "POA&M updated with monitoring findings; management reviews outcomes and accepts or drives remediation of residual risks (03.12.04)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.3; NIST SP 800-171 Rev. 3 03.12.03, 03.12.04"
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.3; NIST SP 800-171 Rev. 3 03.12.03, 03.12.04",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CA.L2-3.12.3"
+        ]
+      }
     },
     "DE-03": {
       "applicable": true,
@@ -215,7 +332,13 @@
         "Assessment results shared with contracting officer or government customer per DFARS 252.204-7020 requirements within applicable timeframes (03.12.05)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.1; NIST SP 800-171 Rev. 3 03.12.01, 03.12.05"
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.1; NIST SP 800-171 Rev. 3 03.12.01, 03.12.05",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CA.L2-3.12.1",
+          "CA.L2-3.12.4"
+        ]
+      }
     },
     "DE-04": {
       "applicable": true,
@@ -225,7 +348,13 @@
         "Time-correlated audit records enable reconstruction of CUI access sequences for incident investigation and multi-step attack detection (03.03.07)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 AU.L2-3.3.4, AU.L2-3.3.6; NIST SP 800-171 Rev. 3 03.03.04, 03.03.06, 03.03.07"
+      "framework_reference": "CMMC Level 2 AU.L2-3.3.4, AU.L2-3.3.6; NIST SP 800-171 Rev. 3 03.03.04, 03.03.06, 03.03.07",
+      "regulatory_mappings": {
+        "cmmc": [
+          "AU.L2-3.3.4",
+          "AU.L2-3.3.6"
+        ]
+      }
     },
     "RS-01": {
       "applicable": true,
@@ -235,7 +364,13 @@
         "Incident response testing conducted at defined frequency; exercise records and lessons-learned updates documented (03.06.05)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 IR.L2-3.6.1; NIST SP 800-171 Rev. 3 03.06.01, 03.06.05"
+      "framework_reference": "CMMC Level 2 IR.L2-3.6.1; NIST SP 800-171 Rev. 3 03.06.01, 03.06.05",
+      "regulatory_mappings": {
+        "cmmc": [
+          "IR.L2-3.6.1",
+          "IR.L2-3.6.5"
+        ]
+      }
     },
     "RS-02": {
       "applicable": true,
@@ -245,7 +380,12 @@
         "Escalation runbook reviewed annually and following significant incidents; emergency contact list verified current"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 IR.L2-3.6.2; NIST SP 800-171 Rev. 3 03.06.02, 03.06.04"
+      "framework_reference": "CMMC Level 2 IR.L2-3.6.2; NIST SP 800-171 Rev. 3 03.06.02, 03.06.04",
+      "regulatory_mappings": {
+        "cmmc": [
+          "IR.L2-3.6.2"
+        ]
+      }
     },
     "RS-03": {
       "applicable": true,
@@ -255,7 +395,12 @@
         "Playbook updates incorporate test results; playbooks cover AI agent-specific incident scenarios including unauthorized CUI access and model poisoning"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 IR.L2-3.6.3; NIST SP 800-171 Rev. 3 03.06.03, 03.06.06"
+      "framework_reference": "CMMC Level 2 IR.L2-3.6.3; NIST SP 800-171 Rev. 3 03.06.03, 03.06.06",
+      "regulatory_mappings": {
+        "cmmc": [
+          "IR.L2-3.6.3"
+        ]
+      }
     },
     "RC-01": {
       "applicable": true,
@@ -265,7 +410,11 @@
         "Recovery procedures ensure CUI safeguards are verified and re-enabled before restored systems return to production"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 recovery planning expectation; NIST SP 800-171 Rev. 3 03.15.02, 03.15.03"
+      "framework_reference": "CMMC Level 2 recovery planning expectation; NIST SP 800-171 Rev. 3 03.15.02, 03.15.03",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "CMMC L2 has no dedicated recovery planning (RE) domain. Recovery planning expectation addressed under CA.L2-3.12.3 (plans of action) and IR.L2-3.6.x. NIST SP 800-171 Rev 3 03.15.02, 03.15.03 added post-CMMC L2 finalization."
+      }
     },
     "RC-02": {
       "applicable": true,
@@ -275,7 +424,12 @@
         "SSP updated to reflect control improvements identified during post-incident review; POA&M tracks implementation of lessons-learned enhancements (03.12.06)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.3; NIST SP 800-171 Rev. 3 03.12.03, 03.12.06"
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.3; NIST SP 800-171 Rev. 3 03.12.03, 03.12.06",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CA.L2-3.12.3"
+        ]
+      }
     }
   },
   "reporting_obligations": {
@@ -483,5 +637,5 @@
   },
   "evidence_retention_minimum_days": 1095,
   "human_oversight_required": false,
-  "notes": "CMMC Level 2 aligns contractors to the safeguarding of Controlled Unclassified Information. This overlay focuses on evidencing the six currently enforced AKSI evaluator controls while preserving a full framework mapping across the broader AKSI baseline so government-oriented deployments can demonstrate CUI handling readiness without changing resolver logic."
+  "notes": "CMMC Level 2 aligns contractors to the safeguarding of Controlled Unclassified Information. This overlay focuses on evidencing the six currently enforced AKSI evaluator controls while preserving a full framework mapping across the broader AKSI baseline so government-oriented deployments can demonstrate CUI handling readiness without changing resolver logic. \n\nCMCC PRACTICE GAP ANALYSIS: 110 CMMC L2 practices audited against 26 AKSI controls. 23 of 26 controls map directly to at least one CMMC L2 practice code. 3 controls have no direct CMMC L2 practice mapping (gap controls): GOV-04 (human oversight mandate \u2014 CMMC L2 governance documentation expectation only, closest CA.L2-3.12.3), ID-04 (supply chain risk \u2014 CMMC L2 has no SR domain; NIST 800-171r3 03.16.x added post-CMMC L2 finalization, out-of-scope), RC-01 (recovery planning \u2014 CMMC L2 has no RE domain; addressed under CA.L2-3.12.3 and IR.L2-3.6.x). All 26 controls contain regulatory_mappings.cmmc fields; gap controls have cmmc_gap notes. Evidence field names are non-overlapping with the FedRAMP overlay to support simultaneous activation."
 }
