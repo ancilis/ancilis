@@ -526,3 +526,87 @@ class TestDetectedDataTypesStore:
         rec = ES._row_to_record(short_row)
         assert rec.detected_data_types == []
         store.close()
+
+
+# --- sdk_version store round-trip (ANC-718) ---
+
+
+class TestSdkVersionStore:
+    """Store round-trip for sdk_version field."""
+
+    def test_sdk_version_populated_from_package(self):
+        """sdk_version is set from ancilis.__version__ on store()."""
+        import ancilis
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        records = store.get_records()
+        assert records[0].sdk_version == ancilis.__version__
+        store.close()
+
+    def test_sdk_version_round_trips(self):
+        """sdk_version survives a write-then-read cycle."""
+        import ancilis
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        store.store(make_evaluation(evaluation_id="eval-002"), tool_name="t2")
+        records = store.get_records()
+        assert records[0].sdk_version == ancilis.__version__
+        assert records[1].sdk_version == ancilis.__version__
+        store.close()
+
+    def test_sdk_version_missing_column_returns_none(self):
+        """Records loaded from a row without sdk_version column return None."""
+        from ancilis.evidence.store import EvidenceStore as ES
+        # 20-element row: all columns up to detected_data_types, no sdk_version
+        short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
+                     "agent", "tool", "ALLOW", "audit",
+                     "[]", "[]", "[]", "[]",
+                     "hash", "prev", 1.0, None, None, "[]")  # 20 cols, no sdk_version
+        rec = ES._row_to_record(short_row)
+        assert rec.sdk_version is None
+
+    def test_sdk_version_migration_adds_column(self, tmp_path):
+        """ALTER TABLE migration adds sdk_version to an existing store."""
+        import duckdb
+        db_file = str(tmp_path / "old.duckdb")
+        # Create a legacy store without sdk_version column (mirrors pre-ANC-718 schema)
+        conn = duckdb.connect(db_file)
+        conn.execute("CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1")
+        conn.execute("""
+            CREATE TABLE evidence_records (
+                seq_id BIGINT DEFAULT nextval('evidence_seq'),
+                record_id VARCHAR PRIMARY KEY,
+                evaluation_id VARCHAR NOT NULL,
+                timestamp VARCHAR NOT NULL,
+                agent_id VARCHAR NOT NULL,
+                session_id VARCHAR,
+                source_type VARCHAR NOT NULL,
+                tool_name VARCHAR NOT NULL,
+                decision VARCHAR NOT NULL,
+                mode VARCHAR NOT NULL,
+                control_results JSON NOT NULL,
+                active_overlays JSON NOT NULL,
+                data_classifications JSON NOT NULL,
+                active_certifications JSON NOT NULL,
+                record_hash VARCHAR NOT NULL,
+                previous_hash VARCHAR NOT NULL,
+                total_duration_ms DOUBLE NOT NULL,
+                output_summary VARCHAR,
+                tenant_id VARCHAR,
+                detected_data_types JSON NOT NULL DEFAULT '[]'
+            )
+        """)
+        conn.close()
+
+        # Opening with EvidenceStore should migrate the column without error
+        config = make_config()
+        store = EvidenceStore(config, db_path=db_file)
+        store.store(make_evaluation(), tool_name="migrated-tool")
+        records = store.get_records()
+        assert len(records) == 1
+        # sdk_version should now be set
+        import ancilis
+        assert records[0].sdk_version == ancilis.__version__
+        store.close()
