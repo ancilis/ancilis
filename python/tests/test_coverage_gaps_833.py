@@ -19,6 +19,7 @@ from ancilis.config import load_config
 from ancilis.controls.de01_baseline import BaselineWindow, DE01BaselineEvaluator
 from ancilis.dependencies.detector import Dependency as OsvDependency
 from ancilis.dependencies import osv as dependencies_osv
+from ancilis.dependencies import detector as dependencies_detector
 from ancilis.deps import manifest as deps_manifest
 from ancilis.engine.action import Action, ActionParameters, ToolInfo
 
@@ -59,6 +60,33 @@ def _load_manifest_without_tomllib(monkeypatch) -> ModuleType:
     real_import = builtins.__import__
 
     def fake_import(name: str, *args, **kwargs):
+        if name in {"tomllib", "tomli"}:
+            raise ImportError("tomllib unavailable")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(sys, "version_info", (3, 10))
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    sys.modules[spec.name] = module
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.modules.pop(spec.name, None)
+    return module
+
+
+def _load_module_with_tomli_fallback(
+    monkeypatch,
+    source_path: Path,
+    module_name: str,
+) -> ModuleType:
+    spec = importlib.util.spec_from_file_location(module_name, source_path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+
+    real_import = builtins.__import__
+
+    def fake_import(name: str, *args, **kwargs):
         if name == "tomllib":
             raise ImportError("tomllib unavailable")
         return real_import(name, *args, **kwargs)
@@ -85,6 +113,46 @@ class TestDepsManifestCoverage833:
 
         assert module._parse_pyproject_toml(pyproject) == []
         assert module._parse_poetry_lock(poetry) == []
+
+    def test_manifest_uses_tomli_fallback_on_python_310(
+        self,
+        monkeypatch,
+        tmp_path: Path,
+    ) -> None:
+        module = _load_module_with_tomli_fallback(
+            monkeypatch,
+            Path(deps_manifest.__file__).resolve(),
+            "ancilis.deps._manifest_with_tomli_test",
+        )
+        assert module.tomllib is not None
+
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text('[project]\ndependencies = ["requests==2.28.0"]\n')
+        poetry = tmp_path / "poetry.lock"
+        poetry.write_text('[[package]]\nname = "flask"\nversion = "2.3.0"\n')
+
+        assert [dep.name for dep in module._parse_pyproject_toml(pyproject)] == ["requests"]
+        assert [dep.name for dep in module._parse_poetry_lock(poetry)] == ["flask"]
+
+    def test_dependency_detector_uses_tomli_fallback_on_python_310(
+        self,
+        monkeypatch,
+        tmp_path: Path,
+    ) -> None:
+        module = _load_module_with_tomli_fallback(
+            monkeypatch,
+            Path(dependencies_detector.__file__).resolve(),
+            "ancilis.dependencies._detector_with_tomli_test",
+        )
+        assert module.tomllib is not None
+
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text('[project]\ndependencies = ["requests==2.28.0"]\n')
+        poetry = tmp_path / "poetry.lock"
+        poetry.write_text('[[package]]\nname = "flask"\nversion = "2.3.0"\n')
+
+        assert [dep.name for dep in module._parse_pyproject_toml(pyproject)] == ["requests"]
+        assert [dep.name for dep in module._parse_poetry_lock(poetry)] == ["flask"]
 
     def test_normalise_pep508_returns_original_for_unparseable_spec(self) -> None:
         name, version = deps_manifest._normalise_pep508("!not-pep508!")

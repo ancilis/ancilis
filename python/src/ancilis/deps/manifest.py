@@ -8,14 +8,20 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 
+tomllib: ModuleType | None
 if sys.version_info >= (3, 11):
-    import tomllib
+    import tomllib as _tomllib
+
+    tomllib = _tomllib
 else:
     try:
-        import tomllib
+        import tomli as _tomllib
     except ImportError:
         tomllib = None
+    else:
+        tomllib = _tomllib
 
 
 @dataclass

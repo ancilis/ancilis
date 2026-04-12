@@ -145,6 +145,14 @@ def test_dev_extra_includes_watch_dependencies_exercised_by_tests():
     assert set(extras["watch"]).issubset(set(extras["dev"]))
 
 
+@pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")
+def test_python_310_declares_tomli_for_pyproject_manifest_parsing():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    dependencies = pyproject["project"]["dependencies"]
+
+    assert "tomli>=2.0; python_version < '3.11'" in dependencies
+
+
 def test_ci_typescript_examples_keeps_deterministic_tarball_name():
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
 
