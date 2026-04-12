@@ -113,7 +113,7 @@ for i, turn in enumerate(CONVERSATIONS, 1):
     print()
 
 # --- Evidence summary ---
-summary = evidence.get_summary()
+summary = evidence.get_summary(session_id=producer.session_id)
 print("=== Evidence Summary ===")
 print(f"  Records:    {summary['total_evaluations']}")
 print(f"  Decisions:  {summary['decisions']}")

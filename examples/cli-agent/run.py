@@ -66,7 +66,7 @@ print(f"   Blocked: {result.blocked}")
 print(f"   Decision: {result.evaluation.decision}")
 
 # --- Evidence summary ---
-summary = evidence.get_summary()
+summary = evidence.get_summary(session_id=producer.session_id)
 print(f"\n=== Evidence Summary ===")
 print(f"  Records: {summary['total_evaluations']}")
 print(f"  Decisions: {summary['decisions']}")
