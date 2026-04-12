@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import os
+import subprocess
 import sys
 if sys.version_info >= (3, 11):
     import tomllib
@@ -70,6 +72,43 @@ def test_optional_mcp_import_remains_lazy(monkeypatch):
     producers = importlib.import_module("ancilis.producers")
     assert producers.CLIActionProducer is not None
     assert producers.HTTPActionProducer is not None
+
+
+def test_pytest_plugin_import_does_not_preload_runtime_modules():
+    code = """
+import sys
+
+blocked = {
+    "ancilis.config",
+    "ancilis.engine.action",
+    "ancilis.engine.engine",
+    "ancilis.engine.registry",
+    "ancilis.evidence.store",
+    "ancilis.producers.tool",
+    "ancilis.testing._helpers",
+    "ancilis.testing.mock_store",
+    "ancilis.testing.scan_result",
+}
+
+import ancilis.testing.plugin  # noqa: F401
+
+loaded = sorted(blocked & set(sys.modules))
+if loaded:
+    print("\\n".join(loaded), file=sys.stderr)
+    raise SystemExit(1)
+"""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(ROOT / "python" / "src")
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_source_type_flows_into_evidence_record():
