@@ -463,6 +463,47 @@ describe("runDoctor", () => {
 
     expect(result.output).toContain("[OK] optional mcp extra: installed");
   });
+
+  it("includes node version check in output", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+
+    const result = await runDoctor(configPath, join(dir, "doctor.duckdb"));
+
+    expect(result.output).toMatch(/\[OK\] node version: Node\.js \d+\.\d+\.\d+ \(>= 18 required\)/);
+  });
+
+  it("includes overlay existence check in output", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+
+    const result = await runDoctor(configPath, join(dir, "doctor.duckdb"));
+
+    expect(result.output).toContain("[OK] overlays:");
+  });
+
+  it("prints 'All checks passed.' summary on success", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+
+    const result = await runDoctor(configPath, join(dir, "doctor.duckdb"));
+
+    expect(result.ok).toBe(true);
+    expect(result.output).toContain("All checks passed.");
+  });
+
+  it("prints failure count summary on any failure", async () => {
+    const result = await runDoctor(join(dir, "missing.yaml"), join(dir, "no.duckdb"));
+
+    expect(result.ok).toBe(false);
+    expect(result.output).toMatch(/\d+ check\(s\) failed/);
+  });
+
+  it("skips platform connectivity check when platform_url is not set", async () => {
+    const configPath = writeConfig(dir, minimalConfig());
+
+    const result = await runDoctor(configPath, join(dir, "doctor.duckdb"));
+
+    expect(result.output).toContain("platform connectivity: platform_url not set");
+    expect(result.output).not.toContain("[FAIL] platform connectivity:");
+  });
 });
 
 // ===== Report Command Tests =====

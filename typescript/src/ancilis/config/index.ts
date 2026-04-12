@@ -7,6 +7,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { sharedPathFrom } from "../shared-path.js";
+import { ConfigError } from "../errors.js";
 
 // Resolve shared/ directory relative to the installed package root
 const SHARED_DIR = sharedPathFrom(import.meta.url);
@@ -221,7 +222,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
       const validIds = new Set<string>(VALID_CONTROL_IDS);
       for (const key of Object.keys(controls)) {
         if (!validIds.has(key)) {
-          throw new Error(`Unknown control ID in security.controls: '${key}'`);
+          throw new ConfigError(`Unknown control ID in security.controls: '${key}'`);
         }
       }
     }
@@ -234,7 +235,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
   if (Array.isArray(dataHandling)) {
     for (const dt of dataHandling) {
       if (!validTypes.has(dt)) {
-        throw new Error(
+        throw new ConfigError(
           `Unknown data type in my_agent_handles: '${dt}'. ` +
           `Valid types: ${[...validTypes].sort().join(", ")}`
         );
@@ -444,7 +445,7 @@ export function loadConfig(options: LoadConfigOptions = {}): ResolvedConfig {
     const content = readFileSync(options.path, "utf-8");
     configDict = (parseYaml(content) ?? {}) as Record<string, unknown>;
   } else {
-    throw new Error("No config path or raw config provided");
+    throw new ConfigError("No config path or raw config provided");
   }
 
   const { config, warnings } = validateConfig(configDict);
