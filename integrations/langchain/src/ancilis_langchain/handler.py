@@ -281,10 +281,10 @@ class AncilisCallbackHandler(BaseCallbackHandler):
             return self._engine
         try:
             from ancilis.config import load_config
-            from ancilis.engine.engine import ControlEngine
+            from ancilis.engine.engine import Engine
 
             config = load_config()
-            self._engine = ControlEngine(config)
+            self._engine = Engine(config)
         except Exception:  # noqa: BLE001
             pass
         return self._engine

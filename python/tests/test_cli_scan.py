@@ -161,7 +161,7 @@ class TestScanCommand:
         runner = CliRunner()
         result = runner.invoke(cli, ["scan", "--config", str(tmp_path / "missing.yaml")])
         assert result.exit_code == 0
-        assert "No tool-call evidence" in result.output
+        assert "Ancilis scan" in result.output
 
     def test_scan_human_readable_no_ci_flag(self, tmp_path: Path) -> None:
         """Without --ci, output is human-readable text (not JSON)."""

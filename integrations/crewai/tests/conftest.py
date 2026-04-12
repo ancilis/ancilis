@@ -11,6 +11,8 @@ import pytest
 
 # Make package importable without installation
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Make 'from tests.conftest import ...' work when pytest runs from outside the package
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 # ---------------------------------------------------------------------------

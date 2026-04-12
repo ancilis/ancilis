@@ -11,6 +11,9 @@ SRC = ROOT / "python" / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+# Register ancilis pytest plugin so ancilis_scan/ancilis_store/ancilis_overlay fixtures are available
+pytest_plugins = ["ancilis.testing.plugin"]
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "asyncio: run async test functions with asyncio.run")
