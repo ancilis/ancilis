@@ -1,9 +1,11 @@
 {
   "id": "nist-csf",
   "name": "NIST Cybersecurity Framework 2.0",
-  "version": "2.0",
+  "version": "2.1",
   "trigger_type": "baseline",
-  "triggered_by": ["*"],
+  "triggered_by": [
+    "*"
+  ],
   "description": "NIST CSF 2.0 baseline overlay — always active for all agents. The AKSIs are organized by CSF functions, making this the most direct and natural mapping. Provides CSF-specific evidence packaging for organizations demonstrating framework alignment.",
   "jurisdiction": "global",
   "enforcement_date": null,
@@ -110,29 +112,32 @@
     "PR-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Data-at-rest and data-in-transit protected (PR.DS-01)",
-        "Assets formally managed throughout lifecycle (PR.DS-02)"
+        "Access permissions, entitlements, and authorizations are managed, incorporating least-privilege principles (PR.AA-05)",
+        "Identities and credentials for authorized users, services, and hardware are managed (PR.AA-01)",
+        "Data-at-rest are protected — access controls enforce that only authorized agents and users can read stored data (PR.DS-01)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "PR.DS-01, PR.DS-02"
+      "framework_reference": "PR.AA-05, PR.AA-01, PR.DS-01"
     },
     "PR-04": {
       "applicable": true,
       "evidence_requirements": [
-        "Data-at-rest and data-in-transit protected (PR.DS-01)",
-        "Data integrity checking mechanisms applied (PR.DS-02)"
+        "Data are destroyed according to policy when no longer needed (PR.DS-10)",
+        "Data backups created, protected, maintained, and tested per retention schedule (PR.DS-11)",
+        "Data-at-rest protected — labeled data stores access-controlled throughout lifecycle (PR.DS-01)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "PR.DS-01, PR.DS-02"
+      "framework_reference": "PR.DS-10, PR.DS-11, PR.DS-01"
     },
     "PR-05": {
       "applicable": true,
       "evidence_requirements": [
-        "Audit/log records determined, documented, implemented, and reviewed (DE.AE-02)",
-        "Information from multiple sources aggregated and analyzed (DE.AE-06)"
+        "Log records are created, protected, and maintained per defined policy (PR.PS-04)",
+        "Audit log content sufficient to support adverse event analysis — agent actions, tool calls, tool responses, delegation chains captured (DE.AE-02)",
+        "Information from audit logs aggregated and available for posture assessment and incident investigation (DE.AE-06)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DE.AE-02, DE.AE-06"
+      "framework_reference": "PR.PS-04, DE.AE-02, DE.AE-06"
     },
     "PR-06": {
       "applicable": true,
@@ -146,29 +151,32 @@
     "PR-07": {
       "applicable": true,
       "evidence_requirements": [
-        "Data-at-rest protected including encryption (PR.DS-01)",
-        "Data-in-transit protected including encryption (PR.DS-02)"
+        "Data-in-transit are protected — all agent-to-API, agent-to-MCP-server, and agent-to-data-store channels encrypted (PR.DS-02)",
+        "Data-at-rest protected with equivalent controls as data-in-transit (PR.DS-01)",
+        "Platform security configurations enforce TLS/mTLS across all communication channels (PR.PS-01)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "PR.DS-01, PR.DS-02"
+      "framework_reference": "PR.DS-02, PR.DS-01, PR.PS-01"
     },
     "PR-08": {
       "applicable": true,
       "evidence_requirements": [
-        "Data-at-rest and data-in-transit protected from unauthorized modification (PR.DS-01)",
-        "Input validation and sanitization practices applied (PR.DS-02)"
+        "Secure software development practices integrate injection prevention — input validation, output encoding, parameterized queries (PR.PS-06)",
+        "Data-in-transit protected from unauthorized modification, including injection of malicious content at communication boundaries (PR.DS-02)",
+        "Software maintained with security fixes applied to input-handling components (PR.PS-02)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "PR.DS-01, PR.DS-02"
+      "framework_reference": "PR.PS-06, PR.DS-02, PR.PS-02"
     },
     "DE-01": {
       "applicable": true,
       "evidence_requirements": [
-        "Anomalous activity detected in a timely manner (DE.AE-02)",
-        "Events from multiple sources correlated for analysis (DE.AE-06)"
+        "Potentially adverse events are analyzed to characterize the events (DE.AE-02)",
+        "The estimated impact and scope of adverse events are understood (DE.AE-04)",
+        "Evidence of correlation across sessions where agent behavioral anomaly patterns span multiple events (DE.AE-06)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DE.AE-02, DE.AE-06"
+      "framework_reference": "DE.AE-02, DE.AE-04"
     },
     "DE-02": {
       "applicable": true,
@@ -182,11 +190,12 @@
     "DE-03": {
       "applicable": true,
       "evidence_requirements": [
-        "Anomalous activity detected and analyzed for event characterization (DE.AE-02)",
-        "Information from multiple sources aggregated for posture assessment (DE.AE-06)"
+        "Cyber threat intelligence and other contextual information are integrated into continuous compliance monitoring (DE.AE-07)",
+        "The estimated impact and scope of compliance deviations are understood and communicated (DE.AE-04)",
+        "Anomalous activity is detected in a timely manner for compliance posture assessment (DE.AE-02)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DE.AE-02, DE.AE-06"
+      "framework_reference": "DE.AE-07, DE.AE-04, DE.AE-02"
     },
     "DE-04": {
       "applicable": true,
@@ -255,32 +264,109 @@
   "control_adjustments": {},
   "evidence_requirements": {},
   "framework_mapping": {
-    "GOV-01": ["GV.PO-01", "GV.PO-02"],
-    "GOV-02": ["GV.RR-01", "GV.RR-02"],
-    "GOV-03": ["GV.RM-01", "GV.RM-02"],
-    "GOV-04": ["GV.OV-01", "GV.OV-02"],
-    "ID-01": ["ID.AM-01", "ID.AM-02"],
-    "ID-02": ["ID.AM-02", "ID.AM-05"],
-    "ID-03": ["ID.AM-07", "ID.AM-08"],
-    "ID-04": ["ID.SC-01", "ID.SC-02"],
-    "ID-05": ["ID.RA-01", "ID.RA-02"],
-    "PR-01": ["PR.AA-01", "PR.AA-03"],
-    "PR-02": ["PR.AA-01", "PR.AA-05"],
-    "PR-03": ["PR.DS-01", "PR.DS-02"],
-    "PR-04": ["PR.DS-01", "PR.DS-02"],
-    "PR-05": ["DE.AE-02", "DE.AE-06"],
-    "PR-06": ["PR.PS-01", "PR.PS-02"],
-    "PR-07": ["PR.DS-01", "PR.DS-02"],
-    "PR-08": ["PR.DS-01", "PR.DS-02"],
-    "DE-01": ["DE.AE-02", "DE.AE-06"],
-    "DE-02": ["DE.CM-01", "DE.CM-09"],
-    "DE-03": ["DE.AE-02", "DE.AE-06"],
-    "DE-04": ["DE.CM-09"],
-    "RS-01": ["RS.MA-01", "RS.MA-02"],
-    "RS-02": ["RS.CO-02", "RS.CO-03"],
-    "RS-03": ["RS.AN-03", "RS.AN-06"],
-    "RC-01": ["RC.RP-01", "RC.RP-02"],
-    "RC-02": ["RC.IM-01", "RC.IM-02"]
+    "GOV-01": [
+      "GV.PO-01",
+      "GV.PO-02"
+    ],
+    "GOV-02": [
+      "GV.RR-01",
+      "GV.RR-02"
+    ],
+    "GOV-03": [
+      "GV.RM-01",
+      "GV.RM-02"
+    ],
+    "GOV-04": [
+      "GV.OV-01",
+      "GV.OV-02"
+    ],
+    "ID-01": [
+      "ID.AM-01",
+      "ID.AM-02"
+    ],
+    "ID-02": [
+      "ID.AM-02",
+      "ID.AM-05"
+    ],
+    "ID-03": [
+      "ID.AM-07",
+      "ID.AM-08"
+    ],
+    "ID-04": [
+      "ID.SC-01",
+      "ID.SC-02"
+    ],
+    "ID-05": [
+      "ID.RA-01",
+      "ID.RA-02"
+    ],
+    "PR-01": [
+      "PR.AA-01",
+      "PR.AA-03"
+    ],
+    "PR-02": [
+      "PR.AA-01",
+      "PR.AA-05"
+    ],
+    "PR-03": [
+      "PR.DS-01",
+      "PR.DS-02"
+    ],
+    "PR-04": [
+      "PR.DS-01",
+      "PR.DS-02"
+    ],
+    "PR-05": [
+      "DE.AE-02",
+      "DE.AE-06"
+    ],
+    "PR-06": [
+      "PR.PS-01",
+      "PR.PS-02"
+    ],
+    "PR-07": [
+      "PR.DS-01",
+      "PR.DS-02"
+    ],
+    "PR-08": [
+      "PR.DS-01",
+      "PR.DS-02"
+    ],
+    "DE-01": [
+      "DE.AE-02",
+      "DE.AE-06"
+    ],
+    "DE-02": [
+      "DE.CM-01",
+      "DE.CM-09"
+    ],
+    "DE-03": [
+      "DE.AE-02",
+      "DE.AE-06"
+    ],
+    "DE-04": [
+      "DE.CM-09"
+    ],
+    "RS-01": [
+      "RS.MA-01",
+      "RS.MA-02"
+    ],
+    "RS-02": [
+      "RS.CO-02",
+      "RS.CO-03"
+    ],
+    "RS-03": [
+      "RS.AN-03",
+      "RS.AN-06"
+    ],
+    "RC-01": [
+      "RC.RP-01",
+      "RC.RP-02"
+    ],
+    "RC-02": [
+      "RC.IM-01",
+      "RC.IM-02"
+    ]
   },
   "evidence_retention_minimum_days": 365,
   "human_oversight_required": false,
