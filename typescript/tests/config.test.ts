@@ -195,3 +195,36 @@ describe("Control Override", () => {
     expect(resolved.controls.get("PR-01")?.threshold).toBe("standard");
   });
 });
+
+describe("Agent ID", () => {
+  it("accepts a valid UUID", () => {
+    const resolved = loadConfig({
+      raw: { agent: { name: "x", agent_id: "12345678-1234-1234-1234-123456789abc" } },
+    });
+    expect(resolved.agentId).toBe("12345678-1234-1234-1234-123456789abc");
+  });
+
+  it("defaults to null when not set", () => {
+    const resolved = loadConfig({ raw: { agent: { name: "x" } } });
+    expect(resolved.agentId).toBeNull();
+  });
+
+  it("rejects a non-UUID value", () => {
+    expect(() =>
+      loadConfig({ raw: { agent: { name: "x", agent_id: "not-a-uuid" } } })
+    ).toThrow(/agent.agent_id must be a valid UUID/);
+  });
+
+  it("rejects a too-short UUID-like value", () => {
+    expect(() =>
+      loadConfig({ raw: { agent: { name: "x", agent_id: "1234" } } })
+    ).toThrow(/agent.agent_id must be a valid UUID/);
+  });
+
+  it("accepts an uppercase UUID", () => {
+    const resolved = loadConfig({
+      raw: { agent: { name: "x", agent_id: "12345678-1234-1234-1234-123456789ABC" } },
+    });
+    expect(resolved.agentId).toBe("12345678-1234-1234-1234-123456789ABC");
+  });
+});
