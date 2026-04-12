@@ -7,6 +7,9 @@ import { randomUUID } from "node:crypto";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import { Engine } from "../src/ancilis/engine/engine.js";
 import { ToolRegistry, ToolStatus } from "../src/ancilis/engine/registry.js";
+import { PR07TransportEvaluator } from "../src/ancilis/engine/evaluators/pr07-transport.js";
+import { PR08InputEvaluator } from "../src/ancilis/engine/evaluators/pr08-input.js";
+import { GOV01PolicyEvaluator } from "../src/ancilis/engine/evaluators/gov01-policy.js";
 import type { Action } from "../src/ancilis/engine/action.js";
 import type { ControlResult } from "../src/ancilis/engine/result.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
@@ -418,5 +421,300 @@ describe("Decision Engine", () => {
     expect(result.activeOverlays).toContain("pci-dss-v4");
     expect(result.dataClassifications).toContain("DC-CHD");
     expect(result.totalDurationMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// --- Helpers for direct evaluator tests ---
+
+function makeMinimalConfig(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
+  return {
+    agentName: "test-agent",
+    agentId: null,
+    agentOwner: "",
+    mode: "audit",
+    controls: new Map(),
+    dataClassifications: new Map(),
+    activeOverlays: new Map(),
+    unavailableOverlays: [],
+    overlayAdjustments: [],
+    evidenceRetentionDays: 365,
+    humanOversightRequired: false,
+    warnings: [],
+    toolsAllowed: [],
+    toolsBlocked: [],
+    scopeMaxActionsPerMinute: null,
+    scopeAllowedDestinations: [],
+    scopeBlockedDestinations: [],
+    activeCertifications: [],
+    scanDependenciesEnabled: true,
+    scanDependenciesSeverityThreshold: "high",
+    scanDependenciesIgnore: [],
+    ...overrides,
+  };
+}
+
+// --- PR-07 Transport Security Tests ---
+
+describe("PR-07 Transport Security", () => {
+  it("passes with no URLs in parameters", () => {
+    const evaluator = new PR07TransportEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { message: "hello world" } }), makeMinimalConfig());
+    expect(result.result).toBe("PASS");
+    expect(result.detail).toContain("No URLs found");
+  });
+
+  it("passes with https:// URL", () => {
+    const evaluator = new PR07TransportEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { url: "https://api.example.com/v1" } }), makeMinimalConfig());
+    expect(result.result).toBe("PASS");
+    expect(result.evidenceData.insecure_urls).toHaveLength(0);
+  });
+
+  it("passes with wss:// URL", () => {
+    const evaluator = new PR07TransportEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { endpoint: "wss://stream.example.com/ws" } }), makeMinimalConfig());
+    expect(result.result).toBe("PASS");
+  });
+
+  it("fails with http:// URL to non-localhost", () => {
+    const evaluator = new PR07TransportEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { url: "http://api.example.com/v1" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.insecure_urls).toContain("http://api.example.com/v1");
+  });
+
+  it("fails with ws:// URL to non-localhost", () => {
+    const evaluator = new PR07TransportEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { url: "ws://chat.example.com/ws" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.insecure_urls).toContain("ws://chat.example.com/ws");
+  });
+
+  it("exempts http://localhost from failure", () => {
+    const evaluator = new PR07TransportEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { url: "http://localhost:8080/api" } }), makeMinimalConfig());
+    expect(result.result).toBe("PASS");
+    expect(result.evidenceData.localhost_exempt).toContain("http://localhost:8080/api");
+  });
+
+  it("exempts http://127.0.0.1 from failure", () => {
+    const evaluator = new PR07TransportEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { url: "http://127.0.0.1:3000" } }), makeMinimalConfig());
+    expect(result.result).toBe("PASS");
+    expect(result.evidenceData.localhost_exempt).toContain("http://127.0.0.1:3000");
+  });
+
+  it("checks alternative URL keys (endpoint, server, api_url)", () => {
+    const evaluator = new PR07TransportEvaluator();
+    const r1 = evaluator.evaluate(makeAction({ params: { endpoint: "http://evil.com" } }), makeMinimalConfig());
+    const r2 = evaluator.evaluate(makeAction({ params: { server: "http://evil.com" } }), makeMinimalConfig());
+    const r3 = evaluator.evaluate(makeAction({ params: { api_url: "http://evil.com" } }), makeMinimalConfig());
+    expect(r1.result).toBe("FAIL");
+    expect(r2.result).toBe("FAIL");
+    expect(r3.result).toBe("FAIL");
+  });
+
+  it("integrated: transport failure in enforce mode blocks", () => {
+    const config = makeConfig({ security: { mode: "enforce" } });
+    const action = makeAction({ params: { url: "http://evil.com/api" } });
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+    const result = engine.evaluate(action);
+    expect(getControlResult(result.controlResults, "PR-07").result).toBe("FAIL");
+    expect(result.decision).toBe("BLOCK");
+  });
+
+  it("integrated: https URL passes in enforce mode", () => {
+    const config = makeConfig({ security: { mode: "enforce" } });
+    const action = makeAction({ params: { url: "https://api.example.com" } });
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+    const result = engine.evaluate(action);
+    expect(getControlResult(result.controlResults, "PR-07").result).toBe("PASS");
+  });
+});
+
+// --- PR-08 Input Validation Tests ---
+
+describe("PR-08 Input Validation", () => {
+  it("passes with clean input", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { query: "list all users" } }), makeMinimalConfig());
+    expect(result.result).toBe("PASS");
+    expect(result.evidenceData.scan_result).toBe("clean");
+    expect(result.evidenceData.patterns_found).toHaveLength(0);
+  });
+
+  it("fails on SQL injection (OR 1=1)", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { input: "' OR 1=1" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.patterns_found).toContain("sql_or_injection");
+  });
+
+  it("fails on DROP TABLE injection", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { input: "; DROP TABLE users" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.patterns_found).toContain("sql_drop_table");
+  });
+
+  it("fails on UNION SELECT injection", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { query: "UNION SELECT * FROM secrets" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.patterns_found).toContain("sql_union_select");
+  });
+
+  it("fails on command injection (rm)", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { cmd: "ls; rm -rf /" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.patterns_found).toContain("cmd_rm");
+  });
+
+  it("fails on subshell injection", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { input: "echo $(cat /etc/passwd)" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.patterns_found).toContain("cmd_subshell");
+  });
+
+  it("fails on backtick injection", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { input: "run `id`" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.patterns_found).toContain("cmd_backtick");
+  });
+
+  it("fails on path traversal (../)", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { path: "../../etc/shadow" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.patterns_found).toContain("path_traversal_unix");
+  });
+
+  it("fails on /etc/passwd reference", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { file: "/etc/passwd" } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.patterns_found).toContain("path_etc_passwd");
+  });
+
+  it("flags on suspicious-only SQL comment pattern", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { input: "'value--" } }), makeMinimalConfig());
+    expect(result.result).toBe("FLAG");
+    expect(result.evidenceData.scan_result).toBe("suspicious");
+  });
+
+  it("scans nested parameter values", () => {
+    const evaluator = new PR08InputEvaluator();
+    const result = evaluator.evaluate(makeAction({ params: { nested: { deep: "'; DROP TABLE x" } } }), makeMinimalConfig());
+    expect(result.result).toBe("FAIL");
+  });
+
+  it("integrated: injection in enforce mode blocks", () => {
+    const config = makeConfig({ security: { mode: "enforce" } });
+    const action = makeAction({ params: { input: "'; DROP TABLE users" } });
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+    const result = engine.evaluate(action);
+    expect(getControlResult(result.controlResults, "PR-08").result).toBe("FAIL");
+    expect(result.decision).toBe("BLOCK");
+  });
+
+  it("integrated: clean input passes in enforce mode", () => {
+    const config = makeConfig({ security: { mode: "enforce" } });
+    const action = makeAction({ params: { query: "get user profile" } });
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+    const result = engine.evaluate(action);
+    expect(getControlResult(result.controlResults, "PR-08").result).toBe("PASS");
+  });
+});
+
+// --- GOV-01 Governance Policy Tests ---
+
+describe("GOV-01 Governance Policy", () => {
+  it("passes with complete governance policy (all 4 fields)", () => {
+    const config = makeMinimalConfig({
+      agentName: "my-agent",
+      mode: "enforce",
+      dataClassifications: new Map([["credit_cards", ["DC-CHD"]]]),
+      toolsAllowed: ["read_file"],
+    });
+    const evaluator = new GOV01PolicyEvaluator();
+    const result = evaluator.evaluate(makeAction(), config);
+    expect(result.result).toBe("PASS");
+    expect(result.evidenceData.policy_completeness).toBe("complete");
+    expect(result.evidenceData.fields_present).toEqual(
+      expect.arrayContaining(["agent_name", "mode", "data_classifications", "scope_constraints"])
+    );
+  });
+
+  it("flags with partial governance policy (2 fields: agent_name + mode)", () => {
+    // Default makeConfig gives agent_name="test-agent", mode="audit", no data_class, no scope
+    const config = makeConfig();
+    const evaluator = new GOV01PolicyEvaluator();
+    const result = evaluator.evaluate(makeAction(), config);
+    expect(result.result).toBe("FLAG");
+    expect(result.evidenceData.policy_completeness).toBe("partial");
+    expect(result.evidenceData.fields_missing).toContain("data_classifications");
+    expect(result.evidenceData.fields_missing).toContain("scope_constraints");
+  });
+
+  it("flags with 3 fields (agent_name + mode + scope)", () => {
+    const config = makeConfig({ security: { tools: { allowed: ["test-tool"] } } });
+    const evaluator = new GOV01PolicyEvaluator();
+    const result = evaluator.evaluate(makeAction(), config);
+    expect(result.result).toBe("FLAG");
+    expect(result.evidenceData.fields_present).toContain("scope_constraints");
+    expect(result.evidenceData.fields_missing).toContain("data_classifications");
+  });
+
+  it("recognizes tools_blocked as valid scope constraint", () => {
+    const config = makeMinimalConfig({
+      agentName: "my-agent",
+      mode: "enforce",
+      dataClassifications: new Map([["pii", ["DC-PII"]]]),
+      toolsBlocked: ["dangerous-tool"],
+    });
+    const evaluator = new GOV01PolicyEvaluator();
+    const result = evaluator.evaluate(makeAction(), config);
+    expect(result.result).toBe("PASS");
+    expect(result.evidenceData.fields_present).toContain("scope_constraints");
+  });
+
+  it("fails with insufficient governance policy (only mode present)", () => {
+    const config = makeMinimalConfig({ agentName: "", mode: "audit" });
+    const evaluator = new GOV01PolicyEvaluator();
+    const result = evaluator.evaluate(makeAction(), config);
+    expect(result.result).toBe("FAIL");
+    expect(result.evidenceData.policy_completeness).toBe("insufficient");
+    expect(result.evidenceData.fields_missing).toContain("agent_name");
+  });
+
+  it("fails with no fields present", () => {
+    const config = makeMinimalConfig({ agentName: "", mode: "" });
+    const evaluator = new GOV01PolicyEvaluator();
+    const result = evaluator.evaluate(makeAction(), config);
+    expect(result.result).toBe("FAIL");
+    expect((result.evidenceData.fields_present as string[]).length).toBe(0);
+  });
+
+  it("integrated: partial policy is allowed in audit mode (FLAG not FAIL)", () => {
+    const config = makeConfig(); // 2 fields → FLAG
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+    const result = engine.evaluate(makeAction());
+    const gov01 = getControlResult(result.controlResults, "GOV-01");
+    expect(gov01.result).toBe("FLAG");
+    expect(result.decision).toBe("ALLOW"); // FLAG doesn't trigger BLOCK
+  });
+
+  it("integrated: complete policy passes in enforce mode", () => {
+    const config = makeConfig({
+      security: { mode: "enforce", tools: { allowed: ["test-tool"] } },
+      my_agent_handles: ["credit_cards"],
+    });
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+    const result = engine.evaluate(makeAction());
+    expect(getControlResult(result.controlResults, "GOV-01").result).toBe("PASS");
   });
 });
