@@ -1,5 +1,7 @@
 agent:
   name: crewai-research-crew
+certification_targets:
+  - aiuc-1
 my_agent_handles:
   - personal_info
 mode: audit
