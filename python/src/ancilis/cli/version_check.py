@@ -8,7 +8,7 @@ import threading
 import time
 import urllib.request
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 
@@ -47,11 +47,11 @@ def is_suppressed(ctx: click.Context) -> bool:
     return bool(is_ci_environment())
 
 
-def read_cache(cache_path: Path = CACHE_PATH, ttl: int = DEFAULT_TTL) -> dict | None:  # type: ignore[type-arg]
+def read_cache(cache_path: Path = CACHE_PATH, ttl: int = DEFAULT_TTL) -> dict[str, Any] | None:
     try:
-        data = json.loads(cache_path.read_text())
+        data: dict[str, Any] = json.loads(cache_path.read_text())
         if time.time() < data["checked_at"] + ttl:
-            return data  # type: ignore[return-value]
+            return data
         return None
     except Exception:
         return None
