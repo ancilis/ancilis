@@ -259,6 +259,7 @@ class EvidenceStore:
 
         detected_data_types = list(getattr(evaluation, "detected_data_types", None) or [])
 
+        _sdk_ver: str | None
         try:
             from ancilis import __version__ as _sdk_ver
         except Exception:  # noqa: BLE001 — best-effort, never breaks evidence writes

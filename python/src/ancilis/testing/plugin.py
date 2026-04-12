@@ -7,14 +7,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ancilis.engine.engine import Engine
-from ancilis.engine.registry import ToolEntry, ToolRegistry
-from ancilis.testing._helpers import make_action, make_test_config
-from ancilis.testing.mock_store import MockEvidenceStore
-from ancilis.testing.scan_result import ScanResult
-
 if TYPE_CHECKING:
-    pass
+    from ancilis.testing.mock_store import MockEvidenceStore
+    from ancilis.testing.scan_result import ScanResult
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -61,6 +56,8 @@ def ancilis_store(ancilis_overlay: str | None) -> Generator[MockEvidenceStore, N
             ancilis_store.store(evaluation, tool_name="my_tool")
             assert ancilis_store.count() == 1
     """
+    from ancilis.testing.mock_store import MockEvidenceStore
+
     agent_name = "test-agent"
     store = MockEvidenceStore(agent_name=agent_name, overlay=ancilis_overlay)
     yield store
@@ -93,6 +90,11 @@ def ancilis_scan(
             assert_posture_above(ancilis_scan, 0.75)
             assert ancilis_scan.score > 0.75
     """
+    from ancilis.engine.engine import Engine
+    from ancilis.engine.registry import ToolEntry, ToolRegistry
+    from ancilis.testing._helpers import make_action, make_test_config
+    from ancilis.testing.scan_result import ScanResult
+
     agent_name = request.config.getini("ancilis_agent_name") or "test-agent"
     mode = request.config.getini("ancilis_mode") or "audit"
 
