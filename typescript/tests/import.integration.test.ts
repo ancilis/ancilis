@@ -136,6 +136,13 @@ describe("TestProgrammaticEngineInvocation", () => {
 // ---------------------------------------------------------------------------
 
 describe("TestEngineConstructorValidatesConfig", () => {
+  it("Engine rejects raw dict config at evaluate time", () => {
+    const rawConfig = { agent: { name: "test" } };
+    const badEngine = new Engine(rawConfig as unknown as ConstructorParameters<typeof Engine>[0]);
+
+    expect(() => badEngine.evaluate(makeAction())).toThrow(TypeError);
+  });
+
   it("Engine built from minimal programmatic raw config", () => {
     const config = loadConfig({ raw: { agent: { name: "minimal-agent" } } });
     const engine = new Engine(config);
