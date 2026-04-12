@@ -94,11 +94,13 @@ export class EvidenceStore {
   private _dbPath: string;
   private _inMemory: boolean;
   private _tenantId: string | undefined;
+  private _configAgentId: string | null;
 
   constructor(config: ResolvedConfig, options?: { dbPath?: string; inMemory?: boolean; tenantId?: string }) {
     this._certifications = [...(config.activeCertifications ?? [])];
     this._inMemory = options?.inMemory ?? false;
     this._tenantId = options?.tenantId;
+    this._configAgentId = config.agentId ?? null;
 
     if (this._inMemory) {
       this._dbPath = ":memory:";
@@ -177,6 +179,7 @@ export class EvidenceStore {
     await this.ensureInitialized();
     const recordId = randomUUID();
     const previousHash = await this.getLastHash();
+    const agentId = this._configAgentId ?? evaluation.agentId;
 
     const controlResultsData = evaluation.controlResults.map(cr => ({
       control_id: cr.controlId,
@@ -190,7 +193,7 @@ export class EvidenceStore {
     const canon = canonicalPayload({
       evaluationId: evaluation.evaluationId,
       timestamp: evaluation.timestamp,
-      agentId: evaluation.agentId,
+      agentId,
       sourceType: evaluation.sourceType ?? "agent",
       toolName,
       decision: evaluation.decision,
@@ -210,7 +213,7 @@ export class EvidenceStore {
       recordId,
       evaluationId: evaluation.evaluationId,
       timestamp: evaluation.timestamp,
-      agentId: evaluation.agentId,
+      agentId,
       sourceType: evaluation.sourceType ?? "agent",
       toolName,
       decision: evaluation.decision,

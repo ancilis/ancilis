@@ -531,3 +531,58 @@ describe("Purge", () => {
     expect(await store.count()).toBe(1);
   });
 });
+
+// --- Agent ID from Config ---
+
+describe("Agent ID from config", () => {
+  let store: EvidenceStore;
+
+  afterEach(async () => {
+    if (store) await store.close();
+  });
+
+  it("uses config agent_id when set, overriding evaluation agentId", async () => {
+    const config = makeConfig({ agent: { name: "test-agent", agent_id: "12345678-1234-1234-1234-123456789abc" } });
+    store = new EvidenceStore(config, { inMemory: true });
+
+    const record = await store.store(
+      makeEvaluation({ agentId: "eval-agent-id" }),
+      "tool1",
+    );
+    expect(record.agentId).toBe("12345678-1234-1234-1234-123456789abc");
+  });
+
+  it("falls back to evaluation agentId when config agent_id is not set", async () => {
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
+
+    const record = await store.store(
+      makeEvaluation({ agentId: "eval-agent-id" }),
+      "tool1",
+    );
+    expect(record.agentId).toBe("eval-agent-id");
+  });
+
+  it("config agent_id is queryable via getRecords agentId filter", async () => {
+    const config = makeConfig({ agent: { name: "test-agent", agent_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" } });
+    store = new EvidenceStore(config, { inMemory: true });
+
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "tool1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "tool2");
+
+    const records = await store.getRecords({ agentId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" });
+    expect(records).toHaveLength(2);
+    expect(records[0]!.agentId).toBe("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+  });
+
+  it("hash chain remains valid when config agent_id is set", async () => {
+    const config = makeConfig({ agent: { name: "test-agent", agent_id: "12345678-1234-1234-1234-123456789abc" } });
+    store = new EvidenceStore(config, { inMemory: true });
+
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "tool1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "tool2");
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(true);
+    expect(errors).toHaveLength(0);
+  });
+});
