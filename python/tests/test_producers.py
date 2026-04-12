@@ -525,6 +525,27 @@ class TestBackwardCompatibility:
         with pytest.raises(AttributeError, match="has no attribute"):
             getattr(producers_pkg, "NonExistentProducer")
 
+    def test_root_package_lazy_ancilis_middleware(self):
+        """ancilis.__getattr__ returns AncilisMiddleware on root package attribute access."""
+        import ancilis
+
+        cls = getattr(ancilis, "AncilisMiddleware")
+        assert cls.__name__ == "AncilisMiddleware"
+
+    def test_root_package_lazy_mcp_producer(self):
+        """ancilis.__getattr__ returns MCPActionProducer on root package attribute access."""
+        import ancilis
+
+        cls = getattr(ancilis, "MCPActionProducer")
+        assert cls.__name__ == "MCPActionProducer"
+
+    def test_root_package_unknown_attribute_raises(self):
+        """ancilis.__getattr__ raises AttributeError for unknown names."""
+        import ancilis
+
+        with pytest.raises(AttributeError, match="has no attribute"):
+            getattr(ancilis, "NonExistentAttribute")
+
 
 # --- Fix 2: Double-Prefix Prevention ---
 
