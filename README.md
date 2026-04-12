@@ -229,6 +229,32 @@ npx ancilis --help
 npx ancilis doctor
 ```
 
+### Quickstart
+
+```typescript
+import { loadConfig, Engine, EvidenceStore, ToolActionProducer, BlockedActionError } from "ancilis";
+
+const config = loadConfig({
+  raw: {
+    agent: { name: "payment-agent" },
+    security: { mode: "enforce", tools: { allowed: ["payments.read"], blocked: ["payments.delete"] } },
+  },
+});
+
+const store = new EvidenceStore(config, { inMemory: true });
+const producer = new ToolActionProducer(config, new Engine(config), undefined, store);
+
+const readPayment = (id: string) => ({ id, amount: 42.0, status: "settled" });
+
+const result = await producer.execute(readPayment, "payment-agent", ["pay_123"], undefined, "payments.read");
+console.log(result.returnValue); // { id: 'pay_123', amount: 42, status: 'settled' }
+
+const { valid } = await store.verifyChain();
+console.log(`Chain integrity: ${valid ? "valid" : "broken"}`);
+```
+
+See [`examples/typescript/`](examples/typescript/) for a runnable end-to-end example.
+
 ## Contributing / Security / License
 
 - Security disclosures: [SECURITY.md](SECURITY.md) — security@ancilis.ai
