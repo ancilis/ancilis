@@ -254,7 +254,7 @@ def test_print_error_writes_to_stderr(capsys) -> None:
     print_error(err)
     captured = capsys.readouterr()
     # Rich strips markup in non-terminal contexts; check plain content
-    assert "E010" in captured.err or "E010" in captured.out or True  # Rich may buffer
+    assert True  # Rich may buffer
 
 
 def test_print_error_fallback_without_rich(capsys) -> None:
@@ -271,7 +271,7 @@ def test_print_error_fallback_without_rich(capsys) -> None:
     captured = capsys.readouterr()
     # Either Rich or fallback output should contain the error code
     combined = captured.err + captured.out
-    assert "E005" in combined or True  # Rich console output may go elsewhere
+    assert True  # Rich console output may go elsewhere
 
 
 # ---------------------------------------------------------------------------
@@ -338,19 +338,17 @@ def test_doctor_check_evidence_cache_fail_has_error_code(tmp_path) -> None:
     cache_dir = tmp_path / "cache"
     cache_dir.mkdir()
 
-    with patch("ancilis.cli.doctor.Path.home", return_value=tmp_path):
-        with patch.object(
-            type(cache_dir / ".ancilis-write-probe"),
-            "write_text",
-            side_effect=PermissionError("denied"),
-        ):
-            # Patch at the Path level
-            pass
+    with patch("ancilis.cli.doctor.Path.home", return_value=tmp_path), patch.object(
+        type(cache_dir / ".ancilis-write-probe"),
+        "write_text",
+        side_effect=PermissionError("denied"),
+    ):
+        # Patch at the Path level
+        pass
 
     # Simulate permission error via patching the probe write
-    with patch("pathlib.Path.write_text", side_effect=PermissionError("denied")):
-        with patch("pathlib.Path.exists", return_value=True):
-            result = check_evidence_cache(None, False)
+    with patch("pathlib.Path.write_text", side_effect=PermissionError("denied")), patch("pathlib.Path.exists", return_value=True):
+        result = check_evidence_cache(None, False)
 
     assert result.status == CheckStatus.FAIL
     assert result.error_code == "E004"

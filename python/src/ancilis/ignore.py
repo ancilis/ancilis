@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import contextlib
 
 _ANCILISIGNORE = ".ancilisignore"
 
@@ -45,7 +46,7 @@ class IgnoreFilter:
         self._spec = pathspec.PathSpec.from_lines("gitignore", combined)
 
     @classmethod
-    def from_file(cls, project_root: Path) -> "IgnoreFilter":
+    def from_file(cls, project_root: Path) -> IgnoreFilter:
         """Load patterns from .ancilisignore in project_root, falling back to defaults."""
         ignore_file = project_root / _ANCILISIGNORE
         extra: list[str] = []
@@ -60,8 +61,6 @@ class IgnoreFilter:
         """Return True if *path* matches any ignore pattern."""
         p = Path(path)
         if relative_to is not None:
-            try:
+            with contextlib.suppress(ValueError):
                 p = p.relative_to(relative_to)
-            except ValueError:
-                pass
         return bool(self._spec.match_file(str(p)))
