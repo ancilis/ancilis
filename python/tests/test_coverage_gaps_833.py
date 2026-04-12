@@ -23,6 +23,11 @@ from ancilis.dependencies import detector as dependencies_detector
 from ancilis.deps import manifest as deps_manifest
 from ancilis.engine.action import Action, ActionParameters, ToolInfo
 
+try:
+    import tomllib as _test_tomllib
+except ModuleNotFoundError:
+    import tomli as _test_tomllib
+
 
 def _osv_response(vulns_per_query: list[list[dict]]) -> bytes:
     return json.dumps({"results": [{"vulns": vs} for vs in vulns_per_query]}).encode()
@@ -83,6 +88,10 @@ def _load_module_with_tomli_fallback(
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+
+    fake_tomli = ModuleType("tomli")
+    fake_tomli.loads = _test_tomllib.loads
+    monkeypatch.setitem(sys.modules, "tomli", fake_tomli)
 
     real_import = builtins.__import__
 
