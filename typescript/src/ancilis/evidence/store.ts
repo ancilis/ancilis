@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     evaluation_id VARCHAR NOT NULL,
     timestamp VARCHAR NOT NULL,
     agent_id VARCHAR NOT NULL,
+    session_id VARCHAR,
     source_type VARCHAR NOT NULL DEFAULT 'agent',
     tool_name VARCHAR NOT NULL,
     decision VARCHAR NOT NULL,
@@ -36,15 +37,15 @@ CREATE TABLE IF NOT EXISTS evidence_records (
 
 const INSERT_SQL = `
 INSERT INTO evidence_records (
-    record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+    record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 `;
 
 const SELECT_COLUMNS = `
-seq_id, record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
 `;
@@ -129,6 +130,9 @@ export class EvidenceStore {
       await execAsync(this._conn, CREATE_TABLE_SQL);
       const columns = await allAsync(this._conn, "PRAGMA table_info('evidence_records')");
       const names = new Set(columns.map((row) => (row as Record<string, unknown>).name as string));
+      if (!names.has("session_id")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN session_id VARCHAR");
+      }
       if (!names.has("source_type")) {
         await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'");
       }
@@ -177,6 +181,7 @@ export class EvidenceStore {
     await this.ensureInitialized();
     const recordId = randomUUID();
     const previousHash = await this.getLastHash();
+    const sessionId = evaluation.context?.sessionId ?? null;
 
     const controlResultsData = evaluation.controlResults.map(cr => ({
       control_id: cr.controlId,
@@ -202,6 +207,7 @@ export class EvidenceStore {
       totalDurationMs: evaluation.totalDurationMs,
       previousHash,
       outputSummary,
+      sessionId,
       tenantId: this._tenantId,
     });
     const recordHash = computeHash(canon);
@@ -223,6 +229,7 @@ export class EvidenceStore {
       previousHash,
       totalDurationMs: evaluation.totalDurationMs,
       outputSummary: outputSummary ?? null,
+      sessionId,
       tenantId: this._tenantId ?? null,
     };
 
@@ -231,6 +238,7 @@ export class EvidenceStore {
       record.evaluationId,
       record.timestamp,
       record.agentId,
+      record.sessionId ?? null,
       record.sourceType ?? "agent",
       record.toolName,
       record.decision,
@@ -347,6 +355,7 @@ export class EvidenceStore {
         totalDurationMs: record.totalDurationMs,
         previousHash: record.previousHash,
         outputSummary: record.outputSummary,
+        sessionId: record.sessionId,
         tenantId: record.tenantId,
       });
       const expectedHash = computeHash(canon);
@@ -481,6 +490,50 @@ export class EvidenceStore {
     return runAsync(this._conn!, sql, params);
   }
 
+  async listSessions(): Promise<Array<{ session_id: string; count: number; first_seen: string; last_seen: string }>> {
+    await this.ensureInitialized();
+    const tenantFilter = this._tenantId ? "AND tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
+    const rows = await allAsync(
+      this._conn!,
+      `SELECT session_id, COUNT(*)::INTEGER as cnt,
+       MIN(timestamp) as first_seen, MAX(timestamp) as last_seen
+       FROM evidence_records
+       WHERE session_id IS NOT NULL ${tenantFilter}
+       GROUP BY session_id ORDER BY last_seen DESC`,
+      params,
+    );
+    return (rows as Array<Record<string, unknown>>).map((r) => ({
+      session_id: r.session_id as string,
+      count: r.cnt as number,
+      first_seen: r.first_seen as string,
+      last_seen: r.last_seen as string,
+    }));
+  }
+
+  async latestSessionId(): Promise<string | null> {
+    await this.ensureInitialized();
+    const tenantFilter = this._tenantId ? "WHERE tenant_id = ?" : "";
+    const params = this._tenantId ? [this._tenantId] : [];
+    const rows = await allAsync(
+      this._conn!,
+      `SELECT session_id FROM evidence_records ${tenantFilter} ORDER BY timestamp DESC LIMIT 1`,
+      params,
+    );
+    const row = (rows as Array<Record<string, unknown>>)[0];
+    return row ? (row.session_id as string | null) : null;
+  }
+
+  async reset(): Promise<number> {
+    await this.ensureInitialized();
+    const countRows = await allAsync(this._conn!, "SELECT COUNT(*)::INTEGER as cnt FROM evidence_records", []);
+    const n = ((countRows[0] as Record<string, unknown>).cnt as number) ?? 0;
+    if (n > 0) {
+      await runAsync(this._conn!, "DELETE FROM evidence_records", []);
+    }
+    return n;
+  }
+
   async purgeBefore(beforeTimestamp: string): Promise<number> {
     await this.ensureInitialized();
     const countRows = await allAsync(
@@ -522,6 +575,7 @@ export class EvidenceStore {
       previousHash: row.previous_hash as string,
       totalDurationMs: row.total_duration_ms as number,
       outputSummary: (row.output_summary as string | null | undefined) ?? null,
+      sessionId: (row.session_id as string | null | undefined) ?? null,
       tenantId: (row.tenant_id as string | null | undefined) ?? null,
     };
   }

@@ -531,3 +531,65 @@ describe("Purge", () => {
     expect(await store.count()).toBe(1);
   });
 });
+
+// ===== listSessions / latestSessionId / reset =====
+
+describe("EvidenceStore.listSessions", () => {
+  it("returns empty array when no sessions recorded", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const sessions = await store.listSessions();
+    expect(sessions).toEqual([]);
+    await store.close();
+  });
+
+  it("groups records by session_id", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const e1 = makeEvaluation({ evaluationId: "e1" });
+    e1.context = { sessionId: "sess-A" } as typeof e1.context;
+    await store.store(e1, "tool1");
+    const e2 = makeEvaluation({ evaluationId: "e2" });
+    e2.context = { sessionId: "sess-A" } as typeof e2.context;
+    await store.store(e2, "tool2");
+    const e3 = makeEvaluation({ evaluationId: "e3" });
+    e3.context = { sessionId: "sess-B" } as typeof e3.context;
+    await store.store(e3, "tool3");
+
+    const sessions = await store.listSessions();
+    const ids = sessions.map((s) => s.session_id);
+    expect(ids).toContain("sess-A");
+    expect(ids).toContain("sess-B");
+    const sessA = sessions.find((s) => s.session_id === "sess-A");
+    expect(sessA?.count).toBe(2);
+    await store.close();
+  });
+});
+
+describe("EvidenceStore.reset", () => {
+  it("returns 0 when store is empty", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const n = await store.reset();
+    expect(n).toBe(0);
+    await store.close();
+  });
+
+  it("deletes all records and returns count", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
+    expect(await store.count()).toBe(2);
+
+    const n = await store.reset();
+    expect(n).toBe(2);
+    expect(await store.count()).toBe(0);
+    await store.close();
+  });
+});
+
+describe("EvidenceStore.latestSessionId", () => {
+  it("returns null when store is empty", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const id = await store.latestSessionId();
+    expect(id).toBeNull();
+    await store.close();
+  });
+});

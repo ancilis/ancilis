@@ -25,4 +25,5 @@ export interface EvaluationResult {
   activeOverlays: string[];
   dataClassifications: string[];
   totalDurationMs: number;
+  context?: { sessionId?: string };
 }
