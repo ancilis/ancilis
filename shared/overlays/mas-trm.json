@@ -1,0 +1,381 @@
+{
+  "id": "mas-trm",
+  "name": "MAS Technology Risk Management Guidelines v2.0",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": [
+    "DC-FIN",
+    "DC-AI"
+  ],
+  "description": "Monetary Authority of Singapore (MAS) Technology Risk Management (TRM) Guidelines v2.0 (2021) overlay. Mandatory for all MAS-regulated financial institutions in Singapore — banks, insurers, capital market intermediaries, and payment services providers. Prescriptive technology risk governance framework covering IT governance, application security, cyber surveillance, vendor management, and data management. AI-specific: MAS FEAT Principles (2018) and MAS AI governance guidance apply as companion obligations for FIs deploying AI/ML in customer-facing or risk-decisive functions.",
+  "jurisdiction": "SGP",
+  "enforcement_date": "2021-01-18",
+  "mandatory": true,
+  "regulated_entities": "MAS-regulated financial institutions — banks, insurers, capital markets intermediaries, payment services providers, and other entities holding a MAS licence or approval",
+  "companion_frameworks": [
+    "imda-mgf",
+    "glba",
+    "dora"
+  ],
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "IT and technology risk governance framework documented and approved by board of directors (MAS TRM §3.1)",
+        "Board-level oversight of technology risk demonstrated — board and senior management roles in technology risk defined (MAS TRM §3.2)",
+        "Technology Risk Management function established with documented responsibilities (MAS TRM §3.3)",
+        "AI/ML governance policy established for FIs using AI in customer-facing or risk-decisive functions — MAS FEAT Principles documented compliance"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §3.1–3.3 (IT Governance)"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Chief Information Officer (CIO) and/or Chief Information Security Officer (CISO) appointed with defined responsibilities (MAS TRM §3.3)",
+        "Technology risk ownership assigned to senior management with board reporting line",
+        "Accountability for AI systems documented — named individual or team for each deployed AI model in production",
+        "Technology governance committee meeting records — evidence of senior management oversight"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §3.2–3.3 (Board and Senior Management Responsibilities)"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Technology risk assessment conducted at least annually and on material changes (MAS TRM §5.1)",
+        "Risk appetite for technology and cyber risk defined by board and operationalized (MAS TRM §5.2)",
+        "Risk assessment covers AI system risks — algorithmic bias, model drift, adversarial inputs, data poisoning",
+        "Residual risk formally accepted and documented by appropriate risk owner"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §5.1–5.2 (Technology Risk Assessment and Appetite)"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Human oversight configuration for AI systems documented — particularly for credit decisions, fraud detection, customer advice, and other regulated functions",
+        "MAS FEAT Principles compliance documented — Fairness, Ethics, Accountability, and Transparency controls for AI used in customer-impacting decisions",
+        "Human-in-the-loop or human-on-the-loop oversight level determined by regulatory impact of AI decision",
+        "Override and contestation mechanism available for AI-assisted customer decisions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §5 (Risk Management); MAS FEAT Principles §Accountability"
+    },
+    "ID-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Technology asset inventory maintained covering all systems in scope of MAS TRM (MAS TRM §4.1)",
+        "AI/ML model inventory maintained — model name, version, deployment date, intended use, owner, data inputs, risk classification",
+        "Critical systems identified with enhanced controls and recovery capability",
+        "Asset inventory reviewed at least annually and updated on material changes"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §4.1 (IT Asset Management)"
+    },
+    "ID-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Third-party technology components and tools inventoried (MAS TRM §11.1)",
+        "AI/ML APIs, model hosting services, and third-party model providers documented in vendor inventory",
+        "Software bill of materials (SBOM) maintained for critical systems including AI pipelines",
+        "Technology outsourcing register maintained with risk classification for each vendor"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §11.1 (Technology Outsourcing — Vendor Inventory)"
+    },
+    "ID-03": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Data classification policy implemented — sensitivity levels defined and applied to customer and operational data (MAS TRM §13.1)",
+        "AI training data documented — sources, quality controls, bias assessment, representativeness",
+        "Data handling procedures mapped to classification level — access controls, encryption, retention, disposal",
+        "Customer data used in AI/ML models — consent and purpose limitation documented per Personal Data Protection Act (PDPA)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §13.1–13.2 (Data Classification and Protection)"
+    },
+    "ID-04": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Technology vendor risk assessment conducted before engagement and periodically thereafter (MAS TRM §11.2)",
+        "AI/ML model providers and cloud AI service providers assessed for concentration risk, data sovereignty, and security posture",
+        "Outsourced AI functions: risk assessment, contractual protections, and exit planning documented (MAS TRM §11.3)",
+        "Vendor due diligence records maintained with risk ratings and remediation tracking"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §11.2–11.3 (Technology Outsourcing — Due Diligence)"
+    },
+    "ID-05": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Technology risk classification applied to each system — critical, important, or general systems (MAS TRM §5.1)",
+        "AI systems classified based on regulatory function, customer impact, and failure consequences",
+        "Higher-risk AI systems (credit, fraud, customer advice) subject to enhanced controls and oversight",
+        "Risk profile updated on material changes to system, data inputs, or operating environment"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §5.1 (Technology Risk Classification)"
+    },
+    "PR-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Privileged access management (PAM) controls implemented for critical systems including AI infrastructure (MAS TRM §7.1)",
+        "Multi-factor authentication (MFA) enforced for remote access and privileged accounts (MAS TRM §7.1)",
+        "Access reviews conducted at least semi-annually — AI system access included",
+        "Separation of duties enforced for AI model development, validation, and production deployment"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §7.1 (Access Control and Privileged Access)"
+    },
+    "PR-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Principle of least privilege applied to all system accounts including AI service accounts (MAS TRM §7.1)",
+        "AI model permissions scoped to production data necessary for declared function — no broad access",
+        "Service account permissions reviewed on AI system deployments and updates",
+        "Permission scope documented in access control records and system security plans"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §7.1 (Principle of Least Privilege)"
+    },
+    "PR-03": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Software integrity verification implemented — checksums or signatures verified for third-party AI components (MAS TRM §7.3)",
+        "Application change management process requires security review for AI model updates (MAS TRM §6.1)",
+        "Third-party AI component authenticity verified before deployment — provenance chain documented",
+        "Patch and update management process applied to AI libraries, SDKs, and model serving infrastructure"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §6.1 (Change Management) and §7.3 (Patch Management)"
+    },
+    "PR-04": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Customer and sensitive data encrypted at rest and in transit in AI processing pipelines (MAS TRM §13.2)",
+        "Data masking or anonymisation applied to non-production AI training environments",
+        "AI model outputs involving customer data reviewed for inadvertent data disclosure",
+        "Data loss prevention (DLP) controls applied to AI system outputs and logs containing sensitive data"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §13.2 (Data Protection and Encryption)"
+    },
+    "PR-05": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Audit logging implemented for all critical system actions including AI inference requests and model changes (MAS TRM §9.1)",
+        "Logs include: timestamp, user/system identity, action, data accessed, and outcome",
+        "Log retention minimum 1 year online, 5 years total for regulated financial activities (MAS TRM §9.1)",
+        "Audit logs protected from modification — integrity controls evidenced"
+      ],
+      "threshold_adjustments": {
+        "log_retention_days": 1825
+      },
+      "framework_reference": "MAS TRM §9.1 (Security Monitoring and Audit Logging)"
+    },
+    "PR-06": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Configuration management process documented — baseline configurations for AI infrastructure and model serving (MAS TRM §6.1)",
+        "Change advisory board (CAB) or equivalent approves material AI system changes",
+        "Configuration baselines maintained and drift detection in place (MAS TRM §6.2)",
+        "Production AI model configuration changes require documented approval and testing evidence"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §6.1–6.2 (IT Project and Change Management)"
+    },
+    "PR-07": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "TLS 1.2 or higher enforced for all AI API communications — certificate management documented (MAS TRM §7.2)",
+        "Network segmentation applied to AI infrastructure — AI processing environments isolated from untrusted networks",
+        "Mutual authentication enforced for inter-system AI service communications in production",
+        "Encryption key management documented including rotation schedule (MAS TRM §13.2)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §7.2 (Network Security and Encryption)"
+    },
+    "PR-08": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Secure software development lifecycle (SSDLC) applied to AI applications — includes security code review and testing (MAS TRM §7.2)",
+        "Input validation implemented for all AI system interfaces exposed to customers or third parties",
+        "Penetration testing conducted annually for customer-facing AI systems (MAS TRM §7.4)",
+        "Vulnerability assessment program includes AI model serving infrastructure"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §7.2 (Application Security) and §7.4 (Security Testing)"
+    },
+    "DE-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Security information and event management (SIEM) deployed with coverage of AI infrastructure (MAS TRM §9.1)",
+        "AI model performance monitoring implemented — tracks accuracy, drift, anomalous output rates",
+        "Behavioural anomaly detection for AI system usage — unusual query volumes, unexpected output patterns",
+        "Monitoring alerts reviewed and triaged — evidence of SOC or equivalent operational monitoring"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §9.1–9.2 (Cyber Surveillance and Security Monitoring)"
+    },
+    "DE-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Configuration drift detection implemented for critical AI infrastructure — alerts on unauthorised changes (MAS TRM §6.2)",
+        "Integrity monitoring in place for AI model files and serving infrastructure",
+        "Drift alerts reviewed within defined SLA — evidence of alert review and disposition records"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §6.2 (Change Detection and Configuration Monitoring)"
+    },
+    "DE-03": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Technology risk compliance review conducted periodically — AI systems included in scope (MAS TRM §5.1)",
+        "Internal audit coverage of AI systems and technology risk controls",
+        "Compliance deviations from MAS TRM reported to senior management and tracked to closure",
+        "MAS examination readiness — evidence packages maintained for regulatory inspection"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §5 (Technology Risk Management) — ongoing compliance monitoring"
+    },
+    "DE-04": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Audit log integrity protected — tamper-evident logging with access controls on log stores (MAS TRM §9.1)",
+        "Log integrity monitoring implemented — alerts on log deletion or modification events",
+        "Evidence preservation controls for regulatory investigation — legal hold capability documented",
+        "Log completeness validated periodically — gaps identified and remediated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §9.1 (Audit Log Integrity)"
+    },
+    "RS-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Cyber incident response plan documented and tested annually — AI system incidents in scope (MAS TRM §10.1)",
+        "Automated containment capabilities for AI system compromise or harmful output scenarios",
+        "Incident response playbooks cover AI-specific scenarios: model poisoning, adversarial attack, data breach via AI",
+        "Response SLAs defined — containment and notification timelines for technology incidents"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §10.1 (Cyber Incident Response)"
+    },
+    "RS-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Escalation procedure for AI system incidents to senior management and board where material (MAS TRM §10.1)",
+        "Customer complaint and appeal mechanism for AI-assisted financial decisions",
+        "MAS incident notification: technology incidents affecting regulated services notified within 1 hour of declaration (MAS TRM §10.2)",
+        "Escalation chain tested — tabletop exercise or simulation records"
+      ],
+      "threshold_adjustments": {
+        "escalation_notification_hours": 1
+      },
+      "framework_reference": "MAS TRM §10.1–10.2 (Incident Escalation and MAS Notification)"
+    },
+    "RS-03": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Forensic evidence preservation for cyber incidents — evidence integrity maintained for regulatory investigation (MAS TRM §10.1)",
+        "AI incident records preserved: model versions, input data, output logs, timeline",
+        "Evidence chain of custody documented for material incidents",
+        "Post-incident evidence package submitted to MAS on request — format and content standards documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §10.1 (Incident Evidence and Forensics)"
+    },
+    "RC-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Business continuity plan (BCP) and IT disaster recovery plan (DRP) documented and tested for AI systems (MAS TRM §8.1)",
+        "AI model rollback capability — ability to revert to prior production model version within defined RTO",
+        "Recovery time objective (RTO) and recovery point objective (RPO) defined for AI-dependent services",
+        "BCP/DRP test results documented — AI system recovery tested at least annually"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §8.1 (Business Continuity and Recovery)"
+    },
+    "RC-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Post-incident review conducted for material technology incidents including AI system failures (MAS TRM §10.1)",
+        "Root cause analysis documented and remediation plan implemented with timeline",
+        "Lessons learned integrated into technology risk management framework",
+        "MAS post-incident report submitted for notifiable incidents — format and timeline per MAS TRM §10.2"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MAS TRM §10.1–10.2 (Post-Incident Review and Regulatory Reporting)"
+    }
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": 1,
+    "assessment_type": "Regulatory examination by MAS — periodic technology risk assessments and cyber resilience stress tests. MAS may conduct targeted examinations of AI system governance for FIs using AI in regulated functions. Annual self-assessment against MAS TRM by CIO/CISO.",
+    "reporting_entity": "Monetary Authority of Singapore (MAS). Notifiable technology incidents (affecting customer services, critical infrastructure, or data integrity) must be reported to MAS within 1 hour of declaration (MAS TRM §10.2) and followed up with a full incident report within 14 days.",
+    "incident_notification_deadline_hours": 1,
+    "full_report_deadline_days": 14,
+    "notes": "MAS adopts a risk-based supervisory approach. Severity of examination scrutiny scales with the FI's technology risk profile and systemic importance. AI-specific supervisory attention is increasing — MAS FEAT Principles (2018) and subsequent guidance are increasingly incorporated into MAS examination scope for FIs using AI in credit, fraud, and customer advisory functions."
+  },
+  "human_oversight_mandates": {
+    "required": true,
+    "description": "MAS FEAT Principles (Fairness, Ethics, Accountability, Transparency) apply to Singapore FIs using AI/ML in customer-impacting decisions. Accountability principle requires human oversight and explainability for AI-assisted credit decisions, fraud alerts, and financial advice. MAS TRM §3.2 requires board oversight of technology risk — this extends to AI model risk for material deployments. Human escalation mandatory for AI incidents affecting customer services or regulatory obligations.",
+    "applies_to": "AI systems used in credit assessment, fraud detection, customer advice, AML/KYC screening, and any function regulated by MAS that involves customer-facing AI decisions"
+  },
+  "framework_mapping": {
+    "GOV-01": ["MAS TRM §3.1", "§3.2", "§3.3"],
+    "GOV-02": ["MAS TRM §3.2", "§3.3"],
+    "GOV-03": ["MAS TRM §5.1", "§5.2"],
+    "GOV-04": ["MAS TRM §5", "MAS FEAT Principles"],
+    "ID-01": ["MAS TRM §4.1"],
+    "ID-02": ["MAS TRM §11.1"],
+    "ID-03": ["MAS TRM §13.1", "§13.2"],
+    "ID-04": ["MAS TRM §11.2", "§11.3"],
+    "ID-05": ["MAS TRM §5.1"],
+    "PR-01": ["MAS TRM §7.1"],
+    "PR-02": ["MAS TRM §7.1"],
+    "PR-03": ["MAS TRM §6.1", "§7.3"],
+    "PR-04": ["MAS TRM §13.2"],
+    "PR-05": ["MAS TRM §9.1"],
+    "PR-06": ["MAS TRM §6.1", "§6.2"],
+    "PR-07": ["MAS TRM §7.2", "§13.2"],
+    "PR-08": ["MAS TRM §7.2", "§7.4"],
+    "DE-01": ["MAS TRM §9.1", "§9.2"],
+    "DE-02": ["MAS TRM §6.2"],
+    "DE-03": ["MAS TRM §5.1"],
+    "DE-04": ["MAS TRM §9.1"],
+    "RS-01": ["MAS TRM §10.1"],
+    "RS-02": ["MAS TRM §10.1", "§10.2"],
+    "RS-03": ["MAS TRM §10.1"],
+    "RC-01": ["MAS TRM §8.1"],
+    "RC-02": ["MAS TRM §10.1", "§10.2"]
+  },
+  "evidence_retention_minimum_days": 1825,
+  "human_oversight_required": true,
+  "notes": "MAS TRM v2.0 — Technology Risk Management Guidelines issued January 2021 by the Monetary Authority of Singapore. Mandatory for all MAS-regulated financial institutions. More prescriptive than the companion IMDA MGF (voluntary). All 26 AKSI controls achieve full coverage under MAS TRM — the prescriptive technical nature of MAS TRM means it addresses security, monitoring, vendor management, and incident response explicitly. Evidence retention set to 1825 days (5 years) per MAS regulatory record-keeping expectations for financial services. Threshold adjustment on PR-05 log retention (1825 days) and RS-02 escalation notification (1 hour) reflects MAS-specific requirements more stringent than AKSI defaults. Companion overlay: imda-mgf.json for broader Singapore AI governance context. MAS FEAT Principles (2018) referenced for AI-specific accountability and fairness obligations — these are soft-law guidance but increasingly examined by MAS for material AI deployments. v0.2 planned to incorporate FEAT Principles as explicit framework mapping entries and add Singapore PDPA Article-level citations for PR-04."
+}
