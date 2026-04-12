@@ -210,21 +210,23 @@ class TestCLIErrorPaths:
         assert result.exit_code != 0
 
     def test_doctor_missing_config(self, tmp_path: Path) -> None:
-        """ancilis doctor with missing config shows FAIL and next steps."""
+        """ancilis doctor with missing config shows error and fix hint."""
         runner = CliRunner()
         result = runner.invoke(cli, ["doctor", "--config", str(tmp_path / "nope.yaml")])
         assert result.exit_code != 0
-        assert "FAIL" in result.output
+        # New format uses [✗] icon; "ancilis.yaml" appears in detail and fix hint
+        assert "[✗]" in result.output or "not found" in result.output
         assert "ancilis.yaml" in result.output
 
     def test_doctor_valid_config(self, tmp_path: Path) -> None:
-        """ancilis doctor with valid config shows OK and next steps."""
+        """ancilis doctor with valid config shows config loaded successfully."""
         path = _write_config({"agent": {"name": "test"}}, tmp_path)
         runner = CliRunner()
         result = runner.invoke(cli, ["doctor", "--config", str(path)])
-        assert result.exit_code == 0
-        assert "OK" in result.output
-        assert "Ready" in result.output
+        # Exit code 0 (all pass) or 1 (warnings like platform/gitignore) — never 2
+        assert result.exit_code in (0, 1)
+        assert "Ancilis Doctor" in result.output
+        assert "checks passed" in result.output
 
     def test_approve_tool_missing_config(self) -> None:
         """ancilis approve-tool with missing config gives error."""
