@@ -70,6 +70,7 @@ export class ToolActionProducer {
   private _engine: Engine;
   private _registry: ToolRegistry;
   private _evidenceStore: EvidenceStore;
+  private _sessionId: string = randomUUID();
 
   constructor(
     config: ResolvedConfig,
@@ -85,6 +86,8 @@ export class ToolActionProducer {
 
   get producerType(): ProducerType { return ProducerType.FRAMEWORK; }
   get producerVersion(): string { return "0.1.0"; }
+  /** Unique identifier for this producer instance (one per agent run). */
+  get sessionId(): string { return this._sessionId; }
 
   private _qualifiedName(fn: AnyFn, toolName?: string): string {
     if (toolName) return toolName;
@@ -128,6 +131,7 @@ export class ToolActionProducer {
       },
       parameters: { raw: payload, parameterHash: paramHash },
       context: {
+        sessionId: this._sessionId,
         dataClassifications: this._buildDcCodes(),
         activeOverlays: [...this._config.activeOverlays.keys()],
       },

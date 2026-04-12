@@ -51,6 +51,24 @@ describe("package exports", () => {
     expect(root.evaluateAndExecute).toBeDefined();
   });
 
+  it("exposes sessionId on all non-MCP producers for Python parity", () => {
+    const config = makeConfig({ mode: "audit" });
+    const store = new EvidenceStore(config, { inMemory: true });
+    const cli = new CLIActionProducer(config, new Engine(config), undefined, store);
+    const http = new HTTPActionProducer(config, new Engine(config), undefined, store);
+    const tool = new ToolActionProducer(config, new Engine(config), undefined, store);
+
+    // Each producer gets a unique session id
+    expect(cli.sessionId).toHaveLength(36);
+    expect(http.sessionId).toHaveLength(36);
+    expect(tool.sessionId).toHaveLength(36);
+    expect(cli.sessionId).not.toBe(http.sessionId);
+    expect(cli.sessionId).not.toBe(tool.sessionId);
+
+    // Session id is stable across calls
+    expect(cli.sessionId).toBe(cli.sessionId);
+  });
+
   it("exposes a shared producer protocol surface", () => {
     const config = makeConfig({ mode: "audit" });
     const evidenceStore = new EvidenceStore(config, { inMemory: true });
@@ -355,6 +373,24 @@ describe("ToolActionProducer", () => {
     );
 
     expect(producer.registerTools(registry)).toEqual(["tool:payments.refund"]);
+  });
+
+  it("propagates sessionId into action context for Python parity", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new ToolActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    const action = producer.translate({
+      fn: (x: unknown) => x,
+      agentName: "runtime-agent",
+      toolName: "tool:demo",
+    });
+
+    expect(action.context?.sessionId).toBe(producer.sessionId);
   });
 
   it("treats a bare allowlist entry as approval for an explicitly named tool", async () => {

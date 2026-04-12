@@ -40,6 +40,7 @@ export class HTTPActionProducer {
   private _engine: Engine;
   private _registry: ToolRegistry;
   private _evidenceStore: EvidenceStore;
+  private _sessionId: string = randomUUID();
 
   constructor(
     config: ResolvedConfig,
@@ -55,6 +56,8 @@ export class HTTPActionProducer {
 
   get producerType(): ProducerType { return ProducerType.HTTP; }
   get producerVersion(): string { return "0.1.0"; }
+  /** Unique identifier for this producer instance (one per agent run). */
+  get sessionId(): string { return this._sessionId; }
 
   private _toolName(request: HTTPRequest): string {
     try {
