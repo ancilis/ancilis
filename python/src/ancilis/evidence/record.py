@@ -22,6 +22,7 @@ class EvidenceRecord:
     active_certifications: list[str]
     record_hash: str
     previous_hash: str
+    detected_data_types: list[str] = field(default_factory=list)
     total_duration_ms: float = 0.0
     output_summary: str | None = None
     session_id: str | None = None

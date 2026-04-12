@@ -24,6 +24,16 @@ from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
 # Controls that have evaluators
 EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08", "DE-01"}
 
+# Maps PR-04 pattern types to data classification DC codes
+PATTERN_TO_DC: dict[str, str] = {
+    "ssn": "DC-PII",
+    "email": "DC-PII",
+    "phone": "DC-PII",
+    "credit_card": "DC-CHD",
+    "mrn": "DC-PHI",
+    "api_key": "DC-IP",
+}
+
 
 class Engine:
     """Control evaluation engine. Evaluates actions against active controls."""
@@ -132,6 +142,16 @@ class Engine:
                 if code not in data_classifications:
                     data_classifications.append(code)
 
+        # Extract detected DC codes from PR-04 pattern scan results
+        detected_data_types: list[str] = []
+        for cr in control_results:
+            if cr.control_id == "PR-04":
+                for pattern in cr.evidence_data.get("patterns_detected", []):
+                    dc_code = PATTERN_TO_DC.get(pattern.get("type", ""))
+                    if dc_code and dc_code not in detected_data_types:
+                        detected_data_types.append(dc_code)
+                break
+
         return EvaluationResult(
             evaluation_id=str(uuid.uuid4()),
             action_id=action.action_id,
@@ -144,6 +164,7 @@ class Engine:
             decision_reason=decision_reason,
             active_overlays=active_overlays,
             data_classifications=data_classifications,
+            detected_data_types=detected_data_types,
             total_duration_ms=total_ms,
             session_id=action.context.session_id,
         )
