@@ -1,0 +1,133 @@
+---
+title: "Financial Services Overlay (GLBA, SOX, DORA)"
+description: "AKSI compliance overlay for AI agents in financial services — packages evidence for GLBA, SOX, and DORA requirements."
+---
+
+## Overview
+
+The `glba` overlay is designed for AI agents that handle customer financial data, process transaction records, support financial reporting workflows, or operate inside financial institutions subject to US or EU financial services regulation.
+
+It packages evidence simultaneously for three frameworks:
+
+| Framework | Full Name | Scope |
+|-----------|-----------|-------|
+| **GLBA** | Gramm-Leach-Bliley Act Safeguards Rule (16 CFR 314) | US financial institutions handling customer NPI |
+| **SOX** | Sarbanes-Oxley Act §302 / §404 | Public company internal controls over financial reporting |
+| **DORA** | EU Digital Operational Resilience Act | EU financial entities and ICT service providers |
+
+---
+
+## Activation
+
+**Explicit in `ancilis.yaml`:**
+```yaml
+compliance:
+  overlays:
+    - glba
+```
+
+**Automatic trigger** — activates when your agent declares data classifications matching financial data types:
+```yaml
+# ancilis.yaml
+my_agent_handles:
+  - financial-data
+```
+
+Confirm activation via `ancilis status`:
+```
+Financial overlay: active — triggered by financial data declaration
+```
+
+---
+
+## Control Mapping
+
+| AKSI Control | GLBA Safeguards Rule | SOX | DORA |
+|-------------|---------------------|-----|------|
+| **PR-01** (Identity & Auth) | 16 CFR 314.4(a) — qualified individual; board oversight | §302 CEO/CFO certifications | Art.5 — management responsibilities |
+| **PR-02** (Scope Confinement) | 314.4(c)(2) — asset inventory; 314.4(f) — vendor management | §404 — scope of ICFR | Art.8 — ICT asset management |
+| **PR-03** (Tool Provenance) | 314.4(g) — change management | §302/§404 — change control | Art.9 — ICT security; Art.15 — anomaly management |
+| **PR-04** (Data Exposure) | 314.4(d) — customer information protection; 314.4(e) — encryption | §302 — material financial disclosures | Art.9(2) — data security |
+| **PR-05** (Audit Trail) | 314.4(h) — audit and testing | §302/§404 — audit committee; §802 — record retention | Art.17 — ICT-related incident logging |
+| **DE-01** (Dependencies) | 314.4(f) — third-party service provider oversight | §404 — third-party controls | Art.9 — patch and vulnerability management |
+
+---
+
+## Evidence Requirements
+
+The overlay adds specific evidence requirements to each control evaluation:
+
+### PR-01 — Identity & Authorization
+- Information security program documented and approved by senior leadership (GLBA 314.4(a))
+- Qualified individual designated to oversee the information security program
+- Annual written report to the board on the information security program (GLBA 314.4(i))
+- SOX §302 CEO/CFO certifications address information security
+
+### PR-04 — Data Exposure Prevention
+- Encryption of customer financial information in transit and at rest (GLBA 314.4(e))
+- No NPI (non-public personal information) transmitted without authorization
+- SOX material financial disclosure controls active
+
+### PR-05 — Audit Trail
+- Audit and testing program covering the information security program (GLBA 314.4(h))
+- SOX §404 management assessment of internal controls documented
+- ICT-related incident logging per DORA Art.17
+
+---
+
+## Example `ancilis.yaml` Configuration
+
+```yaml
+agent:
+  name: financial-reporting-agent
+  description: "Agent for automated financial report generation"
+
+security:
+  mode: enforce   # enforce mode recommended for financial services
+
+compliance:
+  overlays:
+    - glba
+  evidence:
+    retention_days: 2555  # 7 years for SOX §802 compliance
+
+scan:
+  dependencies:
+    enabled: true
+    severity_threshold: high
+```
+
+---
+
+## Posture Output With Financial Overlay
+
+```bash
+ancilis report --format terminal --period 30d
+```
+
+```
+Ancilis Posture Report — financial-reporting-agent
+Period: last 30 days  |  Overlay: Financial Services (GLBA, SOX, DORA)
+
+Control              Framework Ref                    Status    Evals   Failures
+───────────────────────────────────────────────────────────────────────────────
+Identity & Auth      GLBA 314.4(a); SOX §302          ✓ pass    42      0
+Scope Confinement    GLBA 314.4(c); DORA Art.8         ✓ pass    38      0
+Tool Provenance      GLBA 314.4(g); SOX §302           ✓ pass    29      0
+Data Exposure        GLBA 314.4(d)(e); SOX §302        ✓ pass    55      0
+Audit Trail          GLBA 314.4(h); SOX §404; DORA     ✓ pass    80      0
+Dependencies (DE-01) GLBA 314.4(f); DORA Art.9         ✓ pass    —       0
+
+Posture: COMPLIANT
+GLBA Safeguards Rule: evidence present for all 6 controls
+SOX Internal Controls: evidence present (§302, §404 coverage)
+DORA Operational Resilience: evidence present (Art.5, 8, 9, 17)
+```
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview) — how overlays work
+- [Reading Reports](/overlays/reading-reports) — interpreting overlay output
+- [ancilis scan](/cli/scan) — evaluate with overlay active

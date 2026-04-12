@@ -1,0 +1,187 @@
+---
+title: "Reading Overlay Reports"
+description: "How to interpret ancilis report output when a compliance overlay is active."
+---
+
+## Overview
+
+When a compliance overlay is active, `ancilis report` produces richer output that links each control to the relevant framework requirements. This guide walks through how to read every section.
+
+---
+
+## Report Header
+
+```
+Ancilis Posture Report — my-financial-agent
+Period: last 30 days  |  Mode: enforce  |  Overlay: Financial Services (GLBA, SOX, DORA)
+Generated: 2026-04-12T10:00:00Z  |  Session: sess_20260412_abc123
+```
+
+| Field | Meaning |
+|-------|---------|
+| **Agent** | The `agent.name` from `ancilis.yaml` |
+| **Period** | Evidence window passed to `--period` (default 30d) |
+| **Mode** | `audit` (log only) or `enforce` (block on failure) |
+| **Overlay** | Active overlay(s) — the framework name, not the ID |
+| **Session** | Session ID for reproducibility — pass to `--session` to regenerate |
+
+---
+
+## Control Table
+
+```
+Control              Framework Ref                    Status    Evals   Failures   Flags
+─────────────────────────────────────────────────────────────────────────────────────────
+Identity & Auth      GLBA 314.4(a); SOX §302          ✓ pass    42      0          0
+Scope Confinement    GLBA 314.4(c); DORA Art.8         ✓ pass    38      0          2
+Tool Provenance      GLBA 314.4(g); SOX §302           ✗ fail    29      3          0
+Data Exposure        GLBA 314.4(d)(e); SOX §302        ✓ pass    55      0          0
+Audit Trail          GLBA 314.4(h); SOX §404; DORA     ✓ pass    80      0          0
+Dependencies (DE-01) GLBA 314.4(f); DORA Art.9         ✓ pass    —       0          0
+```
+
+### Status Icons
+
+| Icon | Status | Meaning |
+|------|--------|---------|
+| `✓ pass` | PASS | All evaluations for this control passed in the period |
+| `✗ fail` | FAIL | One or more evaluations failed — review is required |
+| `⚠ flag` | FLAG | Deviations detected but not blocking — worth reviewing |
+| `– skip` | SKIP | No evidence collected for this control in the period |
+
+### Columns
+
+| Column | Description |
+|--------|-------------|
+| **Control** | AKSI control display name |
+| **Framework Ref** | Overlay-specific regulatory citations |
+| **Status** | Overall control status for the period |
+| **Evals** | Total evaluation count for the period; `—` means no evidence |
+| **Failures** | Number of FAIL + ERROR evaluations |
+| **Flags** | Number of FLAG evaluations (deviations, not blocking) |
+
+---
+
+## Flags vs Failures
+
+**Failures** (`✗ fail`) mean the control evaluation returned `FAIL` or `ERROR`:
+- In `audit` mode: logged, posture is `non_compliant`, no blocking
+- In `enforce` mode: the tool call was blocked
+
+**Flags** (`FLAG`) mean a deviation was detected that does not directly fail the control:
+- Example: a tool call to an unusual destination that was allowed, but noted for review
+- Always investigate flags — they can be early signals of control drift
+
+---
+
+## Posture Summary
+
+```
+Posture: NON-COMPLIANT
+```
+
+| Posture | Meaning |
+|---------|---------|
+| `COMPLIANT` | All controls pass; no failures; exit code 0 |
+| `NON-COMPLIANT` | One or more controls fail or tool calls blocked; exit code 1 |
+
+---
+
+## Framework Coverage Section
+
+When an overlay is active, the report appends a framework-specific summary:
+
+```
+GLBA Safeguards Rule (16 CFR 314):
+  ✓ 314.4(a) — Identity & oversight: evidence present
+  ✓ 314.4(c) — Asset inventory: evidence present
+  ✗ 314.4(g) — Change management: 3 failures detected
+  ✓ 314.4(h) — Audit & testing: evidence present
+
+SOX Internal Controls:
+  ✓ §302 CEO/CFO Certifications: evidence present
+  ✗ §404 Tool provenance controls: 3 evaluation failures
+
+DORA Operational Resilience:
+  ✓ Art.5 Management responsibilities: evidence present
+  ✓ Art.8 ICT asset management: evidence present
+  ✓ Art.17 Incident logging: evidence present
+```
+
+This section maps posture status back to specific regulatory sections, making it easy to identify which framework obligations have open findings.
+
+---
+
+## Investigating a Failure
+
+When you see `✗ fail` on a control:
+
+**Step 1 — Get NDJSON evidence**
+```bash
+ancilis report --format ndjson --period 30d | jq 'select(.control_id == "PR-03")'
+```
+
+**Step 2 — Filter to failures**
+```bash
+ancilis report --format ndjson | jq 'select(.control_id == "PR-03" and .result == "FAIL")'
+```
+
+**Step 3 — Review the detail and evidence fields**
+```json
+{
+  "control_id": "PR-03",
+  "result": "FAIL",
+  "detail": "Tool 'delete_production_db' is not registered or approved.",
+  "evidence_data": {
+    "tool_name": "delete_production_db",
+    "approved": false,
+    "agent_id": "my-financial-agent"
+  },
+  "timestamp": "2026-04-12T09:43:12Z"
+}
+```
+
+**Step 4 — Approve the tool or update scope**
+```bash
+ancilis approve-tool delete_production_db  # if the tool should be allowed
+# or update ancilis.yaml to add it to security.tools.blocked
+```
+
+---
+
+## Session-Scoped Reports
+
+Every report is tied to a session. Use `--session` to reproduce the same report:
+
+```bash
+# Get the session ID from any report header
+ancilis report --format terminal
+# Session: sess_20260412_abc123
+
+# Reproduce that exact report anytime
+ancilis report --session sess_20260412_abc123 --format markdown --output audit-package.md
+```
+
+---
+
+## Export Formats for Auditors
+
+| Format | Command | Best For |
+|--------|---------|----------|
+| PDF | `ancilis report --format pdf --output report.pdf` | Formal audit packages |
+| Markdown | `ancilis report --format markdown --output report.md` | Pull request evidence |
+| CSV | `ancilis report --format csv --output evidence.csv` | Spreadsheet review |
+| NDJSON | `ancilis report --format ndjson` | SIEM / log pipeline ingestion |
+| AIUC1 Readiness | `ancilis report --format aiuc1-readiness` | AKSI UC-1 certification prep |
+
+---
+
+## Related
+
+- [ancilis report](/cli/report) — full report command reference
+- [ancilis scan](/cli/scan) — evaluate posture and get exit codes
+- [Overlay Overview](/overlays/overview) — how overlays work
+- [Financial Services Overlay](/overlays/financial)
+- [FedRAMP Overlay](/overlays/fedramp)
+- [CCPA/CPRA Overlay](/overlays/ccpa)
+- [NIST CSF Overlay](/overlays/nist-csf)

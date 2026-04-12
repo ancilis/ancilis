@@ -1,0 +1,125 @@
+---
+title: "ancilis init"
+description: "Initialize a new Ancilis project with framework-aware configuration."
+---
+
+## Overview
+
+`ancilis init` scaffolds an `ancilis.yaml` configuration file, a sample scan script, and supporting files in your project directory. It auto-detects your agent framework from `requirements.txt` or `pyproject.toml` and prompts for any missing information.
+
+```bash
+ancilis init [OPTIONS]
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--framework`, `-f` | choice | auto-detect | Agent framework: `langchain`, `crewai`, `autogen`, `openai`, `generic` |
+| `--overlay`, `-o` | string | prompted | Compliance overlay (e.g. `soc2`, `gdpr`, `hipaa`) |
+| `--agent-name` | string | directory name | Agent name written to `ancilis.yaml` |
+| `--detect` | flag | `false` | Auto-detect framework without prompting |
+| `--no-sample` | flag | `false` | Skip generating the `ancilis_scan.py` sample script |
+| `--dir` | path | `.` | Target directory |
+
+## Files Created
+
+| File | Description |
+|------|-------------|
+| `ancilis.yaml` | Main configuration file |
+| `ancilis_scan.py` | Framework-aware sample scan script |
+| `.env.example` | Environment variable template with `ANCILIS_API_KEY` |
+| `.gitignore` | Updated with `.ancilis/` entry if git repo detected |
+
+## Available Overlays
+
+| Overlay ID | Framework |
+|-----------|-----------|
+| `soc2` | SOC 2 Type II |
+| `gdpr` | EU GDPR |
+| `hipaa` | HIPAA |
+| `iso-42001` | ISO/IEC 42001 AI Management |
+| `eu-ai-act` | EU AI Act |
+| `nist-csf` | NIST Cybersecurity Framework |
+| `pci-dss-v4` | PCI DSS v4.0 |
+| `cmmc-l2` | CMMC Level 2 |
+| `glba` | GLBA / SOX / DORA (Financial Services) |
+| `securities-mnpi` | Securities MNPI |
+
+## Examples
+
+**Interactive setup (recommended for first-time users)**
+```bash
+cd my-agent-project
+ancilis init
+```
+
+```
+Detected framework: langchain (from requirements.txt)
+Use langchain? [Y/n]: Y
+Available compliance overlays:
+   1. soc2
+   2. gdpr
+   ...
+Select overlay [soc2]: soc2
+Agent name [my-agent-project]:
+
+✓ ancilis.yaml
+✓ ancilis_scan.py
+✓ .env.example
+✓ updated .gitignore
+
+Next steps:
+  1. Review ancilis.yaml and adjust settings
+  2. Run: ancilis doctor       — verify your setup
+  3. Run: ancilis scan          — run your first compliance scan
+  4. Visit https://docs.ancilis.dev/quickstart for the full guide
+```
+
+**Non-interactive setup (for automation and CI)**
+```bash
+ancilis init \
+  --framework langchain \
+  --overlay soc2 \
+  --agent-name my-trading-agent \
+  --detect \
+  --no-sample
+```
+
+**Initialize in a specific directory**
+```bash
+ancilis init --dir /workspace/agents/billing-agent --framework openai --overlay glba
+```
+
+**Overwrite existing config**
+```bash
+ancilis init
+# ancilis.yaml already exists. Overwrite? [y/N]: y
+```
+
+## Generated ancilis.yaml
+
+```yaml
+agent:
+  name: my-agent
+
+security:
+  mode: audit
+
+compliance:
+  overlays:
+    - soc2
+```
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `ancilis.yaml already exists` | Confirm overwrite at the prompt, or pass `--dir` to a new directory |
+| Framework not detected | Pass `--framework` explicitly |
+| Invalid overlay | Check supported overlays in the table above |
+
+## Related
+
+- [ancilis doctor](/cli/doctor) — verify setup after init
+- [Configuration reference](/sdk/python#configuration) — full `ancilis.yaml` schema

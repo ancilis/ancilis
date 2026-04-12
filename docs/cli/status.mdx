@@ -1,0 +1,123 @@
+---
+title: "ancilis status"
+description: "Show current agent security posture — the developer's primary interaction point."
+---
+
+## Overview
+
+`ancilis status` displays a concise summary of your agent's current compliance posture: active controls, overlay status, evaluation counts, and any flagged deviations. It's the quickest way to check agent health during development without the CI exit-code semantics of `ancilis scan`.
+
+```bash
+ancilis status [OPTIONS]
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--verbose`, `-v` | flag | `false` | Show per-control breakdown with evaluation details |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | default | Path to evidence database |
+| `--session` | string | latest | Scope to a specific session ID |
+| `--latest` / `--all` | flag | `--latest` | Use latest session (default) or all sessions |
+
+## Examples
+
+**Basic status (no evaluations yet)**
+```bash
+ancilis status
+```
+
+```
+Ancilis — my-agent
+  Mode: audit
+  Controls: 6 active, not yet evaluated
+  No evaluations recorded yet. Run your agent with Ancilis to start collecting evidence.
+```
+
+**Status after evidence collection**
+```bash
+ancilis status
+```
+
+```
+Ancilis — my-agent
+  Mode:     audit
+  Controls: 6 active, all passing
+  SOC2: active
+  Financial overlay: active — triggered by financial data declaration
+  Tool calls: 246 evaluated, 0 blocked
+```
+
+**Verbose — per-control breakdown**
+```bash
+ancilis status --verbose
+```
+
+```
+Ancilis — my-agent
+  Mode:     audit
+  Controls: 6 active, all passing
+  SOC2: active
+  Tool calls: 246 evaluated, 0 blocked
+
+  Controls:
+    ✓ Identity & Authorization — passing
+    ✓ Scope Confinement — passing (2 flags)
+    ✓ Output Integrity — passing
+    ✓ Prompt Security — passing
+    ✓ Audit Trail — passing
+    ✓ Dependency Vulnerabilities — passing
+
+  Activation:
+    SOC2 certification active — 6 controls enforcing
+    Financial overlay active — triggered by financial data declaration
+
+  Evidence records: 246 stored, hash chain intact
+```
+
+**Verbose with flagged control warnings**
+```bash
+ancilis status --verbose
+```
+
+```
+  Warnings:
+    [scope confinement] Scope Confinement flagged deviations
+            Review recent activity: ancilis report --period 1d
+```
+
+**Scope to a specific session**
+```bash
+ancilis status --session sess_20260412_abc123 --verbose
+```
+
+## Status Indicators
+
+| Indicator | Meaning |
+|-----------|---------|
+| `not yet evaluated` | No evidence collected in the current session |
+| `all passing` | All controls have evidence and no failures |
+| `issues detected` | One or more controls have failures |
+
+## Overlay Trigger Line
+
+When an overlay is active via automatic data classification, the status line shows what triggered it:
+
+```
+  Financial overlay: active — triggered by financial data declaration
+```
+
+This confirms that your `ancilis.yaml` data classification caused the overlay to activate, rather than an explicit configuration.
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `Error loading config` | Run `ancilis init` to create `ancilis.yaml` |
+| `No evaluations recorded yet` | Attach Ancilis middleware to your agent and run it |
+
+## Related
+
+- [ancilis scan](/cli/scan) — posture check with CI/CD exit codes
+- [ancilis report](/cli/report) — full report in multiple output formats

@@ -1,0 +1,112 @@
+---
+title: "Overlays Overview"
+description: "How compliance overlays work in Ancilis — activation, control mapping, and reading posture output."
+---
+
+## What Are Overlays?
+
+Overlays are compliance framework extensions that map AKSI controls to the specific evidence requirements of a regulatory or certification framework. When an overlay is active, each control evaluation produces evidence tagged to the overlay's requirements — enabling framework-specific posture reporting and audit packages.
+
+Ancilis ships with overlays for the most common frameworks affecting AI agents:
+
+| Overlay ID | Framework | Best For |
+|-----------|-----------|----------|
+| `glba` | GLBA / SOX / DORA | Financial services agents handling customer data |
+| `fedramp` | FedRAMP Moderate | US federal cloud and government agents |
+| `ccpa` | CCPA / CPRA | Agents operating in California / handling US consumer data |
+| `nist-csf` | NIST Cybersecurity Framework | Enterprise risk and security programs |
+| `soc2` | SOC 2 Type II | SaaS and cloud service providers |
+| `gdpr` | EU GDPR | Agents processing EU personal data |
+| `hipaa` | HIPAA | Healthcare and health data agents |
+| `iso-42001` | ISO/IEC 42001 | AI management system certification |
+| `eu-ai-act` | EU AI Act | Agents deployed in the EU |
+| `pci-dss-v4` | PCI DSS v4.0 | Payment card and financial transaction agents |
+| `cmmc-l2` | CMMC Level 2 | US defense industrial base contractors |
+
+---
+
+## How Activation Works
+
+Overlays can be activated three ways:
+
+### 1. Explicit activation in `ancilis.yaml`
+
+```yaml
+compliance:
+  overlays:
+    - glba
+    - nist-csf
+```
+
+### 2. Certification-driven activation
+
+When you set a `certification_target`, Ancilis automatically activates the overlay(s) required by that certification:
+
+```yaml
+certification_targets:
+  - soc2-type2
+```
+
+### 3. Automatic data classification trigger
+
+When your agent processes data classified under specific data types (e.g. `financial-data`, `pii`), the `ActivationResolver` automatically activates the matching overlay without any config change. This appears in `ancilis status` as:
+
+```
+Financial overlay: active — triggered by financial data declaration
+```
+
+---
+
+## Control Mapping
+
+AKSI controls are universal; overlays add framework-specific evidence requirements on top of each control:
+
+| AKSI Control | What It Measures | Overlay Enhancement |
+|-------------|-----------------|---------------------|
+| PR-01 | Agent identity & authorization | Maps to GLBA 314.4(a), FedRAMP AC-2, NIST CSF PR.AC |
+| PR-02 | Scope & boundary confinement | Maps to PCI DSS 1.3, CMMC AC.2.006, GLBA 314.4(c) |
+| PR-03 | Tool provenance verification | Maps to SOC 2 CC7.1, FedRAMP SI-3, NIST CSF DE.CM |
+| PR-04 | Data exposure prevention | Maps to GDPR Art.32, HIPAA 164.312, CCPA 1798.150 |
+| PR-05 | Audit trail completeness | Maps to SOX §302/§404, GLBA 314.4(h), FedRAMP AU-2 |
+| DE-01 | Dependency vulnerabilities | Maps to NIST CSF ID.RA, DORA Art.9, PCI DSS 6.3 |
+
+---
+
+## Reading Posture Output With an Overlay Active
+
+When an overlay is active, `ancilis report` includes framework-specific sections:
+
+```
+Ancilis Posture Report — my-agent
+Period: last 30 days  |  Overlay: Financial Services (GLBA, SOX, DORA)
+
+Control              Framework Ref           Status    Evals
+─────────────────────────────────────────────────────────────
+Identity & Auth      GLBA 314.4(a); SOX§302  ✓ pass    42
+Scope Confinement    GLBA 314.4(c)            ✓ pass    38
+Audit Trail          GLBA 314.4(h); SOX§404   ✓ pass    80
+Dependencies (DE-01) DORA Art.9               ✓ pass    —
+
+Posture: COMPLIANT
+GLBA Safeguards Rule: evidence present
+SOX Internal Controls: evidence present
+DORA Operational Resilience: evidence present
+```
+
+---
+
+## Overlay Reference Pages
+
+- [Financial Services (GLBA, SOX, DORA)](/overlays/financial)
+- [FedRAMP Moderate](/overlays/fedramp)
+- [CCPA / CPRA](/overlays/ccpa)
+- [NIST Cybersecurity Framework](/overlays/nist-csf)
+- [Reading Overlay Reports](/overlays/reading-reports)
+
+---
+
+## Related
+
+- [ancilis scan](/cli/scan) — evaluate posture with active overlays
+- [ancilis status](/cli/status) — check which overlays are active
+- [Python SDK: ActivationResolver](/sdk/python#activation--overlays) — programmatic activation

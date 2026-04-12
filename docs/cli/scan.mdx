@@ -1,0 +1,123 @@
+---
+title: "ancilis scan"
+description: "Evaluate evidence posture and return pass/fail for CI/CD pipelines."
+---
+
+## Overview
+
+`ancilis scan` reads collected evidence from the local DuckDB store, evaluates each enabled control, and prints a compliance posture summary. In CI mode it emits structured JSON and exits with a non-zero code when any control fails.
+
+```bash
+ancilis scan [OPTIONS]
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--ci` | flag | `false` | Machine-readable JSON output with exit codes |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent>.duckdb` | Path to evidence database |
+| `--session` | string | latest session | Scope evaluation to a specific session ID |
+| `--latest` / `--all` | flag | `--latest` | Evaluate latest session (default) or all sessions |
+| `--period` | string | `24h` | Evidence window — e.g. `1h`, `24h`, `7d` |
+| `--watch` | flag | `false` | Watch for file changes and re-evaluate posture in real-time |
+| `--debounce` | float | `2.0` | Seconds to wait after last change before re-scanning (watch mode) |
+| `--clear` | flag | `false` | Clear terminal on each re-scan (watch mode) |
+| `--producers` | string | all | Comma-separated producer names to re-evaluate (watch mode) |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All controls pass |
+| `1` | One or more controls fail, or a tool call was blocked |
+
+## Examples
+
+**Basic scan (human-readable output)**
+```bash
+ancilis scan
+```
+
+```
+Ancilis scan — my-agent
+  Mode:    audit
+  Posture: compliant
+
+  ✓ PR-01 (Identity & Authorization) — pass (42 evals)
+  ✓ PR-02 (Scope Confinement) — pass (38 evals)
+  ✓ DE-01 (Dependency Vulnerabilities) — pass
+
+Next steps:
+  ancilis report              — generate a compliance report
+  ancilis status --verbose    — control-by-control breakdown
+  ancilis scan --ci           — JSON output for CI/CD pipelines
+```
+
+**CI/CD mode with JSON output**
+```bash
+ancilis scan --ci
+echo "Exit code: $?"
+```
+
+```json
+{
+  "version": "0.1.0",
+  "agent": "my-agent",
+  "mode": "audit",
+  "timestamp": "2026-04-12T10:00:00+00:00",
+  "controls": [
+    {
+      "id": "PR-01",
+      "name": "Identity & Authorization",
+      "status": "pass",
+      "evaluations": 42,
+      "failures": 0,
+      "flags": 0
+    }
+  ],
+  "dependencies": {
+    "posture": "compliant",
+    "findings": []
+  },
+  "summary": {
+    "total_controls": 6,
+    "passing": 6,
+    "failing": 0,
+    "skipped": 0,
+    "total_evaluations": 80
+  },
+  "posture": "compliant",
+  "exit_code": 0
+}
+```
+
+**Scan a specific session**
+```bash
+ancilis scan --session sess_20260412_abc123
+```
+
+**Scan with custom config and evidence period**
+```bash
+ancilis scan --config /path/to/ancilis.yaml --period 7d
+```
+
+**Watch mode — re-scan on file changes**
+```bash
+ancilis scan --watch --debounce 1.0 --clear
+```
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `ancilis.yaml not found` | Run `ancilis init` or pass `--config path/to/ancilis.yaml` |
+| No evidence found | Run your agent with Ancilis middleware active, then re-scan |
+| Posture: non_compliant | Check `ancilis report` for the failing control details |
+
+## Related
+
+- [ancilis status](/cli/status) — lightweight posture check without CI exit codes
+- [ancilis report](/cli/report) — full posture report in multiple formats
+- [ancilis watch](/cli/watch) — watch mode reference

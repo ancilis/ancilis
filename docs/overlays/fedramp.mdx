@@ -1,0 +1,131 @@
+---
+title: "FedRAMP Moderate Overlay"
+description: "AKSI compliance overlay for AI agents deployed in US federal cloud environments."
+---
+
+## Overview
+
+The `fedramp` overlay packages AKSI control evidence for FedRAMP Moderate authorization requirements. It maps each AKSI control to the relevant NIST SP 800-53 Rev 5 control families that FedRAMP Moderate mandates.
+
+**Use this overlay when your agent:**
+- Operates within a FedRAMP-authorized cloud service
+- Handles Controlled Unclassified Information (CUI)
+- Is part of a system seeking or maintaining a FedRAMP Authorization to Operate (ATO)
+- Operates under a federal agency Authority to Operate
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - fedramp
+```
+
+---
+
+## Control Mapping
+
+| AKSI Control | FedRAMP Control Families | NIST SP 800-53 Reference |
+|-------------|------------------------|------------------------|
+| **PR-01** (Identity & Auth) | Access Control (AC), Identification & Authentication (IA) | AC-2, AC-3, IA-2, IA-5, IA-8 |
+| **PR-02** (Scope Confinement) | Access Control (AC), System & Communications Protection (SC) | AC-4, AC-6, AC-17, SC-7 |
+| **PR-03** (Tool Provenance) | System Integrity (SI), Configuration Management (CM) | SI-3, SI-7, CM-3, CM-7 |
+| **PR-04** (Data Exposure) | System & Communications Protection (SC), Audit & Accountability (AU) | SC-8, SC-28, AU-3, AU-9 |
+| **PR-05** (Audit Trail) | Audit & Accountability (AU), Incident Response (IR) | AU-2, AU-3, AU-6, AU-12, IR-6 |
+| **DE-01** (Dependencies) | Risk Assessment (RA), System Integrity (SI) | RA-5, SI-2, SI-5 |
+
+---
+
+## Evidence Requirements
+
+### PR-01 — Identity & Authorization
+- AC-2: Account management documentation — agent accounts provisioned and de-provisioned per policy
+- IA-2: Multi-factor authentication for privileged access (where applicable)
+- IA-5: Authenticator management — API keys and credentials managed per FedRAMP policy
+- AC-3: Access enforcement — agent role/permission boundaries documented
+
+### PR-02 — Scope Confinement
+- AC-4: Information flow enforcement — agent only accesses authorized data flows
+- AC-6: Least privilege — agent operates with minimum required permissions
+- SC-7: Boundary protection — network calls scoped to authorized destinations
+
+### PR-03 — Tool Provenance
+- CM-7: Least functionality — only approved tools permitted
+- SI-3: Malicious code protection — tool integrity verified before execution
+- CM-3: Change control — tool additions tracked through change management
+
+### PR-04 — Data Exposure
+- SC-8: Transmission confidentiality — all sensitive data encrypted in transit
+- SC-28: Protection of information at rest — CUI encrypted at rest
+- AU-3: Audit record content — records include user/system IDs and timestamps
+
+### PR-05 — Audit Trail
+- AU-2: Auditable events — all agent actions logged
+- AU-12: Audit record generation — timestamps and identifiers present in every record
+- AU-6: Audit record review and analysis procedures in place
+- IR-6: Incident reporting — anomalous agent behavior escalation path documented
+
+### DE-01 — Dependencies
+- RA-5: Vulnerability scanning — continuous CVE monitoring for agent dependencies
+- SI-2: Flaw remediation — critical/high CVEs remediated within FedRAMP timelines
+- SI-5: Security alerts — CVE notifications tracked and actioned
+
+---
+
+## Example Configuration
+
+```yaml
+agent:
+  name: gov-procurement-agent
+  description: "Agent supporting federal procurement workflows"
+
+security:
+  mode: enforce
+
+compliance:
+  overlays:
+    - fedramp
+  evidence:
+    retention_days: 1095  # 3 years per NARA GRS
+
+scan:
+  dependencies:
+    enabled: true
+    severity_threshold: high   # FedRAMP requires high+critical remediation
+```
+
+---
+
+## Posture Output
+
+```bash
+ancilis report --format terminal --period 30d
+```
+
+```
+Ancilis Posture Report — gov-procurement-agent
+Period: last 30 days  |  Overlay: FedRAMP Moderate
+
+Control              NIST SP 800-53 Ref      Status    Evals   Failures
+──────────────────────────────────────────────────────────────────────
+Identity & Auth      AC-2, IA-2, IA-5        ✓ pass    42      0
+Scope Confinement    AC-4, AC-6, SC-7         ✓ pass    38      0
+Tool Provenance      CM-7, SI-3               ✓ pass    29      0
+Data Exposure        SC-8, SC-28              ✓ pass    55      0
+Audit Trail          AU-2, AU-3, AU-12        ✓ pass    80      0
+Dependencies (DE-01) RA-5, SI-2              ✓ pass    —       0
+
+Posture: COMPLIANT
+FedRAMP Moderate: evidence present for all required control families
+```
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [NIST CSF Overlay](/overlays/nist-csf) — broader NIST framework coverage
+- [Reading Reports](/overlays/reading-reports)
