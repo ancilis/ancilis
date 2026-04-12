@@ -404,3 +404,126 @@ def test_demo_readme_surfaces_end_to_end_walkthrough() -> None:
     assert "tool registry" in readme
     assert "summary block" in readme
     assert "ancilis report generate" in readme
+
+
+# ---------------------------------------------------------------------------
+# Local server session scoping (ANC-654)
+# ---------------------------------------------------------------------------
+
+def test_local_server_scopes_to_latest_session(tmp_path: Path) -> None:
+    """local_server.py must scope summary+records to the latest session only."""
+    import importlib.util
+    import sys as _sys
+
+    LOCAL_SERVER_PATH = ROOT / "examples" / "demo" / "local_server.py"
+    assert LOCAL_SERVER_PATH.exists()
+
+    spec = importlib.util.spec_from_file_location("examples.demo.local_server", LOCAL_SERVER_PATH)
+    assert spec is not None and spec.loader is not None
+    ls_mod = importlib.util.module_from_spec(spec)
+    _sys.modules[spec.name] = ls_mod
+    spec.loader.exec_module(ls_mod)
+
+    db = str(tmp_path / "evidence.duckdb")
+    config = load_config(path=DEMO_CONFIG_PATH)
+    store = EvidenceStore(config, db_path=db)
+
+    # Old session — stale data that should NOT appear on the dashboard
+    from ancilis.engine.result import ControlResult, EvaluationResult
+    import uuid as _uuid
+
+    def _make_eval(decision: str, session_id: str, timestamp: str = "2025-01-15T10:00:00Z") -> EvaluationResult:
+        return EvaluationResult(
+            evaluation_id=str(_uuid.uuid4()),
+            action_id="a1",
+            timestamp=timestamp,
+            agent_id="demo-agent",
+            mode="audit",
+            session_id=session_id,
+            control_results=[
+                ControlResult(
+                    control_id="PR-01",
+                    control_name="Agent Identity",
+                    result="PASS",
+                    detail="ok",
+                    evidence_data={},
+                    duration_ms=1.0,
+                )
+            ],
+            decision=decision,
+            decision_reason="test",
+            active_overlays=[],
+            data_classifications=[],
+            total_duration_ms=1.0,
+        )
+
+    for _ in range(4):
+        store.store(_make_eval("BLOCK", "old-session"), tool_name="bad-tool")
+
+    # Latest session — 6 clean records matching what make demo-local would produce
+    for _ in range(6):
+        store.store(_make_eval("ALLOW", "new-session", "2025-01-15T12:00:00Z"), tool_name="good-tool")
+
+    store.close()
+
+    # Simulate what local_server.main() does when it picks up the latest session
+    handler_store = ls_mod._load_store(db)
+    session_id = handler_store.latest_session_id()
+    assert session_id == "new-session", f"Expected latest session, got {session_id!r}"
+
+    summary = handler_store.get_summary(session_id=session_id)
+    assert summary["total_evaluations"] == 6
+    assert summary["decisions"].get("ALLOW") == 6
+    assert summary["decisions"].get("BLOCK", 0) == 0
+
+    records = handler_store.get_records(session_id=session_id, limit=500)
+    assert len(records) == 6
+    assert all(r.tool_name == "good-tool" for r in records)
+
+    handler_store.close()
+
+
+def test_local_server_session_attribute_is_set_on_handler_class(tmp_path: Path) -> None:
+    """EvidenceHandler.session_id must be set during server initialisation."""
+    import importlib.util
+    import sys as _sys
+
+    LOCAL_SERVER_PATH = ROOT / "examples" / "demo" / "local_server.py"
+    spec = importlib.util.spec_from_file_location("examples.demo.local_server2", LOCAL_SERVER_PATH)
+    assert spec is not None and spec.loader is not None
+    ls_mod = importlib.util.module_from_spec(spec)
+    _sys.modules[spec.name] = ls_mod
+    spec.loader.exec_module(ls_mod)
+
+    db = str(tmp_path / "ev.duckdb")
+    config = load_config(path=DEMO_CONFIG_PATH)
+    store = EvidenceStore(config, db_path=db)
+
+    from ancilis.engine.result import ControlResult, EvaluationResult
+    import uuid as _uuid
+
+    ev = EvaluationResult(
+        evaluation_id=str(_uuid.uuid4()),
+        action_id="a",
+        timestamp="2025-01-15T10:00:00Z",
+        agent_id="demo-agent",
+        mode="audit",
+        session_id="my-session",
+        control_results=[
+            ControlResult("PR-01", "Agent Identity", "PASS", "ok", {}, 1.0)
+        ],
+        decision="ALLOW",
+        decision_reason="test",
+        active_overlays=[],
+        data_classifications=[],
+        total_duration_ms=1.0,
+    )
+    store.store(ev, tool_name="tool")
+    store.close()
+
+    handler_store = ls_mod._load_store(db)
+    ls_mod.EvidenceHandler.store = handler_store
+    ls_mod.EvidenceHandler.session_id = handler_store.latest_session_id()
+
+    assert ls_mod.EvidenceHandler.session_id == "my-session"
+    handler_store.close()
