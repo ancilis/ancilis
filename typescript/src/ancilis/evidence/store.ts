@@ -1,14 +1,24 @@
 /** DuckDB-backed evidence store with hash chain integrity. */
 
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
+import { packageRootFrom } from "../shared-path.js";
 import duckdb from "duckdb";
 import type { EvaluationResult } from "../engine/result.js";
 import type { ResolvedConfig } from "../config/index.js";
 import { GENESIS_SEED, canonicalJsonStringify, canonicalPayload, computeHash } from "./chain.js";
 import type { EvidenceRecord } from "./record.js";
+
+let _sdkVersion: string | undefined;
+try {
+  _sdkVersion = (JSON.parse(
+    readFileSync(join(packageRootFrom(import.meta.url), "package.json"), "utf-8"),
+  ) as { version: string }).version;
+} catch {
+  _sdkVersion = undefined;
+}
 
 const CREATE_TABLE_SQL = `
 CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1;
@@ -31,7 +41,9 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     previous_hash VARCHAR NOT NULL,
     total_duration_ms DOUBLE NOT NULL,
     output_summary VARCHAR,
-    tenant_id VARCHAR
+    tenant_id VARCHAR,
+    detected_data_types JSON NOT NULL DEFAULT '[]',
+    sdk_version VARCHAR
 );
 `;
 
@@ -40,14 +52,16 @@ INSERT INTO evidence_records (
     record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
-    record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
+    detected_data_types, sdk_version
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 `;
 
 const SELECT_COLUMNS = `
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
-active_certifications, record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
+active_certifications, record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
+detected_data_types, sdk_version
 `;
 
 function execAsync(conn: duckdb.Connection, sql: string): Promise<void> {
@@ -142,6 +156,12 @@ export class EvidenceStore {
       if (!names.has("tenant_id")) {
         await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN tenant_id VARCHAR");
       }
+      if (!names.has("detected_data_types")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN detected_data_types JSON DEFAULT '[]'");
+      }
+      if (!names.has("sdk_version")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN sdk_version VARCHAR");
+      }
     })();
 
     return this._initialized;
@@ -231,6 +251,8 @@ export class EvidenceStore {
       outputSummary: outputSummary ?? null,
       sessionId,
       tenantId: this._tenantId ?? null,
+      detectedDataTypes: [...((evaluation as unknown as Record<string, unknown>).detectedDataTypes as string[] | undefined ?? [])],
+      sdkVersion: _sdkVersion ?? null,
     };
 
     await runAsync(this._conn!, INSERT_SQL, [
@@ -252,6 +274,8 @@ export class EvidenceStore {
       record.totalDurationMs,
       record.outputSummary,
       record.tenantId ?? null,
+      JSON.stringify(record.detectedDataTypes ?? []),
+      record.sdkVersion ?? null,
     ]);
 
     return record;
@@ -577,6 +601,8 @@ export class EvidenceStore {
       outputSummary: (row.output_summary as string | null | undefined) ?? null,
       sessionId: (row.session_id as string | null | undefined) ?? null,
       tenantId: (row.tenant_id as string | null | undefined) ?? null,
+      detectedDataTypes: (parseJson(row.detected_data_types) ?? []) as string[],
+      sdkVersion: (row.sdk_version as string | null | undefined) ?? null,
     };
   }
 }
