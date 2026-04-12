@@ -37,6 +37,9 @@ export type { Baseline, ControlSnapshot, ControlDrift, DriftReport, DriftSummary
 export { SarifImporter } from "./importers/sarif.js";
 export { CycloneDxImporter } from "./importers/cyclonedx.js";
 
+export { DependencyScanner, ManifestDetector, OSVClient } from "./deps/index.js";
+export type { Dependency, Manifest, Vuln } from "./deps/index.js";
+
 export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan } from "./cli/index.js";
 export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
 export {
