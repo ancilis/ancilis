@@ -8,6 +8,7 @@ from ancilis.testing import (
     ComplianceScenarios,
     FakeProducer,
 )
+from ancilis.testing.mock_store import MockEvidenceStore
 from ancilis.testing.assertions import (
     assert_control_fails,
     assert_control_flags,
@@ -330,3 +331,79 @@ def test_fake_producer_register_tools() -> None:
     names = fp.register_tools(registry)
     assert names == ["registered-tool"]
     assert registry.is_registered("registered-tool")
+
+
+# ---------------------------------------------------------------------------
+# MockEvidenceStore — get_summary, verify_chain, reset, context manager
+# ---------------------------------------------------------------------------
+
+
+def _make_eval_for_store(decision: str = "ALLOW") -> EvaluationResult:
+    return EvaluationResult(
+        evaluation_id="eval-mock",
+        action_id="action-mock",
+        timestamp="2026-01-01T00:00:00+00:00",
+        agent_id="mock-agent",
+        mode="audit",
+        control_results=[
+            ControlResult("PR-01", "Agent Identity", "PASS", "ok", {}, 1.0)
+        ],
+        decision=decision,
+        decision_reason="test",
+        active_overlays=[],
+        data_classifications=[],
+        total_duration_ms=1.0,
+    )
+
+
+def test_mock_store_get_summary() -> None:
+    store = MockEvidenceStore()
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_b")
+
+    summary = store.get_summary()
+
+    assert summary["total_evaluations"] == 2
+    assert summary["decisions"]["ALLOW"] == 2
+    store.close()
+
+
+def test_mock_store_get_summary_with_since_filter() -> None:
+    store = MockEvidenceStore()
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+
+    summary = store.get_summary(since="2030-01-01T00:00:00Z")
+
+    assert summary["total_evaluations"] == 0
+    store.close()
+
+
+def test_mock_store_verify_chain() -> None:
+    store = MockEvidenceStore()
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+
+    valid, errors = store.verify_chain()
+
+    assert valid is True
+    assert errors == []
+    store.close()
+
+
+def test_mock_store_reset() -> None:
+    store = MockEvidenceStore()
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+    store.store(_make_eval_for_store("BLOCK"), tool_name="tool_b")
+    assert store.count() == 2
+
+    deleted = store.reset()
+
+    assert deleted == 2
+    assert store.count() == 0
+    store.close()
+
+
+def test_mock_store_context_manager() -> None:
+    with MockEvidenceStore() as store:
+        store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+        assert store.count() == 1
+    # After __exit__, store is closed — no assertion needed, just no exception
