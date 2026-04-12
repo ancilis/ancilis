@@ -38,6 +38,7 @@ export class CLIActionProducer {
   private _engine: Engine;
   private _registry: ToolRegistry;
   private _evidenceStore: EvidenceStore;
+  private _sessionId: string = randomUUID();
 
   constructor(
     config: ResolvedConfig,
@@ -53,6 +54,8 @@ export class CLIActionProducer {
 
   get producerType(): ProducerType { return ProducerType.CLI; }
   get producerVersion(): string { return "0.1.0"; }
+  /** Unique identifier for this producer instance (one per agent run). */
+  get sessionId(): string { return this._sessionId; }
 
   private _resolveToolName(command: string[]): string {
     if (!command.length) return "cli:unknown";
