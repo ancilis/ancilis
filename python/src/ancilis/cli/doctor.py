@@ -185,10 +185,10 @@ def check_overlay(config: ResolvedConfig | None, verbose: bool) -> CheckResult:
             detail="skipped (config not loaded)",
         )
     try:
-        from ancilis.overlays.loader import load_overlay_definitions
+        from ancilis.config import load_overlay_definitions
 
-        overlays = getattr(config.compliance, "overlays", []) or []
-        if not overlays:
+        active = getattr(config, "active_overlays", None) or {}
+        if not active:
             return CheckResult(
                 name="overlay",
                 status=CheckStatus.WARN,
@@ -197,30 +197,23 @@ def check_overlay(config: ResolvedConfig | None, verbose: bool) -> CheckResult:
                 fix_hint="Consider enabling an overlay (e.g. financial, hipaa) in ancilis.yaml",
             )
 
-        all_defs = load_overlay_definitions()
-        available = {d.get("id") or d.get("overlay_id", "") for d in all_defs}
-        missing = [ov for ov in overlays if ov not in available]
-        if missing:
+        unavailable = getattr(config, "unavailable_overlays", []) or []
+        if unavailable:
             return CheckResult(
                 name="overlay",
                 status=CheckStatus.FAIL,
                 label="Overlay",
-                detail=f"overlay(s) not found: {', '.join(missing)}",
+                detail=f"overlay(s) not found: {', '.join(unavailable)}",
                 fix_hint="Check overlay IDs in ancilis.yaml against available overlays",
-                verbose_detail=f"Available overlays: {sorted(available)}",
             )
 
-        control_count = sum(
-            len(d.get("controls", []))
-            for d in all_defs
-            if (d.get("id") or d.get("overlay_id", "")) in set(overlays)
-        )
+        overlay_names = sorted(active.keys())
         return CheckResult(
             name="overlay",
             status=CheckStatus.PASS,
             label="Overlay",
-            detail=f"{', '.join(overlays)} (active, {control_count} controls)",
-            verbose_detail=f"Overlays: {overlays}, Total controls: {control_count}",
+            detail=f"{', '.join(overlay_names)} ({len(overlay_names)} active)",
+            verbose_detail=f"Active overlays: {overlay_names}",
         )
     except Exception as exc:
         return CheckResult(
