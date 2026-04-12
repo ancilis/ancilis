@@ -1,5 +1,6 @@
 /** OSV.dev batch vulnerability lookup for npm packages. */
 
+import { UploadError } from "../errors.js";
 import type { Dependency, VulnerabilityFinding } from "./types.js";
 
 const OSV_BATCH_URL = "https://api.osv.dev/v1/querybatch";
@@ -93,7 +94,7 @@ async function fetchWithRetry(
     });
 
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+      throw new UploadError(res.status);
     }
 
     return (await res.json()) as OsvResponse;

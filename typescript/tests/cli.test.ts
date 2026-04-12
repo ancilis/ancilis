@@ -434,7 +434,7 @@ describe("runDoctor", () => {
     expect(result.output).toContain("Ancilis doctor");
     expect(result.output).toContain("[OK] config:");
     expect(result.output).toContain("[OK] assets:");
-    expect(result.output).toContain("[OK] evidence:");
+    expect(result.output).toContain("[OK] evidence store:");
     expect(result.output).toContain("1 records present");
   });
 
