@@ -37,6 +37,10 @@ function usage(): string {
     "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
     "  ancilis baseline list [--overlay <id>] [--config <path>] [--db <path>]",
     "  ancilis baseline drift [--id <baseline-id>] [--overlay <id>] [--format terminal|json] [--config <path>] [--db <path>]",
+    "  ancilis evidence sessions [--config <path>] [--db <path>]",
+    "  ancilis evidence reset [--yes] [--config <path>] [--db <path>]",
+    "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--agent-id <id>] [--config <path>] [--db <path>]",
+    "  ancilis init [--framework <name>] [--overlay <id>] [--agent-name <name>] [--dir <path>] [--detect] [--no-sample]",
     "  ancilis --version",
   ].join("\n");
 }
@@ -316,6 +320,266 @@ async function handleBaseline(args: string[], io: CliIo): Promise<number> {
   }
 }
 
+async function handleEvidence(args: string[], io: CliIo): Promise<number> {
+  const subcommand = args[0];
+  if (!subcommand || subcommand === "--help" || subcommand === "-h") {
+    print(io.stdout, [
+      "Usage:",
+      "  ancilis evidence sessions [--config <path>] [--db <path>]",
+      "  ancilis evidence reset [--yes] [--config <path>] [--db <path>]",
+      "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--agent-id <id>] [--config <path>] [--db <path>]",
+    ].join("\n"));
+    return 0;
+  }
+
+  const rest = args.slice(1);
+  let configPath: string | undefined;
+  let dbPath: string | undefined;
+  let yes = false;
+  let fmt = "auto";
+  let agentId = "import";
+  let positional: string | undefined;
+
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i]!;
+    if (arg === "--config") { configPath = readOption(rest, i, arg); i++; }
+    else if (arg === "--db") { dbPath = readOption(rest, i, arg); i++; }
+    else if (arg === "--yes" || arg === "-y") { yes = true; }
+    else if (arg === "--format") { fmt = readOption(rest, i, arg); i++; }
+    else if (arg === "--agent-id") { agentId = readOption(rest, i, arg); i++; }
+    else if (!arg.startsWith("--")) { positional = arg; }
+    else { throw new Error(`Unknown option for evidence ${subcommand}: ${arg}`); }
+  }
+
+  let config;
+  try {
+    config = loadConfig(configPath ? { path: configPath } : {});
+  } catch (err: unknown) {
+    print(io.stderr, `Error loading config: ${(err as Error).message ?? String(err)}\nTip: run from a directory with ancilis.yaml or pass --config`);
+    return 1;
+  }
+
+  const store = new EvidenceStore(config, dbPath ? { dbPath } : undefined);
+  try {
+    switch (subcommand) {
+      case "sessions": {
+        const sessions = await store.listSessions();
+        if (sessions.length === 0) {
+          print(io.stdout, "No sessions recorded yet.");
+        } else {
+          print(io.stdout, `${"SESSION ID".padEnd(40)}  ${"RECORDS".padStart(7)}  ${"FIRST SEEN".padEnd(24)}  LAST SEEN`);
+          print(io.stdout, "-".repeat(100));
+          for (const s of sessions) {
+            print(io.stdout, `${s.session_id.padEnd(40)}  ${String(s.count).padStart(7)}  ${s.first_seen.padEnd(24)}  ${s.last_seen}`);
+          }
+        }
+        return 0;
+      }
+      case "reset": {
+        if (!yes) {
+          print(io.stderr, "This will permanently delete ALL evidence records. Pass --yes to confirm.");
+          return 1;
+        }
+        const n = await store.reset();
+        print(io.stdout, `Evidence store reset: ${n} record(s) deleted. Hash chain restarted from genesis.`);
+        return 0;
+      }
+      case "import": {
+        if (!positional) {
+          throw new Error("evidence import requires a file path argument");
+        }
+        const { SarifImporter } = await import("./ancilis/importers/sarif.js");
+        const { CycloneDxImporter } = await import("./ancilis/importers/cyclonedx.js");
+        const { readFileSync } = await import("node:fs");
+
+        // Auto-detect format
+        let resolvedFmt = fmt;
+        if (resolvedFmt === "auto") {
+          const lower = positional.toLowerCase();
+          if (lower.endsWith(".sarif") || lower.endsWith(".sarif.json")) {
+            resolvedFmt = "sarif";
+          } else if (lower.endsWith(".cdx.json") || lower.endsWith(".bom.json") || lower.includes("cyclonedx") || lower.includes("sbom")) {
+            resolvedFmt = "cyclonedx";
+          } else {
+            try {
+              const sniff = JSON.parse(readFileSync(positional, "utf-8")) as Record<string, unknown>;
+              if ("runs" in sniff) resolvedFmt = "sarif";
+              else if ("bomFormat" in sniff || "components" in sniff) resolvedFmt = "cyclonedx";
+              else { print(io.stderr, "Cannot detect format. Use --format sarif|cyclonedx."); return 1; }
+            } catch (e: unknown) {
+              print(io.stderr, `Error reading file: ${(e as Error).message ?? String(e)}`);
+              return 1;
+            }
+          }
+        }
+
+        const importer = resolvedFmt === "sarif"
+          ? new SarifImporter(agentId)
+          : new CycloneDxImporter(agentId);
+        const evaluations = importer.parse(positional);
+        let stored = 0;
+        for (const evaluation of evaluations) {
+          await store.store(evaluation, positional);
+          stored++;
+        }
+        print(io.stdout, `Imported ${stored} evidence record(s) from ${resolvedFmt.toUpperCase()} file: ${positional}`);
+        return 0;
+      }
+      default:
+        throw new Error(`Unknown evidence subcommand: ${subcommand}`);
+    }
+  } finally {
+    await store.close();
+  }
+}
+
+async function handleInit(args: string[], io: CliIo): Promise<number> {
+  let framework: string | undefined;
+  let overlay: string | undefined;
+  let agentName: string | undefined;
+  let targetDir = ".";
+  let detect = false;
+  let noSample = false;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]!;
+    if (arg === "--framework" || arg === "-f") { framework = readOption(args, i, arg); i++; }
+    else if (arg === "--overlay" || arg === "-o") { overlay = readOption(args, i, arg); i++; }
+    else if (arg === "--agent-name") { agentName = readOption(args, i, arg); i++; }
+    else if (arg === "--dir") { targetDir = readOption(args, i, arg); i++; }
+    else if (arg === "--detect") { detect = true; }
+    else if (arg === "--no-sample") { noSample = true; }
+    else if (arg === "--yes" || arg === "-y") { /* accept silently for non-interactive use */ }
+    else { throw new Error(`Unknown option for init: ${arg}`); }
+  }
+
+  const { existsSync, writeFileSync, readFileSync } = await import("node:fs");
+  const { join: pathJoin, resolve: pathResolve, basename: pathBasename } = await import("node:path");
+  const target = pathResolve(targetDir);
+  const configFile = pathJoin(target, "ancilis.yaml");
+
+  if (existsSync(configFile)) {
+    print(io.stderr, `ancilis.yaml already exists at ${configFile}. Remove it first or use --dir to target a different directory.`);
+    return 1;
+  }
+
+  // Framework detection from dependency files
+  if (!framework) {
+    const frameworkPatterns: Record<string, RegExp> = {
+      langchain: /langchain(?:-core|-community|-openai|-anthropic)?/i,
+      crewai: /crewai/i,
+      autogen: /(?:pyautogen|autogen)/i,
+      openai: /openai/i,
+    };
+    const detectionOrder = ["langchain", "crewai", "autogen", "openai"];
+
+    const filesToCheck = ["requirements.txt", "pyproject.toml", "package.json"];
+    for (const file of filesToCheck) {
+      const filePath = pathJoin(target, file);
+      if (existsSync(filePath)) {
+        const content = readFileSync(filePath, "utf-8");
+        for (const fw of detectionOrder) {
+          if (frameworkPatterns[fw]!.test(content)) {
+            if (detect) {
+              framework = fw;
+            } else {
+              print(io.stdout, `Detected framework: ${fw} (from ${file})`);
+              framework = fw;
+            }
+            break;
+          }
+        }
+        if (framework) break;
+      }
+    }
+    if (!framework) {
+      if (detect) {
+        framework = "generic";
+        print(io.stdout, "No framework detected — using generic.");
+      } else {
+        framework = "generic";
+      }
+    }
+  }
+
+  // Default overlay
+  if (!overlay) overlay = "soc2";
+
+  // Default agent name from directory name
+  if (!agentName) {
+    const rawName = pathBasename(target);
+    agentName = rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "my-agent";
+  }
+
+  // Generate ancilis.yaml
+  const lines: string[] = [
+    "agent:",
+    `  name: ${agentName}`,
+    "",
+    "security:",
+    "  mode: audit",
+    "",
+    "compliance:",
+    `  overlays: [${overlay}]`,
+    "  evidence:",
+    "    retention_days: 365",
+  ];
+  writeFileSync(configFile, lines.join("\n") + "\n", "utf-8");
+
+  const created: string[] = ["ancilis.yaml"];
+
+  // Generate sample script
+  if (!noSample) {
+    const sampleLines = [
+      "# Ancilis sample — generated by ancilis init",
+      "# Run this to see evidence generation in action.",
+      "from ancilis.middleware import AncilisMiddleware",
+      "from ancilis.config import load_config",
+      "",
+      `# Adjust path if ancilis.yaml is not in the current directory`,
+      "config = load_config()",
+      "# Wrap your MCP client with Ancilis middleware:",
+      "# middleware = AncilisMiddleware(config)",
+    ];
+    writeFileSync(pathJoin(target, "ancilis_sample.py"), sampleLines.join("\n") + "\n", "utf-8");
+    created.push("ancilis_sample.py");
+  }
+
+  // Update .gitignore
+  const gitignorePath = pathJoin(target, ".gitignore");
+  if (existsSync(gitignorePath)) {
+    const content = readFileSync(gitignorePath, "utf-8");
+    if (!content.includes(".ancilis/")) {
+      const sep = content.endsWith("\n") ? "" : "\n";
+      writeFileSync(gitignorePath, content + sep + ".ancilis/\n", "utf-8");
+      created.push("updated .gitignore");
+    }
+  }
+
+  // Generate .env.example
+  const envExample = pathJoin(target, ".env.example");
+  if (!existsSync(envExample)) {
+    writeFileSync(
+      envExample,
+      "# Ancilis platform API key (optional for local-only scanning)\n# ANCILIS_API_KEY=your-api-key-here\n",
+      "utf-8",
+    );
+    created.push(".env.example");
+  }
+
+  for (const f of created) {
+    print(io.stdout, `✓ ${f}`);
+  }
+  print(io.stdout, [
+    "",
+    "Next steps:",
+    "  1. Review ancilis.yaml and adjust settings",
+    "  2. Run: ancilis doctor       — verify your setup",
+    "  3. Run: ancilis scan          — run your first compliance scan",
+  ].join("\n"));
+  return 0;
+}
+
 export async function runCli(args: string[], io: CliIo = defaultIo): Promise<number> {
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     print(io.stdout, usage());
@@ -346,6 +610,10 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
         return handleConfigValidate(rest.slice(1), io);
       case "baseline":
         return await handleBaseline(rest, io);
+      case "evidence":
+        return await handleEvidence(rest, io);
+      case "init":
+        return await handleInit(rest, io);
       case "scan": {
         const knownFlags = ["--ci", "--config", "--db", "--period", "--session", "--latest", "--all"];
         const unknown = rest.filter(a => a.startsWith("--") && !knownFlags.includes(a));
