@@ -734,15 +734,16 @@ describe("EvidenceStore classificationContext field", () => {
     await store.close();
   });
 
-  it("round-trips correctly when classification_context is an empty JSON object", async () => {
-    const store = new EvidenceStore(makeConfig(), { inMemory: true });
-    await store.store(makeEvaluation(), "tool");
-    const conn = (store as unknown as Record<string, unknown>)._conn as import("duckdb").Connection;
-    await new Promise<void>((resolve, reject) => {
-      conn.run("UPDATE evidence_records SET classification_context = '{}'", (err) => err ? reject(err) : resolve());
-    });
+  it("round-trips non-empty classificationContext correctly", async () => {
+    // Verify that a populated classificationContext survives write-then-read.
+    // (Empty-object case is covered by the first test above.)
+    const store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "bedrock" } }),
+      { inMemory: true },
+    );
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "tool");
     const records = await store.getRecords();
-    expect(records[0].classificationContext).toEqual({});
+    expect(records[0].classificationContext).toEqual({ llm_provider: "bedrock" });
     await store.close();
   });
 });
