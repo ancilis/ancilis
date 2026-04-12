@@ -1,0 +1,438 @@
+{
+  "id": "dora",
+  "name": "EU DORA — Digital Operational Resilience Act",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": ["DC-FIN"],
+  "description": "Standalone DORA overlay for EU financial entities subject to the Digital Operational Resilience Act (Regulation (EU) 2022/2554). Enforcement date: January 17, 2025. Applies to banks, investment firms, insurance undertakings, payment institutions, electronic money institutions, crypto-asset service providers, and critical ICT third-party service providers. This overlay provides DORA-specific evidence requirements beyond the combined GLBA/SOX/DORA bundle — use when the regulated entity is an EU financial entity and DORA-specific auditor evidence is required. Key additions: ICT incident notification timeline requirements (Art. 19), DORA testing program (Arts. 24-26), and ICT third-party risk management (Arts. 28-30).",
+  "jurisdiction": "eu",
+  "enforcement_date": "2025-01-17",
+  "applicable_data_types": [
+    "financial_data",
+    "financial_records"
+  ],
+  "reporting_obligations": {
+    "breach_notification_hours": 4,
+    "assessment_type": "ICT-related incident classification and reporting per DORA Art. 18-19. Major incidents require: initial notification within 4 hours of classification, intermediate report within 72 hours, and final report within 1 month. Competent authorities are the relevant national supervisory authority (e.g., national central bank, financial regulator). EBA/ESMA/EIOPA exercise supervisory convergence.",
+    "reporting_entity": "Competent authority designated under DORA Art. 46 in the member state where the financial entity is established. EBA single point of entry for cross-sector incidents under Art. 19(6)."
+  },
+  "human_oversight_mandates": {
+    "required": true,
+    "description": "DORA Art. 5(2) assigns direct responsibility for ICT risk management to the management body. Art. 17(3) requires the ICT-related incident management process to include management escalation and oversight. Art. 15 requires anomaly and deviation management with management body review of outcomes. Management body members must maintain sufficient knowledge of ICT risk (Art. 5(4))."
+  },
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT risk management framework documented and approved by management body per DORA Art. 5(1)",
+        "Management body accountability for ICT risk management framework demonstrated (Art. 5(2))",
+        "ICT risk management framework reviewed at least annually and after major ICT incidents (Art. 6(5))",
+        "ICT strategy aligned with overall business strategy and approved at board level (Art. 6(8))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 5(1), Art. 5(2), Art. 6(1), Art. 6(5)"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Roles and responsibilities for ICT risk management defined and assigned per Art. 5(2)(a)",
+        "Management body member(s) with ICT risk responsibility identified by name and role (Art. 5(2)(b))",
+        "Segregation of duties between ICT risk oversight and operational ICT functions documented (Art. 5(2))",
+        "Annual management body training or awareness program for ICT risk topics (Art. 5(4))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 5(2), Art. 5(4)"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT risk assessment conducted covering threats, vulnerabilities, and impact per Art. 6(2) and Art. 8",
+        "ICT risk register or equivalent maintained with identified assets, threats, and risk ratings (Art. 8(3))",
+        "Risk assessment results used to prioritize ICT security measures and investments (Art. 6(2))",
+        "Risk tolerance defined by management body and documented in ICT risk management framework (Art. 6(8))",
+        "Assessment covers legacy ICT systems and technology obsolescence risks (Art. 8(7))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 6(2), Art. 8(1), Art. 8(3), Art. 8(7)"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Anomaly and deviation management process documented with management escalation path per Art. 15",
+        "Human review gate for automated ICT decisions that could affect operational resilience (Art. 5(2)(d))",
+        "Management body briefed on ICT risk management outcomes at least quarterly (Art. 5(2)(c))",
+        "Documented evidence of management body review and approval of major ICT risk decisions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 5(2)(c), Art. 5(2)(d), Art. 15"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT asset inventory maintained covering all ICT assets supporting critical or important functions per Art. 8(1)",
+        "Asset inventory includes hardware, software, data assets, and cloud components (Art. 8(1))",
+        "Interdependencies between ICT assets mapped (Art. 8(4))",
+        "Asset inventory reviewed and updated at minimum annually (Art. 8(1))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 8(1), Art. 8(4)"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Software and model inventory maintained as part of ICT asset management per Art. 8(1)",
+        "Authorized ICT systems and components documented with version and patch status (Art. 9(4)(a))",
+        "ICT software lifecycle managed per documented policy including end-of-support tracking (Art. 8(7))",
+        "Agent AI model versions and configurations tracked as ICT assets"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 8(1), Art. 8(7), Art. 9(4)(a)"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Data classification scheme applied per sensitivity and regulatory category (Art. 8(1))",
+        "Classification covers financial customer data, transaction data, and ICT operational data",
+        "Data processing activities mapped to ICT assets supporting critical or important functions (Art. 8(4))",
+        "Cross-border data flows identified and assessed for DORA third-party risk implications (Art. 28)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 8(1), Art. 8(4), Art. 28"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Register of all ICT third-party service provider arrangements maintained per Art. 28(3)",
+        "Due diligence conducted on ICT third-party providers prior to contracting (Art. 28(1)(a))",
+        "Contractual arrangements with ICT third-party providers include DORA Art. 30 mandatory provisions",
+        "Concentration risk analysis performed for critical ICT third-party service providers (Art. 29)",
+        "ICT third-party risk management strategy reviewed and reported to management body (Art. 28(2))",
+        "Critical ICT third-party service providers identified per EBA/ESMA/EIOPA designation criteria (Art. 31)"
+      ],
+      "threshold_adjustments": {
+        "review_frequency": "annual_minimum"
+      },
+      "framework_reference": "DORA Art. 28, Art. 29, Art. 30, Art. 31"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT risk assessment methodology documented per Art. 6(2) covering cyber threats and operational risks",
+        "Risk scenarios relevant to the financial entity's operations identified and assessed (Art. 8(3))",
+        "Agent AI system risk profiling performed covering autonomous decision-making risks",
+        "Risk assessment updated following significant changes to ICT environment or business activities (Art. 6(5))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 6(2), Art. 6(5), Art. 8(3)"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "IAM policies and access controls implemented per Art. 9(2) protecting ICT assets",
+        "Privileged access management procedures documented and enforced (Art. 9(2))",
+        "Authentication mechanisms commensurate with ICT asset criticality (Art. 9(2))",
+        "Access reviews conducted at defined frequencies for critical function access (Art. 9(2))"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "DORA Art. 9(2)"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Least privilege principle applied to ICT system access per Art. 9(2)",
+        "Privileged access rights inventory maintained and reviewed (Art. 9(2))",
+        "Segregation of duties enforced between ICT development, operations, and oversight roles (Art. 9(2))",
+        "Timely deprovisioning of access for separated staff and service terminations documented"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "DORA Art. 9(2)"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT change management process documented covering testing, approval, and release (Art. 9(4)(a))",
+        "Changes to ICT systems supporting critical or important functions follow documented approval workflow",
+        "Emergency change procedures documented with post-implementation review requirements",
+        "Change records retained demonstrating authorization and testing results"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 9(4)(a)"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Encryption applied to financial customer data at rest and in transit per Art. 9(2)",
+        "Data minimisation and purpose limitation controls for financial data processing",
+        "Data integrity controls implemented for transaction and financial record processing",
+        "Data loss prevention mechanisms in place for critical financial data flows"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "DORA Art. 9(2)"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Logging and monitoring mechanisms implemented per Art. 10 covering ICT events and anomalies",
+        "Audit logs capture user actions, system events, and ICT incidents for ICT systems supporting critical functions",
+        "Log retention period meets DORA requirements (minimum 5 years for critical functions per Art. 12(6))",
+        "Log integrity protection implemented to prevent tampering (Art. 10)",
+        "Logs forwarded to SIEM or equivalent for centralized analysis"
+      ],
+      "threshold_adjustments": {
+        "retention_days": 1825
+      },
+      "framework_reference": "DORA Art. 10, Art. 12(6)"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configuration management process documented covering ICT assets per Art. 9(4)(a)",
+        "Baseline configurations established for ICT systems supporting critical or important functions",
+        "Patch management policy implemented with defined timelines for critical vulnerability remediation",
+        "Configuration deviations detected and remediated per documented procedures (Art. 9(4)(a))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 9(4)(a)"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Cryptographic key management policy documented covering key generation, rotation, and revocation (Art. 9(2))",
+        "Encryption algorithms and key lengths appropriate to data sensitivity and current standards",
+        "End-to-end encryption implemented for financial data in transit between systems",
+        "Cryptographic controls reviewed following advances in threat landscape (Art. 9(4)(b))"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "DORA Art. 9(2), Art. 9(4)(b)"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Network security controls implemented per Art. 9(4)(b) protecting ICT infrastructure",
+        "Input validation implemented for ICT systems processing financial transactions",
+        "Network segmentation applied to isolate critical ICT systems from general networks (Art. 9(4)(b))",
+        "Vulnerability management covering ICT systems supporting critical or important functions (Art. 9(4)(b))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 9(4)(b)"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Threat detection mechanisms implemented per Art. 10 for ICT systems supporting critical functions",
+        "Security event monitoring active with alerting for anomalies and suspicious activity",
+        "ICT-related incident detection procedures defined including classification criteria per Art. 18",
+        "Threat intelligence feeds incorporated into detection capabilities (Art. 8(3))"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "DORA Art. 8(3), Art. 10, Art. 18"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configuration change monitoring implemented for ICT systems per Art. 10",
+        "Unauthorized configuration changes detected and alerted within defined timeframes",
+        "Monitoring scope covers ICT assets identified in asset inventory per Art. 8(1)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 8(1), Art. 10"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Continuous monitoring program documented per Art. 10 for ICT environment",
+        "Monitoring coverage verified periodically against asset inventory (Art. 8(1))",
+        "DORA digital operational resilience testing results inform detection capability improvements (Art. 24)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 10, Art. 24"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Audit log integrity protection implemented to prevent unauthorized modification (Art. 10)",
+        "Log availability and integrity verified as part of ICT risk management framework (Art. 6)",
+        "Access to audit logs restricted to authorized roles with separation from production systems"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 6, Art. 10"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT-related incident management process documented per Art. 17 including detection, classification, response",
+        "Incident classification applied per Art. 18 criteria (impact on services, financial losses, clients affected)",
+        "Initial notification to competent authority within 4 hours of major incident classification (Art. 19(3)(a))",
+        "Incident response procedures tested at least annually (Art. 25)",
+        "ICT crisis communication plan covering internal escalation and external notifications (Art. 17(6))"
+      ],
+      "threshold_adjustments": {
+        "notification_hours_initial": 4,
+        "notification_hours_intermediate": 72,
+        "notification_days_final": 30
+      },
+      "framework_reference": "DORA Art. 17, Art. 18, Art. 19"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Major ICT-related incident notification submitted to competent authority per Art. 19 timeline",
+        "Initial notification within 4 hours of classification (Art. 19(3)(a))",
+        "Intermediate report within 72 hours with updated impact assessment (Art. 19(3)(b))",
+        "Final report within 1 month of intermediate report with root cause analysis (Art. 19(3)(c))",
+        "Voluntary notification of significant cyber threats per Art. 20 documented",
+        "Client notification procedures for major incidents impacting financial services (Art. 17(6))"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict",
+        "notification_hours_initial": 4,
+        "notification_hours_intermediate": 72,
+        "notification_days_final": 30
+      },
+      "framework_reference": "DORA Art. 19, Art. 20"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT-related incident documentation preserved per Art. 17(4) including timeline, impact, and actions taken",
+        "Root cause analysis records retained for major incidents (Art. 19(3)(c))",
+        "Evidence preservation procedures prevent tampering during and after incidents",
+        "Incident records retained for minimum statutory period (5 years for critical function records per Art. 12(6))"
+      ],
+      "threshold_adjustments": {
+        "retention_days": 1825
+      },
+      "framework_reference": "DORA Art. 17(4), Art. 19(3)(c)"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT business continuity policy documented per Art. 11 covering critical function recovery",
+        "Backup and restoration procedures tested at minimum annually (Art. 12)",
+        "Recovery time objectives (RTO) and recovery point objectives (RPO) defined and tested for critical functions (Art. 12(4))",
+        "BCP covers activation of redundant infrastructure and geographic redundancy where applicable (Art. 11(6))",
+        "Crisis management procedures documented and management body notified of activation (Art. 11(3))"
+      ],
+      "threshold_adjustments": {
+        "threshold_adjustment": "strict"
+      },
+      "framework_reference": "DORA Art. 11, Art. 12"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-incident review conducted per Art. 13 following major ICT-related incidents",
+        "Lessons learned documented and ICT risk management framework updated accordingly (Art. 13(2))",
+        "Changes implemented from lessons learned tracked to completion",
+        "Periodic testing program outcomes documented and used to improve resilience (Art. 25, Art. 26)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 13, Art. 25, Art. 26"
+    }
+  },
+  "control_adjustments": {
+    "PR-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "mfa_enforced",
+        "privileged_access_review_date",
+        "access_recertification_completed"
+      ],
+      "regulatory_citation": "DORA Art. 9(2)"
+    },
+    "PR-05": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "log_retention_years",
+        "log_integrity_verified",
+        "audit_chain_complete"
+      ],
+      "regulatory_citation": "DORA Art. 10, Art. 12(6)"
+    },
+    "RS-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "incident_classification_applied",
+        "initial_notification_timestamp",
+        "competent_authority_notified"
+      ],
+      "regulatory_citation": "DORA Art. 17, Art. 18, Art. 19"
+    },
+    "RS-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "notification_timeline_4h_met",
+        "notification_timeline_72h_met",
+        "final_report_submitted"
+      ],
+      "regulatory_citation": "DORA Art. 19(3)"
+    },
+    "ID-04": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "ict_tpsp_register_complete",
+        "critical_tpsp_identified",
+        "art30_contractual_provisions_verified"
+      ],
+      "regulatory_citation": "DORA Art. 28, Art. 29, Art. 30"
+    },
+    "RC-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "rto_defined_and_tested",
+        "rpo_defined_and_tested",
+        "bcp_tested_date"
+      ],
+      "regulatory_citation": "DORA Art. 11, Art. 12"
+    }
+  },
+  "evidence_requirements": {
+    "PR-01": ["mfa_enforced", "privileged_access_review_date", "access_recertification_completed"],
+    "PR-05": ["log_retention_years", "log_integrity_verified", "audit_chain_complete"],
+    "RS-01": ["incident_classification_applied", "initial_notification_timestamp", "competent_authority_notified"],
+    "RS-02": ["notification_timeline_4h_met", "notification_timeline_72h_met", "final_report_submitted"],
+    "ID-04": ["ict_tpsp_register_complete", "critical_tpsp_identified", "art30_contractual_provisions_verified"],
+    "RC-01": ["rto_defined_and_tested", "rpo_defined_and_tested", "bcp_tested_date"]
+  },
+  "framework_mapping": {
+    "GOV-01": ["DORA Art. 5(1)", "DORA Art. 6(1)", "DORA Art. 6(5)"],
+    "GOV-02": ["DORA Art. 5(2)", "DORA Art. 5(4)"],
+    "GOV-03": ["DORA Art. 6(2)", "DORA Art. 8(1)", "DORA Art. 8(3)"],
+    "GOV-04": ["DORA Art. 5(2)(c)", "DORA Art. 5(2)(d)", "DORA Art. 15"],
+    "ID-01": ["DORA Art. 8(1)", "DORA Art. 8(4)"],
+    "ID-02": ["DORA Art. 8(1)", "DORA Art. 8(7)", "DORA Art. 9(4)(a)"],
+    "ID-03": ["DORA Art. 8(1)", "DORA Art. 8(4)", "DORA Art. 28"],
+    "ID-04": ["DORA Art. 28", "DORA Art. 29", "DORA Art. 30", "DORA Art. 31"],
+    "ID-05": ["DORA Art. 6(2)", "DORA Art. 6(5)", "DORA Art. 8(3)"],
+    "PR-01": ["DORA Art. 9(2)"],
+    "PR-02": ["DORA Art. 9(2)"],
+    "PR-03": ["DORA Art. 9(4)(a)"],
+    "PR-04": ["DORA Art. 9(2)"],
+    "PR-05": ["DORA Art. 10", "DORA Art. 12(6)"],
+    "PR-06": ["DORA Art. 9(4)(a)"],
+    "PR-07": ["DORA Art. 9(2)", "DORA Art. 9(4)(b)"],
+    "PR-08": ["DORA Art. 9(4)(b)"],
+    "DE-01": ["DORA Art. 8(3)", "DORA Art. 10", "DORA Art. 18"],
+    "DE-02": ["DORA Art. 8(1)", "DORA Art. 10"],
+    "DE-03": ["DORA Art. 10", "DORA Art. 24"],
+    "DE-04": ["DORA Art. 6", "DORA Art. 10"],
+    "RS-01": ["DORA Art. 17", "DORA Art. 18", "DORA Art. 19"],
+    "RS-02": ["DORA Art. 19(3)", "DORA Art. 20"],
+    "RS-03": ["DORA Art. 17(4)", "DORA Art. 19(3)(c)"],
+    "RC-01": ["DORA Art. 11", "DORA Art. 12"],
+    "RC-02": ["DORA Art. 13", "DORA Art. 25", "DORA Art. 26"]
+  },
+  "evidence_retention_minimum_days": 1825,
+  "human_oversight_required": true,
+  "notes": "DORA (Regulation (EU) 2022/2554) is a directly applicable EU regulation — no transposition required. Enforcement began January 17, 2025. The management body of the financial entity has direct personal accountability under Art. 5(2). Key DORA-specific items not covered in the GLBA bundle: (1) ICT incident notification timeline — 4h initial alert, 72h intermediate, 1 month final to competent authority; (2) DORA digital operational resilience testing program including TLPT for significant entities; (3) ICT third-party service provider register and Art. 30 mandatory contract provisions; (4) Concentration risk management for critical ICT third-party service providers; (5) 5-year record retention for critical function records (Art. 12(6)). This overlay is DORA-standalone. The glba.json combined overlay remains appropriate for entities facing combined GLBA/SOX/DORA evidence requirements."
+}

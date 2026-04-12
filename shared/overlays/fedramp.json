@@ -1,13 +1,21 @@
 {
   "id": "fedramp",
   "name": "FedRAMP Rev 5 Moderate Baseline (NIST SP 800-53 Rev 5)",
-  "version": "0.1",
+  "version": "0.2",
   "trigger_type": "data_classification",
-  "triggered_by": ["DC-FCI", "DC-GOV"],
-  "description": "FedRAMP Moderate overlay for agents operating in or supporting federal cloud environments. Packages evidence for the six active AKSI evaluators with NIST SP 800-53 Rev 5 control references aligned to the FedRAMP Moderate impact baseline, suitable for cloud service providers (CSPs) seeking or maintaining a FedRAMP authorization to operate (ATO).",
+  "triggered_by": [
+    "DC-FCI",
+    "DC-GOV"
+  ],
+  "description": "FedRAMP Moderate overlay for agents operating in or supporting federal cloud environments. Provides full 26-control AKSI coverage with NIST SP 800-53 Rev 5 control references aligned to the FedRAMP Moderate impact baseline. Covers all control domains: governance, identification, protection, detection, response, and recovery. Suitable for cloud service providers (CSPs) seeking or maintaining a FedRAMP authorization to operate (ATO), including continuous monitoring (ConMon) deliverables and 3PAO annual assessment preparation.",
   "jurisdiction": "us",
   "enforcement_date": "2024-05-01",
-  "applicable_data_types": ["federal_contract", "federal_cloud", "fedramp_system", "government_documents"],
+  "applicable_data_types": [
+    "federal_contract",
+    "federal_cloud",
+    "fedramp_system",
+    "government_documents"
+  ],
   "controls": {
     "PR-01": {
       "applicable": true,
@@ -68,6 +76,206 @@
       ],
       "threshold_adjustments": {},
       "framework_reference": "NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-6(1), IR-8, SI-4, SI-4(2), SI-4(4); FedRAMP Moderate Baseline IR-4, IR-5, IR-6, IR-8, SI-4"
+    },
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "System security plan (SSP) documented, approved by authorizing official, and covering all FedRAMP authorization boundary components per NIST SP 800-53 PL-2 / FedRAMP Moderate PL-2",
+        "Security policies and procedures established for all applicable control families; policy documents version-controlled and reviewed at minimum annually (PL-1)",
+        "SSP scope includes AI agent components, automated workflows, and their data flows within the authorization boundary; FedRAMP Moderate continuous monitoring (ConMon) plan current"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 PL-1, PL-2, PM-1; FedRAMP Moderate Baseline PL-1, PL-2"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Roles and responsibilities for security management within the FedRAMP authorization boundary defined in SSP with named individuals or positions (PL-2)",
+        "Authorizing official (AO) designation documented; AO has accepted residual risk and signed authorization decision (CA-6 / FedRAMP CA-6)",
+        "Personnel security completion records for personnel with privileged access; position risk designations and screening documented (PS-2, PS-3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 CA-6, PL-2, PS-2, PS-3; FedRAMP Moderate Baseline CA-6, PS-2, PS-3"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment conducted for the FedRAMP authorization boundary using FIPS 199 / FIPS 200 impact categorization; results documented in SSP (RA-3)",
+        "Vulnerability scans performed on all authorization boundary components at FedRAMP-required frequency; scan results integrated into POA&M (RA-5, RA-5(1))",
+        "Risk assessment outputs drive POA&M prioritization; risk tolerance documented and accepted by authorizing official"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 RA-1, RA-3, RA-5, RA-5(1); FedRAMP Moderate Baseline RA-1, RA-3, RA-5"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Human oversight mechanisms in place for automated security decisions within the authorization boundary; change control board (CCB) approval documented for AI agent configuration changes (PM-10)",
+        "Management review of security authorization package at minimum every three years or upon significant change (CA-6); residual risk formally accepted",
+        "Security awareness and training records confirm personnel with security responsibilities understand oversight obligations for automated systems (AT-2, AT-3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 AT-2, AT-3, CA-6, PM-10; FedRAMP Moderate Baseline AT-2, AT-3, CA-6"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Component inventory maintained for all hardware, software, and firmware within the FedRAMP authorization boundary per CM-8; inventory current and version-controlled",
+        "AI agent components (model versions, tool integrations, API dependencies) explicitly enumerated in component inventory with authorization boundary justification (CM-8, CM-10)",
+        "Software license and usage tracking confirms only authorized software operates within the authorization boundary; unauthorized software detection process documented (CM-11)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 CM-8, CM-10, CM-11; FedRAMP Moderate Baseline CM-8, CM-10, CM-11"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Boundary protection controls implemented at external authorization boundary and between internal segments; managed interfaces with deny-by-default posture (SC-7, SC-7(5))",
+        "Network architecture diagram submitted as FedRAMP SSP attachment; diagrams show authorization boundary, data flows, and external connections (SC-7(8))",
+        "External system connections documented in SSP Interconnection Security Agreements (ISAs) or Memoranda of Understanding (MOUs); connections reviewed annually"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 SC-7, SC-7(5), SC-7(8); FedRAMP Moderate Baseline SC-7, SC-7(5), SC-7(8)"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Federal information categorization documented per FIPS 199; confidentiality, integrity, and availability impact levels established and approved by agency (RA-2)",
+        "Data classification applied to all federal data processed within the authorization boundary; handling procedures for each impact level documented (MP-1, MP-4)",
+        "AI agent context and memory management procedures ensure federal data is handled per classification requirements; data retention and purge procedures documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 MP-1, MP-4, RA-2; FedRAMP Moderate Baseline MP-1, MP-4, RA-2"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "External service provider security requirements documented in FedRAMP SSP; subcontractors and cloud service dependencies assessed against FedRAMP authorization requirements (SA-9)",
+        "Supply chain risk management procedures identify ICT supplier risks; critical components sourced from vetted suppliers per SA-12 / FedRAMP SA-12",
+        "Third-party service contracts include security requirements, right-to-audit clauses, and incident reporting obligations consistent with FedRAMP requirements (SA-4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 SA-4, SA-9, SA-12; FedRAMP Moderate Baseline SA-4, SA-9, SA-12"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment applied to AI agent components within the authorization boundary; model versions, tooling integrations, and automated action scopes documented in risk register (RA-3)",
+        "AI agent risk profile included in SSP or as SSP attachment: impact categorization, privilege level, CUI/federal data access scope, and residual risk disposition",
+        "Vulnerability assessments include AI agent components; scan findings and remediation status tracked in POA&M per FedRAMP ConMon requirements (RA-5, RA-5(1))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 RA-3, RA-5, RA-5(1); FedRAMP Moderate Baseline RA-3, RA-5"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Least-functionality configuration enforced on authorization boundary components; AI agents restricted to approved capabilities with unused functions disabled per CM-7, CM-7(1)",
+        "Authorized software/function whitelist maintained; unauthorized software or capabilities detected and blocked (CM-7(2) / FedRAMP CM-7(2))",
+        "Output filtering configuration ensures AI agent responses remain within authorized data boundaries; filter rules documented and reviewed in ConMon cycle"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 CM-7, CM-7(1), CM-7(2); FedRAMP Moderate Baseline CM-7, CM-7(1), CM-7(2)"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Network traffic filtering prevents unauthorized data exfiltration from the authorization boundary; egress filtering rules documented and reviewed (SC-5, SC-7(3))",
+        "Federal data minimization procedures applied to AI agent workflows \u2014 only data necessary for authorized function ingested, retained, or transmitted (SC-5)",
+        "Data-in-transit protections include TLS 1.2+ enforcement; downgrade attacks mitigated at network boundaries per FedRAMP transport encryption requirements (SC-8)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 SC-5, SC-7, SC-7(3), SC-8; FedRAMP Moderate Baseline SC-5, SC-7, SC-8"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Malicious code protection deployed on all authorization boundary endpoints including AI agent infrastructure; signatures updated per FedRAMP requirements (SI-3, SI-3(1))",
+        "Flaw remediation process addresses vulnerabilities in AI agent components; high/critical findings patched within FedRAMP-required timeframes (SI-2 / FedRAMP SI-2)",
+        "Input validation and sanitization controls applied to all external inputs; prompt injection attack patterns included in malicious code detection scope (SI-3, SI-10)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 SI-2, SI-3, SI-3(1), SI-10; FedRAMP Moderate Baseline SI-2, SI-3, SI-3(1)"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Continuous monitoring (ConMon) program implemented per FedRAMP requirements; monthly vulnerability scans and annual penetration testing documented (CA-7, CA-7(1))",
+        "ConMon reports submitted to agency authorizing official and FedRAMP PMO on required cadence; security posture dashboard current (CA-7(3))",
+        "Monitoring scope includes AI agent components; automated scanning and log analysis covers authorization boundary comprehensively"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 CA-7, CA-7(1), CA-7(3); FedRAMP Moderate Baseline CA-7, CA-7(1), CA-7(3)"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Annual security assessment (3PAO) conducted and assessment report (SAR) submitted per FedRAMP Moderate requirements (CA-2, CA-2(1))",
+        "Assessment scope includes AI agent components and automated security controls; assessment methodology documented",
+        "POA&M updated following assessment; findings tracked to closure with AO acceptance of residual risk (CA-5, CA-7)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 CA-2, CA-2(1), CA-5, CA-7; FedRAMP Moderate Baseline CA-2, CA-5, CA-7"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security information and event management (SIEM) or equivalent aggregates logs from authorization boundary components; alert rules cover anomalous AI agent activity (AU-6, AU-6(1))",
+        "Audit log review procedures define response actions for high-priority alerts; review cadence documented in ConMon program (AU-6)",
+        "Audit records provide time-correlated, comprehensive trail of user and AI agent actions for incident reconstruction (AU-12, AU-12(1))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 AU-6, AU-6(1), AU-12, AU-12(1); FedRAMP Moderate Baseline AU-6, AU-12"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Incident response plan documented, approved by AO, and reviewed annually or after significant incidents per IR-8 / FedRAMP IR-8",
+        "Incident response plan covers AI agent scenarios: unauthorized data access, model manipulation, automated action failures, and cascade containment",
+        "Incident response exercises conducted; exercise results documented and used to update plan (IR-8, IR-4(1))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 IR-4, IR-4(1), IR-8; FedRAMP Moderate Baseline IR-4, IR-8"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "US-CERT notification path documented and tested; significant cybersecurity incidents reported within 1 hour of detection per OMB M-20-04 / FISMA requirements (IR-6, IR-6(1))",
+        "Human escalation matrix defines decision authority for AI agent incident containment, breach notification, and disclosure to agency customer (IR-5)",
+        "Escalation runbook reviewed annually; emergency contacts verified current; FedRAMP JAB and PMO notification procedures documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 IR-5, IR-6, IR-6(1); FedRAMP Moderate Baseline IR-5, IR-6"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Automated response capabilities tested including AI agent session termination, account lockout, and network isolation; test results documented (IR-4(6))",
+        "Incident response playbooks cover FedRAMP-specific scenarios; playbook currency reviewed in ConMon cycle",
+        "Post-incident analysis conducted following significant incidents; findings drive SSP and playbook updates per FedRAMP improvement requirements (IR-4)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 IR-4, IR-4(6), IR-8; FedRAMP Moderate Baseline IR-4, IR-8"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Contingency plan (CP) documented per CP-2 covering the FedRAMP authorization boundary; plan includes AI agent component recovery procedures (CP-2 / FedRAMP CP-2)",
+        "Backup and restore capabilities tested for authorization boundary components; recovery time objectives (RTO) and recovery point objectives (RPO) defined and validated (CP-9, CP-10)",
+        "Contingency plan reviewed annually or after significant incidents; AO-accepted version current in system authorization package (CP-2(8))"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 CP-2, CP-9, CP-10; FedRAMP Moderate Baseline CP-2, CP-9, CP-10"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Post-incident review captures lessons learned; findings update contingency plan, IR plan, and SSP controls per CA-7 continuous improvement expectations",
+        "Audit evidence from incident-affected systems preserved per FedRAMP log retention requirements (minimum 1 year online, 3 years total) for post-incident analysis (AU-11)",
+        "POA&M updated with lessons-learned control improvements; AO briefed on post-incident findings and risk posture changes (CP-2(8), CA-7)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "NIST SP 800-53 Rev 5 AU-11, CA-7, CP-2, CP-2(8); FedRAMP Moderate Baseline AU-11, CA-7, CP-2"
     }
   },
   "reporting_obligations": {
@@ -82,70 +290,196 @@
   "control_adjustments": {
     "PR-01": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["piv_cac_enforced", "approved_identity_provider", "fedramp_access_review_completed"],
+      "additional_evidence_fields": [
+        "piv_cac_enforced",
+        "approved_identity_provider",
+        "fedramp_access_review_completed"
+      ],
       "regulatory_citation": "NIST SP 800-53 Rev 5 AC-2, AC-3, IA-2, IA-5, IA-8; FedRAMP Moderate Baseline"
     },
     "PR-02": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["least_privilege_baseline", "privileged_access_authorization", "remote_access_restrictions"],
+      "additional_evidence_fields": [
+        "least_privilege_baseline",
+        "privileged_access_authorization",
+        "remote_access_restrictions"
+      ],
       "regulatory_citation": "NIST SP 800-53 Rev 5 AC-5, AC-6, AC-14, AC-17; FedRAMP Moderate Baseline"
     },
     "PR-03": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["fedramp_baseline_configuration", "change_control_board_approval", "flaw_remediation_status"],
+      "additional_evidence_fields": [
+        "fedramp_baseline_configuration",
+        "change_control_board_approval",
+        "flaw_remediation_status"
+      ],
       "regulatory_citation": "NIST SP 800-53 Rev 5 CM-2, CM-3, CM-6, CM-7; FedRAMP Moderate Baseline"
     },
     "PR-04": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["fips_140_encryption_status", "data_in_transit_protection", "media_protection_level"],
+      "additional_evidence_fields": [
+        "fips_140_encryption_status",
+        "data_in_transit_protection",
+        "media_protection_level"
+      ],
       "regulatory_citation": "NIST SP 800-53 Rev 5 SC-8, SC-13, SC-28, MP-2; FedRAMP Moderate Baseline"
     },
     "PR-05": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["audit_event_types_configured", "audit_log_integrity_verified", "fedramp_log_review_completed"],
+      "additional_evidence_fields": [
+        "audit_event_types_configured",
+        "audit_log_integrity_verified",
+        "fedramp_log_review_completed"
+      ],
       "regulatory_citation": "NIST SP 800-53 Rev 5 AU-2, AU-3, AU-6, AU-9, AU-12; FedRAMP Moderate Baseline"
     },
     "DE-01": {
       "threshold_adjustment": "strict",
-      "additional_evidence_fields": ["us_cert_notification_path", "incident_response_plan_version", "continuous_monitoring_conmon_status"],
+      "additional_evidence_fields": [
+        "us_cert_notification_path",
+        "incident_response_plan_version",
+        "continuous_monitoring_conmon_status"
+      ],
       "regulatory_citation": "NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-8, SI-4; FedRAMP Moderate Baseline"
     }
   },
   "evidence_requirements": {
-    "PR-01": ["piv_cac_enforced", "approved_identity_provider", "fedramp_access_review_completed"],
-    "PR-02": ["least_privilege_baseline", "privileged_access_authorization", "remote_access_restrictions"],
-    "PR-03": ["fedramp_baseline_configuration", "change_control_board_approval", "flaw_remediation_status"],
-    "PR-04": ["fips_140_encryption_status", "data_in_transit_protection", "media_protection_level"],
-    "PR-05": ["audit_event_types_configured", "audit_log_integrity_verified", "fedramp_log_review_completed"],
-    "DE-01": ["us_cert_notification_path", "incident_response_plan_version", "continuous_monitoring_conmon_status"]
+    "PR-01": [
+      "piv_cac_enforced",
+      "approved_identity_provider",
+      "fedramp_access_review_completed"
+    ],
+    "PR-02": [
+      "least_privilege_baseline",
+      "privileged_access_authorization",
+      "remote_access_restrictions"
+    ],
+    "PR-03": [
+      "fedramp_baseline_configuration",
+      "change_control_board_approval",
+      "flaw_remediation_status"
+    ],
+    "PR-04": [
+      "fips_140_encryption_status",
+      "data_in_transit_protection",
+      "media_protection_level"
+    ],
+    "PR-05": [
+      "audit_event_types_configured",
+      "audit_log_integrity_verified",
+      "fedramp_log_review_completed"
+    ],
+    "DE-01": [
+      "us_cert_notification_path",
+      "incident_response_plan_version",
+      "continuous_monitoring_conmon_status"
+    ]
   },
   "framework_mapping": {
-    "GOV-01": ["NIST SP 800-53 Rev 5 PL-1, PL-2", "FedRAMP Moderate PL-1, PL-2, AC-1"],
-    "GOV-02": ["NIST SP 800-53 Rev 5 CA-2, CA-5", "FedRAMP Moderate CA-2, CA-5, CA-7"],
-    "GOV-03": ["NIST SP 800-53 Rev 5 RA-1, RA-3", "FedRAMP Moderate RA-1, RA-3, RA-5"],
-    "GOV-04": ["NIST SP 800-53 Rev 5 PL-1, PM-10", "FedRAMP Moderate PL-1, AT-2, AT-3"],
-    "ID-01": ["NIST SP 800-53 Rev 5 CM-8, CM-10", "FedRAMP Moderate CM-8, CM-10, CM-11"],
-    "ID-02": ["NIST SP 800-53 Rev 5 SC-7, SC-7(5)", "FedRAMP Moderate SC-7, SC-7(5), SC-7(8)"],
-    "ID-03": ["NIST SP 800-53 Rev 5 MP-1, MP-4", "FedRAMP Moderate MP-1, MP-4, MP-5"],
-    "ID-04": ["NIST SP 800-53 Rev 5 SA-9, SA-12", "FedRAMP Moderate SA-9, SA-12, SA-4"],
-    "ID-05": ["NIST SP 800-53 Rev 5 RA-3, RA-5", "FedRAMP Moderate RA-3, RA-5, RA-5(1)"],
-    "PR-01": ["NIST SP 800-53 Rev 5 AC-2, AC-3, IA-2, IA-5, IA-8", "FedRAMP Moderate AC-2, AC-3, IA-2, IA-5"],
-    "PR-02": ["NIST SP 800-53 Rev 5 AC-5, AC-6, AC-14, AC-17", "FedRAMP Moderate AC-5, AC-6, AC-14, AC-17"],
-    "PR-03": ["NIST SP 800-53 Rev 5 CM-2, CM-3, CM-6, CM-7", "FedRAMP Moderate CM-2, CM-3, CM-6, CM-7"],
-    "PR-04": ["NIST SP 800-53 Rev 5 SC-8, SC-13, SC-28, MP-2", "FedRAMP Moderate SC-8, SC-13, SC-28, MP-2"],
-    "PR-05": ["NIST SP 800-53 Rev 5 AU-2, AU-3, AU-6, AU-9, AU-12", "FedRAMP Moderate AU-2, AU-3, AU-6, AU-9"],
-    "PR-06": ["NIST SP 800-53 Rev 5 CM-7, CM-7(1)", "FedRAMP Moderate CM-7, CM-7(1), CM-7(2)"],
-    "PR-07": ["NIST SP 800-53 Rev 5 SC-5, SC-7", "FedRAMP Moderate SC-5, SC-7, SC-7(3)"],
-    "PR-08": ["NIST SP 800-53 Rev 5 SI-2, SI-3", "FedRAMP Moderate SI-2, SI-3, SI-3(1)"],
-    "DE-01": ["NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-8, SI-4", "FedRAMP Moderate IR-4, IR-5, IR-6, IR-8, SI-4"],
-    "DE-02": ["NIST SP 800-53 Rev 5 CA-7, CA-7(1)", "FedRAMP Moderate CA-7, CA-7(1), CA-7(3)"],
-    "DE-03": ["NIST SP 800-53 Rev 5 CA-2, CA-7", "FedRAMP Moderate CA-2, CA-7, CA-2(1)"],
-    "DE-04": ["NIST SP 800-53 Rev 5 AU-6, AU-12", "FedRAMP Moderate AU-6, AU-12, AU-6(1)"],
-    "RS-01": ["NIST SP 800-53 Rev 5 IR-4, IR-8", "FedRAMP Moderate IR-4, IR-8, IR-4(1)"],
-    "RS-02": ["NIST SP 800-53 Rev 5 IR-5, IR-6", "FedRAMP Moderate IR-5, IR-6, IR-6(1)"],
-    "RS-03": ["NIST SP 800-53 Rev 5 IR-4, IR-8", "FedRAMP Moderate IR-4, IR-8, IR-4(6)"],
-    "RC-01": ["NIST SP 800-53 Rev 5 CP-2, CP-9", "FedRAMP Moderate CP-2, CP-9, CP-10"],
-    "RC-02": ["NIST SP 800-53 Rev 5 CA-7, CP-2", "FedRAMP Moderate CA-7, CP-2, CP-2(8)"]
+    "GOV-01": [
+      "NIST SP 800-53 Rev 5 PL-1, PL-2",
+      "FedRAMP Moderate PL-1, PL-2, AC-1"
+    ],
+    "GOV-02": [
+      "NIST SP 800-53 Rev 5 CA-2, CA-5",
+      "FedRAMP Moderate CA-2, CA-5, CA-7"
+    ],
+    "GOV-03": [
+      "NIST SP 800-53 Rev 5 RA-1, RA-3",
+      "FedRAMP Moderate RA-1, RA-3, RA-5"
+    ],
+    "GOV-04": [
+      "NIST SP 800-53 Rev 5 PL-1, PM-10",
+      "FedRAMP Moderate PL-1, AT-2, AT-3"
+    ],
+    "ID-01": [
+      "NIST SP 800-53 Rev 5 CM-8, CM-10",
+      "FedRAMP Moderate CM-8, CM-10, CM-11"
+    ],
+    "ID-02": [
+      "NIST SP 800-53 Rev 5 SC-7, SC-7(5)",
+      "FedRAMP Moderate SC-7, SC-7(5), SC-7(8)"
+    ],
+    "ID-03": [
+      "NIST SP 800-53 Rev 5 MP-1, MP-4",
+      "FedRAMP Moderate MP-1, MP-4, MP-5"
+    ],
+    "ID-04": [
+      "NIST SP 800-53 Rev 5 SA-9, SA-12",
+      "FedRAMP Moderate SA-9, SA-12, SA-4"
+    ],
+    "ID-05": [
+      "NIST SP 800-53 Rev 5 RA-3, RA-5",
+      "FedRAMP Moderate RA-3, RA-5, RA-5(1)"
+    ],
+    "PR-01": [
+      "NIST SP 800-53 Rev 5 AC-2, AC-3, IA-2, IA-5, IA-8",
+      "FedRAMP Moderate AC-2, AC-3, IA-2, IA-5"
+    ],
+    "PR-02": [
+      "NIST SP 800-53 Rev 5 AC-5, AC-6, AC-14, AC-17",
+      "FedRAMP Moderate AC-5, AC-6, AC-14, AC-17"
+    ],
+    "PR-03": [
+      "NIST SP 800-53 Rev 5 CM-2, CM-3, CM-6, CM-7",
+      "FedRAMP Moderate CM-2, CM-3, CM-6, CM-7"
+    ],
+    "PR-04": [
+      "NIST SP 800-53 Rev 5 SC-8, SC-13, SC-28, MP-2",
+      "FedRAMP Moderate SC-8, SC-13, SC-28, MP-2"
+    ],
+    "PR-05": [
+      "NIST SP 800-53 Rev 5 AU-2, AU-3, AU-6, AU-9, AU-12",
+      "FedRAMP Moderate AU-2, AU-3, AU-6, AU-9"
+    ],
+    "PR-06": [
+      "NIST SP 800-53 Rev 5 CM-7, CM-7(1)",
+      "FedRAMP Moderate CM-7, CM-7(1), CM-7(2)"
+    ],
+    "PR-07": [
+      "NIST SP 800-53 Rev 5 SC-5, SC-7",
+      "FedRAMP Moderate SC-5, SC-7, SC-7(3)"
+    ],
+    "PR-08": [
+      "NIST SP 800-53 Rev 5 SI-2, SI-3",
+      "FedRAMP Moderate SI-2, SI-3, SI-3(1)"
+    ],
+    "DE-01": [
+      "NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-8, SI-4",
+      "FedRAMP Moderate IR-4, IR-5, IR-6, IR-8, SI-4"
+    ],
+    "DE-02": [
+      "NIST SP 800-53 Rev 5 CA-7, CA-7(1)",
+      "FedRAMP Moderate CA-7, CA-7(1), CA-7(3)"
+    ],
+    "DE-03": [
+      "NIST SP 800-53 Rev 5 CA-2, CA-7",
+      "FedRAMP Moderate CA-2, CA-7, CA-2(1)"
+    ],
+    "DE-04": [
+      "NIST SP 800-53 Rev 5 AU-6, AU-12",
+      "FedRAMP Moderate AU-6, AU-12, AU-6(1)"
+    ],
+    "RS-01": [
+      "NIST SP 800-53 Rev 5 IR-4, IR-8",
+      "FedRAMP Moderate IR-4, IR-8, IR-4(1)"
+    ],
+    "RS-02": [
+      "NIST SP 800-53 Rev 5 IR-5, IR-6",
+      "FedRAMP Moderate IR-5, IR-6, IR-6(1)"
+    ],
+    "RS-03": [
+      "NIST SP 800-53 Rev 5 IR-4, IR-8",
+      "FedRAMP Moderate IR-4, IR-8, IR-4(6)"
+    ],
+    "RC-01": [
+      "NIST SP 800-53 Rev 5 CP-2, CP-9",
+      "FedRAMP Moderate CP-2, CP-9, CP-10"
+    ],
+    "RC-02": [
+      "NIST SP 800-53 Rev 5 CA-7, CP-2",
+      "FedRAMP Moderate CA-7, CP-2, CP-2(8)"
+    ]
   },
   "evidence_retention_minimum_days": 1095,
   "human_oversight_required": false,
