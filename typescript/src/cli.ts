@@ -619,14 +619,18 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
         const unknown = rest.filter(a => a.startsWith("--") && !knownFlags.includes(a));
         if (unknown.length > 0) throw new Error(`Unknown scan flag: ${unknown[0]}`);
         const ci = rest.includes("--ci");
+        const all = rest.includes("--all");
         const configIdx = rest.indexOf("--config");
         const dbIdx = rest.indexOf("--db");
         const periodIdx = rest.indexOf("--period");
+        const sessionIdx = rest.indexOf("--session");
         return await handleScan({
           ci,
+          all,
           config: configIdx !== -1 ? rest[configIdx + 1] : undefined,
           db: dbIdx !== -1 ? rest[dbIdx + 1] : undefined,
           period: periodIdx !== -1 ? rest[periodIdx + 1] : undefined,
+          session: sessionIdx !== -1 ? rest[sessionIdx + 1] : undefined,
         }, io);
       }
       default:
