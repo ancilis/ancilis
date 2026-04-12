@@ -112,6 +112,8 @@ class TestValidateCoverage:
         result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
         assert result.exit_code == 1
         assert "Available controls" in result.output
+        assert "PR-08" in result.output
+        assert "RC-02" in result.output
 
     def test_active_certifications_shown(self, tmp_path: Path) -> None:
         """Validate output shows active certification when certification_targets set."""
