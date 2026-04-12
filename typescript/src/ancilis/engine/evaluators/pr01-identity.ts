@@ -44,7 +44,7 @@ export class PR01IdentityEvaluator implements ControlEvaluator {
       };
     }
 
-    if (config.agentOwner && action.agentOwner !== config.agentOwner) {
+    if (config.agentOwner && action.agentOwner != null && action.agentOwner !== config.agentOwner) {
       return {
         controlId: this.controlId,
         controlName: this.controlName,
