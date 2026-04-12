@@ -1,0 +1,431 @@
+{
+  "id": "iso-27001",
+  "name": "ISO/IEC 27001:2022",
+  "version": "0.1",
+  "framework_version": "2022",
+  "description": "ISO/IEC 27001:2022 Annex A overlay for AI agent deployments. Maps AKSI controls to ISO 27001:2022 Annex A controls across the four themes: Organizational (A.5), People (A.6), Physical (A.7), and Technological (A.8). This overlay covers the ISMS controls most relevant to AI agent security and governance.",
+  "trigger_type": "data_classification",
+  "triggered_by": [
+    "DC-ENTERPRISE",
+    "DC-AI",
+    "DC-PII",
+    "DC-HEALTH",
+    "DC-FIN",
+    "DC-GOV",
+    "DC-CUI"
+  ],
+  "jurisdiction": "International (ISO certification; adopted by 170+ countries)",
+  "enforcement_date": "2022-10-25",
+  "applicable_data_types": [
+    "all"
+  ],
+  "reporting_obligations": {
+    "framework_type": "certification",
+    "assessment_type": "Third-party certification audit (Stage 1: documentation review, Stage 2: implementation audit) plus annual surveillance audits and 3-year recertification cycle. Auditors will expect evidence for all applicable Annex A controls. This overlay maps AKSI controls to the Annex A controls most relevant to AI agent deployments.",
+    "reporting_entity": "Organization holding or pursuing ISO 27001 certification (the 'organization' in ISMS scope)"
+  },
+  "human_oversight_mandates": {
+    "required": true,
+    "basis": "A.5.35 (independent review of information security), A.5.36 (compliance with policies), A.8.16 (monitoring activities)",
+    "minimum_requirement": "Human review of AI agent risk assessments and compliance monitoring outputs; documented management review of ISMS effectiveness including AI agent security controls"
+  },
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information security policies documented, approved by management, published, and communicated to employees and relevant external parties (A.5.1)",
+        "AI-specific security policy or policy addendum covering agent deployment, data handling, and risk management",
+        "Policy review cycle documented — policies reviewed at planned intervals or when significant changes occur (A.5.1)",
+        "Management commitment to ISMS demonstrated through signed policy approval records"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.1"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information security roles and responsibilities defined and allocated (A.5.2)",
+        "Segregation of duties implemented to reduce opportunities for unauthorized or unintentional modification or misuse of organizational assets (A.5.3)",
+        "Named accountability for AI agent security within ISMS roles and responsibilities",
+        "Contact with authorities and special interest groups maintained — AI security groups, sector CERTs (A.5.5, A.5.6)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.2, A.5.3"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information security risk assessment performed using consistent, valid, and comparable risk criteria (A.5.3, A.8.8 for vulnerability management)",
+        "Risk assessment identifies risks associated with the loss of confidentiality, integrity, and availability for agent-processed data (A.5.3)",
+        "Risk treatment plan documented with owner, timeline, and acceptance criteria (A.5.3)",
+        "Risk assessment repeated on significant changes to AI agent deployment context"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.3"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Independent review of organization's approach to managing information security at planned intervals or when significant changes occur (A.5.35)",
+        "Compliance with information security policies, rules, and standards reviewed regularly (A.5.36)",
+        "Human oversight configuration documented as part of ISMS management review",
+        "Management review outputs include decisions on AI agent security posture and improvement opportunities (A.5.35)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.35, A.5.36"
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Inventory of assets associated with information and information processing facilities maintained (A.5.9)",
+        "AI agents identified as information assets and registered in asset inventory with owner, classification, and location",
+        "Assets identified and inventoried throughout their lifecycle — including agent creation, modification, and decommissioning (A.5.9)",
+        "Asset inventory reviewed and updated at planned intervals and when changes occur"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.9"
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Security requirements for use of cloud services identified and managed (A.5.23)",
+        "Third-party tools and MCP servers treated as cloud/supplier services with documented security requirements",
+        "Supplier security policy established and communicated to suppliers (A.5.19)",
+        "ICT supply chain security risks identified and managed throughout the supply chain (A.5.21)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.23, A.5.19, A.5.21"
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information classified according to information security needs based on confidentiality, integrity, and availability (A.5.12)",
+        "Classification scheme documented with consistent, repeatable labeling applied to all data processed by agents (A.5.13)",
+        "Data classification taxonomy (AKSI 16 types) documented as organization's classification scheme",
+        "Classification maintained throughout information lifecycle including when processed by AI agents"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.12, A.5.13"
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information security requirements established and agreed with each supplier that may access, process, store, communicate, or provide IT infrastructure components (A.5.19)",
+        "Supplier agreements include security requirements for AI components — models, tools, MCP servers, vector databases (A.5.20)",
+        "ICT supply chain security risks managed — includes AI model provenance and component integrity (A.5.21)",
+        "Supplier security monitored and reviewed throughout the relationship lifecycle (A.5.22)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.19, A.5.20, A.5.21, A.5.22"
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Technical vulnerabilities in information systems managed timely to reduce exploitability (A.8.8)",
+        "Threat intelligence relevant to the organization gathered, analyzed, and used to inform risk assessment (A.5.7)",
+        "AI agent risk profiling documented as part of ISMS risk assessment process",
+        "Risk profiles updated when new vulnerabilities or threats relevant to AI agents are identified (A.8.8, A.5.7)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.7, A.8.8"
+    },
+    "PR-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Secure authentication technologies and procedures implemented consistent with information access restriction (A.8.5)",
+        "Multi-factor authentication used to protect information systems — including AI agent identity and service accounts (A.8.5)",
+        "Authentication configuration reviewed and tested; MFA enforcement documented for privileged agent access",
+        "Authentication records support audit trail requirements (A.8.15)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.5"
+    },
+    "PR-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Access to information and other associated assets restricted in accordance with access control policy (A.8.3)",
+        "Privileged access rights restricted, managed, monitored, and reviewed with allocation on need-to-use and event-by-event basis (A.8.2)",
+        "Access control policy documented covering AI agents as subjects — principle of least privilege applied (A.5.15)",
+        "Access rights reviewed at regular intervals and adjusted for role changes (A.5.18)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.3, A.8.2, A.5.15, A.5.18"
+    },
+    "PR-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configuration management documented including secure configurations for information processing (A.8.9)",
+        "Software and systems developed securely — access control implemented as part of secure design (A.8.25, A.8.28)",
+        "Data access control configuration records demonstrate authorization enforcement for agent data store access",
+        "Access logs reviewed — unauthorized access attempts detected and investigated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.9, A.5.15, A.5.18"
+    },
+    "PR-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information storage media managed over its lifecycle including secure disposal or re-use (A.8.10)",
+        "Information deletion implemented when no longer required — documented disposal procedures (A.8.10)",
+        "Data masking applied where appropriate based on access control policy and business/legal requirements (A.8.11)",
+        "Retention schedules documented and enforced — aligned with legal/regulatory retention requirements"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.10, A.8.11"
+    },
+    "PR-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Event logs recording user activities, exceptions, faults, and information security events produced, stored, protected, and analyzed (A.8.15)",
+        "Logging facilities and log information protected against tampering and unauthorized access (A.8.15)",
+        "Clock synchronization maintained for all information processing systems contributing to audit logs (A.8.17)",
+        "Log content defined to include agent identity, action type, target, data classifications, and control evaluation results"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.15, A.8.17"
+    },
+    "PR-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configurations of hardware, software, services and networks established, documented, implemented, monitored, and reviewed (A.8.9)",
+        "Configuration baseline documented and enforced — deviations detected and remediated (A.8.9)",
+        "Information about technical vulnerabilities of AI agent systems obtained timely and remediation evaluated (A.8.8)",
+        "Integrity monitoring alerts feed into vulnerability management process (A.8.8)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.9, A.8.8"
+    },
+    "PR-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information transferred over networks protected using appropriate security measures — encryption of sensitive data in transit (A.8.24)",
+        "Rules, procedures, and controls for information transfer formalized in transfer agreements or policies (A.5.14)",
+        "Cryptography policy documented covering intended use, key management, and minimum algorithm standards (A.8.24)",
+        "TLS/mTLS configuration records demonstrate encryption enforcement for agent communication channels"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.24, A.5.14"
+    },
+    "PR-08": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Secure coding practices applied in software development — input validation, output encoding, parameterized queries (A.8.28)",
+        "Security testing integrated into development lifecycle — injection testing included in test cases (A.8.29)",
+        "Technical vulnerability management applied to input-handling components (A.8.8)",
+        "Input validation configuration documented and tested against known injection patterns"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.28, A.8.29, A.8.8"
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Networks, systems, and applications monitored for anomalous behavior and appropriate actions taken to evaluate potential information security incidents (A.8.16)",
+        "Behavioral anomaly detection records demonstrate continuous monitoring of AI agent behavior",
+        "Monitoring coverage documented — all agent action types included in behavioral baseline",
+        "Anomaly alerts feed into incident management process (A.5.24)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.16"
+    },
+    "DE-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Configurations of hardware, software, services and networks monitored and reviewed for deviations (A.8.9)",
+        "Configuration drift monitoring records demonstrate detection of unauthorized changes to AI agent components",
+        "Change management process covers AI agent tools, models, and MCP server updates (A.8.32)",
+        "Drift alerts investigated and remediated with documented response"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.9, A.8.32"
+    },
+    "DE-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Independent review of information security at planned intervals (A.5.35)",
+        "Compliance with information security policies regularly reviewed — continuous compliance monitoring satisfies this (A.5.36)",
+        "Compliance monitoring outputs documented and reviewed by management",
+        "Non-compliances identified and remediated with evidence of corrective action"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.35, A.5.36"
+    },
+    "DE-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Event logs protected against tampering and unauthorized access — evidence integrity monitoring directly supports this (A.8.15)",
+        "Integrity verification records demonstrate that compliance evidence chain cannot be modified post-creation",
+        "Evidence integrity controls documented as part of protective measures for log infrastructure",
+        "Integrity failures trigger incident response process"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.8.15"
+    },
+    "RS-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Responsibilities and procedures established for managing information security incidents — including AI-specific incident categories (A.5.24)",
+        "Information security incidents reported through appropriate management channels promptly (A.6.8)",
+        "Incident response plan documented, tested, and exercised (A.5.26)",
+        "Incident response records include AI agent identifier, action type, data classifications, and control failures"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.24, A.5.26, A.6.8"
+    },
+    "RS-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Information security incidents responded to in accordance with documented procedures (A.5.26)",
+        "Human escalation workflow triggers document when AI agent incidents require human decision-making",
+        "Escalation decision records demonstrate appropriate human oversight for high-severity AI agent incidents",
+        "Evidence preserved during investigation — custody chain documented (A.5.28)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.26, A.5.28"
+    },
+    "RS-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Evidence preserved, collected, acquired, and managed in alignment with legal and regulatory requirements (A.5.28)",
+        "Forensic investigation records documented with methodology and chain-of-custody",
+        "Threat intelligence relevant to investigation gathered and analyzed (A.5.7)",
+        "Investigation findings documented in format suitable for legal, regulatory, or audit review"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.28, A.5.7"
+    },
+    "RC-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "ICT readiness for business continuity planned, implemented, maintained, and tested (A.5.30)",
+        "Backup copies of information taken, tested, and stored in accordance with backup policy (A.8.13)",
+        "Rollback capability tested and recovery time objectives documented (A.5.30, A.8.13)",
+        "Business continuity plans include AI agent recovery procedures with known-good configuration snapshots"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.30, A.8.13"
+    },
+    "RC-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Knowledge gained from analyzing and resolving information security incidents used to reduce likelihood or impact of future incidents (A.5.27)",
+        "Post-incident reviews documented with root cause analysis and corrective actions",
+        "Improvements implemented and verified — evidence of closed corrective actions",
+        "Lessons learned incorporated into ISMS process updates and training (A.6.3)"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "A.5.27, A.6.3"
+    }
+  },
+  "framework_mapping": {
+    "GOV-01": [
+      "A.5.1"
+    ],
+    "GOV-02": [
+      "A.5.2",
+      "A.5.3"
+    ],
+    "GOV-03": [
+      "A.5.3"
+    ],
+    "GOV-04": [
+      "A.5.35",
+      "A.5.36"
+    ],
+    "ID-01": [
+      "A.5.9"
+    ],
+    "ID-02": [
+      "A.5.23",
+      "A.5.19",
+      "A.5.21"
+    ],
+    "ID-03": [
+      "A.5.12",
+      "A.5.13"
+    ],
+    "ID-04": [
+      "A.5.19",
+      "A.5.20",
+      "A.5.21",
+      "A.5.22"
+    ],
+    "ID-05": [
+      "A.5.7",
+      "A.8.8"
+    ],
+    "PR-01": [
+      "A.8.5"
+    ],
+    "PR-02": [
+      "A.8.3",
+      "A.8.2",
+      "A.5.15",
+      "A.5.18"
+    ],
+    "PR-03": [
+      "A.8.9",
+      "A.5.15",
+      "A.5.18"
+    ],
+    "PR-04": [
+      "A.8.10",
+      "A.8.11"
+    ],
+    "PR-05": [
+      "A.8.15",
+      "A.8.17"
+    ],
+    "PR-06": [
+      "A.8.9",
+      "A.8.8"
+    ],
+    "PR-07": [
+      "A.8.24",
+      "A.5.14"
+    ],
+    "PR-08": [
+      "A.8.28",
+      "A.8.29",
+      "A.8.8"
+    ],
+    "DE-01": [
+      "A.8.16"
+    ],
+    "DE-02": [
+      "A.8.9",
+      "A.8.32"
+    ],
+    "DE-03": [
+      "A.5.35",
+      "A.5.36"
+    ],
+    "DE-04": [
+      "A.8.15"
+    ],
+    "RS-01": [
+      "A.5.24",
+      "A.5.26",
+      "A.6.8"
+    ],
+    "RS-02": [
+      "A.5.26",
+      "A.5.28"
+    ],
+    "RS-03": [
+      "A.5.28",
+      "A.5.7"
+    ],
+    "RC-01": [
+      "A.5.30",
+      "A.8.13"
+    ],
+    "RC-02": [
+      "A.5.27",
+      "A.6.3"
+    ]
+  },
+  "evidence_retention_minimum_days": 1095,
+  "human_oversight_required": true,
+  "notes": "ISO/IEC 27001:2022 supersedes ISO/IEC 27001:2013. The 2022 revision reorganized Annex A from 114 controls in 14 domains to 93 controls in 4 themes (Organizational A.5, People A.6, Physical A.7, Technological A.8). New controls relevant to AI agents include A.5.7 (Threat intelligence), A.5.23 (Information security for use of cloud services), A.8.9 (Configuration management), A.8.10 (Information deletion), A.8.11 (Data masking), A.8.16 (Monitoring activities), A.8.23 (Web filtering), A.8.28 (Secure coding). AI agents should be treated as information assets within the ISMS scope, with their tools and MCP servers treated as cloud services or suppliers under A.5.23 and A.5.19. This overlay does not cover the full ISMS (clauses 4-10) which are organizational requirements — it covers only the Annex A technical controls most directly mappable to AKSI."
+}
