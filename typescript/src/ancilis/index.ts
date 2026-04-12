@@ -26,6 +26,19 @@ export {
 export type { ActivationSpec, ClassificationRecommendation, CertificationUpgradeAdvisory, PatternDetection } from "./activation/index.js";
 
 export { PR05AuditEvaluator, DE01BaselineEvaluator } from "./controls/index.js";
+export {
+  PR01IdentityEvaluator,
+  PR02ScopeEvaluator,
+  PR03ProvenanceEvaluator,
+  PR04ExposureEvaluator,
+  PR07TransportEvaluator,
+  PR08InputEvaluator,
+  GOV01PolicyEvaluator,
+  GOV02OwnershipEvaluator,
+  ID01InventoryEvaluator,
+  DE04IntegrityEvaluator,
+} from "./engine/evaluators/index.js";
+export type { DE04StoreAdapter } from "./engine/evaluators/index.js";
 export type { BaselineWindow, DeviationFlag } from "./controls/index.js";
 
 export { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderNdjson, renderCsv, renderOscalJson, renderPdf } from "./report/index.js";
