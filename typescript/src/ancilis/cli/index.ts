@@ -16,3 +16,6 @@ export { WatchRunner, getProducersForPaths } from "./watch.js";
 export type { WatchRunnerOptions } from "./watch.js";
 export { formatHeader, formatDelta, printScanResult, printSessionSummary } from "./watch-display.js";
 export type { WatchControlResult } from "./watch-display.js";
+export { runInit, detectFramework, sanitizeName } from "./init.js";
+export type { InitOptions, DetectionResult } from "./init.js";
+export { checkAndNotify, isCiEnvironment, isSuppressed, readCache, writeCache, shouldNotify, fetchLatestVersion } from "./version-check.js";

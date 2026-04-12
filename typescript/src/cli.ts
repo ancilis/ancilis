@@ -3,7 +3,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { approveTool, formatStatus, handleEvidence, handleScan, runDoctor, runReport, validateAndFormat, WatchRunner, runConnect } from "./ancilis/cli/index.js";
+import { approveTool, formatStatus, handleEvidence, handleScan, runDoctor, runReport, validateAndFormat, WatchRunner, runConnect, runInit, checkAndNotify } from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
@@ -42,7 +42,9 @@ function usage(): string {
     "  ancilis evidence reset [--config <path>] [--db <path>] [--yes]",
     "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--config <path>] [--db <path>] [--agent-id <id>]",
     "  ancilis connect",
+    "  ancilis init [--framework <name>] [--overlay <id>] [--agent-name <name>] [--detect] [--no-sample] [--dir <path>]",
     "  ancilis --version",
+    "  ancilis --no-update-check <command> [options]",
   ].join("\n");
 }
 
@@ -332,6 +334,9 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
     return 0;
   }
 
+  // Non-blocking background version check (fire-and-forget)
+  checkAndNotify(loadVersion(), args, io);
+
   const [command, ...rest] = args;
 
   try {
@@ -353,6 +358,18 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
         return await handleBaseline(rest, io);
       case "evidence":
         return await handleEvidence(rest, io);
+      case "init": {
+        const initResult = await runInit({
+          framework: rest.find((_, i) => rest[i - 1] === "--framework" || rest[i - 1] === "-f"),
+          overlay: rest.find((_, i) => rest[i - 1] === "--overlay" || rest[i - 1] === "-o"),
+          agentName: rest.find((_, i) => rest[i - 1] === "--agent-name"),
+          detect: rest.includes("--detect"),
+          noSample: rest.includes("--no-sample"),
+          dir: rest.find((_, i) => rest[i - 1] === "--dir"),
+        }, io);
+        if (!initResult.ok && initResult.output) print(io.stderr, initResult.output);
+        return initResult.ok ? 0 : 1;
+      }
       case "connect": {
         const result = await runConnect(rest, io);
         return result.ok ? 0 : 1;
