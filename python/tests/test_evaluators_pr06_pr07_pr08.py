@@ -6,8 +6,12 @@ import pytest
 
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
 from ancilis.engine.evaluators.pr06_config_baseline import PR06ConfigBaselineEvaluator
-from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
-from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
+from ancilis.engine.evaluators.pr07_transport import (
+    PR07TransportEvaluator,
+    _is_localhost,
+    _extract_urls,
+)
+from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator, _flatten_values
 from ancilis.testing._helpers import make_action, make_test_config
 
 
@@ -133,6 +137,37 @@ class TestPR07TransportEvaluator:
     def test_control_id(self):
         assert self.evaluator.control_id == "PR-07"
 
+    def test_nested_dict_url_extraction(self):
+        """Line 43: nested dict URL key triggers insecure detection."""
+        action = make_action(
+            tool_name="t",
+            parameters={"config": {"endpoint": "http://internal.example.com/api"}},
+        )
+        result = self.evaluator.evaluate(action, self.config)
+        assert result.result == "FAIL"
+        assert result.evidence_data["insecure_urls"]
+
+    def test_server_url_from_context(self):
+        """Line 64: server_url set dynamically on ActionContext is picked up."""
+        action = make_action(tool_name="t", parameters={})
+        action.context.server_url = "http://dynamic.server.com/ws"  # type: ignore[attr-defined]
+        result = self.evaluator.evaluate(action, self.config)
+        assert result.result == "FAIL"
+
+    def test_is_localhost_invalid_url(self):
+        """Lines 26-27: _is_localhost returns False for unparseable input."""
+        # urlparse is very permissive; feed a truly invalid URL via a custom scheme edge-case
+        # The except branch is reached by patching urlparse to raise
+        import unittest.mock as mock
+        with mock.patch("ancilis.engine.evaluators.pr07_transport.urlparse", side_effect=ValueError("bad")):
+            assert _is_localhost("http://anything") is False
+
+    def test_extract_urls_nested_dict_multiple_keys(self):
+        """_extract_urls finds URLs in nested dicts under several recognized keys."""
+        params = {"settings": {"base_url": "https://secure.example.com"}}
+        urls = _extract_urls(params)
+        assert "https://secure.example.com" in urls
+
 
 # ---------------------------------------------------------------------------
 # PR-08: Input Validation
@@ -205,3 +240,24 @@ class TestPR08InputEvaluator:
         result = self.evaluator.evaluate(action, self.config)
         assert "key1" in result.evidence_data["parameter_keys"]
         assert "key2" in result.evidence_data["parameter_keys"]
+
+    def test_flatten_values_depth_limit(self):
+        """Line 40: recursion terminates at depth=0 — returns empty list."""
+        result = _flatten_values({"key": "value"}, depth=0)
+        assert result == []
+
+    def test_flatten_values_dict_in_list(self):
+        """Line 51: dict items inside a list are recursively flattened."""
+        params = {"items": [{"nested_key": "' OR 1=1"}]}
+        values = _flatten_values(params)
+        assert "' OR 1=1" in values
+
+    def test_fail_dict_in_list_injection(self):
+        """End-to-end: dict inside list triggers injection detection via evaluator."""
+        action = make_action(
+            tool_name="t",
+            parameters={"batch": [{"query": "UNION SELECT password FROM users"}]},
+        )
+        result = self.evaluator.evaluate(action, self.config)
+        assert result.result == "FAIL"
+        assert "sql_union_select" in result.evidence_data["patterns_found"]
