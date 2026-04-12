@@ -251,7 +251,7 @@ export class EvidenceStore {
       outputSummary: outputSummary ?? null,
       sessionId,
       tenantId: this._tenantId ?? null,
-      detectedDataTypes: [...((evaluation as unknown as Record<string, unknown>).detectedDataTypes as string[] | undefined ?? [])],
+      detectedDataTypes: [...(evaluation.detectedDataTypes ?? [])],
       sdkVersion: _sdkVersion ?? null,
     };
 
