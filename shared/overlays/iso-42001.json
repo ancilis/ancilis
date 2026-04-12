@@ -1,13 +1,15 @@
 {
   "id": "iso-42001",
   "name": "ISO/IEC 42001:2023",
-  "version": "0.1",
+  "version": "0.2",
   "trigger_type": "data_classification",
-  "triggered_by": ["DC-AI"],
+  "triggered_by": [
+    "DC-AI"
+  ],
   "_note_future_trigger": "This overlay will also be available as a certification_target in a future release. Currently wired as data_classification triggered by DC-AI.",
   "description": "ISO/IEC 42001 AI Management System Standard overlay. The ISO 27001 equivalent for AI. Provides requirements for establishing, implementing, maintaining, and continually improving an AI management system (AIMS). Activated by AI training data declarations.",
   "jurisdiction": "global",
-  "enforcement_date": null,
+  "enforcement_date": "2023-12-18",
   "controls": {
     "GOV-01": {
       "applicable": true,
@@ -269,34 +271,100 @@
   "control_adjustments": {},
   "evidence_requirements": {},
   "framework_mapping": {
-    "GOV-01": ["Clause 5.1", "5.2", "GOV 1.1"],
-    "GOV-02": ["Clause 5.3", "7.2", "GOV 1.3"],
-    "GOV-03": ["Clause 6.1", "GOV 1.1"],
-    "GOV-04": ["Clause 8.4", "9.3", "GOV 1.3"],
-    "ID-01": ["Clause 7.3", "MAP 1.1"],
-    "ID-02": ["Clause 7.1"],
-    "ID-03": ["MAP 1.5"],
-    "ID-04": ["MAP 5.1"],
-    "ID-05": ["Clause 6.1", "MAP 1.1"],
-    "PR-01": ["Clause 8.1"],
-    "PR-02": ["Clause 8.4"],
-    "PR-03": ["Clause 8.1"],
-    "PR-04": ["MAP 1.5"],
-    "PR-05": ["Clause 7.5", "MEA 2.1"],
-    "PR-06": ["Clause 8.1"],
-    "PR-07": ["Clause 8.1"],
-    "PR-08": ["Clause 8.4"],
-    "DE-01": ["MEA 2.2"],
-    "DE-02": ["Clause 8.1"],
-    "DE-03": ["Clause 9.1", "9.2", "MEA 2.1"],
-    "DE-04": ["Clause 7.5.3"],
-    "RS-01": ["MAN 4.1"],
-    "RS-02": ["MAN 4.1"],
-    "RS-03": ["Clause 7.5"],
-    "RC-01": ["Clause 8.1"],
-    "RC-02": ["Clause 10.1", "10.2", "MAN 4.2"]
+    "GOV-01": [
+      "Clause 5.1",
+      "5.2",
+      "GOV 1.1"
+    ],
+    "GOV-02": [
+      "Clause 5.3",
+      "7.2",
+      "GOV 1.3"
+    ],
+    "GOV-03": [
+      "Clause 6.1",
+      "GOV 1.1"
+    ],
+    "GOV-04": [
+      "Clause 8.4",
+      "9.3",
+      "GOV 1.3"
+    ],
+    "ID-01": [
+      "Clause 7.3",
+      "MAP 1.1"
+    ],
+    "ID-02": [
+      "Clause 7.1"
+    ],
+    "ID-03": [
+      "MAP 1.5"
+    ],
+    "ID-04": [
+      "MAP 5.1"
+    ],
+    "ID-05": [
+      "Clause 6.1",
+      "MAP 1.1"
+    ],
+    "PR-01": [
+      "Clause 8.1"
+    ],
+    "PR-02": [
+      "Clause 8.4"
+    ],
+    "PR-03": [
+      "Clause 8.1"
+    ],
+    "PR-04": [
+      "MAP 1.5"
+    ],
+    "PR-05": [
+      "Clause 7.5",
+      "MEA 2.1"
+    ],
+    "PR-06": [
+      "Clause 8.1"
+    ],
+    "PR-07": [
+      "Clause 8.1"
+    ],
+    "PR-08": [
+      "Clause 8.4"
+    ],
+    "DE-01": [
+      "MEA 2.2"
+    ],
+    "DE-02": [
+      "Clause 8.1"
+    ],
+    "DE-03": [
+      "Clause 9.1",
+      "9.2",
+      "MEA 2.1"
+    ],
+    "DE-04": [
+      "Clause 7.5.3"
+    ],
+    "RS-01": [
+      "MAN 4.1"
+    ],
+    "RS-02": [
+      "MAN 4.1"
+    ],
+    "RS-03": [
+      "Clause 7.5"
+    ],
+    "RC-01": [
+      "Clause 8.1"
+    ],
+    "RC-02": [
+      "Clause 10.1",
+      "10.2",
+      "MAN 4.2"
+    ]
   },
   "evidence_retention_minimum_days": 1095,
   "human_oversight_required": false,
-  "notes": "ISO/IEC 42001:2023 is the AI management system standard — the ISO 27001 equivalent for AI. It is process-oriented, emphasizing documented procedures, management review records, and continuous improvement evidence. Unlike PCI which is checklist-oriented, ISO 42001 wants to see the management system operating. Certification requires demonstrating the Plan-Do-Check-Act cycle. Published December 2023, with growing adoption among organizations pursuing responsible AI credentials."
+  "notes": "ISO/IEC 42001:2023 — AI Management System (AIMS) standard, published December 18, 2023. The 'ISO 27001 equivalent for AI' — provides a certifiable management system framework for responsible AI development and use. Structure: Clauses 4-10 (management system requirements) + Annex A (organizational controls, abbreviated A.2-A.6) + Annex B (AI system impact categories). Annex A is organized as: A.2 Policies for AI (governance), A.3 Internal organization (roles), A.4 Resources for AI (data, tools), A.5 Assessing impacts, A.6 AI system lifecycle. Annex A control notation used in this overlay follows ISO 42001 published structure: Cl.X.X for clause-based requirements, A.X.X for Annex A controls. The TECH sub-notation (A.TECH.X.X) used in some prior AKSI drafts is not an official ISO 42001 notation — this overlay uses correct Annex A section references. Certification path: Third-party certification audits by accredited certification bodies (UKAS, DAkkS, etc.). Relationship to ISO 27001: Organizations with existing ISO 27001 certification can use it as a foundation — ISO 42001 adds AI-specific requirements on top of the ISMS. AKSI controls map most densely to ISO 42001 Clause 6 (planning), Clause 8 (operation), and Annex A."
 }
