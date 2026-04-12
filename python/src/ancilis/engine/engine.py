@@ -16,13 +16,16 @@ from ancilis.engine.evaluators.pr04_exposure import PR04ExposureEvaluator
 from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
 from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
 from ancilis.engine.evaluators.gov01_policy import GOV01PolicyEvaluator
+from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
+from ancilis.engine.evaluators.gov02_ownership import GOV02OwnershipEvaluator
+from ancilis.engine.evaluators.id01_inventory import ID01InventoryEvaluator
 from ancilis.engine.registry import ToolRegistry
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.controls.pr05_audit import PR05AuditEvaluator
 from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow
 
 # Controls that have evaluators
-EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01", "PR-07", "PR-08", "GOV-01"}
+EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01", "PR-07", "PR-08", "GOV-01", "DE-04", "GOV-02", "ID-01"}
 
 
 class Engine:
@@ -34,6 +37,7 @@ class Engine:
         registry: ToolRegistry | None = None,
         rate_tracker: RateTracker | None = None,
         baseline_window: BaselineWindow | None = None,
+        evidence_store: object | None = None,
     ) -> None:
         self.config = config
         self.registry = registry or ToolRegistry()
@@ -48,6 +52,9 @@ class Engine:
             "PR-07": PR07TransportEvaluator(),
             "PR-08": PR08InputEvaluator(),
             "GOV-01": GOV01PolicyEvaluator(),
+            "DE-04": DE04IntegrityEvaluator(evidence_store=evidence_store),  # type: ignore[arg-type]
+            "GOV-02": GOV02OwnershipEvaluator(),
+            "ID-01": ID01InventoryEvaluator(),
         }
 
     def evaluate(self, action: Action) -> EvaluationResult:
