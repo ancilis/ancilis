@@ -698,3 +698,63 @@ describe("EvidenceStore sdkVersion field", () => {
     await store.close();
   });
 });
+
+// --- classificationContext + llmProvider store round-trip (ANC-782) ---
+
+describe("EvidenceStore classificationContext field", () => {
+  it("defaults to empty object when llm_provider is not set", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "tool");
+    const records = await store.getRecords();
+    expect(records[0].classificationContext).toEqual({});
+    await store.close();
+  });
+
+  it("includes llm_provider when set in config", async () => {
+    const store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "openai" } }),
+      { inMemory: true },
+    );
+    await store.store(makeEvaluation(), "tool");
+    const records = await store.getRecords();
+    expect(records[0].classificationContext).toEqual({ llm_provider: "openai" });
+    await store.close();
+  });
+
+  it("classificationContext is independent per record", async () => {
+    const store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "anthropic" } }),
+      { inMemory: true },
+    );
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
+    const records = await store.getRecords();
+    expect(records[0].classificationContext).toEqual({ llm_provider: "anthropic" });
+    expect(records[1].classificationContext).toEqual({ llm_provider: "anthropic" });
+    await store.close();
+  });
+
+  it("round-trips correctly when classification_context is an empty JSON object", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "tool");
+    const conn = (store as unknown as Record<string, unknown>)._conn as import("duckdb").Connection;
+    await new Promise<void>((resolve, reject) => {
+      conn.run("UPDATE evidence_records SET classification_context = '{}'", (err) => err ? reject(err) : resolve());
+    });
+    const records = await store.getRecords();
+    expect(records[0].classificationContext).toEqual({});
+    await store.close();
+  });
+});
+
+describe("ResolvedConfig llmProvider field", () => {
+  it("defaults to null when llm_provider is not specified", () => {
+    const config = makeConfig();
+    expect(config.llmProvider).toBeNull();
+  });
+
+  it("resolves llm_provider string from config", () => {
+    const config = makeConfig({ agent: { name: "test-agent", llm_provider: "bedrock" } });
+    expect(config.llmProvider).toBe("bedrock");
+  });
+});

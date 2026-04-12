@@ -66,6 +66,7 @@ const AncilisConfigSchema = z.object({
     name: z.string().min(1, "agent.name must be a non-empty string"),
     description: z.string().default(""),
     owner: z.string().default(""),
+    llm_provider: z.string().nullable().default(null),
   }),
   security: SecurityConfigSchema,
   my_agent_handles: z.array(z.string()).default([]),
@@ -191,6 +192,7 @@ export interface ResolvedConfig {
   scopeAllowedDestinations: string[];
   scopeBlockedDestinations: string[];
   activeCertifications: string[];
+  llmProvider: string | null;
   scanDependenciesEnabled: boolean;
   scanDependenciesSeverityThreshold: "critical" | "high" | "medium" | "low";
   scanDependenciesIgnore: string[];
@@ -278,6 +280,7 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
     scopeAllowedDestinations: [...config.security.scope.allowed_destinations],
     scopeBlockedDestinations: [...config.security.scope.blocked_destinations],
     activeCertifications: [],
+    llmProvider: config.agent.llm_provider,
     scanDependenciesEnabled: config.scan.dependencies.enabled,
     scanDependenciesSeverityThreshold: config.scan.dependencies.severity_threshold,
     scanDependenciesIgnore: [...config.scan.dependencies.ignore],
