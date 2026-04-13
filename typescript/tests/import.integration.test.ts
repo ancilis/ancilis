@@ -20,7 +20,7 @@ const DEMO_CONFIG_PATH = join(__dirname, "../../examples/demo/ancilis.yaml");
 // Implemented evaluator control IDs that must appear in every evaluation
 const EVALUATOR_CONTROL_IDS = new Set([
   "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
-  "DE-01", "DE-02",
+  "DE-01", "DE-02", "DE-04",
 ]);
 const VALID_RESULTS = new Set(["PASS", "FAIL", "SKIP", "ERROR"]);
 
@@ -87,6 +87,10 @@ describe("TestProgrammaticEngineInvocation", () => {
 
   it("DE-02 evaluator is exported from the evaluators package", () => {
     expect(evaluators.DE02ConfigDriftEvaluator).toBeDefined();
+  });
+
+  it("DE-04 evaluator is exported from the evaluators package", () => {
+    expect(evaluators.DE04IntegrityEvaluator).toBeDefined();
   });
 
   it("every ControlResult has a valid result value (PASS/FAIL/SKIP/ERROR)", () => {
