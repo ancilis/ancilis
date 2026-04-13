@@ -237,6 +237,19 @@ class EvidenceStore:
             for cr in evaluation.control_results
         ]
 
+        detected_data_types = list(getattr(evaluation, "detected_data_types", None) or [])
+
+        _sdk_ver: str | None
+        try:
+            from ancilis import __version__ as _sdk_ver
+        except Exception:  # noqa: BLE001 — best-effort, never breaks evidence writes
+            _sdk_ver = None
+
+        classification_context: dict[str, Any] = {}
+        llm_provider = getattr(self._config, "llm_provider", None)
+        if llm_provider:
+            classification_context["llm_provider"] = llm_provider
+
         canon = canonical_payload(
             evaluation_id=evaluation.evaluation_id,
             timestamp=evaluation.timestamp,
@@ -254,22 +267,11 @@ class EvidenceStore:
             output_summary=output_summary,
             session_id=session_id,
             tenant_id=self._tenant_id,
+            detected_data_types=detected_data_types,
+            sdk_version=_sdk_ver,
+            classification_context=classification_context,
         )
         record_hash = compute_hash(canon)
-
-        detected_data_types = list(getattr(evaluation, "detected_data_types", None) or [])
-
-        _sdk_ver: str | None
-        try:
-            from ancilis import __version__ as _sdk_ver
-        except Exception:  # noqa: BLE001 — best-effort, never breaks evidence writes
-            _sdk_ver = None
-
-        # Build classification_context from config metadata
-        classification_context: dict[str, Any] = {}
-        llm_provider = getattr(self._config, "llm_provider", None)
-        if llm_provider:
-            classification_context["llm_provider"] = llm_provider
 
         record = EvidenceRecord(
             record_id=record_id,
@@ -455,7 +457,12 @@ class EvidenceStore:
         return n
 
     def verify_chain(self) -> tuple[bool, list[str]]:
-        """Verify the hash chain integrity. Returns (valid, errors)."""
+        """Verify the hash chain integrity. Returns (valid, errors).
+
+        Records written before ANC-922 used a narrower canonical payload. Those
+        legacy hashes are accepted only when the stored hash matches that old
+        payload exactly; new writes protect the expanded metadata fields.
+        """
         self._ensure_initialized()
         # SELECT_COLUMNS is a constant defined at module level, safe to concatenate
         if self._tenant_id is not None:
@@ -499,14 +506,37 @@ class EvidenceStore:
                 output_summary=record.output_summary,
                 session_id=record.session_id,
                 tenant_id=record.tenant_id,
+                detected_data_types=record.detected_data_types,
+                sdk_version=record.sdk_version,
+                classification_context=record.classification_context,
             )
             expected_hash = compute_hash(canon)
 
             if record.record_hash != expected_hash:
-                errors.append(
-                    f"Record {record.record_id}: hash mismatch. "
-                    f"Expected {expected_hash[:16]}..., got {record.record_hash[:16]}..."
+                legacy_canon = canonical_payload(
+                    evaluation_id=record.evaluation_id,
+                    timestamp=record.timestamp,
+                    agent_id=record.agent_id,
+                    source_type=record.source_type,
+                    tool_name=record.tool_name,
+                    decision=record.decision,
+                    mode=record.mode,
+                    control_results=record.control_results,
+                    active_overlays=record.active_overlays,
+                    data_classifications=record.data_classifications,
+                    active_certifications=record.active_certifications,
+                    total_duration_ms=record.total_duration_ms,
+                    previous_hash=record.previous_hash,
+                    output_summary=record.output_summary,
+                    session_id=record.session_id,
+                    tenant_id=record.tenant_id,
                 )
+                legacy_hash = compute_hash(legacy_canon)
+                if record.record_hash != legacy_hash:
+                    errors.append(
+                        f"Record {record.record_id}: hash mismatch. "
+                        f"Expected {expected_hash[:16]}..., got {record.record_hash[:16]}..."
+                    )
 
             expected_previous = record.record_hash
 

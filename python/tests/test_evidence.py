@@ -299,6 +299,77 @@ class TestEvidenceStore:
         assert any("hash mismatch" in error for error in errors)
         store.close()
 
+    @pytest.mark.parametrize(
+        ("column", "tampered_value"),
+        [
+            ("detected_data_types", json.dumps(["DC-CHD"])),
+            ("sdk_version", "9.9.9"),
+            ("classification_context", json.dumps({"llm_provider": "tampered"})),
+        ],
+    )
+    def test_verify_chain_detects_integrity_metadata_tampering(self, column, tampered_value):
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, in_memory=True)
+
+        ev = make_evaluation(evaluation_id="e1")
+        ev.detected_data_types = ["DC-PII"]
+        record = store.store(ev, tool_name="t1")
+
+        if column in {"detected_data_types", "classification_context"}:
+            store._connection.execute(
+                f"UPDATE evidence_records SET {column} = ?::JSON WHERE record_id = ?",
+                [tampered_value, record.record_id],
+            )
+        else:
+            store._connection.execute(
+                f"UPDATE evidence_records SET {column} = ? WHERE record_id = ?",
+                [tampered_value, record.record_id],
+            )
+
+        valid, errors = store.verify_chain()
+        assert valid is False
+        assert any("hash mismatch" in error for error in errors)
+        store.close()
+
+    def test_verify_chain_accepts_legacy_hash_without_integrity_metadata(self):
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, in_memory=True)
+
+        ev = make_evaluation(evaluation_id="e1")
+        ev.detected_data_types = ["DC-PII"]
+        record = store.store(ev, tool_name="t1")
+        assert record.detected_data_types == ["DC-PII"]
+        assert record.sdk_version is not None
+        assert record.classification_context == {"llm_provider": "openai"}
+
+        legacy_canon = canonical_payload(
+            evaluation_id=record.evaluation_id,
+            timestamp=record.timestamp,
+            agent_id=record.agent_id,
+            source_type=record.source_type,
+            tool_name=record.tool_name,
+            decision=record.decision,
+            mode=record.mode,
+            control_results=record.control_results,
+            active_overlays=record.active_overlays,
+            data_classifications=record.data_classifications,
+            active_certifications=record.active_certifications,
+            total_duration_ms=record.total_duration_ms,
+            previous_hash=record.previous_hash,
+            output_summary=record.output_summary,
+            session_id=record.session_id,
+            tenant_id=record.tenant_id,
+        )
+        store._connection.execute(
+            "UPDATE evidence_records SET record_hash = ? WHERE record_id = ?",
+            [compute_hash(legacy_canon), record.record_id],
+        )
+
+        valid, errors = store.verify_chain()
+        assert valid is True
+        assert errors == []
+        store.close()
+
     def test_verify_chain_empty(self):
         config = make_config()
         store = EvidenceStore(config, in_memory=True)
