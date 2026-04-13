@@ -97,6 +97,16 @@ describe("Validation", () => {
     ).toThrow(/Unknown control ID/);
   });
 
+  it("accepts DE-02 control overrides", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "x" },
+        security: { controls: { "DE-02": { enabled: false } } },
+      },
+    });
+    expect(resolved.controls.get("DE-02")?.enabled).toBe(false);
+  });
+
   it("throws ConfigError (not plain Error) for invalid data types", () => {
     expect(() =>
       loadConfig({ raw: { agent: { name: "x" }, my_agent_handles: ["not_a_type"] } })

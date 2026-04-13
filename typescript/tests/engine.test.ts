@@ -19,6 +19,7 @@ function makeAction(overrides: Partial<{
   agentOwner: string | null;
   toolName: string;
   toolVersion: string | null;
+  toolServer: string | null;
   descriptionHash: string | null;
   params: Record<string, unknown>;
   actionType: "tool_call" | "api_request" | "data_access";
@@ -32,6 +33,7 @@ function makeAction(overrides: Partial<{
     tool: {
       name: overrides.toolName ?? "test-tool",
       version: overrides.toolVersion ?? null,
+      server: overrides.toolServer ?? null,
       descriptionHash: overrides.descriptionHash ?? null,
     },
     parameters: {
@@ -421,6 +423,80 @@ describe("Decision Engine", () => {
     expect(result.activeOverlays).toContain("pci-dss-v4");
     expect(result.dataClassifications).toContain("DC-CHD");
     expect(result.totalDurationMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// --- DE-02 Configuration Drift Tests ---
+
+describe("DE-02 Configuration Drift", () => {
+  it("records the first observed configuration fingerprint", () => {
+    const config = makeConfig();
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+
+    const result = engine.evaluate(makeAction({ descriptionHash: "hash-v1" }));
+
+    const de02 = getControlResult(result.controlResults, "DE-02");
+    expect(de02.result).toBe("PASS");
+    expect(de02.detail).toContain("first observation");
+    expect(de02.evidenceData).toMatchObject({
+      drift_detected: false,
+      first_observation: true,
+      tool_name: "test-tool",
+    });
+  });
+
+  it("detects description hash drift on the same engine instance", () => {
+    const config = makeConfig();
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+
+    engine.evaluate(makeAction({ descriptionHash: "hash-v1" }));
+    const result = engine.evaluate(makeAction({ descriptionHash: "hash-v2" }));
+
+    const de02 = getControlResult(result.controlResults, "DE-02");
+    expect(de02.result).toBe("FAIL");
+    expect(de02.detail).toContain("Configuration drift detected");
+    expect(de02.evidenceData).toMatchObject({ drift_detected: true });
+    expect(de02.evidenceData.previous_fingerprint).toBeDefined();
+  });
+
+  it("skips missing description hashes without establishing a false baseline", () => {
+    const config = makeConfig();
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+
+    const skipped = engine.evaluate(makeAction({ descriptionHash: null }));
+    const observed = engine.evaluate(makeAction({ descriptionHash: "hash-v1" }));
+
+    const skippedDe02 = getControlResult(skipped.controlResults, "DE-02");
+    expect(skippedDe02.result).toBe("SKIP");
+    expect(skippedDe02.detail).toContain("Cannot compute fingerprint");
+    expect(skippedDe02.evidenceData).toMatchObject({
+      drift_detected: false,
+      tool_name: "test-tool",
+    });
+
+    const observedDe02 = getControlResult(observed.controlResults, "DE-02");
+    expect(observedDe02.result).toBe("PASS");
+    expect(observedDe02.evidenceData).toMatchObject({ first_observation: true });
+  });
+
+  it("includes version and server in the configuration fingerprint", () => {
+    const config = makeConfig();
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+
+    engine.evaluate(makeAction({
+      descriptionHash: "same-hash",
+      toolVersion: "1.0",
+      toolServer: "mcp://server-a",
+    }));
+    const result = engine.evaluate(makeAction({
+      descriptionHash: "same-hash",
+      toolVersion: "1.0",
+      toolServer: "mcp://server-b",
+    }));
+
+    const de02 = getControlResult(result.controlResults, "DE-02");
+    expect(de02.result).toBe("FAIL");
+    expect(de02.evidenceData).toMatchObject({ drift_detected: true });
   });
 });
 
