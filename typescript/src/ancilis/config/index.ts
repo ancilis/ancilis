@@ -18,8 +18,6 @@ const CLASSIFICATIONS_FILE = join(SHARED_DIR, "classifications", "taxonomy.json"
 
 // --- Zod Schemas ---
 
-const VALID_CONTROL_IDS = ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01", "DE-02"] as const;
-
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ControlOverrideSchema = z.object({
@@ -221,7 +219,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
   if (security && typeof security === "object") {
     const controls = security.controls as Record<string, unknown> | undefined;
     if (controls && typeof controls === "object") {
-      const validIds = new Set<string>(VALID_CONTROL_IDS);
+      const validIds = new Set<string>(loadControlDefinitions().keys());
       for (const key of Object.keys(controls)) {
         if (!validIds.has(key)) {
           throw new ConfigError(`Unknown control ID in security.controls: '${key}'`);
