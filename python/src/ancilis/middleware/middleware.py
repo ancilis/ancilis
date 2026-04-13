@@ -86,12 +86,15 @@ class AncilisMiddleware:
                 status=ToolStatus.APPROVED,
             ))
 
-        self._engine = Engine(self._config, registry=self._registry)
-
         self._evaluation_log: list[EvaluationResult] = []
         self._scan_results: list[ScanResult] = []
         self._drift_events: list[DriftEvent] = []
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(self._config)
+        self._engine = Engine(
+            self._config,
+            registry=self._registry,
+            evidence_store=self._evidence_store,
+        )
         self._issue_count: int = 0
         self._closed: bool = False
         self._session_id = str(uuid.uuid4())

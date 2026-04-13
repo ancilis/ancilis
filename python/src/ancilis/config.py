@@ -151,6 +151,10 @@ CERTIFICATIONS_DIR = SHARED_DIR / "overlays" / "certifications"
 
 VALID_CERTIFICATION_TARGETS: set[str] = set()
 
+DEFAULT_CONTROL_ACTIVATION_SOURCE = "default"
+EXPLICIT_CONTROL_ACTIVATION_SOURCE = "explicit:security.controls"
+CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX = "certification_targets:"
+
 
 def _load_valid_certification_targets() -> set[str]:
     """Discover available certification targets from shared/overlays/certifications/."""
@@ -236,12 +240,22 @@ class ResolvedConfig:
         self.scope_blocked_destinations: list[str] = []
         self.active_certifications: list[str] = []
         self.llm_provider: str | None = None
+        self.control_activation_sources: dict[str, set[str]] = {}
         # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
         self.overlay_requirements: dict[str, dict[str, Any]] = {}
         # Dependency scan config
         self.scan_dependencies_enabled: bool = True
         self.scan_dependencies_severity_threshold: str = "high"
         self.scan_dependencies_ignore: list[str] = []
+
+    def control_has_activation_source(self, control_id: str, *source_prefixes: str) -> bool:
+        """Return whether a control was activated by any exact source or source prefix."""
+        sources = self.control_activation_sources.get(control_id, set())
+        return any(
+            source == prefix or source.startswith(prefix)
+            for source in sources
+            for prefix in source_prefixes
+        )
 
 
 # --- Config Parser ---
@@ -316,6 +330,14 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
         override = config.security.controls.get(cid)
         enabled = override.enabled if override else cdef.get("default_enabled", True)
         result.controls[cid] = ControlStatus(cid, cdef["name"], enabled)
+        result.control_activation_sources[cid] = set()
+        if enabled:
+            source = (
+                EXPLICIT_CONTROL_ACTIVATION_SOURCE
+                if override is not None
+                else DEFAULT_CONTROL_ACTIVATION_SOURCE
+            )
+            result.control_activation_sources[cid].add(source)
 
     # Resolve data classifications
     type_mapping = taxonomy["developer_type_mapping"]
@@ -432,6 +454,9 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
         for cid in spec.active_controls:
             if cid in result.controls:
                 result.controls[cid].enabled = True
+                source = spec.activation_source.get(cid)
+                if source and source.startswith(CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX):
+                    result.control_activation_sources.setdefault(cid, set()).add(source)
             # Apply stricter thresholds from certification profiles
             threshold = spec.control_thresholds.get(cid, "standard")
             if threshold == "strict" and cid in result.controls:

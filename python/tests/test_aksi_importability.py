@@ -27,7 +27,7 @@ DEMO_CONFIG_PATH = Path(__file__).parent.parent.parent / "examples" / "demo" / "
 # Implemented evaluator control IDs that must appear in every evaluation
 EVALUATOR_CONTROL_IDS = {
     "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
-    "DE-01", "DE-02",
+    "DE-01", "DE-02", "DE-04",
 }
 
 VALID_RESULTS = {"PASS", "FAIL", "SKIP", "ERROR"}
@@ -96,6 +96,11 @@ class TestProgrammaticEngineInvocation:
         """DE-02 evaluator is importable from the evaluators package."""
         evaluators = importlib.import_module("ancilis.engine.evaluators")
         assert hasattr(evaluators, "DE02ConfigDriftEvaluator")
+
+    def test_de04_evaluator_exported_from_evaluators_package(self) -> None:
+        """DE-04 evaluator is importable from the evaluators package."""
+        evaluators = importlib.import_module("ancilis.engine.evaluators")
+        assert hasattr(evaluators, "DE04IntegrityEvaluator")
 
     def test_each_control_result_has_valid_outcome(self) -> None:
         """Every ControlResult has a valid result value."""

@@ -7,8 +7,8 @@ Usage:
     from ancilis.evidence import EvidenceStore
 
     config = load_config()
-    engine = Engine(config)
     evidence_store = EvidenceStore(config)
+    engine = Engine(config, evidence_store=evidence_store)
     producer = CLIActionProducer(config=config, engine=engine, evidence_store=evidence_store)
 
     # Wrap a subprocess call
