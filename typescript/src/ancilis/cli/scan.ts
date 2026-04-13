@@ -53,6 +53,14 @@ function periodToSince(period: string): string {
   return new Date(Date.now() - ms).toISOString();
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function dependencyEvidencePersistenceWarning(error: unknown): string {
+  return `Warning: dependency-scan evidence was not persisted: ${errorMessage(error)}`;
+}
+
 function loadConfigSafe(configPath: string | undefined): ResolvedConfig | null {
   try {
     if (configPath !== undefined) {
@@ -201,7 +209,11 @@ export async function runEvaluation(
         const activeFindings = depResult.vulnerabilities.filter(f => !ignoreSet.has(f.cveId));
         const violating = activeFindings.filter(f => atOrAboveThreshold(f.severity, threshold));
         const depEval = buildDepEvaluationResult(config, activeFindings, depResult.dependencies.length, null, violating);
-        try { await store.store(depEval, "dependency-scanner"); } catch { /* non-fatal */ }
+        try {
+          await store.store(depEval, "dependency-scanner");
+        } catch (error: unknown) {
+          process.stderr.write(`${dependencyEvidencePersistenceWarning(error)}\n`);
+        }
         if (violating.length > 0) anyFailing = true;
       }
     }
@@ -294,6 +306,14 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
       io.stdout(msg.endsWith("\n") ? msg : `${msg}\n`);
     } else {
       console.log(msg);
+    }
+  };
+  const err = (msg: string): void => {
+    const line = msg.endsWith("\n") ? msg : `${msg}\n`;
+    if (io) {
+      io.stderr(line);
+    } else {
+      process.stderr.write(line);
     }
   };
 
@@ -435,7 +455,9 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
       );
       try {
         await store.store(depEval, "dependency-scanner");
-      } catch { /* evidence store errors are non-fatal */ }
+      } catch (error: unknown) {
+        err(dependencyEvidencePersistenceWarning(error));
+      }
     } else {
       depSummary = { status: "disabled", findings: [], violatingFindings: [], componentCount: 0, osvError: null };
     }
