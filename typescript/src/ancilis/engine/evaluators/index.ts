@@ -13,6 +13,7 @@ export { GOV02OwnershipEvaluator } from "./gov02-ownership.js";
 export { ID01InventoryEvaluator } from "./id01-inventory.js";
 export { DE04IntegrityEvaluator } from "./de04-integrity.js";
 export type { DE04StoreAdapter } from "./de04-integrity.js";
+export { DE02ConfigDriftEvaluator } from "./de02-config-drift.js";
 export { PR05AuditEvaluator } from "../../controls/pr05Audit.js";
 export { DE01BaselineEvaluator } from "../../controls/de01Baseline.js";
 export type { BaselineWindow, DeviationFlag } from "../../controls/de01Baseline.js";

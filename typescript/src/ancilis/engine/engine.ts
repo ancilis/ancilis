@@ -19,6 +19,7 @@ import { PR08InputEvaluator } from "../controls/pr08Input.js";
 import { GOV01PolicyEvaluator } from "./evaluators/gov01-policy.js";
 import { DE01BaselineEvaluator } from "../controls/de01Baseline.js";
 import type { BaselineWindow } from "../controls/de01Baseline.js";
+import { DE02ConfigDriftEvaluator } from "./evaluators/de02-config-drift.js";
 import { ToolRegistry } from "./registry.js";
 import type { ControlResult, EvaluationResult } from "./result.js";
 
@@ -60,6 +61,7 @@ export class Engine {
       ["PR-08", new PR08InputEvaluator()],
       ["GOV-01", new GOV01PolicyEvaluator()],
       ["DE-01", new DE01BaselineEvaluator(options?.baselineWindow)],
+      ["DE-02", new DE02ConfigDriftEvaluator()],
     ]);
   }
 

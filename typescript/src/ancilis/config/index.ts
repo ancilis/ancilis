@@ -18,7 +18,7 @@ const CLASSIFICATIONS_FILE = join(SHARED_DIR, "classifications", "taxonomy.json"
 
 // --- Zod Schemas ---
 
-const VALID_CONTROL_IDS = ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"] as const;
+const VALID_CONTROL_IDS = ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01", "DE-02"] as const;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

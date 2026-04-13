@@ -11,13 +11,17 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import { Engine } from "../src/ancilis/engine/engine.js";
+import * as evaluators from "../src/ancilis/engine/evaluators/index.js";
 import type { Action } from "../src/ancilis/engine/action.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEMO_CONFIG_PATH = join(__dirname, "../../examples/demo/ancilis.yaml");
 
-// All 6 evaluator control IDs that must appear in every evaluation
-const EVALUATOR_CONTROL_IDS = new Set(["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"]);
+// Implemented evaluator control IDs that must appear in every evaluation
+const EVALUATOR_CONTROL_IDS = new Set([
+  "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
+  "DE-01", "DE-02",
+]);
 const VALID_RESULTS = new Set(["PASS", "FAIL", "SKIP", "ERROR"]);
 
 function makeAction(
@@ -68,7 +72,7 @@ describe("TestProgrammaticEngineInvocation", () => {
     expect(result.controlResults.length).toBeGreaterThan(0);
   });
 
-  it("all 6 evaluators (PR-01–PR-05, DE-01) appear in results", () => {
+  it("all implemented evaluators appear in results", () => {
     const config = loadConfig({ path: DEMO_CONFIG_PATH });
     const engine = new Engine(config);
     const action = makeAction();
@@ -79,6 +83,10 @@ describe("TestProgrammaticEngineInvocation", () => {
     for (const expected of EVALUATOR_CONTROL_IDS) {
       expect(resultIds.has(expected), `Missing evaluator: ${expected}`).toBe(true);
     }
+  });
+
+  it("DE-02 evaluator is exported from the evaluators package", () => {
+    expect(evaluators.DE02ConfigDriftEvaluator).toBeDefined();
   });
 
   it("every ControlResult has a valid result value (PASS/FAIL/SKIP/ERROR)", () => {
