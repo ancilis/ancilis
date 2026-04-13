@@ -36,9 +36,9 @@ export type { AncilisLoadOptions, AncilisToolOptions, AncilisToolRun } from "./f
 export { loadConfig, formatResolvedConfig } from "./config/index.js";
 export type { ResolvedConfig, ControlStatus, OverlayActivation, UnavailableOverlay, LoadConfigOptions } from "./config/index.js";
 
-export { Engine, ToolRegistry } from "./engine/index.js";
+export { Engine, ToolRegistry, DE04IntegrityEvaluator } from "./engine/index.js";
 export { ToolStatus } from "./engine/index.js";
-export type { Action, ToolInfo, ActionParameters, ActionContext, ControlResult, EvaluationResult, ToolEntry, ControlEvaluator, RateTracker } from "./engine/index.js";
+export type { Action, ToolInfo, ActionParameters, ActionContext, ControlResult, EvaluationResult, ToolEntry, ControlEvaluator, RateTracker, DE04StoreAdapter } from "./engine/index.js";
 
 export { AncilisMiddleware, BlockedToolCallError, scanResponse } from "./middleware/index.js";
 export type { AncilisMiddlewareOptions, McpClientLike, ScanResult, EncryptionFinding, DriftEvent } from "./middleware/index.js";

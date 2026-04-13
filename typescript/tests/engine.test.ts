@@ -10,6 +10,7 @@ import { ToolRegistry, ToolStatus } from "../src/ancilis/engine/registry.js";
 import { PR07TransportEvaluator } from "../src/ancilis/engine/evaluators/pr07-transport.js";
 import { PR08InputEvaluator } from "../src/ancilis/engine/evaluators/pr08-input.js";
 import { GOV01PolicyEvaluator } from "../src/ancilis/engine/evaluators/gov01-policy.js";
+import type { DE04StoreAdapter } from "../src/ancilis/engine/evaluators/de04-integrity.js";
 import type { Action } from "../src/ancilis/engine/action.js";
 import type { ControlResult } from "../src/ancilis/engine/result.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
@@ -69,6 +70,26 @@ function getControlResult(results: ControlResult[], controlId: string): ControlR
   const r = results.find(r => r.controlId === controlId);
   if (!r) throw new Error(`Control ${controlId} not found`);
   return r;
+}
+
+function makeEvidenceIntegrityStore(total = 2, chainValid = true, errors: string[] = []): {
+  store: DE04StoreAdapter;
+  calls: { count: number; verifyChain: number };
+} {
+  const calls = { count: 0, verifyChain: 0 };
+  return {
+    calls,
+    store: {
+      count: () => {
+        calls.count += 1;
+        return total;
+      },
+      verifyChain: () => {
+        calls.verifyChain += 1;
+        return { valid: chainValid, errors };
+      },
+    },
+  };
 }
 
 // --- Action Object Tests ---
@@ -500,6 +521,60 @@ describe("DE-02 Configuration Drift", () => {
   });
 });
 
+// --- DE-04 Integrity Runtime Policy Tests ---
+
+describe("DE-04 Integrity Runtime Policy", () => {
+  it("policy-skips DE-04 for minimal config without running the evaluator", () => {
+    const config = makeConfig();
+    const { store, calls } = makeEvidenceIntegrityStore();
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]), evidenceStore: store });
+
+    const result = engine.evaluate(makeAction());
+
+    const de04 = getControlResult(result.controlResults, "DE-04");
+    expect(de04.result).toBe("SKIP");
+    expect(de04.detail.toLowerCase()).toContain("policy gate");
+    expect(de04.evidenceData.activation_sources).toEqual(["default"]);
+    expect(calls.count).toBe(0);
+    expect(calls.verifyChain).toBe(0);
+  });
+
+  it("runs DE-04 when explicitly enabled with an evidence store", () => {
+    const config = makeConfig({ security: { controls: { "DE-04": { enabled: true } } } });
+    const { store, calls } = makeEvidenceIntegrityStore(2, true);
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]), evidenceStore: store });
+
+    const result = engine.evaluate(makeAction());
+
+    const de04 = getControlResult(result.controlResults, "DE-04");
+    expect(de04.result).toBe("PASS");
+    expect(de04.evidenceData.chain_valid).toBe(true);
+    expect(calls.count).toBe(1);
+    expect(calls.verifyChain).toBe(1);
+  });
+
+  it("runs DE-04 when required by a certification target", () => {
+    const config = makeConfig({ certification_targets: ["gov-contractor"] });
+    const { store } = makeEvidenceIntegrityStore(1, true);
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]), evidenceStore: store });
+
+    const result = engine.evaluate(makeAction());
+
+    const de04 = getControlResult(result.controlResults, "DE-04");
+    expect(de04.result).toBe("PASS");
+    expect(config.controlActivationSources.get("DE-04")).toContain("certification_targets:gov-contractor");
+  });
+
+  it("keeps governance and inventory evaluators out of the runtime engine", () => {
+    const config = makeConfig({ certification_targets: ["gov-contractor"] });
+    const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
+    const result = engine.evaluate(makeAction());
+
+    expect(getControlResult(result.controlResults, "GOV-01").result).toBe("SKIP");
+    expect(getControlResult(result.controlResults, "ID-01").result).toBe("SKIP");
+  });
+});
+
 // --- Helpers for direct evaluator tests ---
 
 function makeMinimalConfig(overrides: Partial<ResolvedConfig> = {}): ResolvedConfig {
@@ -522,6 +597,8 @@ function makeMinimalConfig(overrides: Partial<ResolvedConfig> = {}): ResolvedCon
     scopeAllowedDestinations: [],
     scopeBlockedDestinations: [],
     activeCertifications: [],
+    controlActivationSources: new Map(),
+    controlHasActivationSource: () => false,
     scanDependenciesEnabled: true,
     scanDependenciesSeverityThreshold: "high",
     scanDependenciesIgnore: [],
@@ -775,22 +852,22 @@ describe("GOV-01 Governance Policy", () => {
     expect((result.evidenceData.fields_present as string[]).length).toBe(0);
   });
 
-  it("integrated: partial policy is allowed in audit mode (FLAG not FAIL)", () => {
-    const config = makeConfig(); // 2 fields → FLAG
+  it("integrated: policy-sensitive governance control is runtime-skipped", () => {
+    const config = makeConfig();
     const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
     const result = engine.evaluate(makeAction());
     const gov01 = getControlResult(result.controlResults, "GOV-01");
-    expect(gov01.result).toBe("FLAG");
-    expect(result.decision).toBe("ALLOW"); // FLAG doesn't trigger BLOCK
+    expect(gov01.result).toBe("SKIP");
+    expect(result.decision).toBe("ALLOW");
   });
 
-  it("integrated: complete policy passes in enforce mode", () => {
+  it("integrated: policy-sensitive governance control remains skipped in enforce mode", () => {
     const config = makeConfig({
       security: { mode: "enforce", tools: { allowed: ["test-tool"] } },
       my_agent_handles: ["credit_cards"],
     });
     const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
     const result = engine.evaluate(makeAction());
-    expect(getControlResult(result.controlResults, "GOV-01").result).toBe("PASS");
+    expect(getControlResult(result.controlResults, "GOV-01").result).toBe("SKIP");
   });
 });

@@ -45,6 +45,18 @@ describe("Minimal Config", () => {
     expect(resolved.activeOverlays.size).toBe(0);
     expect(resolved.dataClassifications.size).toBe(0);
   });
+
+  it("marks default control activation sources", () => {
+    const resolved = loadConfig({ raw: { agent: { name: "my-agent" } } });
+    expect(resolved.controlActivationSources.get("DE-04")).toEqual(new Set(["default"]));
+    expect(
+      resolved.controlHasActivationSource(
+        "DE-04",
+        "explicit:security.controls",
+        "certification_targets:",
+      ),
+    ).toBe(false);
+  });
 });
 
 describe("Full Config", () => {
@@ -249,6 +261,17 @@ describe("Control Override", () => {
     expect(resolved.controls.get("PR-02")?.enabled).toBe(true);
   });
 
+  it("marks enabled control overrides as explicit activation sources", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "x" },
+        security: { controls: { "DE-04": { enabled: true } } },
+      },
+    });
+    expect(resolved.controlActivationSources.get("DE-04")).toContain("explicit:security.controls");
+    expect(resolved.controlHasActivationSource("DE-04", "explicit:security.controls")).toBe(true);
+  });
+
   it("does not apply overlay adjustments to disabled controls", () => {
     const resolved = loadConfig({
       raw: {
@@ -259,6 +282,19 @@ describe("Control Override", () => {
     });
     expect(resolved.controls.get("PR-01")?.enabled).toBe(false);
     expect(resolved.controls.get("PR-01")?.threshold).toBe("standard");
+  });
+});
+
+describe("Certification Targets", () => {
+  it("marks certification-required controls with certification activation sources", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "x" },
+        certification_targets: ["gov-contractor"],
+      },
+    });
+    expect(resolved.controlActivationSources.get("DE-04")).toContain("certification_targets:gov-contractor");
+    expect(resolved.controlHasActivationSource("DE-04", "certification_targets:")).toBe(true);
   });
 });
 
