@@ -9,10 +9,12 @@ from ancilis.engine.evaluators.pr06_config_baseline import PR06ConfigBaselineEva
 from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
 from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
 from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow, DeviationFlag
+from ancilis.engine.evaluators.de02_config_drift import DE02ConfigDriftEvaluator
 
 __all__ = [
     "BaselineWindow",
     "DE01BaselineEvaluator",
+    "DE02ConfigDriftEvaluator",
     "DeviationFlag",
     "PR01IdentityEvaluator",
     "PR02ScopeEvaluator",

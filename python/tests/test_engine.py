@@ -313,6 +313,49 @@ class TestPR04Exposure:
         assert "no data classifications" in pr04.detail.lower()
 
 
+# --- DE-02 Configuration Drift Tests ---
+
+
+class TestDE02ConfigDriftEngine:
+    def test_de02_evaluator_is_active_when_control_enabled(self):
+        config = _make_config()
+        action = _make_action(description_hash="hash-v1")
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        assert "DE-02" in engine._evaluators
+
+        result = engine.evaluate(action)
+        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
+
+        assert de02.result == "PASS"
+        assert de02.evidence_data["first_observation"] is True
+        assert de02.evidence_data["drift_detected"] is False
+
+    def test_de02_detects_description_hash_drift_on_same_engine_instance(self):
+        config = _make_config()
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        engine.evaluate(_make_action(description_hash="hash-v1"))
+        result = engine.evaluate(_make_action(description_hash="hash-v2"))
+
+        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
+        assert de02.result == "FAIL"
+        assert de02.evidence_data["drift_detected"] is True
+        assert "previous_fingerprint" in de02.evidence_data
+
+    def test_de02_missing_description_hash_skips_without_false_drift(self):
+        config = _make_config()
+        action = _make_action(description_hash=None)
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        result = engine.evaluate(action)
+
+        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
+        assert de02.result == "SKIP"
+        assert de02.evidence_data.get("drift_detected") is False
+        assert "cannot compute fingerprint" in de02.detail.lower()
+
+
 # --- Decision Engine Tests ---
 
 
