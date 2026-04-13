@@ -3,10 +3,22 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { sharedPathFrom } from "../src/ancilis/shared-path.js";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import { ConfigError } from "../src/ancilis/errors.js";
+
+function loadSharedControlIds(): string[] {
+  const controlsDir = sharedPathFrom(import.meta.url, "controls");
+  return readdirSync(controlsDir)
+    .filter(file => file.endsWith(".json"))
+    .map(file => {
+      const raw = readFileSync(sharedPathFrom(import.meta.url, "controls", file), "utf-8");
+      const parsed = JSON.parse(raw) as { id: string };
+      return parsed.id;
+    })
+    .sort();
+}
 
 describe("Minimal Config", () => {
   it("finds packaged shared assets from the installed package root", () => {
@@ -105,6 +117,21 @@ describe("Validation", () => {
       },
     });
     expect(resolved.controls.get("DE-02")?.enabled).toBe(false);
+  });
+
+  it("accepts control overrides for all shared control definitions", () => {
+    const controlIds = loadSharedControlIds();
+    expect(controlIds).toEqual(expect.arrayContaining(["PR-08", "GOV-01"]));
+
+    for (const controlId of controlIds) {
+      const resolved = loadConfig({
+        raw: {
+          agent: { name: "x" },
+          security: { controls: { [controlId]: { enabled: false } } },
+        },
+      });
+      expect(resolved.controls.get(controlId)?.enabled).toBe(false);
+    }
   });
 
   it("throws ConfigError (not plain Error) for invalid data types", () => {
