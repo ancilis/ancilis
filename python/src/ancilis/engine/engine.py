@@ -11,6 +11,7 @@ from ancilis.config import ResolvedConfig, load_control_definitions
 from ancilis.engine.action import Action
 from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
 from ancilis.engine.evaluators.base import ControlEvaluator
+from ancilis.engine.evaluators.gov02_ownership import GOV02OwnershipEvaluator
 from ancilis.engine.evaluators.pr01_identity import PR01IdentityEvaluator
 from ancilis.engine.evaluators.pr02_scope import PR02ScopeEvaluator, RateTracker
 from ancilis.engine.evaluators.pr03_provenance import PR03ProvenanceEvaluator
@@ -29,6 +30,7 @@ EVALUATOR_CONTROL_IDS = {
     "DE-01",
     "DE-02",
     "DE-04",
+    "GOV-02",
     "PR-01",
     "PR-02",
     "PR-03",
@@ -94,6 +96,7 @@ class Engine:
             "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
             "DE-02": DE02ConfigDriftEvaluator(),
             "DE-04": DE04IntegrityEvaluator(evidence_store=evidence_store),
+            "GOV-02": GOV02OwnershipEvaluator(),
         }
 
     def evaluate(self, action: Action) -> EvaluationResult:

@@ -417,12 +417,54 @@ class TestDE04IntegrityEngine:
         assert de04.result == "PASS"
         assert "certification_targets:gov-contractor" in config.control_activation_sources["DE-04"]
 
+    def test_gov02_policy_skips_for_minimal_config_without_owner_failure(self):
+        config = _make_config()
+        action = _make_action()
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        assert "GOV-02" in engine._evaluators
+
+        result = engine.evaluate(action)
+        gov02 = next(r for r in result.control_results if r.control_id == "GOV-02")
+
+        assert gov02.result == "SKIP"
+        assert "policy" in gov02.detail.lower()
+        assert gov02.evidence_data["activation_sources"] == ["default"]
+
+    def test_gov02_runs_when_enabled_explicitly_with_owner(self):
+        config = _make_config(
+            agent={"name": "test-agent", "owner": "alice@example.com"},
+            security={"controls": {"GOV-02": {"enabled": True}}},
+        )
+        action = _make_action()
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        result = engine.evaluate(action)
+        gov02 = next(r for r in result.control_results if r.control_id == "GOV-02")
+
+        assert gov02.result == "PASS"
+        assert gov02.evidence_data["owner_declared"] is True
+        assert gov02.evidence_data["owner_value"] == "alice@example.com"
+
+    def test_gov02_runs_when_required_by_certification_target(self):
+        config = _make_config(
+            agent={"name": "test-agent", "owner": "alice@example.com"},
+            certification_targets=["gov-contractor"],
+        )
+        action = _make_action()
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        result = engine.evaluate(action)
+        gov02 = next(r for r in result.control_results if r.control_id == "GOV-02")
+
+        assert gov02.result == "PASS"
+        assert "certification_targets:gov-contractor" in config.control_activation_sources["GOV-02"]
+
     def test_governance_policy_sensitive_evaluators_remain_unregistered(self):
         config = _make_config(certification_targets=["gov-contractor"])
         engine = Engine(config, registry=_make_registry(("test-tool",)))
 
         assert "GOV-01" not in engine._evaluators
-        assert "GOV-02" not in engine._evaluators
         assert "GOV-03" not in engine._evaluators
         assert "ID-01" not in engine._evaluators
 
