@@ -6,6 +6,7 @@ direct Python imports with no subprocess or CLI layer involved.
 
 from __future__ import annotations
 
+import importlib
 import uuid
 from pathlib import Path
 
@@ -23,8 +24,11 @@ from ancilis.engine import (
 # Path to demo config shipped with the repo
 DEMO_CONFIG_PATH = Path(__file__).parent.parent.parent / "examples" / "demo" / "ancilis.yaml"
 
-# All 6 evaluator control IDs that must appear in every evaluation
-EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"}
+# Implemented evaluator control IDs that must appear in every evaluation
+EVALUATOR_CONTROL_IDS = {
+    "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
+    "DE-01", "DE-02",
+}
 
 VALID_RESULTS = {"PASS", "FAIL", "SKIP", "ERROR"}
 
@@ -75,8 +79,8 @@ class TestProgrammaticEngineInvocation:
         assert isinstance(result.control_results, list)
         assert len(result.control_results) > 0
 
-    def test_all_six_evaluators_produce_results(self) -> None:
-        """All 6 evaluator controls (PR-01..PR-05, DE-01) appear in results."""
+    def test_all_implemented_evaluators_produce_results(self) -> None:
+        """All implemented evaluator controls appear in results."""
         config = load_config(path=DEMO_CONFIG_PATH)
         engine = Engine(config)
         action = _make_action()
@@ -87,6 +91,11 @@ class TestProgrammaticEngineInvocation:
         assert EVALUATOR_CONTROL_IDS.issubset(result_ids), (
             f"Missing evaluators: {EVALUATOR_CONTROL_IDS - result_ids}"
         )
+
+    def test_de02_evaluator_exported_from_evaluators_package(self) -> None:
+        """DE-02 evaluator is importable from the evaluators package."""
+        evaluators = importlib.import_module("ancilis.engine.evaluators")
+        assert hasattr(evaluators, "DE02ConfigDriftEvaluator")
 
     def test_each_control_result_has_valid_outcome(self) -> None:
         """Every ControlResult has a valid result value."""

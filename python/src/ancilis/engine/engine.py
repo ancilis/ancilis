@@ -17,12 +17,24 @@ from ancilis.engine.registry import ToolRegistry
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.controls.pr05_audit import PR05AuditEvaluator
 from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow
+from ancilis.engine.evaluators.de02_config_drift import DE02ConfigDriftEvaluator
 from ancilis.engine.evaluators.pr06_config_baseline import PR06ConfigBaselineEvaluator
 from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
 from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
 
 # Controls that have evaluators
-EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08", "DE-01"}
+EVALUATOR_CONTROL_IDS = {
+    "DE-01",
+    "DE-02",
+    "PR-01",
+    "PR-02",
+    "PR-03",
+    "PR-04",
+    "PR-05",
+    "PR-06",
+    "PR-07",
+    "PR-08",
+}
 
 # Maps PR-04 pattern types to data classification DC codes
 PATTERN_TO_DC: dict[str, str] = {
@@ -58,6 +70,7 @@ class Engine:
             "PR-07": PR07TransportEvaluator(),
             "PR-08": PR08InputEvaluator(),
             "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
+            "DE-02": DE02ConfigDriftEvaluator(),
         }
 
     def evaluate(self, action: Action) -> EvaluationResult:
@@ -81,7 +94,7 @@ class Engine:
 
             evaluator = self._evaluators.get(control_id)
             if evaluator is None:
-                # No evaluator for this control yet (PR-05, DE-01 are future units)
+                # No runtime evaluator is active for this control yet.
                 control_results.append(
                     ControlResult(
                         control_id=control_id,

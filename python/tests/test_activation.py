@@ -447,7 +447,7 @@ class TestEngineIntegration:
         engine = Engine(config)
         assert "DE-01" in engine._evaluators
 
-    def test_all_six_controls_evaluate(self):
+    def test_all_implemented_controls_evaluate(self):
         config = load_config(raw={"agent": {"name": "test-agent"}})
         registry = ToolRegistry()
         from ancilis.engine.registry import ToolStatus
@@ -455,9 +455,19 @@ class TestEngineIntegration:
         engine = Engine(config, registry=registry)
         action = make_action()
         result = engine.evaluate(action)
-        control_ids = [cr.control_id for cr in result.control_results]
-        assert "PR-05" in control_ids
-        assert "DE-01" in control_ids
+        control_ids = {cr.control_id for cr in result.control_results}
+        assert {
+            "DE-01",
+            "DE-02",
+            "PR-01",
+            "PR-02",
+            "PR-03",
+            "PR-04",
+            "PR-05",
+            "PR-06",
+            "PR-07",
+            "PR-08",
+        }.issubset(control_ids)
 
 
 # --- Output Disclosure Contract ---
