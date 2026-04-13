@@ -30,6 +30,9 @@ function readPackageVersion(): string {
 
 export const __version__ = readPackageVersion();
 
+export { Ancilis } from "./facade.js";
+export type { AncilisLoadOptions, AncilisToolOptions, AncilisToolRun } from "./facade.js";
+
 export { loadConfig, formatResolvedConfig } from "./config/index.js";
 export type { ResolvedConfig, ControlStatus, OverlayActivation, UnavailableOverlay, LoadConfigOptions } from "./config/index.js";
 
