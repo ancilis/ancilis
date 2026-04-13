@@ -1,6 +1,7 @@
 """Tests for ancilis.engine — Unit 2: Control Engine Core."""
 
 import uuid
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -65,6 +66,17 @@ def _make_registry(*tools: tuple) -> ToolRegistry:
             status=ToolStatus.APPROVED,
         ))
     return reg
+
+
+def _make_evidence_store(
+    total: int = 2,
+    chain_valid: bool = True,
+    errors: list[str] | None = None,
+) -> MagicMock:
+    store = MagicMock()
+    store.count.return_value = total
+    store.verify_chain.return_value = (chain_valid, errors or [])
+    return store
 
 
 # --- Action Object Tests ---
@@ -354,6 +366,65 @@ class TestDE02ConfigDriftEngine:
         assert de02.result == "SKIP"
         assert de02.evidence_data.get("drift_detected") is False
         assert "cannot compute fingerprint" in de02.detail.lower()
+
+
+# --- DE-04 Integrity Runtime Policy Tests ---
+
+
+class TestDE04IntegrityEngine:
+    def test_de04_policy_skips_for_minimal_config_without_running_evaluator(self):
+        config = _make_config()
+        action = _make_action()
+        store = _make_evidence_store(total=2, chain_valid=True)
+        engine = Engine(config, registry=_make_registry(("test-tool",)), evidence_store=store)
+
+        assert "DE-04" in engine._evaluators
+
+        result = engine.evaluate(action)
+        de04 = next(r for r in result.control_results if r.control_id == "DE-04")
+
+        assert de04.result == "SKIP"
+        assert "policy" in de04.detail.lower()
+        assert de04.evidence_data["activation_sources"] == ["default"]
+        store.count.assert_not_called()
+        store.verify_chain.assert_not_called()
+
+    def test_de04_runs_when_enabled_explicitly_with_evidence_store(self):
+        config = _make_config(
+            security={"controls": {"DE-04": {"enabled": True}}},
+        )
+        action = _make_action()
+        store = _make_evidence_store(total=2, chain_valid=True)
+        engine = Engine(config, registry=_make_registry(("test-tool",)), evidence_store=store)
+
+        result = engine.evaluate(action)
+        de04 = next(r for r in result.control_results if r.control_id == "DE-04")
+
+        assert de04.result == "PASS"
+        assert de04.evidence_data["chain_valid"] is True
+        store.count.assert_called_once_with()
+        store.verify_chain.assert_called_once_with()
+
+    def test_de04_runs_when_required_by_certification_target(self):
+        config = _make_config(certification_targets=["gov-contractor"])
+        action = _make_action()
+        store = _make_evidence_store(total=1, chain_valid=True)
+        engine = Engine(config, registry=_make_registry(("test-tool",)), evidence_store=store)
+
+        result = engine.evaluate(action)
+        de04 = next(r for r in result.control_results if r.control_id == "DE-04")
+
+        assert de04.result == "PASS"
+        assert "certification_targets:gov-contractor" in config.control_activation_sources["DE-04"]
+
+    def test_governance_policy_sensitive_evaluators_remain_unregistered(self):
+        config = _make_config(certification_targets=["gov-contractor"])
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        assert "GOV-01" not in engine._evaluators
+        assert "GOV-02" not in engine._evaluators
+        assert "GOV-03" not in engine._evaluators
+        assert "ID-01" not in engine._evaluators
 
 
 # --- Decision Engine Tests ---

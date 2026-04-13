@@ -28,6 +28,13 @@ class TestMinimalConfig:
         assert len(resolved.active_overlays) == 0
         assert len(resolved.data_classifications) == 0
 
+    def test_minimal_config_marks_default_control_activation_source(self):
+        resolved = load_config(raw={"agent": {"name": "my-agent"}})
+        assert resolved.control_activation_sources["DE-04"] == {"default"}
+        assert not resolved.control_has_activation_source(
+            "DE-04", "explicit:security.controls", "certification_targets:"
+        )
+
 
 class TestFullConfig:
     def test_full_config_loads(self):
@@ -162,6 +169,16 @@ class TestControlOverride:
         assert resolved.controls["PR-01"].enabled is False
         assert resolved.controls["PR-02"].enabled is True
 
+    def test_enabled_control_override_marks_explicit_activation_source(self):
+        resolved = load_config(
+            raw={
+                "agent": {"name": "x"},
+                "security": {"controls": {"DE-04": {"enabled": True}}},
+            }
+        )
+        assert "explicit:security.controls" in resolved.control_activation_sources["DE-04"]
+        assert resolved.control_has_activation_source("DE-04", "explicit:security.controls")
+
     def test_disabled_control_not_adjusted_by_overlay(self):
         resolved = load_config(
             raw={
@@ -173,3 +190,15 @@ class TestControlOverride:
         assert resolved.controls["PR-01"].enabled is False
         # Threshold should stay default since control is disabled
         assert resolved.controls["PR-01"].threshold == "standard"
+
+
+class TestCertificationTargets:
+    def test_certification_target_marks_control_activation_source(self):
+        resolved = load_config(
+            raw={
+                "agent": {"name": "x"},
+                "certification_targets": ["gov-contractor"],
+            }
+        )
+        assert "certification_targets:gov-contractor" in resolved.control_activation_sources["DE-04"]
+        assert resolved.control_has_activation_source("DE-04", "certification_targets:")

@@ -5,9 +5,11 @@ from __future__ import annotations
 import time
 import uuid
 from datetime import datetime, timezone
+from typing import Protocol
 
 from ancilis.config import ResolvedConfig, load_control_definitions
 from ancilis.engine.action import Action
+from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
 from ancilis.engine.evaluators.base import ControlEvaluator
 from ancilis.engine.evaluators.pr01_identity import PR01IdentityEvaluator
 from ancilis.engine.evaluators.pr02_scope import PR02ScopeEvaluator, RateTracker
@@ -26,6 +28,7 @@ from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
 EVALUATOR_CONTROL_IDS = {
     "DE-01",
     "DE-02",
+    "DE-04",
     "PR-01",
     "PR-02",
     "PR-03",
@@ -35,6 +38,18 @@ EVALUATOR_CONTROL_IDS = {
     "PR-07",
     "PR-08",
 }
+
+POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS = {
+    "DE-04",
+    "GOV-01",
+    "GOV-02",
+    "GOV-03",
+    "ID-01",
+}
+RUNTIME_POLICY_GATE_SOURCES = (
+    "explicit:security.controls",
+    "certification_targets:",
+)
 
 # Maps PR-04 pattern types to data classification DC codes
 PATTERN_TO_DC: dict[str, str] = {
@@ -47,6 +62,12 @@ PATTERN_TO_DC: dict[str, str] = {
 }
 
 
+class EvidenceIntegrityStore(Protocol):
+    def count(self) -> int: ...
+
+    def verify_chain(self) -> tuple[bool, list[str]]: ...
+
+
 class Engine:
     """Control evaluation engine. Evaluates actions against active controls."""
 
@@ -56,6 +77,7 @@ class Engine:
         registry: ToolRegistry | None = None,
         rate_tracker: RateTracker | None = None,
         baseline_window: BaselineWindow | None = None,
+        evidence_store: EvidenceIntegrityStore | None = None,
     ) -> None:
         self.config = config
         self.registry = registry or ToolRegistry()
@@ -71,6 +93,7 @@ class Engine:
             "PR-08": PR08InputEvaluator(),
             "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
             "DE-02": DE02ConfigDriftEvaluator(),
+            "DE-04": DE04IntegrityEvaluator(evidence_store=evidence_store),
         }
 
     def evaluate(self, action: Action) -> EvaluationResult:
@@ -87,6 +110,27 @@ class Engine:
                         result="SKIP",
                         detail="Control is disabled.",
                         evidence_data={},
+                        duration_ms=0.0,
+                    )
+                )
+                continue
+
+            if self._is_policy_gated(control_id):
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=control_status.name,
+                        result="SKIP",
+                        detail=(
+                            "Control is not runtime-active under the explicit/certification "
+                            "policy gate."
+                        ),
+                        evidence_data={
+                            "activation_sources": sorted(
+                                self.config.control_activation_sources.get(control_id, set())
+                            ),
+                            "required_activation_sources": list(RUNTIME_POLICY_GATE_SOURCES),
+                        },
                         duration_ms=0.0,
                     )
                 )
@@ -180,4 +224,12 @@ class Engine:
             detected_data_types=detected_data_types,
             total_duration_ms=total_ms,
             session_id=action.context.session_id,
+        )
+
+    def _is_policy_gated(self, control_id: str) -> bool:
+        if control_id not in POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS:
+            return False
+        return not self.config.control_has_activation_source(
+            control_id,
+            *RUNTIME_POLICY_GATE_SOURCES,
         )
