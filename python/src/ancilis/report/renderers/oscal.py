@@ -1,0 +1,178 @@
+"""OSCAL Assessment Results renderer."""
+
+from __future__ import annotations
+
+import json
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from ancilis._shared import shared_path
+from ancilis.evidence.record import EvidenceRecord
+
+ANCILIS_OSCAL_NS = "https://ancilis.ai/ns/oscal"
+RUNTIME_CONTROL_PREFIXES = ("PR-", "DE-")
+POSTURE_CONTROL_PREFIXES = ("GOV-", "ID-", "RS-", "RC-")
+RESULT_TO_STATE = {
+    "PASS": "satisfied",
+    "FAIL": "not-satisfied",
+    "SKIP": "not-applicable",
+    "ERROR": "not-satisfied",
+    "FLAG": "not-satisfied",
+}
+
+
+def load_oscal_mapping() -> dict[str, Any]:
+    """Load the shared AKSI to NIST SP 800-53 Rev 5 OSCAL mapping."""
+    mapping_path = shared_path("mappings", "oscal-sp800-53.json")
+    return json.loads(mapping_path.read_text(encoding="utf-8"))
+
+
+def render_oscal(records: list[EvidenceRecord]) -> str:
+    """Render evidence records as OSCAL Assessment Results JSON."""
+    mapping = load_oscal_mapping()
+    generated_at = datetime.now(timezone.utc).isoformat()
+    observations: list[dict[str, Any]] = []
+    findings: list[dict[str, Any]] = []
+    reviewed_controls: dict[str, None] = {}
+
+    for record in records:
+        for control_result in record.control_results:
+            control_id = str(control_result.get("control_id", ""))
+            nist_controls = _nist_controls_for(mapping, control_id)
+            if not nist_controls:
+                continue
+            primary_nist_control = nist_controls[0]
+            reviewed_controls[primary_nist_control] = None
+
+            if control_id.startswith(RUNTIME_CONTROL_PREFIXES):
+                observations.append(
+                    _observation(record, control_result, control_id, primary_nist_control)
+                )
+            elif control_id.startswith(POSTURE_CONTROL_PREFIXES):
+                findings.append(_finding(record, control_result, control_id, primary_nist_control))
+
+    assessment_results = {
+        "assessment-results": {
+            "uuid": str(uuid.uuid4()),
+            "metadata": {
+                "title": "Ancilis Runtime Evidence Export",
+                "last-modified": generated_at,
+                "version": "1.0.0",
+                "oscal-version": mapping["oscal_version"],
+                "props": [
+                    _prop("framework", mapping["framework"]),
+                    _prop("source", "ancilis-sdk"),
+                ],
+            },
+            "import-ap": {
+                "href": mapping["catalog_href"],
+            },
+            "results": [
+                {
+                    "uuid": str(uuid.uuid4()),
+                    "title": "Ancilis Assessment Results",
+                    "description": "Assessment results generated from Ancilis hash-chained evidence.",
+                    "start": _first_timestamp(records) or generated_at,
+                    "end": _last_timestamp(records) or generated_at,
+                    "reviewed-controls": {
+                        "control-selections": [
+                            {
+                                "include-controls": [
+                                    {"control-id": control_id}
+                                    for control_id in sorted(reviewed_controls)
+                                ]
+                            }
+                        ]
+                    },
+                    "observations": observations,
+                    "findings": findings,
+                }
+            ],
+        }
+    }
+    return json.dumps(assessment_results, indent=2, sort_keys=True) + "\n"
+
+
+def _nist_controls_for(mapping: dict[str, Any], control_id: str) -> list[str]:
+    raw_controls = mapping["mappings"].get(control_id, [])
+    return [str(control).lower() for control in raw_controls]
+
+
+def _observation(
+    record: EvidenceRecord,
+    control_result: dict[str, Any],
+    control_id: str,
+    nist_control_id: str,
+) -> dict[str, Any]:
+    return {
+        "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{record.record_id}:{control_id}:observation")),
+        "title": f"{control_id} runtime evidence",
+        "description": str(control_result.get("detail") or control_result.get("control_name") or control_id),
+        "methods": ["TEST"],
+        "collected": record.timestamp,
+        "props": _shared_props(record, control_result, control_id, nist_control_id),
+        "relevant-evidence": [
+            {
+                "href": f"#evidence-{record.record_id}",
+                "description": f"Ancilis evidence record {record.record_id}",
+            }
+        ],
+    }
+
+
+def _finding(
+    record: EvidenceRecord,
+    control_result: dict[str, Any],
+    control_id: str,
+    nist_control_id: str,
+) -> dict[str, Any]:
+    return {
+        "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{record.record_id}:{control_id}:finding")),
+        "title": f"{control_id} posture finding",
+        "description": str(control_result.get("detail") or control_result.get("control_name") or control_id),
+        "props": _shared_props(record, control_result, control_id, nist_control_id),
+        "target": {
+            "type": "control-id",
+            "target-id": nist_control_id,
+            "status": {
+                "state": _assessment_state(control_result),
+                "reason": str(control_result.get("result", "SKIP")),
+            },
+        },
+    }
+
+
+def _shared_props(
+    record: EvidenceRecord,
+    control_result: dict[str, Any],
+    control_id: str,
+    nist_control_id: str,
+) -> list[dict[str, str]]:
+    return [
+        _prop("aksi-control-id", control_id),
+        _prop("nist-sp800-53-control-id", nist_control_id),
+        _prop("evidence-record-id", record.record_id),
+        _prop("assessment-state", _assessment_state(control_result)),
+    ]
+
+
+def _assessment_state(control_result: dict[str, Any]) -> str:
+    result = str(control_result.get("result", "SKIP")).upper()
+    return RESULT_TO_STATE.get(result, "not-satisfied")
+
+
+def _prop(name: str, value: str) -> dict[str, str]:
+    return {"name": name, "ns": ANCILIS_OSCAL_NS, "value": value}
+
+
+def _first_timestamp(records: list[EvidenceRecord]) -> str | None:
+    if not records:
+        return None
+    return min(record.timestamp for record in records)
+
+
+def _last_timestamp(records: list[EvidenceRecord]) -> str | None:
+    if not records:
+        return None
+    return max(record.timestamp for record in records)
