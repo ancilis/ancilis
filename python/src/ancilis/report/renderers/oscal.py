@@ -149,12 +149,25 @@ def _shared_props(
     control_id: str,
     nist_control_id: str,
 ) -> list[dict[str, str]]:
-    return [
+    props = [
         _prop("aksi-control-id", control_id),
         _prop("nist-sp800-53-control-id", nist_control_id),
         _prop("evidence-record-id", record.record_id),
+        _prop("evidence-record-hash", record.record_hash),
+        _prop("evidence-previous-hash", record.previous_hash),
         _prop("assessment-state", _assessment_state(control_result)),
     ]
+    if record.session_id is not None:
+        props.append(_prop("evidence-session-id", record.session_id))
+    if record.tenant_id is not None:
+        props.append(_prop("evidence-tenant-id", record.tenant_id))
+    if record.detected_data_types:
+        props.append(_prop("detected-data-types", json.dumps(record.detected_data_types)))
+    if record.sdk_version is not None:
+        props.append(_prop("sdk-version", record.sdk_version))
+    if record.classification_context:
+        props.append(_prop("classification-context", json.dumps(record.classification_context, sort_keys=True)))
+    return props
 
 
 def _assessment_state(control_result: dict[str, Any]) -> str:

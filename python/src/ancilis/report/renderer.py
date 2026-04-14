@@ -30,6 +30,7 @@ EXPORT_FIELDNAMES = [
     "evaluation_id",
     "timestamp",
     "agent_id",
+    "session_id",
     "source_type",
     "tool_name",
     "decision",
@@ -42,6 +43,10 @@ EXPORT_FIELDNAMES = [
     "previous_hash",
     "total_duration_ms",
     "output_summary",
+    "tenant_id",
+    "detected_data_types",
+    "sdk_version",
+    "classification_context",
 ]
 
 
@@ -204,6 +209,7 @@ def _record_to_export_dict(record: EvidenceRecord) -> dict[str, Any]:
         "evaluation_id": record.evaluation_id,
         "timestamp": record.timestamp,
         "agent_id": record.agent_id,
+        "session_id": record.session_id,
         "source_type": record.source_type,
         "tool_name": record.tool_name,
         "decision": record.decision,
@@ -216,6 +222,10 @@ def _record_to_export_dict(record: EvidenceRecord) -> dict[str, Any]:
         "previous_hash": record.previous_hash,
         "total_duration_ms": record.total_duration_ms,
         "output_summary": record.output_summary,
+        "tenant_id": record.tenant_id,
+        "detected_data_types": record.detected_data_types,
+        "sdk_version": record.sdk_version,
+        "classification_context": record.classification_context,
     }
 
 

@@ -58,28 +58,35 @@ def test_render_oscal_maps_runtime_controls_to_observations() -> None:
     assert result["findings"] == []
 
     observation = result["observations"][0]
-    assert observation["props"] == [
-        {
-            "name": "aksi-control-id",
-            "ns": "https://ancilis.ai/ns/oscal",
-            "value": "PR-01",
-        },
-        {
-            "name": "nist-sp800-53-control-id",
-            "ns": "https://ancilis.ai/ns/oscal",
-            "value": "ac-2",
-        },
-        {
-            "name": "evidence-record-id",
-            "ns": "https://ancilis.ai/ns/oscal",
-            "value": "record-pr-01",
-        },
-        {
-            "name": "assessment-state",
-            "ns": "https://ancilis.ai/ns/oscal",
-            "value": "satisfied",
-        },
-    ]
+    props = {prop["name"]: prop["value"] for prop in observation["props"]}
+    assert props["aksi-control-id"] == "PR-01"
+    assert props["nist-sp800-53-control-id"] == "ac-2"
+    assert props["evidence-record-id"] == "record-pr-01"
+    assert props["assessment-state"] == "satisfied"
+
+
+def test_render_oscal_includes_integrity_metadata_props() -> None:
+    record = _record(control_id="PR-01", result="PASS")
+    record.session_id = "session-1"
+    record.tenant_id = "tenant-1"
+    record.detected_data_types = ["DC-PII"]
+    record.sdk_version = "0.1.0"
+    record.classification_context = {"llm_provider": "openai"}
+
+    output = render_oscal([record])
+    payload = json.loads(output)
+
+    props = {
+        prop["name"]: prop["value"]
+        for prop in payload["assessment-results"]["results"][0]["observations"][0]["props"]
+    }
+    assert props["evidence-record-hash"] == "hash-pr-01"
+    assert props["evidence-previous-hash"] == "genesis"
+    assert props["evidence-session-id"] == "session-1"
+    assert props["evidence-tenant-id"] == "tenant-1"
+    assert props["detected-data-types"] == '["DC-PII"]'
+    assert props["sdk-version"] == "0.1.0"
+    assert props["classification-context"] == '{"llm_provider": "openai"}'
 
 
 def test_render_oscal_maps_posture_controls_to_findings() -> None:

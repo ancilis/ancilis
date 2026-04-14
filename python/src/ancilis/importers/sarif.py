@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fnmatch
+import hashlib
 import json
 import uuid
 from datetime import datetime, timezone
@@ -65,12 +66,13 @@ class SarifImporter:
 
     def parse(self, path: str | Path) -> list[EvaluationResult]:
         """Parse a SARIF file and return one EvaluationResult per run."""
-        with open(path) as f:
-            doc = json.load(f)
+        content = Path(path).read_bytes()
+        file_sha256 = hashlib.sha256(content).hexdigest()
+        doc = json.loads(content.decode("utf-8"))
 
         results: list[EvaluationResult] = []
         for run in doc.get("runs", []):
-            results.append(self._parse_run(run))
+            results.append(self._parse_run(run, file_sha256=file_sha256))
         return results
 
     def parse_string(self, content: str) -> list[EvaluationResult]:
@@ -78,7 +80,12 @@ class SarifImporter:
         doc = json.loads(content)
         return [self._parse_run(run) for run in doc.get("runs", [])]
 
-    def _parse_run(self, run: dict[str, Any]) -> EvaluationResult:
+    def _parse_run(
+        self,
+        run: dict[str, Any],
+        *,
+        file_sha256: str | None = None,
+    ) -> EvaluationResult:
         tool_name = (
             run.get("tool", {})
             .get("driver", {})
@@ -90,6 +97,11 @@ class SarifImporter:
             .get("version", "")
         )
         source_tool = f"{tool_name}/{tool_version}" if tool_version else tool_name
+        source_provenance = _source_provenance(
+            tool_name=tool_name,
+            tool_version=tool_version,
+            file_sha256=file_sha256,
+        )
 
         # Build a rule-id → rule-metadata index from the run
         rule_index: dict[str, dict[str, Any]] = {}
@@ -128,6 +140,7 @@ class SarifImporter:
                         "rule_id": rule_id,
                         "level": result_level,
                         "source_tool": source_tool,
+                        "source_provenance": source_provenance,
                         "message": finding.get("message", {}).get("text", ""),
                     },
                 )
@@ -141,7 +154,10 @@ class SarifImporter:
                     control_name=_CONTROL_NAMES["PR-01"],
                     result="PASS",
                     detail=f"No findings reported by {source_tool}",
-                    evidence_data={"source_tool": source_tool},
+                    evidence_data={
+                        "source_tool": source_tool,
+                        "source_provenance": source_provenance,
+                    },
                 )
             )
 
@@ -172,3 +188,19 @@ def _format_location(location: dict[str, Any]) -> str:
     if uri and line:
         return f"{uri}:{line}"
     return uri or str(line)
+
+
+def _source_provenance(
+    *,
+    tool_name: str,
+    tool_version: str,
+    file_sha256: str | None,
+) -> dict[str, Any]:
+    provenance: dict[str, Any] = {
+        "source_format": "sarif",
+        "source_tool_name": tool_name,
+        "source_tool_version": tool_version,
+    }
+    if file_sha256 is not None:
+        provenance["original_file_sha256"] = file_sha256
+    return provenance

@@ -6,12 +6,16 @@ with compliance sections and advisory, upgrade advisories, _short_date edge case
 """
 from __future__ import annotations
 
+import csv
+import json
 import subprocess
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
+from ancilis.evidence.record import EvidenceRecord
 from ancilis.report.generator import ReportData
 from ancilis.report.renderer import (
     RenderPdfResult,
@@ -527,3 +531,69 @@ def test_render_ndjson_empty_list() -> None:
 def test_render_csv_empty_list() -> None:
     result = render_csv([])
     assert "record_id" in result  # header only
+
+
+def test_render_ndjson_includes_integrity_metadata_fields() -> None:
+    record = EvidenceRecord(
+        record_id="record-1",
+        evaluation_id="eval-1",
+        timestamp="2026-04-14T00:00:00+00:00",
+        agent_id="agent-1",
+        session_id="session-1",
+        source_type="agent",
+        tool_name="read_file",
+        decision="ALLOW",
+        mode="audit",
+        control_results=[],
+        active_overlays=["nist-csf"],
+        data_classifications=["personal_info"],
+        active_certifications=[],
+        record_hash="hash-1",
+        previous_hash="hash-0",
+        detected_data_types=["DC-PII"],
+        tenant_id="tenant-1",
+        sdk_version="0.1.0",
+        classification_context={"llm_provider": "openai"},
+    )
+
+    payload = json.loads(render_ndjson([record]))
+
+    assert payload["record_hash"] == "hash-1"
+    assert payload["previous_hash"] == "hash-0"
+    assert payload["session_id"] == "session-1"
+    assert payload["tenant_id"] == "tenant-1"
+    assert payload["detected_data_types"] == ["DC-PII"]
+    assert payload["sdk_version"] == "0.1.0"
+    assert payload["classification_context"] == {"llm_provider": "openai"}
+
+
+def test_render_csv_includes_integrity_metadata_fields() -> None:
+    record = EvidenceRecord(
+        record_id="record-1",
+        evaluation_id="eval-1",
+        timestamp="2026-04-14T00:00:00+00:00",
+        agent_id="agent-1",
+        session_id="session-1",
+        source_type="agent",
+        tool_name="read_file",
+        decision="ALLOW",
+        mode="audit",
+        control_results=[],
+        active_overlays=[],
+        data_classifications=[],
+        active_certifications=[],
+        record_hash="hash-1",
+        previous_hash="hash-0",
+        detected_data_types=["DC-PII"],
+        tenant_id="tenant-1",
+        sdk_version="0.1.0",
+        classification_context={"llm_provider": "openai"},
+    )
+
+    rows = list(csv.DictReader(StringIO(render_csv([record]))))
+
+    assert rows[0]["session_id"] == "session-1"
+    assert rows[0]["tenant_id"] == "tenant-1"
+    assert rows[0]["detected_data_types"] == '["DC-PII"]'
+    assert rows[0]["sdk_version"] == "0.1.0"
+    assert rows[0]["classification_context"] == '{"llm_provider": "openai"}'

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import textwrap
 from pathlib import Path
 
@@ -10,6 +11,8 @@ import pytest
 
 from ancilis.importers.sarif import SarifImporter, _map_rule_to_control, _load_mappings
 from ancilis.importers.cyclonedx import CycloneDxImporter, _cwe_to_control
+from ancilis.config import load_config
+from ancilis.evidence.store import EvidenceStore
 
 # ---------------------------------------------------------------------------
 # Fixtures — minimal inline SARIF and CycloneDX documents
@@ -176,6 +179,38 @@ class TestSarifImporter:
             assert ev.source_type == "sarif_import"
             assert ev.evaluation_id
 
+    def test_parse_file_captures_hash_covered_provenance(self, tmp_path: Path):
+        fixture = tmp_path / "scan.sarif"
+        fixture.write_text(SARIF_ONE_FINDING, encoding="utf-8")
+        expected_sha256 = hashlib.sha256(SARIF_ONE_FINDING.encode("utf-8")).hexdigest()
+
+        imp = SarifImporter(agent_id="ci-pipeline")
+        evaluation = imp.parse(fixture)[0]
+        provenance = evaluation.control_results[0].evidence_data["source_provenance"]
+
+        assert provenance == {
+            "source_format": "sarif",
+            "source_tool_name": "TestScanner",
+            "source_tool_version": "1.0.0",
+            "original_file_sha256": expected_sha256,
+        }
+
+        store = EvidenceStore(load_config(raw={"agent": {"name": "test-agent"}}), in_memory=True)
+        record = store.store(evaluation, tool_name=str(fixture))
+        tampered_control_results = record.control_results
+        tampered_control_results[0]["evidence_data"]["source_provenance"][
+            "source_tool_version"
+        ] = "tampered"
+        store._connection.execute(
+            "UPDATE evidence_records SET control_results = ?::JSON WHERE record_id = ?",
+            [json.dumps(tampered_control_results), record.record_id],
+        )
+
+        valid, errors = store.verify_chain()
+        assert valid is False
+        assert any("hash mismatch" in error for error in errors)
+        store.close()
+
 
 # ---------------------------------------------------------------------------
 # SARIF control mapping unit tests
@@ -266,6 +301,38 @@ class TestCycloneDxImporter:
         assert len(results) >= 1
         for ev in results:
             assert ev.source_type == "cyclonedx_import"
+
+    def test_parse_file_captures_hash_covered_provenance(self, tmp_path: Path):
+        fixture = tmp_path / "bom.cdx.json"
+        fixture.write_text(CDX_WITH_VULN, encoding="utf-8")
+        expected_sha256 = hashlib.sha256(CDX_WITH_VULN.encode("utf-8")).hexdigest()
+
+        imp = CycloneDxImporter(agent_id="sbom-pipeline")
+        evaluation = imp.parse(fixture)[0]
+        provenance = evaluation.control_results[0].evidence_data["source_provenance"]
+
+        assert provenance == {
+            "source_format": "cyclonedx",
+            "source_tool_name": "syft",
+            "source_tool_version": "0.90.0",
+            "original_file_sha256": expected_sha256,
+        }
+
+        store = EvidenceStore(load_config(raw={"agent": {"name": "test-agent"}}), in_memory=True)
+        record = store.store(evaluation, tool_name=str(fixture))
+        tampered_control_results = record.control_results
+        tampered_control_results[0]["evidence_data"]["source_provenance"][
+            "source_tool_name"
+        ] = "tampered"
+        store._connection.execute(
+            "UPDATE evidence_records SET control_results = ?::JSON WHERE record_id = ?",
+            [json.dumps(tampered_control_results), record.record_id],
+        )
+
+        valid, errors = store.verify_chain()
+        assert valid is False
+        assert any("hash mismatch" in error for error in errors)
+        store.close()
 
 
 # ---------------------------------------------------------------------------
