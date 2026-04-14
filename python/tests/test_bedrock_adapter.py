@@ -190,6 +190,23 @@ def test_credentials_and_signed_request_material_are_redacted() -> None:
     assert "signed_headers" not in serialized
 
 
+def test_unrecognized_auth_mode_is_not_persisted() -> None:
+    producer = _producer()
+
+    action = producer.translate(
+        {
+            "operation": "InvokeModel",
+            "modelId": "anthropic.claude-3-haiku-20240307-v1:0",
+            "region": "us-east-1",
+            "response_body": {"usage": {"input_tokens": 1, "output_tokens": 2}},
+            "auth_mode": "AKIASECRET",
+        }
+    )
+
+    assert "auth_mode" not in action.parameters.raw
+    assert "akiasecret" not in json.dumps(action.parameters.raw).lower()
+
+
 def test_observe_records_bedrock_evidence_summary() -> None:
     producer = _producer()
 
