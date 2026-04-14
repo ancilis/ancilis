@@ -70,6 +70,18 @@ def test_evidence_verify_valid_chain_exits_zero(tmp_path: Path) -> None:
     assert "1 record" in result.output
 
 
+def test_evidence_verify_db_only_does_not_require_config_in_cwd(tmp_path: Path) -> None:
+    _cfg_path, db_path, _record_id = _store_record(tmp_path)
+    runner = CliRunner()
+
+    with runner.isolated_filesystem():
+        result = runner.invoke(cli, ["evidence", "verify", "--db", str(db_path)])
+
+    assert result.exit_code == 0
+    assert "Evidence chain valid" in result.output
+    assert "1 record" in result.output
+
+
 def test_evidence_verify_tampered_chain_exits_nonzero(tmp_path: Path) -> None:
     cfg_path, db_path, record_id = _store_record(tmp_path)
     store = EvidenceStore(load_config(path=str(cfg_path)), db_path=str(db_path))
