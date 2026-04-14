@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from typing import Any, cast
 
 from ancilis._shared import shared_path
-from ancilis.plugins import PluginContext, PluginRegistry
+from ancilis.plugins import OverlayPlugin, PluginContext, PluginRegistry
 
 logger = logging.getLogger("ancilis.activation")
 
@@ -52,12 +52,15 @@ def _merge_plugin_overlay_profiles(
         if record.plugin is None:
             _warn_overlay(plugin_name, "has no plugin object and was skipped", warnings)
             continue
+        if not isinstance(record.plugin, OverlayPlugin):
+            _warn_overlay(plugin_name, "does not implement the overlay plugin contract", warnings)
+            continue
         context = PluginContext(
             sdk_version=plugin_registry.sdk_version,
             config=plugin_configs.get(plugin_name, {}),
         )
         try:
-            raw_profile = record.plugin.load_overlay_profile(context)  # type: ignore[attr-defined]
+            raw_profile = record.plugin.load_overlay_profile(context)
         except Exception as exc:
             _warn_overlay(plugin_name, f"failed to load overlay profile: {exc}", warnings)
             continue
@@ -86,7 +89,11 @@ def _validated_plugin_overlay_profile(
 
     profile = {str(key): value for key, value in raw_profile.items()}
     overlay_id = profile.get("id")
-    if not isinstance(overlay_id, str) or not overlay_id.startswith("plugin:"):
+    if (
+        not isinstance(overlay_id, str)
+        or not overlay_id.startswith("plugin:")
+        or not overlay_id.removeprefix("plugin:").strip()
+    ):
         _warn_overlay(plugin_name, "overlay id must be explicit and namespaced as plugin:<name>", warnings)
         return None
 
@@ -106,6 +113,59 @@ def _validated_plugin_overlay_profile(
         if value is not None and not isinstance(value, Mapping):
             _warn_overlay(plugin_name, f"overlay profile field '{field_name}' must be a mapping", warnings)
             return None
+
+    control_adjustments = profile.get("control_adjustments")
+    if isinstance(control_adjustments, Mapping):
+        for control_id, adjustment in control_adjustments.items():
+            if not isinstance(adjustment, Mapping):
+                _warn_overlay(
+                    plugin_name,
+                    f"overlay profile field 'control_adjustments.{control_id}' must be a mapping",
+                    warnings,
+                )
+                return None
+
+    evidence_requirements = profile.get("evidence_requirements")
+    if isinstance(evidence_requirements, Mapping):
+        for control_id, requirements in evidence_requirements.items():
+            if not _is_string_list(requirements):
+                _warn_overlay(
+                    plugin_name,
+                    f"overlay profile field 'evidence_requirements.{control_id}' must be a list of strings",
+                    warnings,
+                )
+                return None
+
+    controls = profile.get("controls")
+    if isinstance(controls, Mapping):
+        for control_id, control_data in controls.items():
+            if not isinstance(control_data, Mapping):
+                _warn_overlay(
+                    plugin_name,
+                    f"overlay profile field 'controls.{control_id}' must be a mapping",
+                    warnings,
+                )
+                return None
+            control_requirements = control_data.get("evidence_requirements")
+            if control_requirements is not None and not _is_string_list(control_requirements):
+                _warn_overlay(
+                    plugin_name,
+                    f"overlay profile field 'controls.{control_id}.evidence_requirements' must be a list of strings",
+                    warnings,
+                )
+                return None
+
+    retention_days = profile.get("evidence_retention_minimum_days")
+    if retention_days is not None and (
+        not isinstance(retention_days, int) or isinstance(retention_days, bool)
+    ):
+        _warn_overlay(plugin_name, "overlay profile field 'evidence_retention_minimum_days' must be an integer", warnings)
+        return None
+
+    human_oversight = profile.get("human_oversight_required")
+    if human_oversight is not None and not isinstance(human_oversight, bool):
+        _warn_overlay(plugin_name, "overlay profile field 'human_oversight_required' must be a boolean", warnings)
+        return None
 
     return profile
 
