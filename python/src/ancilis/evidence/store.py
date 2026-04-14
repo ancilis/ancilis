@@ -110,6 +110,7 @@ class EvidenceStore:
         tenant_id: str | None = None,
         on_drift: Callable[[DriftReport], None] | None = None,
         evidence_adapter: EvidenceAdapter | None = None,
+        evidence_adapter_name: str | None = None,
         evidence_adapter_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self._config = config
@@ -121,6 +122,7 @@ class EvidenceStore:
         self._tenant_id = tenant_id
         self._on_drift = on_drift
         self._evidence_adapter = evidence_adapter
+        self._evidence_adapter_name = evidence_adapter_name
         self._evidence_adapter_metadata = dict(evidence_adapter_metadata or {})
 
         if in_memory:
@@ -341,7 +343,8 @@ class EvidenceStore:
         try:
             self._evidence_adapter.store(payload)
         except Exception as exc:  # noqa: BLE001 — plugin hooks must not break DuckDB evidence
-            logger.warning("plugin evidence adapter store hook failed: %s", exc)
+            adapter_name = self._evidence_adapter_name or self._evidence_adapter.__class__.__name__
+            logger.warning("plugin evidence adapter %r store hook failed: %s", adapter_name, exc)
 
     def _maybe_trigger_drift_check(self) -> None:
         """Fire the on_drift callback if configured and an active baseline exists."""

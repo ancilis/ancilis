@@ -135,12 +135,14 @@ def test_plugin_evidence_adapter_can_be_selected_and_receives_canonical_record()
         config,
         in_memory=True,
         evidence_adapter=selection.adapter,
+        evidence_adapter_name=selection.adapter_name,
         evidence_adapter_metadata={"adapter_sink": "fake"},
     )
 
     record = store.store(_evaluation(), tool_name="plugin:fake.lookup")
 
     assert selection.warnings == ()
+    assert selection.adapter_name == "fake-evidence"
     assert store.get_summary(session_id="adapter-session")["total_evaluations"] == 1
     assert plugin.adapter.payloads == [
         EvidenceAdapterPayload(
@@ -169,6 +171,7 @@ def test_duckdb_store_remains_default_when_plugin_adapter_is_not_selected() -> N
     record = store.store(_evaluation(), tool_name="builtin-tool")
 
     assert selection.adapter is None
+    assert selection.adapter_name is None
     assert selection.warnings == ()
     assert record.tool_name == "builtin-tool"
     assert store.get_summary(session_id="adapter-session")["total_evaluations"] == 1
@@ -190,12 +193,14 @@ def test_broken_plugin_adapter_hooks_warn_and_duckdb_store_still_succeeds(
         config,
         in_memory=True,
         evidence_adapter=broken_store_adapter,
+        evidence_adapter_name="broken-store",
     )
 
     record = store.store(_evaluation(), tool_name="plugin:broken.lookup")
 
     assert create_failure.adapter is None
+    assert create_failure.adapter_name == "broken-create"
     assert "failed to create plugin evidence adapter 'broken-create': adapter create boom" in caplog.text
-    assert "plugin evidence adapter store hook failed: adapter store boom" in caplog.text
+    assert "plugin evidence adapter 'broken-store' store hook failed: adapter store boom" in caplog.text
     assert record.tool_name == "plugin:broken.lookup"
     assert store.count(session_id="adapter-session") == 1

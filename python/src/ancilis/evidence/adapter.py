@@ -69,6 +69,7 @@ class EvidenceAdapterSelection:
     """Resolved plugin evidence adapter plus non-fatal selection warnings."""
 
     adapter: EvidenceAdapter | None
+    adapter_name: str | None = None
     warnings: tuple[str, ...] = ()
 
 
@@ -102,10 +103,10 @@ def resolve_evidence_adapter(
     )
     if record is None:
         _warn(warnings, f"Plugin evidence adapter '{adapter_name}' was not discovered or compatible.")
-        return EvidenceAdapterSelection(adapter=None, warnings=tuple(warnings))
+        return EvidenceAdapterSelection(adapter=None, adapter_name=adapter_name, warnings=tuple(warnings))
     if record.plugin is None:
         _warn(warnings, f"Plugin evidence adapter '{adapter_name}' has no plugin object and was skipped.")
-        return EvidenceAdapterSelection(adapter=None, warnings=tuple(warnings))
+        return EvidenceAdapterSelection(adapter=None, adapter_name=adapter_name, warnings=tuple(warnings))
 
     plugin_config_map = plugin_configs or {}
     context = PluginContext(
@@ -116,16 +117,16 @@ def resolve_evidence_adapter(
         adapter = record.plugin.create_adapter(context)  # type: ignore[attr-defined]
     except Exception as exc:
         _warn(warnings, f"failed to create plugin evidence adapter '{adapter_name}': {exc}")
-        return EvidenceAdapterSelection(adapter=None, warnings=tuple(warnings))
+        return EvidenceAdapterSelection(adapter=None, adapter_name=adapter_name, warnings=tuple(warnings))
 
     if not isinstance(adapter, EvidenceAdapter):
         _warn(
             warnings,
             f"Plugin evidence adapter '{adapter_name}' did not expose store(), query(), and export().",
         )
-        return EvidenceAdapterSelection(adapter=None, warnings=tuple(warnings))
+        return EvidenceAdapterSelection(adapter=None, adapter_name=adapter_name, warnings=tuple(warnings))
 
-    return EvidenceAdapterSelection(adapter=adapter, warnings=tuple(warnings))
+    return EvidenceAdapterSelection(adapter=adapter, adapter_name=adapter_name, warnings=tuple(warnings))
 
 
 def _requested_adapter_name(plugin_name: str | None, warnings: list[str]) -> str | None:
