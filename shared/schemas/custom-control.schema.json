@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Ancilis Custom Control Definition",
+  "description": "Shared artifact contract for customer-defined controls. Phase 1 supports active regex and manual evaluators; script and webhook evaluator types are reserved for a future sandboxed design.",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "description",
+    "category",
+    "severity",
+    "evaluator_type",
+    "evaluator"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^custom:[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Canonical custom control id. Ownership belongs in metadata fields, not in this id."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": ["govern", "identify", "protect", "detect", "respond", "recover"]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "evaluator_type": {
+      "type": "string",
+      "enum": ["regex", "manual"],
+      "description": "Active evaluator type. Reserved future types: script, webhook."
+    },
+    "evaluator": {
+      "type": "object"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "framework_references": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "overlay_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "evidence_selectors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/evidenceSelector"
+      }
+    },
+    "remediation": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "evaluator_type": { "const": "regex" } },
+        "required": ["evaluator_type"]
+      },
+      "then": {
+        "properties": {
+          "evaluator": { "$ref": "#/definitions/regexEvaluator" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "evaluator_type": { "const": "manual" } },
+        "required": ["evaluator_type"]
+      },
+      "then": {
+        "properties": {
+          "evaluator": { "$ref": "#/definitions/manualEvaluator" }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "evidenceSelector": {
+      "type": "object",
+      "required": ["field", "operator", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operator": {
+          "type": "string",
+          "enum": ["equals", "contains", "regex", "exists"]
+        },
+        "value": {
+          "type": ["string", "number", "boolean", "null"]
+        }
+      }
+    },
+    "regexEvaluator": {
+      "type": "object",
+      "required": ["pattern"],
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "enum": ["tool_name", "input_summary", "output_summary", "metadata", "evidence"]
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["IGNORECASE", "MULTILINE", "DOTALL"]
+          },
+          "uniqueItems": true
+        },
+        "pass_when": {
+          "type": "string",
+          "enum": ["matches", "does_not_match"]
+        }
+      }
+    },
+    "manualEvaluator": {
+      "type": "object",
+      "required": ["instructions"],
+      "additionalProperties": false,
+      "properties": {
+        "instructions": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
