@@ -33,7 +33,7 @@ def test_vertex_ai_producer_satisfies_protocol_without_google_packages() -> None
 
     assert isinstance(producer, ActionProducer)
     assert producer.producer_type == ProducerType.FRAMEWORK
-    assert ancilis.VertexAIActionProducer is vertex.VertexAIActionProducer
+    assert ancilis.__getattr__("VertexAIActionProducer") is vertex.VertexAIActionProducer
 
 
 def test_predict_normalizes_endpoint_metadata_without_prompt_or_credentials() -> None:
