@@ -5,6 +5,12 @@ from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ancilis.adapters.azure_openai import (
+        AzureOpenAIActionProducer,
+        AzureOpenAIAdapter,
+        AzureOpenAIInvocation,
+        AzureOpenAIObservation,
+    )
     from ancilis.adapters.bedrock import (
         BedrockActionProducer,
         BedrockAdapter,
@@ -64,6 +70,10 @@ except PackageNotFoundError:
 _EXPORTS: dict[str, tuple[str, str]] = {
     "ActionProducer": ("ancilis.producers.protocol", "ActionProducer"),
     "AncilisMiddleware": ("ancilis.middleware.middleware", "AncilisMiddleware"),
+    "AzureOpenAIActionProducer": ("ancilis.adapters.azure_openai", "AzureOpenAIActionProducer"),
+    "AzureOpenAIAdapter": ("ancilis.adapters.azure_openai", "AzureOpenAIAdapter"),
+    "AzureOpenAIInvocation": ("ancilis.adapters.azure_openai", "AzureOpenAIInvocation"),
+    "AzureOpenAIObservation": ("ancilis.adapters.azure_openai", "AzureOpenAIObservation"),
     "BaselineManager": ("ancilis.baselines", "BaselineManager"),
     "BedrockActionProducer": ("ancilis.adapters.bedrock", "BedrockActionProducer"),
     "BedrockAdapter": ("ancilis.adapters.bedrock", "BedrockAdapter"),
