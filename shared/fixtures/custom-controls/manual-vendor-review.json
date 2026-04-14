@@ -1,0 +1,20 @@
+{
+  "id": "custom:vendor-review",
+  "title": "Vendor Review Complete",
+  "description": "Requires a manual attestation that the vendor risk review has been completed.",
+  "category": "govern",
+  "severity": "high",
+  "evaluator_type": "manual",
+  "evaluator": {
+    "instructions": "Review the current vendor assessment and mark this control as passing only when the risk owner has approved it.",
+    "expected_evidence": [
+      "Completed vendor risk questionnaire",
+      "Risk owner approval record"
+    ]
+  },
+  "version": "1.0.0",
+  "owner": "governance",
+  "framework_references": ["SOC 2 CC9.2"],
+  "tags": ["vendor-risk", "manual"],
+  "remediation": "Collect the missing vendor assessment approval before marking this control complete."
+}
