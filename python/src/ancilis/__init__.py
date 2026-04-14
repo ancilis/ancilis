@@ -25,6 +25,11 @@ if TYPE_CHECKING:
     )
     from ancilis.producers.mcp import MCPActionProducer
     from ancilis.producers.protocol import ActionProducer, ProducerType
+    from ancilis.producers.runtime import (
+        RuntimeProducerSelection,
+        resolve_runtime_producers,
+        translate_runtime_action,
+    )
     from ancilis.producers.tool import (
         BlockedActionError,
         ToolActionProducer,
@@ -62,12 +67,15 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "HTTPRequest": ("ancilis.producers.http", "HTTPRequest"),
     "MCPActionProducer": ("ancilis.producers.mcp", "MCPActionProducer"),
     "ProducerType": ("ancilis.producers.protocol", "ProducerType"),
+    "RuntimeProducerSelection": ("ancilis.producers.runtime", "RuntimeProducerSelection"),
     "ToolActionProducer": ("ancilis.producers.tool", "ToolActionProducer"),
     "ToolExecutionResult": ("ancilis.producers.tool", "ToolExecutionResult"),
     "ToolInvocation": ("ancilis.producers.tool", "ToolInvocation"),
     "evaluate_and_execute": ("ancilis.producers.tool", "evaluate_and_execute"),
     "load_config": ("ancilis.config", "load_config"),
+    "resolve_runtime_producers": ("ancilis.producers.runtime", "resolve_runtime_producers"),
     "tool": ("ancilis.producers.tool", "tool"),
+    "translate_runtime_action": ("ancilis.producers.runtime", "translate_runtime_action"),
     "wrap_tool": ("ancilis.producers.tool", "wrap_tool"),
 }
 
