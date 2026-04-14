@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 from ancilis._shared import shared_path
 from ancilis.evidence.record import EvidenceRecord
@@ -25,7 +25,10 @@ RESULT_TO_STATE = {
 def load_oscal_mapping() -> dict[str, Any]:
     """Load the shared AKSI to NIST SP 800-53 Rev 5 OSCAL mapping."""
     mapping_path = shared_path("mappings", "oscal-sp800-53.json")
-    return json.loads(mapping_path.read_text(encoding="utf-8"))
+    data = json.loads(mapping_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("OSCAL mapping must be a JSON object")
+    return cast(dict[str, Any], data)
 
 
 def render_oscal(records: list[EvidenceRecord]) -> str:
@@ -42,15 +45,15 @@ def render_oscal(records: list[EvidenceRecord]) -> str:
             nist_controls = _nist_controls_for(mapping, control_id)
             if not nist_controls:
                 continue
-            primary_nist_control = nist_controls[0]
-            reviewed_controls[primary_nist_control] = None
+            for nist_control_id in nist_controls:
+                reviewed_controls[nist_control_id] = None
 
-            if control_id.startswith(RUNTIME_CONTROL_PREFIXES):
-                observations.append(
-                    _observation(record, control_result, control_id, primary_nist_control)
-                )
-            elif control_id.startswith(POSTURE_CONTROL_PREFIXES):
-                findings.append(_finding(record, control_result, control_id, primary_nist_control))
+                if control_id.startswith(RUNTIME_CONTROL_PREFIXES):
+                    observations.append(
+                        _observation(record, control_result, control_id, nist_control_id)
+                    )
+                elif control_id.startswith(POSTURE_CONTROL_PREFIXES):
+                    findings.append(_finding(record, control_result, control_id, nist_control_id))
 
     assessment_results = {
         "assessment-results": {
@@ -106,7 +109,12 @@ def _observation(
     nist_control_id: str,
 ) -> dict[str, Any]:
     return {
-        "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{record.record_id}:{control_id}:observation")),
+        "uuid": str(
+            uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                f"{record.record_id}:{control_id}:{nist_control_id}:observation",
+            )
+        ),
         "title": f"{control_id} runtime evidence",
         "description": str(control_result.get("detail") or control_result.get("control_name") or control_id),
         "methods": ["TEST"],
@@ -128,7 +136,12 @@ def _finding(
     nist_control_id: str,
 ) -> dict[str, Any]:
     return {
-        "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{record.record_id}:{control_id}:finding")),
+        "uuid": str(
+            uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                f"{record.record_id}:{control_id}:{nist_control_id}:finding",
+            )
+        ),
         "title": f"{control_id} posture finding",
         "description": str(control_result.get("detail") or control_result.get("control_name") or control_id),
         "props": _shared_props(record, control_result, control_id, nist_control_id),

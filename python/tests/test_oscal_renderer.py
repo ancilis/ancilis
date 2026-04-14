@@ -54,15 +54,20 @@ def test_render_oscal_maps_runtime_controls_to_observations() -> None:
     payload = json.loads(output)
 
     result = payload["assessment-results"]["results"][0]
-    assert len(result["observations"]) == 1
+    assert len(result["observations"]) == 3
     assert result["findings"] == []
 
-    observation = result["observations"][0]
-    props = {prop["name"]: prop["value"] for prop in observation["props"]}
-    assert props["aksi-control-id"] == "PR-01"
-    assert props["nist-sp800-53-control-id"] == "ac-2"
-    assert props["evidence-record-id"] == "record-pr-01"
-    assert props["assessment-state"] == "satisfied"
+    observed_nist_controls = []
+    for observation in result["observations"]:
+        props = {prop["name"]: prop["value"] for prop in observation["props"]}
+        assert props["aksi-control-id"] == "PR-01"
+        assert props["evidence-record-id"] == "record-pr-01"
+        assert props["assessment-state"] == "satisfied"
+        observed_nist_controls.append(props["nist-sp800-53-control-id"])
+    assert observed_nist_controls == ["ac-2", "ia-2", "ia-5"]
+
+    reviewed = result["reviewed-controls"]["control-selections"][0]["include-controls"]
+    assert [item["control-id"] for item in reviewed] == ["ac-2", "ia-2", "ia-5"]
 
 
 def test_render_oscal_includes_integrity_metadata_props() -> None:
@@ -95,9 +100,9 @@ def test_render_oscal_maps_posture_controls_to_findings() -> None:
 
     result = payload["assessment-results"]["results"][0]
     assert result["observations"] == []
-    assert len(result["findings"]) == 1
+    assert len(result["findings"]) == 2
 
-    finding = result["findings"][0]
-    assert finding["target"]["target-id"] == "pl-2"
-    assert finding["target"]["status"]["state"] == "not-satisfied"
-    assert finding["props"][0]["value"] == "GOV-01"
+    assert [finding["target"]["target-id"] for finding in result["findings"]] == ["pl-2", "pm-1"]
+    for finding in result["findings"]:
+        assert finding["target"]["status"]["state"] == "not-satisfied"
+        assert finding["props"][0]["value"] == "GOV-01"
