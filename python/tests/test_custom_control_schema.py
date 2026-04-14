@@ -5,10 +5,10 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
-from jsonschema import Draft7Validator
+from jsonschema import Draft7Validator  # type: ignore[import-untyped]
 
 from ancilis.config import SHARED_DIR
 
@@ -18,7 +18,7 @@ FIXTURE_DIR = SHARED_DIR / "fixtures" / "custom-controls"
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text())
+    return cast(dict[str, Any], json.loads(path.read_text()))
 
 
 @pytest.fixture(scope="module")
