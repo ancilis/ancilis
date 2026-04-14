@@ -11,6 +11,12 @@ if TYPE_CHECKING:
         BedrockInvocation,
         BedrockObservation,
     )
+    from ancilis.adapters.vertex_ai import (
+        VertexAIActionProducer,
+        VertexAIAdapter,
+        VertexAIInvocation,
+        VertexAIObservation,
+    )
     from ancilis.baselines import BaselineManager, DriftReport
     from ancilis.config import load_config
     from ancilis.controls.custom import CustomControlDefinition, register_control
@@ -63,6 +69,10 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "BedrockAdapter": ("ancilis.adapters.bedrock", "BedrockAdapter"),
     "BedrockInvocation": ("ancilis.adapters.bedrock", "BedrockInvocation"),
     "BedrockObservation": ("ancilis.adapters.bedrock", "BedrockObservation"),
+    "VertexAIActionProducer": ("ancilis.adapters.vertex_ai", "VertexAIActionProducer"),
+    "VertexAIAdapter": ("ancilis.adapters.vertex_ai", "VertexAIAdapter"),
+    "VertexAIInvocation": ("ancilis.adapters.vertex_ai", "VertexAIInvocation"),
+    "VertexAIObservation": ("ancilis.adapters.vertex_ai", "VertexAIObservation"),
     "BlockedActionError": ("ancilis.producers.tool", "BlockedActionError"),
     "DependencyScanner": ("ancilis.deps.scanner", "DependencyScanner"),
     "DriftReport": ("ancilis.baselines", "DriftReport"),
