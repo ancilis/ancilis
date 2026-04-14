@@ -5,6 +5,12 @@ from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ancilis.adapters.bedrock import (
+        BedrockActionProducer,
+        BedrockAdapter,
+        BedrockInvocation,
+        BedrockObservation,
+    )
     from ancilis.baselines import BaselineManager, DriftReport
     from ancilis.config import load_config
     from ancilis.deps.scanner import DependencyScanner
@@ -38,6 +44,10 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "ActionProducer": ("ancilis.producers.protocol", "ActionProducer"),
     "AncilisMiddleware": ("ancilis.middleware.middleware", "AncilisMiddleware"),
     "BaselineManager": ("ancilis.baselines", "BaselineManager"),
+    "BedrockActionProducer": ("ancilis.adapters.bedrock", "BedrockActionProducer"),
+    "BedrockAdapter": ("ancilis.adapters.bedrock", "BedrockAdapter"),
+    "BedrockInvocation": ("ancilis.adapters.bedrock", "BedrockInvocation"),
+    "BedrockObservation": ("ancilis.adapters.bedrock", "BedrockObservation"),
     "BlockedActionError": ("ancilis.producers.tool", "BlockedActionError"),
     "DependencyScanner": ("ancilis.deps.scanner", "DependencyScanner"),
     "DriftReport": ("ancilis.baselines", "DriftReport"),
