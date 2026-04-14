@@ -14,7 +14,16 @@ if TYPE_CHECKING:
     from ancilis.baselines import BaselineManager, DriftReport
     from ancilis.config import load_config
     from ancilis.deps.scanner import DependencyScanner
-    from ancilis.evidence import EvidenceRecord, EvidenceStore
+    from ancilis.evidence import (
+        EvidenceAdapter,
+        EvidenceAdapterExport,
+        EvidenceAdapterPayload,
+        EvidenceAdapterQuery,
+        EvidenceAdapterSelection,
+        EvidenceRecord,
+        EvidenceStore,
+        resolve_evidence_adapter,
+    )
     from ancilis.middleware.middleware import AncilisMiddleware
     from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
     from ancilis.producers.http import (
@@ -56,6 +65,11 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "BlockedActionError": ("ancilis.producers.tool", "BlockedActionError"),
     "DependencyScanner": ("ancilis.deps.scanner", "DependencyScanner"),
     "DriftReport": ("ancilis.baselines", "DriftReport"),
+    "EvidenceAdapter": ("ancilis.evidence", "EvidenceAdapter"),
+    "EvidenceAdapterExport": ("ancilis.evidence", "EvidenceAdapterExport"),
+    "EvidenceAdapterPayload": ("ancilis.evidence", "EvidenceAdapterPayload"),
+    "EvidenceAdapterQuery": ("ancilis.evidence", "EvidenceAdapterQuery"),
+    "EvidenceAdapterSelection": ("ancilis.evidence", "EvidenceAdapterSelection"),
     "CLIActionProducer": ("ancilis.producers.cli", "CLIActionProducer"),
     "CLIExecutionResult": ("ancilis.producers.cli", "CLIExecutionResult"),
     "CLIInvocation": ("ancilis.producers.cli", "CLIInvocation"),
@@ -73,6 +87,7 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "ToolInvocation": ("ancilis.producers.tool", "ToolInvocation"),
     "evaluate_and_execute": ("ancilis.producers.tool", "evaluate_and_execute"),
     "load_config": ("ancilis.config", "load_config"),
+    "resolve_evidence_adapter": ("ancilis.evidence", "resolve_evidence_adapter"),
     "resolve_runtime_producers": ("ancilis.producers.runtime", "resolve_runtime_producers"),
     "tool": ("ancilis.producers.tool", "tool"),
     "translate_runtime_action": ("ancilis.producers.runtime", "translate_runtime_action"),

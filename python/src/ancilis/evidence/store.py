@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import logging
 import os
 import uuid
+from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from pathlib import Path
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import duckdb
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.result import EvaluationResult
+from ancilis.evidence.adapter import EvidenceAdapter, EvidenceAdapterPayload
 from ancilis.evidence.chain import GENESIS_SEED, canonical_payload, compute_hash
 from ancilis.evidence.record import EvidenceRecord
 
@@ -107,6 +109,8 @@ class EvidenceStore:
         in_memory: bool = False,
         tenant_id: str | None = None,
         on_drift: Callable[[DriftReport], None] | None = None,
+        evidence_adapter: EvidenceAdapter | None = None,
+        evidence_adapter_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self._config = config
         self._certifications: list[str] = list(
@@ -116,6 +120,8 @@ class EvidenceStore:
         self._conn: duckdb.DuckDBPyConnection | None = None
         self._tenant_id = tenant_id
         self._on_drift = on_drift
+        self._evidence_adapter = evidence_adapter
+        self._evidence_adapter_metadata = dict(evidence_adapter_metadata or {})
 
         if in_memory:
             self._db_path = ":memory:"
@@ -322,7 +328,20 @@ class EvidenceStore:
         ])
 
         self._maybe_trigger_drift_check()
+        self._forward_to_evidence_adapter(record)
         return record
+
+    def _forward_to_evidence_adapter(self, record: EvidenceRecord) -> None:
+        if self._evidence_adapter is None:
+            return
+        payload = EvidenceAdapterPayload(
+            record=copy.deepcopy(record),
+            adapter_metadata=dict(self._evidence_adapter_metadata),
+        )
+        try:
+            self._evidence_adapter.store(payload)
+        except Exception as exc:  # noqa: BLE001 — plugin hooks must not break DuckDB evidence
+            logger.warning("plugin evidence adapter store hook failed: %s", exc)
 
     def _maybe_trigger_drift_check(self) -> None:
         """Fire the on_drift callback if configured and an active baseline exists."""
