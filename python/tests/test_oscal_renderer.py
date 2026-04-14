@@ -1,0 +1,96 @@
+"""Tests for OSCAL report rendering."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from ancilis.evidence.record import EvidenceRecord
+from ancilis.report.renderers.oscal import load_oscal_mapping, render_oscal
+
+
+def _record(*, control_id: str, result: str) -> EvidenceRecord:
+    return EvidenceRecord(
+        record_id=f"record-{control_id.lower()}",
+        evaluation_id=f"eval-{control_id.lower()}",
+        timestamp="2026-04-14T00:00:00+00:00",
+        agent_id="agent-1",
+        source_type="agent",
+        tool_name="read_file",
+        decision="ALLOW" if result in {"PASS", "SKIP"} else "BLOCK",
+        mode="audit",
+        control_results=[
+            {
+                "control_id": control_id,
+                "control_name": f"{control_id} control",
+                "result": result,
+                "detail": f"{control_id} detail",
+                "evidence_data": {"example": True},
+                "duration_ms": 1.0,
+            }
+        ],
+        active_overlays=[],
+        data_classifications=[],
+        active_certifications=[],
+        record_hash=f"hash-{control_id.lower()}",
+        previous_hash="genesis",
+    )
+
+
+def test_load_oscal_mapping_covers_all_shared_controls() -> None:
+    mapping = load_oscal_mapping()
+    control_ids = {
+        json.loads(path.read_text(encoding="utf-8"))["id"]
+        for path in Path("shared/controls").glob("*.json")
+    }
+
+    assert control_ids == set(mapping["mappings"])
+    assert mapping["framework"] == "NIST SP 800-53 Rev 5"
+    assert mapping["oscal_version"] == "1.1.2"
+
+
+def test_render_oscal_maps_runtime_controls_to_observations() -> None:
+    output = render_oscal([_record(control_id="PR-01", result="PASS")])
+    payload = json.loads(output)
+
+    result = payload["assessment-results"]["results"][0]
+    assert len(result["observations"]) == 1
+    assert result["findings"] == []
+
+    observation = result["observations"][0]
+    assert observation["props"] == [
+        {
+            "name": "aksi-control-id",
+            "ns": "https://ancilis.ai/ns/oscal",
+            "value": "PR-01",
+        },
+        {
+            "name": "nist-sp800-53-control-id",
+            "ns": "https://ancilis.ai/ns/oscal",
+            "value": "ac-2",
+        },
+        {
+            "name": "evidence-record-id",
+            "ns": "https://ancilis.ai/ns/oscal",
+            "value": "record-pr-01",
+        },
+        {
+            "name": "assessment-state",
+            "ns": "https://ancilis.ai/ns/oscal",
+            "value": "satisfied",
+        },
+    ]
+
+
+def test_render_oscal_maps_posture_controls_to_findings() -> None:
+    output = render_oscal([_record(control_id="GOV-01", result="ERROR")])
+    payload = json.loads(output)
+
+    result = payload["assessment-results"]["results"][0]
+    assert result["observations"] == []
+    assert len(result["findings"]) == 1
+
+    finding = result["findings"][0]
+    assert finding["target"]["target-id"] == "pl-2"
+    assert finding["target"]["status"]["state"] == "not-satisfied"
+    assert finding["props"][0]["value"] == "GOV-01"
