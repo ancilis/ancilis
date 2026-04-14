@@ -456,12 +456,14 @@ class EvidenceStore:
         self._connection.execute("DELETE FROM evidence_records")
         return n
 
-    def verify_chain(self) -> tuple[bool, list[str]]:
+    def verify_chain(self, session_id: str | None = None) -> tuple[bool, list[str]]:
         """Verify the hash chain integrity. Returns (valid, errors).
 
         Records written before ANC-922 used a narrower canonical payload. Those
         legacy hashes are accepted only when the stored hash matches that old
         payload exactly; new writes protect the expanded metadata fields.
+        When session_id is provided, only records in that session are reported;
+        previous_hash links are still checked against the stored global chain.
         """
         self._ensure_initialized()
         # SELECT_COLUMNS is a constant defined at module level, safe to concatenate
@@ -480,9 +482,10 @@ class EvidenceStore:
 
         for row in rows:
             record = self._row_to_record(row)
+            in_scope = session_id is None or record.session_id == session_id
 
             # Check previous_hash links correctly
-            if record.previous_hash != expected_previous:
+            if in_scope and record.previous_hash != expected_previous:
                 errors.append(
                     f"Record {record.record_id}: previous_hash mismatch. "
                     f"Expected {expected_previous[:16]}..., got {record.previous_hash[:16]}..."
@@ -512,7 +515,7 @@ class EvidenceStore:
             )
             expected_hash = compute_hash(canon)
 
-            if record.record_hash != expected_hash:
+            if in_scope and record.record_hash != expected_hash:
                 legacy_canon = canonical_payload(
                     evaluation_id=record.evaluation_id,
                     timestamp=record.timestamp,
