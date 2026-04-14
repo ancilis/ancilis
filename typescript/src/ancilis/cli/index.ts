@@ -9,7 +9,7 @@ export { runReport } from "./report.js";
 export type { ReportCommandOptions, ReportCommandResult } from "./report.js";
 export { handleScan } from "./scan.js";
 export type { ScanOptions, ControlResult2, EvaluationSummary } from "./scan.js";
-export { handleEvidence, runEvidenceSessions, runEvidenceReset, runEvidenceImport } from "./evidence.js";
+export { handleEvidence, runEvidenceVerify, runEvidenceSessions, runEvidenceReset, runEvidenceImport } from "./evidence.js";
 export { runConnect } from "./connect.js";
 export type { ConnectOptions } from "./connect.js";
 export { WatchRunner, getProducersForPaths } from "./watch.js";

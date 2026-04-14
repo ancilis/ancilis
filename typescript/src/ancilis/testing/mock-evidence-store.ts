@@ -45,6 +45,10 @@ export class MockEvidenceStore {
       this._records.length > 0
         ? this._records[this._records.length - 1]!.recordHash
         : GENESIS_SEED;
+    const sessionId = evaluation.context?.sessionId ?? null;
+    const detectedDataTypes = [...(evaluation.detectedDataTypes ?? [])];
+    const sdkVersion = null;
+    const classificationContext: Record<string, unknown> = {};
 
     const controlResultsData = evaluation.controlResults.map((cr) => ({
       control_id: cr.controlId,
@@ -70,7 +74,11 @@ export class MockEvidenceStore {
       totalDurationMs: evaluation.totalDurationMs,
       previousHash,
       outputSummary,
+      sessionId,
       tenantId: this._tenantId,
+      detectedDataTypes,
+      sdkVersion,
+      classificationContext,
     });
     const recordHash = computeHash(canon);
 
@@ -91,7 +99,11 @@ export class MockEvidenceStore {
       previousHash,
       totalDurationMs: evaluation.totalDurationMs,
       outputSummary: outputSummary ?? null,
+      sessionId,
       tenantId: this._tenantId ?? null,
+      detectedDataTypes,
+      sdkVersion,
+      classificationContext,
     };
 
     this._records.push(record);
@@ -103,6 +115,7 @@ export class MockEvidenceStore {
     toolName?: string;
     decision?: string;
     since?: string;
+    sessionId?: string;
     limit?: number | null;
   }): Promise<EvidenceRecord[]> {
     let records = [...this._records];
@@ -119,6 +132,9 @@ export class MockEvidenceStore {
     if (filters?.decision) {
       records = records.filter((r) => r.decision === filters.decision);
     }
+    if (filters?.sessionId) {
+      records = records.filter((r) => r.sessionId === filters.sessionId);
+    }
     if (filters?.since) {
       records = records.filter((r) => r.timestamp >= filters.since!);
     }
@@ -131,17 +147,23 @@ export class MockEvidenceStore {
     return records;
   }
 
-  async count(): Promise<number> {
+  async count(scope?: { sessionId?: string | null } | string): Promise<number> {
+    const sessionId = typeof scope === "string" ? scope : scope?.sessionId;
+    let records = this._records;
     if (this._tenantId) {
-      return this._records.filter((r) => r.tenantId === this._tenantId).length;
+      records = records.filter((r) => r.tenantId === this._tenantId);
     }
-    return this._records.length;
+    if (sessionId !== undefined && sessionId !== null) {
+      records = records.filter((r) => r.sessionId === sessionId);
+    }
+    return records.length;
   }
 
-  async verifyChain(): Promise<{ valid: boolean; errors: string[] }> {
+  async verifyChain(scope?: { sessionId?: string | null } | string): Promise<{ valid: boolean; errors: string[] }> {
     const records = this._tenantId
       ? this._records.filter((r) => r.tenantId === this._tenantId)
       : this._records;
+    const sessionId = typeof scope === "string" ? scope : scope?.sessionId;
 
     if (records.length === 0) return { valid: true, errors: [] };
 
@@ -149,7 +171,9 @@ export class MockEvidenceStore {
     let expectedPrevious = GENESIS_SEED;
 
     for (const record of records) {
-      if (record.previousHash !== expectedPrevious) {
+      const inScope = sessionId === undefined || sessionId === null || record.sessionId === sessionId;
+
+      if (inScope && record.previousHash !== expectedPrevious) {
         errors.push(
           `Record ${record.recordId}: previous_hash mismatch. ` +
             `Expected ${expectedPrevious.slice(0, 16)}..., got ${record.previousHash.slice(0, 16)}...`,
@@ -171,15 +195,40 @@ export class MockEvidenceStore {
         totalDurationMs: record.totalDurationMs,
         previousHash: record.previousHash,
         outputSummary: record.outputSummary,
+        sessionId: record.sessionId,
         tenantId: record.tenantId,
+        detectedDataTypes: record.detectedDataTypes,
+        sdkVersion: record.sdkVersion,
+        classificationContext: record.classificationContext,
       });
       const expectedHash = computeHash(canon);
 
-      if (record.recordHash !== expectedHash) {
-        errors.push(
-          `Record ${record.recordId}: hash mismatch. ` +
-            `Expected ${expectedHash.slice(0, 16)}..., got ${record.recordHash.slice(0, 16)}...`,
-        );
+      if (inScope && record.recordHash !== expectedHash) {
+        const legacyCanon = canonicalPayload({
+          evaluationId: record.evaluationId,
+          timestamp: record.timestamp,
+          agentId: record.agentId,
+          sourceType: record.sourceType ?? "agent",
+          toolName: record.toolName,
+          decision: record.decision,
+          mode: record.mode,
+          controlResults: record.controlResults,
+          activeOverlays: record.activeOverlays,
+          dataClassifications: record.dataClassifications,
+          activeCertifications: record.activeCertifications,
+          totalDurationMs: record.totalDurationMs,
+          previousHash: record.previousHash,
+          outputSummary: record.outputSummary,
+          sessionId: record.sessionId,
+          tenantId: record.tenantId,
+        });
+        const legacyHash = computeHash(legacyCanon);
+        if (record.recordHash !== legacyHash) {
+          errors.push(
+            `Record ${record.recordId}: hash mismatch. ` +
+              `Expected ${expectedHash.slice(0, 16)}..., got ${record.recordHash.slice(0, 16)}...`,
+          );
+        }
       }
 
       expectedPrevious = record.recordHash;
@@ -285,7 +334,11 @@ export class MockEvidenceStore {
       previousHash,
       totalDurationMs: partial.totalDurationMs ?? 0,
       outputSummary: partial.outputSummary ?? null,
+      sessionId: partial.sessionId ?? null,
       tenantId: partial.tenantId ?? this._tenantId ?? null,
+      detectedDataTypes: partial.detectedDataTypes ?? [],
+      sdkVersion: partial.sdkVersion ?? null,
+      classificationContext: partial.classificationContext ?? {},
     };
 
     const canon = canonicalPayload({
@@ -303,7 +356,11 @@ export class MockEvidenceStore {
       totalDurationMs: record.totalDurationMs,
       previousHash,
       outputSummary: record.outputSummary,
+      sessionId: record.sessionId,
       tenantId: record.tenantId,
+      detectedDataTypes: record.detectedDataTypes,
+      sdkVersion: record.sdkVersion,
+      classificationContext: record.classificationContext,
     });
     record.recordHash = computeHash(canon);
 

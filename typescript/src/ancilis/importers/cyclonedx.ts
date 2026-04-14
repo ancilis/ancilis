@@ -1,7 +1,7 @@
 /** CycloneDX v1.5+ SBOM importer — maps components and vulnerabilities to AKSI controls. */
 
 import { readFileSync } from "node:fs";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { ControlResult, EvaluationResult } from "../engine/result.js";
 
 // CWE → AKSI control mapping (subset covering most common SBOM vulnerability categories)
@@ -58,16 +58,34 @@ function extractCwes(vulnerability: Record<string, unknown>): string[] {
   });
 }
 
-function sourceTool(doc: Record<string, unknown>): string {
+function sourceToolMetadata(doc: Record<string, unknown>): { name: string; version: string } {
   const meta = (doc["metadata"] as Record<string, unknown>) ?? {};
   const tools = (meta["tools"] as Record<string, unknown>[]) ?? [];
   if (tools.length > 0) {
     const t = tools[0]!;
     const name = (t["name"] as string) ?? "cyclonedx-tool";
     const version = (t["version"] as string) ?? "";
-    return version ? `${name}/${version}` : name;
+    return { name, version };
   }
-  return "cyclonedx-import";
+  return { name: "cyclonedx-import", version: "" };
+}
+
+function sourceTool(doc: Record<string, unknown>): string {
+  const { name, version } = sourceToolMetadata(doc);
+  return version ? `${name}/${version}` : name;
+}
+
+function sourceProvenance(doc: Record<string, unknown>, fileSha256?: string): Record<string, unknown> {
+  const { name, version } = sourceToolMetadata(doc);
+  const provenance: Record<string, unknown> = {
+    source_format: "cyclonedx",
+    source_tool_name: name,
+    source_tool_version: version,
+  };
+  if (fileSha256) {
+    provenance.original_file_sha256 = fileSha256;
+  }
+  return provenance;
 }
 
 export class CycloneDxImporter {
@@ -80,8 +98,10 @@ export class CycloneDxImporter {
   }
 
   parse(path: string): EvaluationResult[] {
-    const doc = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
-    return this._parseDoc(doc);
+    const content = readFileSync(path);
+    const fileSha256 = createHash("sha256").update(content).digest("hex");
+    const doc = JSON.parse(content.toString("utf-8")) as Record<string, unknown>;
+    return this._parseDoc(doc, fileSha256);
   }
 
   parseString(content: string): EvaluationResult[] {
@@ -89,18 +109,19 @@ export class CycloneDxImporter {
     return this._parseDoc(doc);
   }
 
-  private _parseDoc(doc: Record<string, unknown>): EvaluationResult[] {
+  private _parseDoc(doc: Record<string, unknown>, fileSha256?: string): EvaluationResult[] {
     const results: EvaluationResult[] = [];
-    results.push(this._buildComponentResult(doc));
+    results.push(this._buildComponentResult(doc, fileSha256));
     const vulns = (doc["vulnerabilities"] as Record<string, unknown>[]) ?? [];
     for (const vuln of vulns) {
-      results.push(this._buildVulnResult(doc, vuln));
+      results.push(this._buildVulnResult(doc, vuln, fileSha256));
     }
     return results;
   }
 
-  private _buildComponentResult(doc: Record<string, unknown>): EvaluationResult {
+  private _buildComponentResult(doc: Record<string, unknown>, fileSha256?: string): EvaluationResult {
     const tool = sourceTool(doc);
+    const provenance = sourceProvenance(doc, fileSha256);
     const components = (doc["components"] as Record<string, unknown>[]) ?? [];
     const meta = (doc["metadata"] as Record<string, unknown>) ?? {};
     const serial = (doc["serialNumber"] as string) ?? "";
@@ -119,6 +140,7 @@ export class CycloneDxImporter {
         detail: `SBOM component inventory ingested from ${tool}. ${summaryParts.join(", ")}.`,
         evidenceData: {
           source_tool: tool,
+          source_provenance: provenance,
           spec_version: specVersion,
           serial_number: serial,
           component_count: components.length,
@@ -156,9 +178,11 @@ export class CycloneDxImporter {
 
   private _buildVulnResult(
     doc: Record<string, unknown>,
-    vuln: Record<string, unknown>
+    vuln: Record<string, unknown>,
+    fileSha256?: string,
   ): EvaluationResult {
     const tool = sourceTool(doc);
+    const provenance = sourceProvenance(doc, fileSha256);
     const vulnId = (vuln["id"] as string) ?? "UNKNOWN";
     const description = (vuln["description"] as string) ?? "";
     const cwes = extractCwes(vuln);
@@ -190,6 +214,7 @@ export class CycloneDxImporter {
           score,
           cwes,
           source_tool: tool,
+          source_provenance: provenance,
           affects: affects.map((a) => ({
             ref: (a["ref"] as string) ?? "",
             versions: (a["versions"] as unknown[]) ?? [],

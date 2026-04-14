@@ -4,10 +4,10 @@
  */
 
 import { describe, it, expect, afterEach } from "vitest";
-import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import { EvidenceStore } from "../src/ancilis/evidence/store.js";
@@ -18,6 +18,7 @@ import {
   runEvidenceSessions,
   runEvidenceReset,
   runEvidenceImport,
+  runEvidenceVerify,
 } from "../src/ancilis/cli/evidence.js";
 import { runCli } from "../src/cli.js";
 
@@ -34,6 +35,10 @@ function tmpDir(): string {
   const dir = join(tmpdir(), `ancilis-evidence-cli-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   return dir;
+}
+
+function fileSha256(path: string): string {
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
 
 function writeConfig(dir: string, extra: Record<string, unknown> = {}): string {
@@ -93,6 +98,69 @@ async function populateStore(dbPath: string, configPath: string, count = 3): Pro
   }
   await store.close();
 }
+
+// ---------------------------------------------------------------------------
+// runEvidenceVerify
+// ---------------------------------------------------------------------------
+
+describe("evidence verify", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (existsSync(dir)) rmSync(dir, { recursive: true });
+  });
+
+  it("returns valid JSON output for an intact evidence chain", async () => {
+    dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const dbPath = join(dir, "ev.duckdb");
+    await populateStore(dbPath, configPath, 3);
+
+    const result = await runEvidenceVerify({ configPath, dbPath, json: true });
+    const parsed = JSON.parse(result.output);
+
+    expect(result.ok).toBe(true);
+    expect(parsed).toMatchObject({
+      valid: true,
+      record_count: 3,
+      session_id: null,
+      errors: [],
+    });
+  });
+
+  it("returns non-ok output for a tampered evidence chain", async () => {
+    dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const dbPath = join(dir, "ev.duckdb");
+    await populateStore(dbPath, configPath, 1);
+
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await store.run("UPDATE evidence_records SET tool_name = 'tampered'");
+    await store.close();
+
+    const result = await runEvidenceVerify({ configPath, dbPath });
+
+    expect(result.ok).toBe(false);
+    expect(result.output).toContain("Evidence chain broken");
+    expect(result.output).toContain("hash mismatch");
+  });
+
+  it("handleEvidence routes to verify subcommand", async () => {
+    dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const dbPath = join(dir, "ev.duckdb");
+    await populateStore(dbPath, configPath, 2);
+    const { io, stdout } = captureIo();
+
+    const code = await handleEvidence(["verify", "--config", configPath, "--db", dbPath, "--json"], io);
+    const parsed = JSON.parse(stdout());
+
+    expect(code).toBe(0);
+    expect(parsed.valid).toBe(true);
+    expect(parsed.record_count).toBe(2);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // runEvidenceSessions
@@ -263,6 +331,31 @@ describe("evidence import", () => {
     expect(result.output).toMatch(/Imported \d+ evidence record/);
   });
 
+  it("imports SARIF source provenance into hash-covered evidence data", async () => {
+    dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const dbPath = join(dir, "ev.duckdb");
+    const { io } = captureIo();
+
+    const result = await runEvidenceImport(
+      { file: SARIF_FIXTURE, configPath, dbPath },
+      io,
+    );
+
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    const records = await store.getRecords({ limit: null });
+    await store.close();
+
+    expect(result.ok).toBe(true);
+    expect(records[0]?.controlResults[0]?.evidence_data).toMatchObject({
+      source_provenance: {
+        source_format: "sarif",
+        original_file_sha256: fileSha256(SARIF_FIXTURE),
+      },
+    });
+  });
+
   it("imports SARIF file with explicit --format sarif", async () => {
     dir = tmpDir();
     const configPath = writeConfig(dir);
@@ -289,6 +382,31 @@ describe("evidence import", () => {
     );
     expect(result.ok).toBe(true);
     expect(result.output).toContain("CYCLONEDX");
+  });
+
+  it("imports CycloneDX source provenance into hash-covered evidence data", async () => {
+    dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const dbPath = join(dir, "ev.duckdb");
+    const { io } = captureIo();
+
+    const result = await runEvidenceImport(
+      { file: CDX_FIXTURE, configPath, dbPath },
+      io,
+    );
+
+    const config = loadConfig({ path: configPath });
+    const store = new EvidenceStore(config, { dbPath });
+    const records = await store.getRecords({ limit: null });
+    await store.close();
+
+    expect(result.ok).toBe(true);
+    expect(records[0]?.controlResults[0]?.evidence_data).toMatchObject({
+      source_provenance: {
+        source_format: "cyclonedx",
+        original_file_sha256: fileSha256(CDX_FIXTURE),
+      },
+    });
   });
 
   it("imports CycloneDX file with explicit --format cyclonedx", async () => {
@@ -468,5 +586,24 @@ describe("runCli evidence integration", () => {
     const code = await runCli(["evidence", "import", SARIF_FIXTURE, "--config", configPath, "--db", dbPath], io);
     expect(code).toBe(0);
     expect(out.join("")).toMatch(/Imported \d+ evidence record/);
+  });
+
+  it("evidence verify via runCli", async () => {
+    dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const dbPath = join(dir, "ev.duckdb");
+    await populateStore(dbPath, configPath, 2);
+
+    const out: string[] = [];
+    const err: string[] = [];
+    const io = { stdout: (m: string) => out.push(m), stderr: (m: string) => err.push(m) };
+
+    const code = await runCli(["evidence", "verify", "--config", configPath, "--db", dbPath, "--json"], io);
+    const parsed = JSON.parse(out.join(""));
+
+    expect(code).toBe(0);
+    expect(parsed.valid).toBe(true);
+    expect(parsed.record_count).toBe(2);
+    expect(err.join("")).toBe("");
   });
 });

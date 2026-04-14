@@ -14,6 +14,7 @@ const EXPORT_FIELDNAMES = [
   "evaluation_id",
   "timestamp",
   "agent_id",
+  "session_id",
   "source_type",
   "tool_name",
   "decision",
@@ -26,6 +27,10 @@ const EXPORT_FIELDNAMES = [
   "previous_hash",
   "total_duration_ms",
   "output_summary",
+  "tenant_id",
+  "detected_data_types",
+  "sdk_version",
+  "classification_context",
 ] as const;
 
 function shortDate(iso: string): string {
@@ -445,6 +450,7 @@ function exportRecord(record: EvidenceRecord): Record<(typeof EXPORT_FIELDNAMES)
     evaluation_id: record.evaluationId,
     timestamp: record.timestamp,
     agent_id: record.agentId,
+    session_id: record.sessionId ?? null,
     source_type: record.sourceType,
     tool_name: record.toolName,
     decision: record.decision,
@@ -457,6 +463,10 @@ function exportRecord(record: EvidenceRecord): Record<(typeof EXPORT_FIELDNAMES)
     previous_hash: record.previousHash,
     total_duration_ms: record.totalDurationMs,
     output_summary: record.outputSummary ?? null,
+    tenant_id: record.tenantId ?? null,
+    detected_data_types: record.detectedDataTypes ?? [],
+    sdk_version: record.sdkVersion ?? null,
+    classification_context: record.classificationContext ?? {},
   };
 }
 
@@ -533,7 +543,67 @@ function findingProps(row: Record<string, unknown>): Array<{ name: string; value
     }));
 }
 
+function evidenceAssessmentState(result: unknown): string {
+  switch (String(result ?? "SKIP").toUpperCase()) {
+    case "PASS":
+      return "satisfied";
+    case "SKIP":
+      return "not-applicable";
+    default:
+      return "not-satisfied";
+  }
+}
+
+function evidenceProps(record: EvidenceRecord, controlResult: Record<string, unknown>): Array<{ name: string; value: string }> {
+  const props = [
+    { name: "aksi-control-id", value: String(controlResult.control_id ?? "") },
+    { name: "evidence-record-id", value: record.recordId },
+    { name: "evidence-record-hash", value: record.recordHash },
+    { name: "evidence-previous-hash", value: record.previousHash },
+    { name: "assessment-state", value: evidenceAssessmentState(controlResult.result) },
+  ];
+  if (record.sessionId !== null && record.sessionId !== undefined) {
+    props.push({ name: "evidence-session-id", value: record.sessionId });
+  }
+  if (record.tenantId !== null && record.tenantId !== undefined) {
+    props.push({ name: "evidence-tenant-id", value: record.tenantId });
+  }
+  if ((record.detectedDataTypes ?? []).length > 0) {
+    props.push({ name: "detected-data-types", value: canonicalJsonStringify(record.detectedDataTypes ?? []) });
+  }
+  if (record.sdkVersion !== null && record.sdkVersion !== undefined) {
+    props.push({ name: "sdk-version", value: record.sdkVersion });
+  }
+  if (record.classificationContext && Object.keys(record.classificationContext).length > 0) {
+    props.push({ name: "classification-context", value: canonicalJsonStringify(record.classificationContext) });
+  }
+  return props;
+}
+
+function evidenceObservations(records: EvidenceRecord[]): Array<Record<string, unknown>> {
+  return records.flatMap((record) =>
+    record.controlResults.map((controlResult, index) => {
+      const controlId = String(controlResult.control_id ?? `control-${index}`);
+      return {
+        uuid: stableId(record.recordId, controlId, String(index), "observation"),
+        title: `${controlId} runtime evidence`,
+        description: String(controlResult.detail ?? controlResult.control_name ?? controlId),
+        methods: ["TEST"],
+        collected: record.timestamp,
+        props: evidenceProps(record, controlResult),
+        "relevant-evidence": [
+          {
+            href: `#evidence-${record.recordId}`,
+            description: `Ancilis evidence record ${record.recordId}`,
+          },
+        ],
+      };
+    }),
+  );
+}
+
 export function renderOscalJson(data: ReportData): string {
+  const observations = evidenceObservations(data.evidenceRecords ?? []);
   const findings = reportRows(data)
     .filter((row) => row.recordType !== "report")
     .map((row, index) => {
@@ -574,6 +644,7 @@ export function renderOscalJson(data: ReportData): string {
             description: `Ancilis ${data.mode} posture report exported in OSCAL-compatible JSON.`,
             start: data.periodStart,
             end: data.periodEnd,
+            observations,
             findings,
           },
         ],

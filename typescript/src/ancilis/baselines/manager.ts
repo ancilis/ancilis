@@ -10,6 +10,7 @@
 import { randomUUID } from "node:crypto";
 import type { EvidenceStore } from "../evidence/store.js";
 import type { ResolvedConfig } from "../config/index.js";
+import { normalizeOverlayId } from "../overlays/index.js";
 import { computeControlStats, DriftDetector, dominantResult, passRate } from "./drift.js";
 import type { Baseline, ControlSnapshot, DriftReport } from "./models.js";
 
@@ -106,7 +107,8 @@ export class BaselineManager {
     metadata?: Record<string, unknown>;
   }): Promise<Baseline> {
     await this.ensureTable();
-    const { label, overlayId, evidenceWindowHours = 168, metadata } = options;
+    const { label, evidenceWindowHours = 168, metadata } = options;
+    const overlayId = options.overlayId === undefined ? undefined : normalizeOverlayId(options.overlayId);
     const agentId = this.agentId;
     const now = new Date();
     const windowStart = new Date(now.getTime() - evidenceWindowHours * 3600 * 1000).toISOString();
@@ -186,6 +188,7 @@ export class BaselineManager {
 
   async listBaselines(overlayId?: string): Promise<Baseline[]> {
     await this.ensureTable();
+    const normalizedOverlayId = overlayId === undefined ? undefined : normalizeOverlayId(overlayId);
     const agentId = this.agentId;
     const conditions: string[] = ["agent_id = ?"];
     const params: unknown[] = [agentId];
@@ -194,9 +197,9 @@ export class BaselineManager {
       conditions.push("tenant_id = ?");
       params.push(this._tenantId);
     }
-    if (overlayId !== undefined) {
+    if (normalizedOverlayId !== undefined) {
       conditions.push("overlay_id = ?");
-      params.push(overlayId);
+      params.push(normalizedOverlayId);
     }
 
     const where = ` WHERE ${conditions.join(" AND ")}`;
@@ -221,6 +224,7 @@ export class BaselineManager {
   async checkDrift(options?: { baselineId?: string; overlayId?: string }): Promise<DriftReport> {
     await this.ensureTable();
     const agentId = this.agentId;
+    const overlayId = options?.overlayId === undefined ? undefined : normalizeOverlayId(options.overlayId);
     let baseline: Baseline;
 
     if (options?.baselineId) {
@@ -232,9 +236,9 @@ export class BaselineManager {
         conditions.push("tenant_id = ?");
         params.push(this._tenantId);
       }
-      if (options?.overlayId !== undefined) {
+      if (overlayId !== undefined) {
         conditions.push("overlay_id = ?");
-        params.push(options.overlayId);
+        params.push(overlayId);
       }
       const where = ` WHERE ${conditions.join(" AND ")}`;
       const rows = await this._store.query(

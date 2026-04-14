@@ -516,7 +516,9 @@ describe("ToolActionProducer", () => {
     );
 
     expect(await store.count()).toBe(1);
-    expect((await store.getRecords())[0]?.toolName).toBe("tool:payments.refund");
+    const record = (await store.getRecords())[0];
+    expect(record?.toolName).toBe("tool:payments.refund");
+    expect(record?.sessionId).toBe(producer.sessionId);
   });
 
   it("awaits async tool return values before returning execution results", async () => {

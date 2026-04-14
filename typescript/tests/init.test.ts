@@ -161,6 +161,19 @@ describe("runInit non-interactive", () => {
     expect(yaml).toMatch(/mode: audit/);
   });
 
+  it("writes the canonical NIST CSF overlay when given the nist-csf-2 alias", async () => {
+    const { io } = captureIo();
+    const result = await runInit(
+      { framework: "generic", overlay: "nist-csf-2", agentName: "my-agent", detect: true, noSample: true, dir },
+      io,
+    );
+
+    expect(result.ok).toBe(true);
+    const yaml = readFileSync(join(dir, "ancilis.yaml"), "utf-8");
+    expect(yaml).toMatch(/- nist-csf\s+# Compliance framework/);
+    expect(yaml).not.toContain("nist-csf-2");
+  });
+
   it("creates .env.example", async () => {
     const { io } = captureIo();
     await runInit({ framework: "generic", overlay: "gdpr", detect: true, noSample: true, dir }, io);

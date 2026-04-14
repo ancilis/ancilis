@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { generateAncilisYaml } from "./templates/ancilis-yaml.js";
 import { getScanScript } from "./templates/scan-scripts.js";
+import { normalizeOverlayId } from "../overlays/index.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -223,6 +224,7 @@ export async function runInit(
         overlay = "soc2";
       }
     }
+    overlay = normalizeOverlayId(overlay);
 
     // 3. Agent name
     let agentName = options.agentName;

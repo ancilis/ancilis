@@ -3,6 +3,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
+import type { EvidenceRecord } from "../evidence/record.js";
 import { ClassificationAdvisory } from "../activation/advisory.js";
 import { sharedPathFrom } from "../shared-path.js";
 
@@ -55,6 +56,7 @@ export interface ReportData {
   complianceSections: Record<string, unknown>[];
   certification: Record<string, unknown> | null;
   advisory: Record<string, unknown> | null;
+  evidenceRecords?: EvidenceRecord[];
   totalEvaluations: number;
   chainValid: boolean;
   chainErrors: string[];
