@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ancilis.activation.loader import load_overlay_profiles, load_taxonomy
+from ancilis.overlays import normalize_overlay_ids
 
 
 @dataclass
@@ -153,7 +154,9 @@ class ClassificationAdvisory:
 
         classification_lookup: dict[str, list[str]] = {}
         for entry in self._taxonomy.get("classifications", []):
-            classification_lookup[entry["code"]] = entry.get("overlays", [])
+            classification_lookup[entry["code"]] = normalize_overlay_ids(
+                entry.get("overlays", [])
+            )
 
         overlays: list[str] = []
         for dc_code in dc_codes:

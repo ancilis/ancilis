@@ -13,6 +13,7 @@ import click
 
 from ancilis.cli.templates.ancilis_yaml import generate_ancilis_yaml
 from ancilis.cli.templates.scan_scripts import get_scan_script
+from ancilis.overlays import normalize_overlay_id
 
 # ---------------------------------------------------------------------------
 # Framework detection
@@ -265,6 +266,7 @@ def init(
     # 3. Overlay selection
     if overlay is None:
         overlay = _prompt_overlay_selection()
+    overlay = normalize_overlay_id(overlay)
 
     # 4. Agent name
     if agent_name is None:

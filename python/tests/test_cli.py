@@ -344,6 +344,16 @@ class TestConfigValidate:
         assert result.exit_code == 0
         assert "CMMC Level 2" in result.output
 
+    def test_nist_csf_2_overlay_alias_validates_as_nist_csf(self, tmp_path: Path) -> None:
+        data = _minimal_config()
+        data["compliance"] = {"overlays": ["nist-csf-2"]}
+        cfg = _make_config_file(data, tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
+        assert result.exit_code == 0
+        assert "NIST Cybersecurity Framework 2.0" in result.output
+        assert "nist-csf-2" not in result.output
+
 
 # ===== Status Tests =====
 
@@ -905,6 +915,24 @@ class TestReportCompliance:
 
         assert "Compliance Posture" in md
         assert "Citation" in md  # Table header
+        store.close()
+
+    def test_report_uses_canonical_nist_csf_section_for_alias(self, tmp_path: Path) -> None:
+        data = _minimal_config()
+        data["compliance"] = {"overlays": ["nist-csf", "nist-csf-2"]}
+        config = load_config(raw=data)
+        store = EvidenceStore(config, db_path=str(tmp_path / "ev.db"))
+
+        gen = ReportGenerator(config, store)
+        report = gen.generate()
+
+        nist_sections = [
+            section
+            for section in report.compliance_sections
+            if section["overlay_name"] == "NIST Cybersecurity Framework 2.0"
+        ]
+        assert [section["overlay_id"] for section in nist_sections] == ["nist-csf"]
+        assert "nist-csf-2" not in [section["overlay_id"] for section in report.compliance_sections]
         store.close()
 
 

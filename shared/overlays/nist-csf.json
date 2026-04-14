@@ -1,7 +1,7 @@
 {
   "id": "nist-csf",
   "name": "NIST Cybersecurity Framework 2.0",
-  "version": "2.1",
+  "version": "2.0",
   "trigger_type": "baseline",
   "triggered_by": [
     "*"

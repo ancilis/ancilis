@@ -12,6 +12,7 @@ from ancilis.activation.loader import (
     load_overlay_profiles,
     load_taxonomy,
 )
+from ancilis.overlays import normalize_overlay_ids
 
 logger = logging.getLogger("ancilis.activation")
 
@@ -94,7 +95,9 @@ class ActivationResolver:
         # Build DC code → overlay lookup
         classification_lookup: dict[str, list[str]] = {}
         for entry in self._taxonomy.get("classifications", []):
-            classification_lookup[entry["code"]] = entry.get("overlays", [])
+            classification_lookup[entry["code"]] = normalize_overlay_ids(
+                entry.get("overlays", [])
+            )
 
         all_dc_codes: set[str] = set()
         for data_type in my_agent_handles:
