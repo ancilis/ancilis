@@ -12,11 +12,11 @@ from typing import TYPE_CHECKING, Any, cast
 from jsonschema import Draft7Validator  # type: ignore[import-untyped]
 
 from ancilis._shared import shared_path
-from ancilis.engine.action import Action
-from ancilis.engine.result import ControlResult
 
 if TYPE_CHECKING:
     from ancilis.config import ResolvedConfig
+    from ancilis.engine.action import Action
+    from ancilis.engine.result import ControlResult
 
 
 SUPPORTED_EVALUATOR_TYPES = {"regex", "manual"}
@@ -100,11 +100,11 @@ def register_control(
 ) -> CustomControlDefinition:
     """Register a schema-valid custom control in the process-local registry."""
     if isinstance(custom_control, CustomControlDefinition):
-        definition = custom_control
+        data = _definition_to_mapping(custom_control)
     else:
         data = dict(custom_control)
-        _validate_definition(data)
-        definition = CustomControlDefinition.from_mapping(data)
+    _validate_definition(data)
+    definition = CustomControlDefinition.from_mapping(data)
 
     if definition.evaluator_type not in SUPPORTED_EVALUATOR_TYPES:
         raise ValueError(f"unsupported evaluator_type '{definition.evaluator_type}'")
@@ -114,6 +114,33 @@ def register_control(
 
     _CUSTOM_CONTROLS[definition.id] = definition
     return definition
+
+
+def _definition_to_mapping(definition: CustomControlDefinition) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "id": definition.id,
+        "title": definition.title,
+        "description": definition.description,
+        "category": definition.category,
+        "severity": definition.severity,
+        "evaluator_type": definition.evaluator_type,
+        "evaluator": dict(definition.evaluator),
+    }
+    if definition.version is not None:
+        data["version"] = definition.version
+    if definition.owner is not None:
+        data["owner"] = definition.owner
+    if definition.framework_references:
+        data["framework_references"] = list(definition.framework_references)
+    if definition.overlay_ids:
+        data["overlay_ids"] = list(definition.overlay_ids)
+    if definition.tags:
+        data["tags"] = list(definition.tags)
+    if definition.evidence_selectors:
+        data["evidence_selectors"] = list(definition.evidence_selectors)
+    if definition.remediation is not None:
+        data["remediation"] = definition.remediation
+    return data
 
 
 def list_custom_controls() -> dict[str, CustomControlDefinition]:
@@ -166,6 +193,8 @@ class CustomControlEvaluator:
         elif self.definition.evaluator_type == "manual":
             result = self._evaluate_manual(action)
         else:
+            from ancilis.engine.result import ControlResult
+
             result = ControlResult(
                 control_id=self.control_id,
                 control_name=self.control_name,
@@ -250,6 +279,8 @@ class CustomControlEvaluator:
     ) -> ControlResult:
         if self.definition.remediation:
             evidence_data["remediation"] = self.definition.remediation
+        from ancilis.engine.result import ControlResult
+
         return ControlResult(
             control_id=self.control_id,
             control_name=self.control_name,

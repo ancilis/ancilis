@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -12,6 +12,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from ancilis._shared import shared_path
 from ancilis.errors import config_invalid
 from ancilis.overlays import normalize_overlay_ids
+
+if TYPE_CHECKING:
+    from ancilis.controls.custom import CustomControlDefinition
 
 # Resolve shared/ directory from packaged assets
 SHARED_DIR = shared_path()
@@ -243,7 +246,7 @@ class ResolvedConfig:
         self.active_certifications: list[str] = []
         self.llm_provider: str | None = None
         self.control_activation_sources: dict[str, set[str]] = {}
-        self.custom_controls: dict[str, Any] = {}
+        self.custom_controls: dict[str, CustomControlDefinition] = {}
         # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
         self.overlay_requirements: dict[str, dict[str, Any]] = {}
         # Dependency scan config
@@ -273,8 +276,18 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     if isinstance(security, dict):
         controls = security.get("controls", {})
         if isinstance(controls, dict):
+            custom_control_ids: set[str] | None = None
             for key in controls:
-                if key not in VALID_CONTROL_IDS and not key.startswith("custom:"):
+                if key.startswith("custom:"):
+                    if custom_control_ids is None:
+                        from ancilis.controls.custom import list_custom_controls
+
+                        custom_control_ids = set(list_custom_controls())
+                    if key not in custom_control_ids:
+                        raise config_invalid(
+                            f"Unknown custom control ID in security.controls: '{key}'"
+                        )
+                elif key not in VALID_CONTROL_IDS:
                     raise config_invalid(f"Unknown control ID in security.controls: '{key}'")
 
     # Validate my_agent_handles types
@@ -472,9 +485,13 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
         for cid in spec.active_controls:
             if cid in result.controls:
                 result.controls[cid].enabled = True
-                source = spec.activation_source.get(cid)
-                if source and source.startswith(CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX):
-                    result.control_activation_sources.setdefault(cid, set()).add(source)
+                activation_source = spec.activation_source.get(cid)
+                if activation_source and activation_source.startswith(
+                    CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX
+                ):
+                    result.control_activation_sources.setdefault(cid, set()).add(
+                        activation_source
+                    )
             # Apply stricter thresholds from certification profiles
             threshold = spec.control_thresholds.get(cid, "standard")
             if threshold == "strict" and cid in result.controls:
