@@ -6,10 +6,20 @@ from ancilis.adapters.bedrock import (
     BedrockInvocation,
     BedrockObservation,
 )
+from ancilis.adapters.vertex_ai import (
+    VertexAIActionProducer,
+    VertexAIAdapter,
+    VertexAIInvocation,
+    VertexAIObservation,
+)
 
 __all__ = [
     "BedrockActionProducer",
     "BedrockAdapter",
     "BedrockInvocation",
     "BedrockObservation",
+    "VertexAIActionProducer",
+    "VertexAIAdapter",
+    "VertexAIInvocation",
+    "VertexAIObservation",
 ]
