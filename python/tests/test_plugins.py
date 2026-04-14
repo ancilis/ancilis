@@ -9,7 +9,7 @@ from typing import Any
 from click.testing import CliRunner
 
 from ancilis.cli.main import cli
-from ancilis.plugins import PluginMetadata, PluginRegistry
+from ancilis.plugins import PluginContext, PluginMetadata, PluginRegistry
 
 
 @dataclass(frozen=True)
@@ -79,6 +79,13 @@ def _patch_entry_points(monkeypatch: Any, entries: list[FakeEntryPoint]) -> None
     import importlib.metadata
 
     monkeypatch.setattr(importlib.metadata, "entry_points", lambda: FakeEntryPoints(entries))
+
+
+def test_plugin_context_defaults_to_immutable_empty_config() -> None:
+    context = PluginContext(sdk_version="0.1.0")
+
+    assert dict(context.config) == {}
+    assert type(context.config).__name__ == "mappingproxy"
 
 
 def test_registry_discovers_good_plugins_for_all_entry_point_groups(monkeypatch: Any) -> None:
@@ -154,6 +161,51 @@ def test_registry_skips_broken_missing_metadata_and_incompatible_plugins(
     assert "Skipping Ancilis plugin broken" in caplog.text
     assert "Skipping Ancilis plugin missing" in caplog.text
     assert "Skipping Ancilis plugin future-producer" in caplog.text
+
+
+def test_registry_skips_metadata_accessor_and_factory_failures(
+    monkeypatch: Any,
+    caplog: Any,
+) -> None:
+    class MetadataRaisesPlugin:
+        @property
+        def metadata(self) -> PluginMetadata:
+            raise RuntimeError("metadata boom")
+
+    def factory_raises() -> Any:
+        raise RuntimeError("factory boom")
+
+    caplog.set_level(logging.WARNING)
+    _patch_entry_points(
+        monkeypatch,
+        [
+            FakeEntryPoint(
+                "metadata-raises",
+                "ancilis.producers",
+                "fake_plugin:metadata_raises",
+                loaded=MetadataRaisesPlugin,
+            ),
+            FakeEntryPoint(
+                "factory-raises",
+                "ancilis.producers",
+                "fake_plugin:factory_raises",
+                loaded=factory_raises,
+            ),
+        ],
+    )
+
+    registry = PluginRegistry.discover(sdk_version="0.1.0")
+
+    assert [record.name for record in registry.skipped()] == [
+        "metadata-raises",
+        "factory-raises",
+    ]
+    assert [record.skip_reason for record in registry.skipped()] == [
+        "failed to read plugin metadata: metadata boom",
+        "failed to load entry point: factory boom",
+    ]
+    assert "Skipping Ancilis plugin metadata-raises" in caplog.text
+    assert "Skipping Ancilis plugin factory-raises" in caplog.text
 
 
 def test_plugins_list_cli_shows_compatibility_and_skip_reason(monkeypatch: Any) -> None:

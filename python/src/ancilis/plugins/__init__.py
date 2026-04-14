@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib.metadata
 import logging
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any, Literal, Protocol, runtime_checkable
 
@@ -42,7 +42,7 @@ class PluginContext:
     """Read-only context passed to plugin hook construction."""
 
     sdk_version: str
-    config: Mapping[str, Any] = MappingProxyType({})
+    config: Mapping[str, Any] = field(default_factory=lambda: MappingProxyType({}))
 
 
 @runtime_checkable
@@ -157,7 +157,17 @@ class PluginRegistry:
                 f"failed to load entry point: {exc}",
             )
 
-        metadata = _plugin_metadata(plugin)
+        try:
+            metadata = _plugin_metadata(plugin)
+        except Exception as exc:
+            return _skipped_record(
+                entry_point,
+                entry_point_group,
+                expected_type,
+                package_name,
+                f"failed to read plugin metadata: {exc}",
+                plugin=plugin,
+            )
         if metadata is None:
             return _skipped_record(
                 entry_point,
