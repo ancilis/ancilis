@@ -10,6 +10,7 @@ Producers translate protocol-specific invocations into Action objects that the e
 | `AncilisMiddleware` | MCP client sessions | Wrapping MCP tool calls |
 | `CLIActionProducer` | Shell commands | Wrapping subprocess execution |
 | `HTTPActionProducer` | HTTP requests | Wrapping explicit HTTP/API calls |
+| `BedrockActionProducer` | AWS Bedrock Runtime envelopes | Normalizing boto3-style Bedrock calls |
 
 ## ToolActionProducer
 
@@ -184,6 +185,34 @@ print(result.evaluation.decision)
 With `enforce=True`, requests that fail policy evaluation raise `BlockedActionError` before the HTTP call is made.
 
 No dependencies beyond `pip install ancilis`. Works with any HTTP library (`requests`, `httpx`, `aiohttp`) — you pass the transport function.
+
+## BedrockActionProducer
+
+Normalizes AWS Bedrock Runtime invocation envelopes into framework-sourced Actions. The adapter accepts plain dictionaries or `BedrockInvocation` objects, so importing `ancilis` and constructing other SDK components does not require `boto3` or `botocore`.
+
+```python
+from ancilis import BedrockActionProducer, BedrockInvocation, load_config
+from ancilis.engine import Engine
+
+config = load_config()
+engine = Engine(config)
+producer = BedrockActionProducer(config=config, engine=engine)
+
+observation = producer.observe(
+    BedrockInvocation(
+        operation="InvokeModel",
+        model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",
+        region="us-east-1",
+        response_body={"usage": {"input_tokens": 12, "output_tokens": 34}},
+        request_id="req-123",
+        latency_ms=87.5,
+    )
+)
+
+print(observation.evaluation.decision)
+```
+
+The recorded Action includes provider, operation, model id, region, request id, latency, token counts when inferable, and deployment metadata for Bedrock model ids or inference-profile ARNs. Request bodies, response bodies, streamed text chunks, access keys, session tokens, authorization headers, signed headers, and canonical request material are not persisted in the Action payload.
 
 ## Common patterns
 

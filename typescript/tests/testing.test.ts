@@ -1,28 +1,420 @@
-/**
- * Tests for @ancilis/testing — MockEvidenceStore, FakeProducer, matchers, and scenarios.
- */
-
-import { describe, it, expect, beforeEach } from "vitest";
-import { MockEvidenceStore } from "../src/ancilis/testing/mock-evidence-store.js";
-import { FakeProducer } from "../src/ancilis/testing/fake-producer.js";
-import { ComplianceScenarios } from "../src/ancilis/testing/scenarios.js";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
-  AssertionError,
-  expectControlToPass,
-  expectControlToFail,
-  expectControlToSkip,
-  expectDecisionToBe,
-  expectAllowed,
-  expectBlocked,
-  expectPostureAbove,
-  expectAllPassed,
-  setupAncilisMatchers,
-} from "../src/ancilis/testing/matchers.js";
-import { loadConfig } from "../src/ancilis/config/index.js";
-import { GENESIS_SEED } from "../src/ancilis/evidence/chain.js";
+  MockEvidenceStore,
+  FakeProducer,
+  ScanResult,
+  ComplianceScenarios,
+  assertControlPasses,
+  assertControlFails,
+  assertControlFlags,
+  assertPostureAbove,
+  assertDecisionAllows,
+  assertDecisionBlocks,
+  makeTestConfig,
+  makeAction,
+} from "../src/ancilis/testing/index.js";
+import type { EvaluationResult, ControlResult } from "../src/ancilis/engine/result.js";
+import { Engine } from "../src/ancilis/engine/index.js";
 
-// Register custom matchers for expect().toPassControl() etc.
-setupAncilisMatchers(expect);
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+
+function makePassResult(controlId: string): ControlResult {
+  return {
+    controlId,
+    controlName: controlId,
+    result: "PASS",
+    detail: "ok",
+    evidenceData: {},
+    durationMs: 0,
+  };
+}
+
+function makeFailResult(controlId: string): ControlResult {
+  return {
+    controlId,
+    controlName: controlId,
+    result: "FAIL",
+    detail: "failed",
+    evidenceData: {},
+    durationMs: 0,
+  };
+}
+
+function makeFlagResult(controlId: string): ControlResult {
+  return {
+    controlId,
+    controlName: controlId,
+    result: "FLAG",
+    detail: "flagged",
+    evidenceData: {},
+    durationMs: 0,
+  };
+}
+
+function makeSkipResult(controlId: string): ControlResult {
+  return {
+    controlId,
+    controlName: controlId,
+    result: "SKIP",
+    detail: "skipped",
+    evidenceData: {},
+    durationMs: 0,
+  };
+}
+
+function makeEvalResult(controlResults: ControlResult[], decision: "ALLOW" | "BLOCK" = "ALLOW"): EvaluationResult {
+  return {
+    evaluationId: "test-eval-id",
+    actionId: "test-action-id",
+    timestamp: new Date().toISOString(),
+    agentId: "test-agent",
+    sourceType: "agent",
+    mode: "audit",
+    controlResults,
+    decision,
+    decisionReason: "test",
+    activeOverlays: [],
+    dataClassifications: [],
+    totalDurationMs: 0,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// makeTestConfig
+// ---------------------------------------------------------------------------
+
+describe("makeTestConfig", () => {
+  it("creates config with default agent name", () => {
+    const config = makeTestConfig();
+    expect(config.agentName).toBe("test-agent");
+    expect(config.mode).toBe("audit");
+  });
+
+  it("creates config with custom agent name and mode", () => {
+    const config = makeTestConfig({ agentName: "my-agent", mode: "enforce" });
+    expect(config.agentName).toBe("my-agent");
+    expect(config.mode).toBe("enforce");
+  });
+
+  it("accepts overlay option without throwing", () => {
+    // Overlay may require data classifications to activate; test config creation succeeds
+    expect(() => makeTestConfig({ overlay: "soc2" })).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// makeAction
+// ---------------------------------------------------------------------------
+
+describe("makeAction", () => {
+  it("creates action with default values", () => {
+    const action = makeAction();
+    expect(action.tool.name).toBe("test_tool");
+    expect(action.agentId).toBe("test-agent");
+    expect(action.actionType).toBe("tool_call");
+    expect(action.actionId).toBeTruthy();
+    expect(action.parameters.parameterHash).toBeTruthy();
+  });
+
+  it("creates action with custom tool and agent", () => {
+    const action = makeAction({ toolName: "my_tool", agentId: "agent-42" });
+    expect(action.tool.name).toBe("my_tool");
+    expect(action.agentId).toBe("agent-42");
+  });
+
+  it("includes parameters in action", () => {
+    const action = makeAction({ parameters: { key: "value" } });
+    expect(action.parameters.raw).toEqual({ key: "value" });
+  });
+
+  it("includes session and classifications in context", () => {
+    const action = makeAction({ sessionId: "s-1", dataClassifications: ["DC-01"] });
+    expect(action.context?.sessionId).toBe("s-1");
+    expect(action.context?.dataClassifications).toContain("DC-01");
+  });
+
+  it("each call generates a unique actionId", () => {
+    const a1 = makeAction();
+    const a2 = makeAction();
+    expect(a1.actionId).not.toBe(a2.actionId);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ScanResult
+// ---------------------------------------------------------------------------
+
+describe("ScanResult", () => {
+  it("computes score correctly with all PASS", () => {
+    const eval1 = makeEvalResult([makePassResult("PR-01"), makePassResult("PR-02")]);
+    const scan = new ScanResult([eval1]);
+    expect(scan.score).toBe(1.0);
+  });
+
+  it("computes score correctly with mixed results", () => {
+    const eval1 = makeEvalResult([makePassResult("PR-01"), makeFailResult("PR-02")]);
+    const scan = new ScanResult([eval1]);
+    expect(scan.score).toBeCloseTo(0.5);
+  });
+
+  it("excludes SKIP from score denominator", () => {
+    const eval1 = makeEvalResult([makePassResult("PR-01"), makeSkipResult("PR-02")]);
+    const scan = new ScanResult([eval1]);
+    expect(scan.score).toBe(1.0);
+  });
+
+  it("returns 1.0 score when all results are SKIP", () => {
+    const eval1 = makeEvalResult([makeSkipResult("PR-01"), makeSkipResult("PR-02")]);
+    const scan = new ScanResult([eval1]);
+    expect(scan.score).toBe(1.0);
+  });
+
+  it("getControlResult returns the result for a control", () => {
+    const eval1 = makeEvalResult([makePassResult("PR-01")]);
+    const scan = new ScanResult([eval1]);
+    const cr = scan.getControlResult("PR-01");
+    expect(cr?.result).toBe("PASS");
+  });
+
+  it("getControlResult returns undefined for unknown control", () => {
+    const eval1 = makeEvalResult([makePassResult("PR-01")]);
+    const scan = new ScanResult([eval1]);
+    expect(scan.getControlResult("PR-99")).toBeUndefined();
+  });
+
+  it("decision returns the decision from the last evaluation", () => {
+    const eval1 = makeEvalResult([makePassResult("PR-01")], "ALLOW");
+    const eval2 = makeEvalResult([makePassResult("PR-01")], "BLOCK");
+    const scan = new ScanResult([eval1, eval2]);
+    expect(scan.decision()).toBe("BLOCK");
+  });
+
+  it("throws when constructed with empty array", () => {
+    expect(() => new ScanResult([])).toThrow();
+  });
+
+  it("fromSingle wraps a single evaluation", () => {
+    const ev = makeEvalResult([makePassResult("PR-01")]);
+    const scan = ScanResult.fromSingle(ev);
+    expect(scan.evaluations.length).toBe(1);
+  });
+
+  it("FLAGS count against score", () => {
+    const eval1 = makeEvalResult([makePassResult("PR-01"), makeFlagResult("DE-01")]);
+    const scan = new ScanResult([eval1]);
+    expect(scan.score).toBeCloseTo(0.5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Assertion helpers
+// ---------------------------------------------------------------------------
+
+describe("assertControlPasses", () => {
+  it("passes when control is PASS", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01")])]);
+    expect(() => assertControlPasses(scan, "PR-01")).not.toThrow();
+  });
+
+  it("throws when control is FAIL", () => {
+    const scan = new ScanResult([makeEvalResult([makeFailResult("PR-01")])]);
+    expect(() => assertControlPasses(scan, "PR-01")).toThrow(/FAIL/);
+  });
+
+  it("throws with available controls when control not evaluated", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01")])]);
+    expect(() => assertControlPasses(scan, "PR-99")).toThrow(/PR-01/);
+  });
+
+  it("accepts raw EvaluationResult", () => {
+    const ev = makeEvalResult([makePassResult("PR-01")]);
+    expect(() => assertControlPasses(ev, "PR-01")).not.toThrow();
+  });
+});
+
+describe("assertControlFails", () => {
+  it("passes when control is FAIL", () => {
+    const scan = new ScanResult([makeEvalResult([makeFailResult("PR-01")])]);
+    expect(() => assertControlFails(scan, "PR-01")).not.toThrow();
+  });
+
+  it("passes when control is ERROR", () => {
+    const ev = makeEvalResult([{ ...makeFailResult("PR-01"), result: "ERROR" }]);
+    const scan = new ScanResult([ev]);
+    expect(() => assertControlFails(scan, "PR-01")).not.toThrow();
+  });
+
+  it("throws when control is PASS", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01")])]);
+    expect(() => assertControlFails(scan, "PR-01")).toThrow(/PASS/);
+  });
+});
+
+describe("assertControlFlags", () => {
+  it("passes when control is FLAG", () => {
+    const scan = new ScanResult([makeEvalResult([makeFlagResult("DE-01")])]);
+    expect(() => assertControlFlags(scan, "DE-01")).not.toThrow();
+  });
+
+  it("throws when control is PASS", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("DE-01")])]);
+    expect(() => assertControlFlags(scan, "DE-01")).toThrow(/PASS/);
+  });
+});
+
+describe("assertPostureAbove", () => {
+  it("passes when score meets threshold", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01"), makePassResult("PR-02")])]);
+    expect(() => assertPostureAbove(scan, 0.8)).not.toThrow();
+  });
+
+  it("throws when score is below threshold", () => {
+    const scan = new ScanResult([makeEvalResult([makeFailResult("PR-01"), makeFailResult("PR-02")])]);
+    expect(() => assertPostureAbove(scan, 0.8)).toThrow(/below/);
+  });
+
+  it("passes at exact threshold", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01"), makeFailResult("PR-02")])]);
+    expect(() => assertPostureAbove(scan, 0.5)).not.toThrow();
+  });
+});
+
+describe("assertDecisionAllows", () => {
+  it("passes when decision is ALLOW", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01")], "ALLOW")]);
+    expect(() => assertDecisionAllows(scan)).not.toThrow();
+  });
+
+  it("throws when decision is BLOCK", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01")], "BLOCK")]);
+    expect(() => assertDecisionAllows(scan)).toThrow(/BLOCK/);
+  });
+});
+
+describe("assertDecisionBlocks", () => {
+  it("passes when decision is BLOCK", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01")], "BLOCK")]);
+    expect(() => assertDecisionBlocks(scan)).not.toThrow();
+  });
+
+  it("throws when decision is ALLOW", () => {
+    const scan = new ScanResult([makeEvalResult([makePassResult("PR-01")], "ALLOW")]);
+    expect(() => assertDecisionBlocks(scan)).toThrow(/ALLOW/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FakeProducer
+// ---------------------------------------------------------------------------
+
+describe("FakeProducer", () => {
+  it("creates action with default producer name as tool", () => {
+    const producer = new FakeProducer("identity");
+    const action = producer.makeAction();
+    expect(action.tool.name).toBe("identity");
+    expect(action.agentId).toBe("test-agent");
+  });
+
+  it("emit accumulates key-value pairs", () => {
+    const producer = new FakeProducer();
+    producer.emit("user.id", "alice");
+    producer.emit("role", "admin");
+    expect(producer.emittedData).toEqual({ "user.id": "alice", role: "admin" });
+  });
+
+  it("emitted data is included in action parameters", () => {
+    const producer = new FakeProducer();
+    producer.emit("session.start", "2026-04-12T00:00:00Z");
+    const action = producer.makeAction();
+    expect(action.parameters.raw["session.start"]).toBe("2026-04-12T00:00:00Z");
+  });
+
+  it("makeAction options override emitted data", () => {
+    const producer = new FakeProducer();
+    producer.emit("key", "original");
+    const action = producer.makeAction({ parameters: { key: "override" } });
+    expect(action.parameters.raw["key"]).toBe("override");
+  });
+
+  it("clear resets emitted data", () => {
+    const producer = new FakeProducer();
+    producer.emit("key", "value");
+    producer.clear();
+    expect(producer.emittedData).toEqual({});
+  });
+
+  it("producerType is MANUAL", () => {
+    const producer = new FakeProducer();
+    expect(producer.producerType).toBe("manual");
+  });
+
+  it("computeToolHash returns consistent SHA-256 hex", () => {
+    const producer = new FakeProducer();
+    const hash1 = producer.computeToolHash("tool-name");
+    const hash2 = producer.computeToolHash("tool-name");
+    expect(hash1).toBe(hash2);
+    expect(hash1).toHaveLength(64);
+  });
+
+  it("translate handles dict invocation", () => {
+    const producer = new FakeProducer("fake");
+    const action = producer.translate({ tool: "my_tool", parameters: { key: "val" } });
+    expect(action.tool.name).toBe("my_tool");
+    expect(action.parameters.raw["key"]).toBe("val");
+  });
+
+  it("registerTools adds the producer name to the registry", async () => {
+    const { ToolRegistry } = await import("../src/ancilis/engine/index.js");
+    const producer = new FakeProducer("my-tool");
+    const registry = new ToolRegistry();
+    const registered = producer.registerTools(registry);
+    expect(registered).toContain("my-tool");
+    expect(registry.lookup("my-tool")).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ComplianceScenarios
+// ---------------------------------------------------------------------------
+
+describe("ComplianceScenarios", () => {
+  it("financialCompliant — all controls pass, score 1.0", () => {
+    const scan = ComplianceScenarios.financialCompliant();
+    expect(scan.score).toBe(1.0);
+    assertControlPasses(scan, "PR-01");
+    assertControlPasses(scan, "PR-02");
+    assertDecisionAllows(scan);
+  });
+
+  it("missingIdentity — PR-01 fails, others pass", () => {
+    const scan = ComplianceScenarios.missingIdentity();
+    assertControlFails(scan, "PR-01");
+    assertControlPasses(scan, "PR-02");
+    expect(scan.score).toBeLessThan(1.0);
+  });
+
+  it("minimalViable — PR-01 passes, rest skipped, score 1.0", () => {
+    const scan = ComplianceScenarios.minimalViable();
+    assertControlPasses(scan, "PR-01");
+    expect(scan.score).toBe(1.0);
+  });
+
+  it("allFailing — score < 0.5, controls fail or flag", () => {
+    const scan = ComplianceScenarios.allFailing();
+    assertControlFails(scan, "PR-01");
+    assertControlFlags(scan, "PR-04");
+    assertPostureAbove(scan, 0.0);
+    expect(() => assertPostureAbove(scan, 0.5)).toThrow();
+  });
+
+  it("enforceBlocked — decision is BLOCK in enforce mode", () => {
+    const scan = ComplianceScenarios.enforceBlocked();
+    assertDecisionBlocks(scan);
+    assertControlFails(scan, "PR-01");
+  });
+});
 
 // ---------------------------------------------------------------------------
 // MockEvidenceStore
@@ -35,340 +427,53 @@ describe("MockEvidenceStore", () => {
     store = new MockEvidenceStore();
   });
 
-  it("starts empty", async () => {
+  afterEach(async () => {
+    await store.close();
+  });
+
+  it("starts with zero records", async () => {
     expect(await store.count()).toBe(0);
-    expect(store.getAll()).toHaveLength(0);
   });
 
-  it("dbPath is :memory:", () => {
-    expect(store.dbPath).toBe(":memory:");
-  });
-
-  it("addFakeRecord inserts a record", async () => {
-    store.addFakeRecord({ toolName: "read_file", decision: "ALLOW" });
+  it("stores evaluation and count increases", async () => {
+    const config = makeTestConfig();
+    const engine = new Engine(config);
+    const action = makeAction();
+    const result = await engine.evaluate(action);
+    await store.store(result);
     expect(await store.count()).toBe(1);
-    expect(store.getLastRecord()?.toolName).toBe("read_file");
   });
 
-  it("addFakeRecord builds hash chain from GENESIS_SEED", async () => {
-    const r1 = store.addFakeRecord({ toolName: "t1" });
-    const r2 = store.addFakeRecord({ toolName: "t2" });
-    expect(r1.previousHash).toBe(GENESIS_SEED);
-    expect(r2.previousHash).toBe(r1.recordHash);
+  it("verifyChain returns valid for empty store", async () => {
+    const chainResult = await store.verifyChain();
+    expect(chainResult.valid).toBe(true);
   });
 
-  it("verifyChain is valid after addFakeRecord calls", async () => {
-    store.addFakeRecord({ toolName: "t1" });
-    store.addFakeRecord({ toolName: "t2" });
-    const { valid, errors } = await store.verifyChain();
-    expect(valid).toBe(true);
-    expect(errors).toHaveLength(0);
+  it("verifyChain is valid after storing records", async () => {
+    const config = makeTestConfig();
+    const engine = new Engine(config);
+    const action = makeAction();
+    const result = await engine.evaluate(action);
+    await store.store(result);
+    await store.store(result);
+    const chainResult = await store.verifyChain();
+    expect(chainResult.valid).toBe(true);
   });
 
-  it("getRecordsForTool filters correctly", () => {
-    store.addFakeRecord({ toolName: "read_file" });
-    store.addFakeRecord({ toolName: "write_file" });
-    store.addFakeRecord({ toolName: "read_file" });
-    expect(store.getRecordsForTool("read_file")).toHaveLength(2);
-    expect(store.getRecordsForTool("write_file")).toHaveLength(1);
-    expect(store.getRecordsForTool("delete_file")).toHaveLength(0);
+  it("reset clears all records", async () => {
+    const config = makeTestConfig();
+    const engine = new Engine(config);
+    const action = makeAction();
+    const result = await engine.evaluate(action);
+    await store.store(result);
+    expect(await store.count()).toBe(1);
+    await store.reset();
+    expect(await store.count()).toBe(0);
   });
 
-  it("getRecordsForDecision filters correctly", () => {
-    store.addFakeRecord({ toolName: "t1", decision: "ALLOW" });
-    store.addFakeRecord({ toolName: "t2", decision: "BLOCK" });
-    store.addFakeRecord({ toolName: "t3", decision: "ALLOW" });
-    expect(store.getRecordsForDecision("ALLOW")).toHaveLength(2);
-    expect(store.getRecordsForDecision("BLOCK")).toHaveLength(1);
-    expect(store.getRecordsForDecision("FLAG")).toHaveLength(0);
-  });
-
-  it("getRecords with filters", async () => {
-    store.addFakeRecord({ toolName: "read_file", decision: "ALLOW", agentId: "a1" });
-    store.addFakeRecord({ toolName: "write_file", decision: "BLOCK", agentId: "a2" });
-    const allowed = await store.getRecords({ decision: "ALLOW" });
-    expect(allowed).toHaveLength(1);
-    expect(allowed[0]?.toolName).toBe("read_file");
-    const byAgent = await store.getRecords({ agentId: "a2" });
-    expect(byAgent).toHaveLength(1);
-  });
-
-  it("clear wipes all records", () => {
-    store.addFakeRecord({ toolName: "t1" });
-    store.addFakeRecord({ toolName: "t2" });
-    store.clear();
-    expect(store.getAll()).toHaveLength(0);
-  });
-
-  it("close is a no-op and does not throw", async () => {
-    await expect(store.close()).resolves.toBeUndefined();
-  });
-
-  it("getSummary returns correct totals", async () => {
-    store.addFakeRecord({ toolName: "t1", decision: "ALLOW" });
-    store.addFakeRecord({ toolName: "t2", decision: "BLOCK" });
-    const summary = await store.getSummary();
-    expect(summary.totalEvaluations).toBe(2);
-    expect((summary.decisions as Record<string, number>).ALLOW).toBe(1);
-    expect((summary.decisions as Record<string, number>).BLOCK).toBe(1);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// FakeProducer
-// ---------------------------------------------------------------------------
-
-describe("FakeProducer", () => {
-  it("creates with default test-agent config", () => {
-    const producer = new FakeProducer();
-    expect(producer.config.agentName).toBe("test-agent");
-  });
-
-  it("evaluate returns action, evaluation, and record", async () => {
-    const producer = new FakeProducer();
-    const { action, evaluation, record } = await producer.evaluate("read_file", { path: "/tmp/x" });
-    expect(action.tool.name).toBe("read_file");
-    expect(evaluation.decision).toMatch(/ALLOW|BLOCK|FLAG/);
-    expect(record.toolName).toBe("read_file");
-  });
-
-  it("evaluation is stored in MockEvidenceStore", async () => {
-    const producer = new FakeProducer();
-    await producer.evaluate("read_file");
-    expect(await producer.store.count()).toBe(1);
-  });
-
-  it("evaluateAll processes multiple calls", async () => {
-    const producer = new FakeProducer();
-    const results = await producer.evaluateAll([
-      { toolName: "read_file" },
-      { toolName: "write_file" },
-      { toolName: "delete_file" },
-    ]);
-    expect(results).toHaveLength(3);
-    expect(await producer.store.count()).toBe(3);
-  });
-
-  it("reset clears the store", async () => {
-    const producer = new FakeProducer();
-    await producer.evaluate("read_file");
-    expect(await producer.store.count()).toBe(1);
-    producer.reset();
-    expect(await producer.store.count()).toBe(0);
-  });
-
-  it("accepts a custom config", async () => {
-    const config = loadConfig({ raw: { agent: { name: "custom-agent" } } });
-    const producer = new FakeProducer({ config, defaultAgentId: "custom-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(evaluation.agentId).toBe("custom-agent");
-  });
-
-  it("agentId override parameter overrides defaultAgentId", async () => {
-    const producer = new FakeProducer();
-    const { action } = await producer.evaluate("read_file", {}, "override-agent");
-    expect(action.agentId).toBe("override-agent");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Assertion helpers (matchers)
-// ---------------------------------------------------------------------------
-
-describe("expectControlToPass / expectControlToFail", () => {
-  it("passes when control is PASS", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectControlToPass(evaluation, "PR-01")).not.toThrow();
-  });
-
-  it("throws AssertionError when control is not PASS", async () => {
-    // mismatched agentId → PR-01 fails
-    const producer = new FakeProducer({ defaultAgentId: "wrong-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectControlToPass(evaluation, "PR-01")).toThrow(AssertionError);
-  });
-
-  it("passes when control is FAIL", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "wrong-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectControlToFail(evaluation, "PR-01")).not.toThrow();
-  });
-
-  it("throws AssertionError when control is not FAIL", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectControlToFail(evaluation, "PR-01")).toThrow(AssertionError);
-  });
-
-  it("throws AssertionError for unknown control ID", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectControlToPass(evaluation, "ZZ-99")).toThrow(AssertionError);
-  });
-});
-
-describe("expectControlToSkip", () => {
-  it("passes for a disabled control", async () => {
-    const config = loadConfig({
-      raw: {
-        agent: { name: "minimal-agent" },
-        security: { controls: { "PR-02": { enabled: false } } },
-      },
-    });
-    const producer = new FakeProducer({ config, defaultAgentId: "minimal-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectControlToSkip(evaluation, "PR-02")).not.toThrow();
-  });
-});
-
-describe("expectDecisionToBe / expectAllowed / expectBlocked", () => {
-  it("expectDecisionToBe ALLOW passes for ALLOW decision", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectDecisionToBe(evaluation, "ALLOW")).not.toThrow();
-  });
-
-  it("expectAllowed passes for audit mode with passing controls", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectAllowed(evaluation)).not.toThrow();
-  });
-
-  it("expectBlocked passes for enforce mode with failing controls", async () => {
-    const config = loadConfig({
-      raw: {
-        agent: { name: "strict-agent" },
-        security: { mode: "enforce" },
-      },
-    });
-    const producer = new FakeProducer({ config, defaultAgentId: "wrong-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectBlocked(evaluation)).not.toThrow();
-  });
-
-  it("expectDecisionToBe throws AssertionError on mismatch", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expect(() => expectDecisionToBe(evaluation, "BLOCK")).toThrow(AssertionError);
-  });
-});
-
-describe("expectPostureAbove / expectAllPassed", () => {
-  it("expectPostureAbove passes when all evaluations are ALLOW", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const results = await producer.evaluateAll([
-      { toolName: "t1" },
-      { toolName: "t2" },
-      { toolName: "t3" },
-    ]);
-    const evals = results.map((r) => r.evaluation);
-    expect(() => expectPostureAbove(evals, 0.8)).not.toThrow();
-  });
-
-  it("expectAllPassed passes when all evaluations are ALLOW", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const results = await producer.evaluateAll([{ toolName: "t1" }, { toolName: "t2" }]);
-    const evals = results.map((r) => r.evaluation);
-    expect(() => expectAllPassed(evals)).not.toThrow();
-  });
-
-  it("expectPostureAbove throws when posture is too low", async () => {
-    // All calls fail PR-01 → ALLOW in audit mode (engine still allows), so posture should be 100%
-    // Use enforce mode to get BLOCKs
-    const config = loadConfig({
-      raw: { agent: { name: "strict" }, security: { mode: "enforce" } },
-    });
-    const producer = new FakeProducer({ config, defaultAgentId: "wrong-agent" });
-    const results = await producer.evaluateAll([
-      { toolName: "t1" },
-      { toolName: "t2" },
-    ]);
-    const evals = results.map((r) => r.evaluation);
-    expect(() => expectPostureAbove(evals, 0.5)).toThrow(AssertionError);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Vitest custom matchers (expect().toPassControl() etc.)
-// ---------------------------------------------------------------------------
-
-describe("custom Vitest matchers", () => {
-  it("expect(evaluation).toPassControl(id) passes for PASS", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    // @ts-expect-error — type augmentation takes effect only after setupAncilisMatchers
-    expect(evaluation).toPassControl("PR-01");
-  });
-
-  it("expect(evaluation).toBeAllowed() passes for ALLOW", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    // @ts-expect-error
-    expect(evaluation).toBeAllowed();
-  });
-
-  it("expect(evaluation).toFailControl(id) passes when control fails", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "wrong-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    // @ts-expect-error
-    expect(evaluation).toFailControl("PR-01");
-  });
-
-  it("expect(evaluation).toHaveDecision('ALLOW') passes", async () => {
-    const producer = new FakeProducer({ defaultAgentId: "test-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    // @ts-expect-error
-    expect(evaluation).toHaveDecision("ALLOW");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// ComplianceScenarios
-// ---------------------------------------------------------------------------
-
-describe("ComplianceScenarios", () => {
-  it("fullyCompliant() — PR-01 passes and decision is ALLOW (audit mode)", async () => {
-    const producer = ComplianceScenarios.fullyCompliant();
-    const { evaluation } = await producer.evaluate("read_file");
-    expectControlToPass(evaluation, "PR-01");
-    // audit mode → ALLOW regardless of other control findings
-    expectDecisionToBe(evaluation, "ALLOW");
-  });
-
-  it("missingIdentity() — PR-01 fails due to empty agentId", async () => {
-    const producer = ComplianceScenarios.missingIdentity();
-    const { evaluation } = await producer.evaluate("read_file");
-    expectControlToFail(evaluation, "PR-01");
-  });
-
-  it("minimalViable() — only PR-01 is evaluated, others skip", async () => {
-    const producer = ComplianceScenarios.minimalViable();
-    const { evaluation } = await producer.evaluate("read_file");
-    expectControlToPass(evaluation, "PR-01");
-    expectControlToSkip(evaluation, "PR-02");
-    expectControlToSkip(evaluation, "PR-03");
-    expectControlToSkip(evaluation, "PR-04");
-    expectControlToSkip(evaluation, "PR-05");
-    expectControlToSkip(evaluation, "DE-01");
-  });
-
-  it("enforceMode() — decision is BLOCK when identity fails", async () => {
-    const config = ComplianceScenarios.enforceMode().config;
-    const producer = new FakeProducer({ config, defaultAgentId: "wrong-agent" });
-    const { evaluation } = await producer.evaluate("read_file");
-    expectControlToFail(evaluation, "PR-01");
-    expectBlocked(evaluation);
-  });
-
-  it("fullyCompliantConfig() returns a ResolvedConfig", () => {
-    const config = ComplianceScenarios.fullyCompliantConfig();
-    expect(config.agentName).toBe("compliant-agent");
-    expect(config.mode).toBe("enforce");
-  });
-
-  it("minimalViableConfig() returns a ResolvedConfig with disabled controls", () => {
-    const config = ComplianceScenarios.minimalViableConfig();
-    expect(config.controls.get("PR-02")?.enabled).toBe(false);
+  it("uses custom agent name in config", () => {
+    const customStore = new MockEvidenceStore("my-agent");
+    expect(customStore).toBeDefined();
+    void customStore.close();
   });
 });

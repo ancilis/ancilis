@@ -272,6 +272,104 @@ class TestEvidenceStore:
         assert any("hash mismatch" in error for error in errors)
         store.close()
 
+    def test_verify_chain_detects_null_output_summary_injection(self):
+        """Records stored with output_summary=None must detect post-hoc injection.
+
+        Backward-compat scenario: legacy records had output_summary=NULL, which is
+        excluded from the hash by the conditional-inclusion logic. If an attacker later
+        injects a non-null value, the recomputed hash includes it and won't match the
+        stored hash — tamper detected.
+        """
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+
+        record = store.store(
+            make_evaluation(evaluation_id="e1"),
+            tool_name="t1",
+            output_summary=None,  # stored without output_summary in hash
+        )
+        # Inject a value post-hoc
+        store._connection.execute(
+            "UPDATE evidence_records SET output_summary = ? WHERE record_id = ?",
+            ["injected output", record.record_id],
+        )
+
+        valid, errors = store.verify_chain()
+        assert valid is False
+        assert any("hash mismatch" in error for error in errors)
+        store.close()
+
+    @pytest.mark.parametrize(
+        ("column", "tampered_value"),
+        [
+            ("detected_data_types", json.dumps(["DC-CHD"])),
+            ("sdk_version", "9.9.9"),
+            ("classification_context", json.dumps({"llm_provider": "tampered"})),
+        ],
+    )
+    def test_verify_chain_detects_integrity_metadata_tampering(self, column, tampered_value):
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, in_memory=True)
+
+        ev = make_evaluation(evaluation_id="e1")
+        ev.detected_data_types = ["DC-PII"]
+        record = store.store(ev, tool_name="t1")
+
+        if column in {"detected_data_types", "classification_context"}:
+            store._connection.execute(
+                f"UPDATE evidence_records SET {column} = ?::JSON WHERE record_id = ?",
+                [tampered_value, record.record_id],
+            )
+        else:
+            store._connection.execute(
+                f"UPDATE evidence_records SET {column} = ? WHERE record_id = ?",
+                [tampered_value, record.record_id],
+            )
+
+        valid, errors = store.verify_chain()
+        assert valid is False
+        assert any("hash mismatch" in error for error in errors)
+        store.close()
+
+    def test_verify_chain_accepts_legacy_hash_without_integrity_metadata(self):
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, in_memory=True)
+
+        ev = make_evaluation(evaluation_id="e1")
+        ev.detected_data_types = ["DC-PII"]
+        record = store.store(ev, tool_name="t1")
+        assert record.detected_data_types == ["DC-PII"]
+        assert record.sdk_version is not None
+        assert record.classification_context == {"llm_provider": "openai"}
+
+        legacy_canon = canonical_payload(
+            evaluation_id=record.evaluation_id,
+            timestamp=record.timestamp,
+            agent_id=record.agent_id,
+            source_type=record.source_type,
+            tool_name=record.tool_name,
+            decision=record.decision,
+            mode=record.mode,
+            control_results=record.control_results,
+            active_overlays=record.active_overlays,
+            data_classifications=record.data_classifications,
+            active_certifications=record.active_certifications,
+            total_duration_ms=record.total_duration_ms,
+            previous_hash=record.previous_hash,
+            output_summary=record.output_summary,
+            session_id=record.session_id,
+            tenant_id=record.tenant_id,
+        )
+        store._connection.execute(
+            "UPDATE evidence_records SET record_hash = ? WHERE record_id = ?",
+            [compute_hash(legacy_canon), record.record_id],
+        )
+
+        valid, errors = store.verify_chain()
+        assert valid is True
+        assert errors == []
+        store.close()
+
     def test_verify_chain_empty(self):
         config = make_config()
         store = EvidenceStore(config, in_memory=True)
@@ -629,4 +727,237 @@ class TestSessionIsolation:
         ev_new = make_evaluation(evaluation_id="post-reset")
         record = store.store(ev_new, tool_name="t1")
         assert record.previous_hash == GENESIS_SEED
+        store.close()
+
+
+# --- detected_data_types store round-trip (ANC-716) ---
+
+
+class TestDetectedDataTypesStore:
+    """Store round-trip for detected_data_types field."""
+
+    def _make_eval_with_detected(self, dc_codes: list[str]) -> EvaluationResult:
+        ev = make_evaluation()
+        ev.detected_data_types = dc_codes
+        return ev
+
+    def test_empty_list_round_trips(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        ev = self._make_eval_with_detected([])
+        store.store(ev, tool_name="scan-tool")
+        records = store.get_records()
+        assert records[0].detected_data_types == []
+        store.close()
+
+    def test_dc_codes_round_trip(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        ev = self._make_eval_with_detected(["DC-PII", "DC-CHD"])
+        store.store(ev, tool_name="scan-tool")
+        records = store.get_records()
+        assert records[0].detected_data_types == ["DC-PII", "DC-CHD"]
+        store.close()
+
+    def test_multiple_records_independent(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(self._make_eval_with_detected(["DC-PII"]), tool_name="t1")
+
+        ev2 = make_evaluation(evaluation_id="eval-002")
+        ev2.detected_data_types = ["DC-IP"]
+        store.store(ev2, tool_name="t2")
+
+        records = store.get_records()
+        assert records[0].detected_data_types == ["DC-PII"]
+        assert records[1].detected_data_types == ["DC-IP"]
+        store.close()
+
+    def test_missing_column_returns_empty_list(self):
+        """Records loaded without detected_data_types column default to []."""
+        import duckdb
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        ev = make_evaluation()
+        ev.detected_data_types = ["DC-PHI"]
+        store.store(ev, tool_name="t1")
+
+        # Simulate an old row by directly patching _row_to_record with a short row
+        short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
+                     "agent", "tool", "ALLOW", "audit",
+                     "[]", "[]", "[]", "[]",
+                     "hash", "prev", 1.0, None, None)  # no detected_data_types column
+        rec = EvidenceStore._row_to_record(short_row)
+        assert rec.detected_data_types == []
+        store.close()
+
+
+# --- sdk_version store round-trip (ANC-718) ---
+
+
+class TestSdkVersionStore:
+    """Store round-trip for sdk_version field."""
+
+    def test_sdk_version_populated_from_package(self):
+        """sdk_version is set from ancilis.__version__ on store()."""
+        import ancilis
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        records = store.get_records()
+        assert records[0].sdk_version == ancilis.__version__
+        store.close()
+
+    def test_sdk_version_round_trips(self):
+        """sdk_version survives a write-then-read cycle."""
+        import ancilis
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        store.store(make_evaluation(evaluation_id="eval-002"), tool_name="t2")
+        records = store.get_records()
+        assert records[0].sdk_version == ancilis.__version__
+        assert records[1].sdk_version == ancilis.__version__
+        store.close()
+
+    def test_sdk_version_missing_column_returns_none(self):
+        """Records loaded from a row without sdk_version column return None."""
+        # 20-element row: all columns up to detected_data_types, no sdk_version
+        short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
+                     "agent", "tool", "ALLOW", "audit",
+                     "[]", "[]", "[]", "[]",
+                     "hash", "prev", 1.0, None, None, "[]")  # 20 cols, no sdk_version
+        rec = EvidenceStore._row_to_record(short_row)
+        assert rec.sdk_version is None
+
+    def test_sdk_version_migration_adds_column(self, tmp_path):
+        """ALTER TABLE migration adds sdk_version to an existing store."""
+        import duckdb
+        db_file = str(tmp_path / "old.duckdb")
+        # Create a legacy store without sdk_version column (mirrors pre-ANC-718 schema)
+        conn = duckdb.connect(db_file)
+        conn.execute("CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1")
+        conn.execute("""
+            CREATE TABLE evidence_records (
+                seq_id BIGINT DEFAULT nextval('evidence_seq'),
+                record_id VARCHAR PRIMARY KEY,
+                evaluation_id VARCHAR NOT NULL,
+                timestamp VARCHAR NOT NULL,
+                agent_id VARCHAR NOT NULL,
+                session_id VARCHAR,
+                source_type VARCHAR NOT NULL,
+                tool_name VARCHAR NOT NULL,
+                decision VARCHAR NOT NULL,
+                mode VARCHAR NOT NULL,
+                control_results JSON NOT NULL,
+                active_overlays JSON NOT NULL,
+                data_classifications JSON NOT NULL,
+                active_certifications JSON NOT NULL,
+                record_hash VARCHAR NOT NULL,
+                previous_hash VARCHAR NOT NULL,
+                total_duration_ms DOUBLE NOT NULL,
+                output_summary VARCHAR,
+                tenant_id VARCHAR,
+                detected_data_types JSON NOT NULL DEFAULT '[]'
+            )
+        """)
+        conn.close()
+
+        # Opening with EvidenceStore should migrate the column without error
+        config = make_config()
+        store = EvidenceStore(config, db_path=db_file)
+        store.store(make_evaluation(), tool_name="migrated-tool")
+        records = store.get_records()
+        assert len(records) == 1
+        # sdk_version should now be set
+        import ancilis
+        assert records[0].sdk_version == ancilis.__version__
+        store.close()
+
+
+# --- classification_context store round-trip (ANC-738) ---
+
+
+class TestClassificationContextStore:
+    """Store round-trip for classification_context field (llm_provider capture)."""
+
+    def test_no_llm_provider_yields_empty_context(self):
+        """classification_context is empty dict when no llm_provider in config."""
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        records = store.get_records()
+        assert records[0].classification_context == {}
+        store.close()
+
+    def test_llm_provider_captured_in_context(self):
+        """llm_provider from config appears in classification_context."""
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        records = store.get_records()
+        assert records[0].classification_context == {"llm_provider": "openai"}
+        store.close()
+
+    def test_classification_context_round_trips(self):
+        """classification_context survives a write-then-read cycle."""
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "anthropic/claude-3"}})
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        store.store(make_evaluation(evaluation_id="eval-002"), tool_name="t2")
+        records = store.get_records()
+        assert records[0].classification_context == {"llm_provider": "anthropic/claude-3"}
+        assert records[1].classification_context == {"llm_provider": "anthropic/claude-3"}
+        store.close()
+
+    def test_classification_context_missing_column_returns_empty_dict(self):
+        """Records loaded from a row without classification_context column return {}."""
+        # 21-element row: all columns up to sdk_version, no classification_context
+        short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
+                     "agent", "tool", "ALLOW", "audit",
+                     "[]", "[]", "[]", "[]",
+                     "hash", "prev", 1.0, None, None, "[]", "0.1.0")  # 21 cols
+        rec = EvidenceStore._row_to_record(short_row)
+        assert rec.classification_context == {}
+
+    def test_classification_context_migration_adds_column(self, tmp_path):
+        """ALTER TABLE migration adds classification_context to an existing store."""
+        import duckdb
+        db_file = str(tmp_path / "old.duckdb")
+        # Create a legacy store without classification_context column
+        conn = duckdb.connect(db_file)
+        conn.execute("CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1")
+        conn.execute("""
+            CREATE TABLE evidence_records (
+                seq_id BIGINT DEFAULT nextval('evidence_seq'),
+                record_id VARCHAR PRIMARY KEY,
+                evaluation_id VARCHAR NOT NULL,
+                timestamp VARCHAR NOT NULL,
+                agent_id VARCHAR NOT NULL,
+                session_id VARCHAR,
+                source_type VARCHAR NOT NULL,
+                tool_name VARCHAR NOT NULL,
+                decision VARCHAR NOT NULL,
+                mode VARCHAR NOT NULL,
+                control_results JSON NOT NULL,
+                active_overlays JSON NOT NULL,
+                data_classifications JSON NOT NULL,
+                active_certifications JSON NOT NULL,
+                record_hash VARCHAR NOT NULL,
+                previous_hash VARCHAR NOT NULL,
+                total_duration_ms DOUBLE NOT NULL,
+                output_summary VARCHAR,
+                tenant_id VARCHAR,
+                detected_data_types JSON NOT NULL DEFAULT '[]',
+                sdk_version VARCHAR
+            )
+        """)
+        conn.close()
+
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, db_path=db_file)
+        store.store(make_evaluation(), tool_name="migrated-tool")
+        records = store.get_records()
+        assert len(records) == 1
+        assert records[0].classification_context == {"llm_provider": "openai"}
         store.close()

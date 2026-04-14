@@ -1,139 +1,325 @@
+/** ComplianceScenarios — pre-built test datasets for common compliance states. */
+
+import { randomUUID } from "node:crypto";
+import type { ControlResult, EvaluationResult } from "../engine/result.js";
+import { ScanResult } from "./scan-result.js";
+
+function makeEvaluation(
+  controlResults: ControlResult[],
+  options: {
+    agentId?: string;
+    mode?: "audit" | "enforce";
+    toolName?: string;
+    activeOverlays?: string[];
+    dataClassifications?: string[];
+  } = {},
+): EvaluationResult {
+  const { agentId = "test-agent", mode = "audit", activeOverlays = [], dataClassifications = [] } = options;
+  const hasFailure = controlResults.some((cr) => cr.result === "FAIL" || cr.result === "ERROR");
+  const decision = mode === "enforce" && hasFailure ? "BLOCK" : "ALLOW";
+
+  return {
+    evaluationId: randomUUID(),
+    actionId: randomUUID(),
+    timestamp: new Date().toISOString(),
+    agentId,
+    sourceType: "agent",
+    mode,
+    controlResults,
+    decision,
+    decisionReason: "Pre-built test scenario",
+    activeOverlays,
+    dataClassifications,
+    totalDurationMs: 0,
+  };
+}
+
 /**
- * Pre-built compliance test scenarios.
+ * Factory for pre-built compliance test scenarios.
  *
- * Each factory returns a `FakeProducer` pre-configured for a specific
- * compliance state.  Use these to write fast, self-documenting tests
- * without hand-crafting config objects.
+ * All scenarios work fully offline — no platform API, no DuckDB file.
  *
  * @example
- * ```ts
- * import { ComplianceScenarios, expectControlToPass, expectPostureAbove } from "ancilis/testing";
+ * const scenario = ComplianceScenarios.financialCompliant();
+ * assertPostureAbove(scenario, 0.80);
  *
- * // Test that your agent logic passes full compliance
- * const producer = ComplianceScenarios.fullyCompliant();
- * const { evaluation } = await producer.evaluate("read_file");
- * expectControlToPass(evaluation, "PR-01");
- *
- * // Test a known-failing identity scenario
- * const broken = ComplianceScenarios.missingIdentity();
- * const { evaluation: ev2 } = await broken.evaluate("send_email");
- * expectControlToFail(ev2, "PR-01");
- * ```
+ * const failing = ComplianceScenarios.missingIdentity();
+ * assertControlFails(failing, "PR-01");
  */
-
-import { loadConfig } from "../config/index.js";
-import type { ResolvedConfig } from "../config/index.js";
-import { FakeProducer } from "./fake-producer.js";
-
 export class ComplianceScenarios {
   /**
-   * A fully-compliant scenario.  The agent identity matches the config so
-   * PR-01 passes.  Mode is `audit` so control findings are logged but never
-   * block execution — any FAIL will surface as an ALLOW with logged detail.
+   * All controls passing for a financial services overlay context.
    *
-   * Use this to assert that "happy path" agent code satisfies identity and
-   * other controls without having to pre-register every tool.
+   * Simulates a well-configured agent with identity, scope, provenance,
+   * and exposure controls all PASS. Active overlays: financial.
    */
-  static fullyCompliant(): FakeProducer {
-    const config = loadConfig({
-      raw: {
-        agent: { name: "compliant-agent", owner: "security-team" },
-        security: { mode: "audit" },
+  static financialCompliant(): ScanResult {
+    const results: ControlResult[] = [
+      {
+        controlId: "PR-01",
+        controlName: "Agent Identity & Authentication",
+        result: "PASS",
+        detail: "Agent identity verified.",
+        evidenceData: { agentId: "test-agent", verificationResult: "verified" },
+        durationMs: 0,
       },
+      {
+        controlId: "PR-02",
+        controlName: "Scope & Boundary Enforcement",
+        result: "PASS",
+        detail: "Tool is allowed. Rate limit: 0/60 actions per minute.",
+        evidenceData: { toolName: "test_tool", rateLimitOk: true },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-03",
+        controlName: "Tool Provenance Verification",
+        result: "PASS",
+        detail: "Tool registered and approved.",
+        evidenceData: { toolName: "test_tool", approved: true },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-04",
+        controlName: "Data Exposure Prevention",
+        result: "PASS",
+        detail: "No sensitive data patterns detected.",
+        evidenceData: { patternsDetected: [] },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-05",
+        controlName: "Audit Trail Completeness",
+        result: "PASS",
+        detail: "Audit trail complete.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+      {
+        controlId: "DE-01",
+        controlName: "Baseline Behavior Detection",
+        result: "PASS",
+        detail: "No anomalous baseline drift detected.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+    ];
+    const ev = makeEvaluation(results, {
+      activeOverlays: ["financial"],
+      dataClassifications: ["DC-03", "DC-07"],
     });
-    // defaultAgentId matches config.agentName so PR-01 passes
-    return new FakeProducer({ config, defaultAgentId: "compliant-agent" });
+    return new ScanResult([ev]);
   }
 
   /**
-   * A scenario where agent identity is absent — PR-01 (Identity) will FAIL.
+   * PR-01 fails — agent identity is missing.
    *
-   * Use this to verify that your code handles identity-check failures
-   * correctly (e.g. logs, fallback logic, user-facing error messages).
+   * Simulates an agent that forgot to configure its name, or is calling
+   * from an unrecognized agentId. All other controls pass.
    */
-  static missingIdentity(): FakeProducer {
-    const config = loadConfig({
-      raw: {
-        agent: { name: "registered-agent" },
-        security: { mode: "audit" },
-      },
-    });
-    // Empty string triggers "Agent identity missing" in PR-01
-    return new FakeProducer({ config, defaultAgentId: "" });
-  }
-
-  /**
-   * A minimal-viable scenario — only PR-01 is enabled; all other controls
-   * are disabled.  Useful for testing a single control in isolation.
-   */
-  static minimalViable(): FakeProducer {
-    const config = loadConfig({
-      raw: {
-        agent: { name: "minimal-agent" },
-        security: {
-          mode: "audit",
-          controls: {
-            "PR-02": { enabled: false },
-            "PR-03": { enabled: false },
-            "PR-04": { enabled: false },
-            "PR-05": { enabled: false },
-            "DE-01": { enabled: false },
-          },
+  static missingIdentity(): ScanResult {
+    const results: ControlResult[] = [
+      {
+        controlId: "PR-01",
+        controlName: "Agent Identity & Authentication",
+        result: "FAIL",
+        detail: "Agent identity missing.",
+        evidenceData: {
+          agentId: null,
+          verificationResult: "failed",
+          failureReason: "agentId is empty or missing",
         },
+        durationMs: 0,
       },
-    });
-    return new FakeProducer({ config, defaultAgentId: "minimal-agent" });
+      {
+        controlId: "PR-02",
+        controlName: "Scope & Boundary Enforcement",
+        result: "PASS",
+        detail: "Tool is allowed.",
+        evidenceData: { toolName: "test_tool" },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-03",
+        controlName: "Tool Provenance Verification",
+        result: "PASS",
+        detail: "Tool registered.",
+        evidenceData: { toolName: "test_tool" },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-04",
+        controlName: "Data Exposure Prevention",
+        result: "PASS",
+        detail: "No sensitive data patterns detected.",
+        evidenceData: { patternsDetected: [] },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-05",
+        controlName: "Audit Trail Completeness",
+        result: "PASS",
+        detail: "Audit trail complete.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+      {
+        controlId: "DE-01",
+        controlName: "Baseline Behavior Detection",
+        result: "PASS",
+        detail: "No anomalous baseline drift detected.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+    ];
+    const ev = makeEvaluation(results);
+    return new ScanResult([ev]);
   }
 
   /**
-   * An enforce-mode scenario.  Any control failure results in `BLOCK`.
+   * Bare minimum passing scenario — only PR-01 scored, rest skipped.
    *
-   * Use this to verify that your code handles `BlockedActionError`
-   * correctly when the engine is in strict enforcement mode.
+   * Useful for testing that your agent at least provides identity
+   * before adding other controls.
    */
-  static enforceMode(): FakeProducer {
-    const config = loadConfig({
-      raw: {
-        agent: { name: "strict-agent" },
-        security: { mode: "enforce" },
+  static minimalViable(): ScanResult {
+    const results: ControlResult[] = [
+      {
+        controlId: "PR-01",
+        controlName: "Agent Identity & Authentication",
+        result: "PASS",
+        detail: "Agent identity verified.",
+        evidenceData: { agentId: "test-agent", verificationResult: "verified" },
+        durationMs: 0,
       },
-    });
-    return new FakeProducer({ config, defaultAgentId: "strict-agent" });
+      {
+        controlId: "PR-02",
+        controlName: "Scope & Boundary Enforcement",
+        result: "SKIP",
+        detail: "Control is disabled.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-03",
+        controlName: "Tool Provenance Verification",
+        result: "SKIP",
+        detail: "Control is disabled.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-04",
+        controlName: "Data Exposure Prevention",
+        result: "SKIP",
+        detail: "Control is disabled.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-05",
+        controlName: "Audit Trail Completeness",
+        result: "SKIP",
+        detail: "Control is disabled.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+      {
+        controlId: "DE-01",
+        controlName: "Baseline Behavior Detection",
+        result: "SKIP",
+        detail: "Control is disabled.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+    ];
+    const ev = makeEvaluation(results);
+    return new ScanResult([ev]);
   }
 
   /**
-   * Returns the `ResolvedConfig` for the fully-compliant scenario without
-   * wrapping it in a `FakeProducer`.  Useful when you need the raw config
-   * to construct your own `Engine` or `EvidenceStore`.
+   * All controls failing — useful for testing assertion error messages.
    */
-  static fullyCompliantConfig(): ResolvedConfig {
-    return loadConfig({
-      raw: {
-        agent: { name: "compliant-agent", owner: "security-team" },
-        security: { mode: "enforce" },
+  static allFailing(): ScanResult {
+    const results: ControlResult[] = [
+      {
+        controlId: "PR-01",
+        controlName: "Agent Identity & Authentication",
+        result: "FAIL",
+        detail: "Agent identity missing.",
+        evidenceData: { failureReason: "agentId is empty or missing" },
+        durationMs: 0,
       },
-    });
+      {
+        controlId: "PR-02",
+        controlName: "Scope & Boundary Enforcement",
+        result: "FAIL",
+        detail: "Tool is blocked.",
+        evidenceData: { toolName: "blocked_tool" },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-03",
+        controlName: "Tool Provenance Verification",
+        result: "FAIL",
+        detail: "Tool not registered.",
+        evidenceData: { toolName: "unknown_tool" },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-04",
+        controlName: "Data Exposure Prevention",
+        result: "FLAG",
+        detail: "Sensitive data patterns detected.",
+        evidenceData: { patternsDetected: [{ type: "pii", count: 2 }] },
+        durationMs: 0,
+      },
+      {
+        controlId: "PR-05",
+        controlName: "Audit Trail Completeness",
+        result: "FAIL",
+        detail: "Missing required audit fields.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+      {
+        controlId: "DE-01",
+        controlName: "Baseline Behavior Detection",
+        result: "FLAG",
+        detail: "Anomalous behavior detected.",
+        evidenceData: {},
+        durationMs: 0,
+      },
+    ];
+    const ev = makeEvaluation(results);
+    return new ScanResult([ev]);
   }
 
   /**
-   * Returns the `ResolvedConfig` for the minimal scenario without a
-   * `FakeProducer` wrapper.
+   * Enforce mode with a failing control — decision is BLOCK.
+   *
+   * Useful for testing that enforce mode blocks when controls fail.
    */
-  static minimalViableConfig(): ResolvedConfig {
-    return loadConfig({
-      raw: {
-        agent: { name: "minimal-agent" },
-        security: {
-          mode: "audit",
-          controls: {
-            "PR-02": { enabled: false },
-            "PR-03": { enabled: false },
-            "PR-04": { enabled: false },
-            "PR-05": { enabled: false },
-            "DE-01": { enabled: false },
-          },
-        },
+  static enforceBlocked(): ScanResult {
+    const results: ControlResult[] = [
+      {
+        controlId: "PR-01",
+        controlName: "Agent Identity & Authentication",
+        result: "FAIL",
+        detail: "Agent identity missing.",
+        evidenceData: { failureReason: "agentId is empty or missing" },
+        durationMs: 0,
       },
-    });
+      {
+        controlId: "PR-02",
+        controlName: "Scope & Boundary Enforcement",
+        result: "PASS",
+        detail: "Tool is allowed.",
+        evidenceData: { toolName: "test_tool" },
+        durationMs: 0,
+      },
+    ];
+    const ev = makeEvaluation(results, { mode: "enforce" });
+    return new ScanResult([ev]);
   }
 }

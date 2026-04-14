@@ -1,0 +1,457 @@
+{
+  "id": "imda-mgf",
+  "name": "Singapore Model AI Governance Framework (IMDA MGF) — Second Edition",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": [
+    "DC-AI"
+  ],
+  "description": "Singapore IMDA/PDPC Model AI Governance Framework (Second Edition, 2020) overlay. Voluntary, principle-based framework for private sector organizations deploying AI in Singapore. Four governance areas: (1) Internal Governance Structures, (2) Human Involvement in Decision-Making, (3) Operations Management, (4) Stakeholder Communication. Strong companion signal with MAS TRM (mandatory for Singapore financial institutions). PDPC linkage makes personal data protection obligations directly regulatory.",
+  "jurisdiction": "SGP",
+  "effective_date": "2020-01-21",
+  "voluntary": true,
+  "companion_frameworks": [
+    "mas-trm",
+    "gdpr"
+  ],
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Documented AI governance policy approved by senior management or board",
+        "AI governance committee or cross-functional AI governance structure evidenced by meeting records or organizational charter",
+        "AI deployment decision framework covering risk assessment, approval criteria, and lifecycle stages",
+        "Policy communicated to relevant personnel — awareness training records or acknowledgements"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 1 — Internal Governance Structures and Measures §2.1"
+    },
+    "GOV-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Named individual or team accountable for each deployed AI system",
+        "Responsibility assignment documented in RACI matrix or equivalent governance artifact",
+        "Competence requirements for AI oversight roles defined and met",
+        "Accountability chain accessible internally and, where required, to affected stakeholders"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 1 — Internal Governance Structures and Measures §2.2"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "AI-specific risk assessment process documented — includes bias, accuracy degradation, misuse, and third-party risk dimensions",
+        "Risk acceptance thresholds defined and approved by senior management",
+        "Risk assessment conducted before AI system deployment and at material changes",
+        "Risk register maintained with treatment decisions and residual risk tracking"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 1 — Internal Governance Structures and Measures §2.3"
+    },
+    "GOV-04": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Human oversight classification documented for each AI system: human-in-the-loop, human-on-the-loop, or fully automated — with rationale",
+        "Higher-risk AI decisions mapped to increased human oversight requirements",
+        "Oversight configuration reviewed on material changes to AI system or deployment context",
+        "Explainability mechanisms in place appropriate to decision impact level",
+        "Documentation of rationale for oversight level selection, including risk basis"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 2 — Human Involvement in AI-Augmented Decision-Making §3.1–3.3"
+    },
+    "ID-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "Inventory of AI systems in scope of governance program — minimum: system name, intended purpose, deployment context, accountable owner",
+        "Lifecycle stage tracked for each system (development, pilot, production, retired)",
+        "Note: MGF does not explicitly require a formal registry; coverage is inferred from governance accountability requirements — an org cannot demonstrate Area 1 compliance without knowing what is deployed"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 1 — Internal Governance Structures and Measures (implied)"
+    },
+    "ID-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "Third-party AI tools and components included in vendor risk assessment",
+        "AI-relevant terms addressed in vendor agreements — data handling, model change notification, incident reporting",
+        "Note: MGF Area 3 vendor management principles apply; no specific tool registry requirement stated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.3 (vendor/third-party)"
+    },
+    "ID-03": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Data quality assessment documented for AI training and inference inputs — representativeness, bias screening, known limitations",
+        "Data governance procedures covering acquisition, labelling, validation, and disposal",
+        "Personal data handling in AI context documented with PDPC compliance linkage",
+        "Data sources and provenance documented for each AI system"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.1 (data governance)"
+    },
+    "ID-04": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Third-party AI components (models, APIs, datasets) assessed for risk before adoption",
+        "Supply chain risk assessment documents provenance, licensing, update cadence, and exit/replacement plan",
+        "Vendor dependency risk reviewed periodically and on material vendor changes"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.3 (third-party AI component risk)"
+    },
+    "ID-05": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "AI system risk profile documented — severity of potential harm, breadth of impact, reversibility, and automation level",
+        "Risk profile determines oversight configuration (linkage to GOV-04 oversight classification)",
+        "Risk profile updated on material changes to system capability or deployment context"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Areas 1+2 — risk assessment drives oversight level selection"
+    },
+    "PR-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "Access controls for AI systems documented — who can modify, retrain, or access model outputs",
+        "Note: MGF Area 3 implies access controls in operations management but does not specify authentication standards; PDPC linkage applies for personal data access"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management (access controls implied)"
+    },
+    "PR-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "AI system permissions scoped to intended purpose — documented principle of data minimization in deployment",
+        "Note: MGF principle of limiting AI use to declared purpose aligns with scope enforcement; no specific technical control mandated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management (minimal access principle)"
+    },
+    "PR-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "AI component integrity verified before deployment — third-party models and APIs assessed for authenticity",
+        "Change management process requires re-assessment on AI component updates",
+        "Note: MGF Area 3 vendor management and operations integrity principles apply; no explicit provenance verification standard cited"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.3 (AI system integrity)"
+    },
+    "PR-04": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Personal data exposure in AI outputs controlled and documented — PDPC Advisory on AI linkage applies",
+        "Data minimization applied to AI training data and inference outputs involving personal data",
+        "Consent and purpose limitation documented for personal data used in AI contexts",
+        "Cross-border data transfer controls applied where relevant to AI training/inference data"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.1 (data protection); PDPC Advisory on Use of Personal Data in AI Recommendation Systems"
+    },
+    "PR-05": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Audit logs maintained for AI system actions — sufficient for accountability and contested decision review",
+        "Log records retained to support post-incident investigation and stakeholder accountability queries",
+        "Audit trail design documented — what is logged, retention period, access controls on logs",
+        "Logs accessible to internal accountability chain and, where required, to affected parties under Area 4"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Areas 1+4 — accountability and stakeholder interaction"
+    },
+    "PR-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "AI system configuration controls documented — change management process for model updates and parameter changes",
+        "Configuration baseline maintained with change approval process",
+        "Note: MGF Area 3 operations management implies configuration integrity; no specific configuration management standard cited"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management (AI system integrity monitoring)"
+    },
+    "PR-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "Data in transit protected for AI system communications — encryption applied to model API calls involving personal or sensitive data",
+        "Note: MGF Area 3 implies data security in operations; MAS TRM companion overlay provides specific encryption requirements for Singapore financial institutions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management (data security, implied)"
+    },
+    "PR-08": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "AI system tested for robustness against adversarial inputs before deployment",
+        "AI Verify toolkit testing dimensions considered for robustness and safety validation",
+        "Input validation documented for AI system interfaces exposed to external or untrusted parties",
+        "Note: Project Moonshot (IMDA LLM eval toolkit) provides more explicit adversarial testing guidance as companion resource"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.2 (AI system testing); AI Verify Toolkit (companion resource)"
+    },
+    "DE-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Model performance monitoring implemented — tracks accuracy, drift, bias indicators, and output quality degradation",
+        "Monitoring thresholds defined with escalation triggers for significant drift",
+        "Monitoring results reviewed at defined intervals and on material events",
+        "Evidence of monitoring activity maintained — logs or dashboards showing ongoing surveillance"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.2 (model monitoring)"
+    },
+    "DE-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "Configuration change detection in place for AI systems — alerts on unauthorized or unexpected changes",
+        "Note: MGF Area 3 implies configuration monitoring as part of operations management; no specific drift detection standard"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management (change detection implied)"
+    },
+    "DE-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "Internal governance audit process covers AI system compliance with policies and framework commitments",
+        "Compliance deviations tracked and remediated — audit records maintained",
+        "Note: MGF Area 1 continuous improvement and internal governance review principles apply"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 1 — Internal Governance (governance audit and continuous improvement)"
+    },
+    "DE-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "Audit log integrity maintained — controls to detect tampering with AI audit records",
+        "Evidence preservation for accountability purposes — records sufficient for contested decision review",
+        "Note: MGF Area 1 accountability requirements and Area 4 stakeholder appeal rights imply audit integrity obligations"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Areas 1+4 — accountability and audit integrity"
+    },
+    "RS-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "evidence_requirements": [
+        "Incident response process documented for AI system failures, harmful outputs, and misuse events",
+        "Response playbook covers model rollback, output suppression, and stakeholder notification",
+        "Note: MGF Area 3 requires incident response process but does not mandate automated response — human decision remains appropriate for significant AI incidents"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.4 (incident response)"
+    },
+    "RS-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Human escalation pathway documented for high-risk AI decisions and contested AI outputs",
+        "Appeal or contestation mechanism available to individuals affected by consequential AI decisions",
+        "Escalation response SLA defined — timeline for human review of contested decisions",
+        "Escalation pathway tested periodically — evidence of test or drill records"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 2 §3.2 (human review) and Area 4 §5.2 (contestation mechanism)"
+    },
+    "RS-03": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Incident evidence preserved sufficient for accountability review and post-incident analysis",
+        "Incident records maintained — timeline, affected systems, affected parties, response actions taken",
+        "Evidence package available for governance review or regulatory inquiry"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.4 (incident management and evidence)"
+    },
+    "RC-01": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "AI model rollback capability demonstrated — ability to revert to prior model version on safety or quality failure",
+        "Rollback procedure documented and tested — evidence of test or drill",
+        "Recovery time objective defined for AI system restoration following incident"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Area 3 — Operations Management §4.4 (model rollback and recovery)"
+    },
+    "RC-02": {
+      "applicable": true,
+      "coverage": "full",
+      "evidence_requirements": [
+        "Post-incident review process for AI events — root cause analysis, contributing factors, remediation plan",
+        "Lessons learned documented and fed back into AI governance program (Area 1 continuous improvement loop)",
+        "Governance committee notified of material AI incidents — evidence of board or senior management reporting"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "MGF Areas 1+3 — continuous improvement and post-incident learning"
+    }
+  },
+  "evidence_requirements": {
+    "PR-01": [
+      "agent_identity",
+      "human_oversight_role"
+    ],
+    "PR-02": [
+      "purpose_limitation",
+      "human_involvement_decision"
+    ],
+    "PR-04": [
+      "data_classification",
+      "personal_data_governance"
+    ],
+    "PR-05": [
+      "stakeholder_communication_log",
+      "audit_trail_completeness"
+    ]
+  },
+  "reporting_obligations": {
+    "breach_notification_hours": null,
+    "assessment_type": "Voluntary self-assessment. No mandatory certification or third-party audit required by MGF itself. Organizations may voluntarily use AI Verify (IMDA's AI testing toolkit) for self-assessment against MGF dimensions. MAS TRM companion overlay applies separate mandatory reporting for Singapore financial institutions.",
+    "reporting_entity": "No mandatory external reporting under MGF. Internal governance reporting to board or senior management required (Area 1). PDPC notification obligations apply for personal data breaches involving AI systems under Singapore PDPA.",
+    "notes": "MGF is a voluntary framework — no enforcement body and no penalty regime. Practical enforcement driver is MAS TRM (for financial institutions) and procurement requirements from Singapore government agencies. IMDA AI Verify toolkit (9 testing dimensions) provides structured self-assessment mechanism aligned to MGF."
+  },
+  "human_oversight_mandates": {
+    "required": true,
+    "description": "MGF Area 2 explicitly requires organizations to determine the appropriate level of human involvement in AI-augmented decisions. For high-risk or consequential decisions, human-in-the-loop or human-on-the-loop oversight is required. Fully automated AI decisions affecting individuals must be documented with rationale and must include a contestation mechanism (Area 4). This makes human oversight configuration a core compliance element, not optional.",
+    "min_oversight_level": "human_on_the_loop",
+    "applies_to": "Consequential AI decisions — those affecting individuals' rights, safety, financial interests, or significant life decisions"
+  },
+  "framework_mapping": {
+    "GOV-01": [
+      "MGF Area 1 §2.1",
+      "Internal Governance Structures"
+    ],
+    "GOV-02": [
+      "MGF Area 1 §2.2",
+      "Accountability and Competence"
+    ],
+    "GOV-03": [
+      "MGF Area 1 §2.3",
+      "AI Risk Assessment"
+    ],
+    "GOV-04": [
+      "MGF Area 2 §3.1-3.3",
+      "Human Oversight Classification"
+    ],
+    "ID-01": [
+      "MGF Area 1 (implied)",
+      "Governance Accountability"
+    ],
+    "ID-02": [
+      "MGF Area 3 §4.3",
+      "Vendor Management"
+    ],
+    "ID-03": [
+      "MGF Area 3 §4.1",
+      "Data Governance"
+    ],
+    "ID-04": [
+      "MGF Area 3 §4.3",
+      "Third-Party AI Component Risk"
+    ],
+    "ID-05": [
+      "MGF Areas 1+2",
+      "Risk-Driven Oversight Selection"
+    ],
+    "PR-01": [
+      "MGF Area 3 (implied)",
+      "Operations Access Controls"
+    ],
+    "PR-02": [
+      "MGF Area 3 (implied)",
+      "Minimal Access Principle"
+    ],
+    "PR-03": [
+      "MGF Area 3 §4.3",
+      "AI System Integrity"
+    ],
+    "PR-04": [
+      "MGF Area 3 §4.1",
+      "PDPC Data Protection in AI"
+    ],
+    "PR-05": [
+      "MGF Areas 1+4",
+      "Accountability Audit Trail"
+    ],
+    "PR-06": [
+      "MGF Area 3",
+      "Configuration Integrity"
+    ],
+    "PR-07": [
+      "MGF Area 3 (implied)",
+      "Data Security in Operations"
+    ],
+    "PR-08": [
+      "MGF Area 3 §4.2",
+      "Robustness Testing"
+    ],
+    "DE-01": [
+      "MGF Area 3 §4.2",
+      "Model Monitoring"
+    ],
+    "DE-02": [
+      "MGF Area 3 (implied)",
+      "Change Detection"
+    ],
+    "DE-03": [
+      "MGF Area 1",
+      "Governance Audit"
+    ],
+    "DE-04": [
+      "MGF Areas 1+4",
+      "Audit Integrity"
+    ],
+    "RS-01": [
+      "MGF Area 3 §4.4",
+      "Incident Response"
+    ],
+    "RS-02": [
+      "MGF Areas 2+4",
+      "Human Escalation and Contestation"
+    ],
+    "RS-03": [
+      "MGF Area 3 §4.4",
+      "Incident Evidence"
+    ],
+    "RC-01": [
+      "MGF Area 3 §4.4",
+      "Model Rollback"
+    ],
+    "RC-02": [
+      "MGF Areas 1+3",
+      "Post-Incident Review and Continuous Improvement"
+    ]
+  },
+  "evidence_retention_minimum_days": 1095,
+  "human_oversight_required": true,
+  "companion_resources": [
+    "AI Verify Toolkit (IMDA, 2022) — 9-dimension self-assessment aligned to MGF",
+    "Project Moonshot (IMDA, 2023) — LLM safety evaluation benchmarks",
+    "PDPC Advisory on the Use of Personal Data in AI Recommendation Systems",
+    "MAS TRM Guidelines — mandatory companion for Singapore financial institutions"
+  ],
+  "notes": "Singapore IMDA Model AI Governance Framework Second Edition (2020). Published by IMDA and PDPC jointly. Voluntary, principle-based framework — the primary AI governance reference for Singapore private sector. Four governance areas map well to AKSI's three-tier architecture: Area 1 (Internal Governance) → GOV/ID controls; Area 2 (Human Oversight) → GOV-04/RS-02; Area 3 (Operations) → PR/DE/RS/RC controls; Area 4 (Stakeholder Communication) → PR-05/RS-02. The MGF's voluntary character means evidence is governance documentation rather than regulatory compliance artifacts. Practical compliance pressure comes from MAS TRM (mandatory for regulated financial institutions) and Singapore government procurement expectations. All 26 AKSI controls apply with 13 at full coverage and 13 at partial coverage. No controls are excluded — the principle-based scope of MGF means implied coverage is treated as partial rather than inapplicable. First Singapore MGF overlay — v0.2 planned to add AI Verify dimension-to-control mappings once available."
+}

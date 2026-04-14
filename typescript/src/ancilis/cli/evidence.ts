@@ -57,7 +57,7 @@ export async function runEvidenceSessions(options: {
       lines.push("-".repeat(100));
       for (const s of sessions) {
         lines.push(
-          `${s.sessionId.padEnd(40)}  ${String(s.count).padStart(7)}  ${s.firstSeen.padEnd(24)}  ${s.lastSeen.padEnd(24)}`,
+          `${s.session_id.padEnd(40)}  ${String(s.count).padStart(7)}  ${s.first_seen.padEnd(24)}  ${s.last_seen.padEnd(24)}`,
         );
       }
     }

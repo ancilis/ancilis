@@ -51,6 +51,8 @@ examples/demo/discovery/discovery-manifest.json
 
 # Ancilis
 ancilis-reports/
+release-artifacts/
+*.tgz
 .ancilis-cache/
 
 # Agent workspace — non-code outputs (PRDs, marketing, design, etc.)

@@ -550,3 +550,149 @@ class TestConfigIntegration:
     def test_minimal_config_26_controls(self):
         resolved = load_config(raw={"agent": {"name": "x"}})
         assert len(resolved.controls) == 26
+
+
+class TestOverlayCitationRegression:
+    """Regression tests for specific framework_mapping citation correctness.
+
+    These tests guard against wrong HIPAA/GDPR provisions that would cause
+    auditors to receive incorrect evidence packages (ANC-652, T1-02 through T1-06).
+    """
+
+    def test_hipaa_pr06_cites_risk_management_not_facility_access(self):
+        """PR-06 (Config Baseline) must cite risk management, not facility access controls."""
+        profiles = load_overlay_profiles()
+        fm = profiles["hipaa"]["framework_mapping"]
+        pr06 = fm["PR-06"]
+        # Correct: 164.308(a)(1)(ii)(B) — risk management
+        assert "164.308(a)(1)(ii)(B)" in pr06, (
+            f"HIPAA PR-06 should cite 164.308(a)(1)(ii)(B) (risk management), got: {pr06}"
+        )
+        # Wrong: facility access controls
+        assert "164.310(a)" not in pr06, (
+            f"HIPAA PR-06 must NOT cite 164.310(a) (facility access controls), got: {pr06}"
+        )
+        assert "164.310(b)" not in pr06, (
+            f"HIPAA PR-06 must NOT cite 164.310(b) (workstation use), got: {pr06}"
+        )
+
+    def test_hipaa_pr07_cites_transmission_security_not_workstation(self):
+        """PR-07 (Transport Security) must cite transmission security, not workstation controls."""
+        profiles = load_overlay_profiles()
+        fm = profiles["hipaa"]["framework_mapping"]
+        pr07 = fm["PR-07"]
+        # Correct: transmission security / encryption in transit
+        assert "164.312(e)(1)" in pr07, (
+            f"HIPAA PR-07 should cite 164.312(e)(1) (transmission security), got: {pr07}"
+        )
+        assert "164.312(e)(2)(ii)" in pr07, (
+            f"HIPAA PR-07 should cite 164.312(e)(2)(ii) (encryption in transit), got: {pr07}"
+        )
+        # Wrong: workstation controls
+        assert "164.310(b)" not in pr07, (
+            f"HIPAA PR-07 must NOT cite 164.310(b) (workstation use), got: {pr07}"
+        )
+        assert "164.310(c)" not in pr07, (
+            f"HIPAA PR-07 must NOT cite 164.310(c) (workstation security), got: {pr07}"
+        )
+
+    def test_gdpr_gov04_includes_dpia_requirement(self):
+        """GOV-04 (HITL Enforcement) must cite Art. 35 (DPIA for high-risk automated processing)."""
+        profiles = load_overlay_profiles()
+        fm = profiles["gdpr"]["framework_mapping"]
+        gov04 = fm["GOV-04"]
+        assert "Art. 35" in gov04, (
+            f"GDPR GOV-04 should cite Art. 35 (DPIA for high-risk processing), got: {gov04}"
+        )
+        assert "Art. 22" in gov04, (
+            f"GDPR GOV-04 should cite Art. 22 (automated decision-making), got: {gov04}"
+        )
+
+    def test_gdpr_id05_cites_data_protection_by_design_not_prior_consultation(self):
+        """ID-05 (Agent Risk Profiling) must cite Art. 25 (privacy by design), not Art. 36."""
+        profiles = load_overlay_profiles()
+        fm = profiles["gdpr"]["framework_mapping"]
+        id05 = fm["ID-05"]
+        assert "Art. 25" in id05, (
+            f"GDPR ID-05 should cite Art. 25 (data protection by design), got: {id05}"
+        )
+        assert "Art. 35" in id05, (
+            f"GDPR ID-05 should cite Art. 35 (DPIA for agent risk profiling), got: {id05}"
+        )
+        # Art. 36 (prior consultation) is not the right anchor for agent risk profiling
+        assert "Art. 36" not in id05, (
+            f"GDPR ID-05 must NOT cite Art. 36 (prior consultation — wrong anchor), got: {id05}"
+        )
+
+    def test_gdpr_pr08_cites_privacy_by_design_not_erasure_right(self):
+        """PR-08 (Input Validation) must cite Art. 25 (privacy by design), not Art. 5(1)(f)."""
+        profiles = load_overlay_profiles()
+        fm = profiles["gdpr"]["framework_mapping"]
+        pr08 = fm["PR-08"]
+        assert "Art. 25" in pr08, (
+            f"GDPR PR-08 should cite Art. 25 (privacy by design / input integrity), got: {pr08}"
+        )
+        assert "Art. 32(1)(b)" in pr08, (
+            f"GDPR PR-08 should cite Art. 32(1)(b) (security measures), got: {pr08}"
+        )
+        # Art. 5(1)(f) is integrity/confidentiality principle — belongs in PR-03/PR-04, not PR-08
+        assert "Art. 5(1)(f)" not in pr08, (
+            f"GDPR PR-08 must NOT cite Art. 5(1)(f) (integrity principle, wrong anchor), got: {pr08}"
+        )
+
+    def test_securities_mnpi_pr05_cites_sox802_and_rule17a4_for_retention(self):
+        """PR-05 (Audit Trail) must cite SOX §802 and SEC Rule 17a-4 for 7-year MNPI retention."""
+        profiles = load_overlay_profiles()
+        fm = profiles["securities-mnpi"]["framework_mapping"]
+        pr05 = fm["PR-05"]
+        # framework_mapping values are lists; join for substring checks
+        pr05_str = " | ".join(pr05)
+        # SOX §802 mandates destruction-of-records prohibition and 7-year retention
+        assert "§802" in pr05_str, (
+            f"MNPI PR-05 should cite SOX §802 (record destruction prohibition), got: {pr05}"
+        )
+        # SEC Rule 17a-4 mandates broker-dealer recordkeeping and non-erasable storage
+        assert "17a-4" in pr05_str, (
+            f"MNPI PR-05 should cite SEC Rule 17a-4 (7-year recordkeeping), got: {pr05}"
+        )
+
+    def test_securities_mnpi_gov04_cites_reg_fd_101e_for_disclosure_approval(self):
+        """GOV-04 (HITL Enforcement) must cite Reg FD §243.101(e) for disclosure exceptions."""
+        profiles = load_overlay_profiles()
+        fm = profiles["securities-mnpi"]["framework_mapping"]
+        gov04 = fm["GOV-04"]
+        gov04_str = " | ".join(gov04)
+        # Reg FD §243.101(e) defines the selective disclosure exception requiring human oversight
+        assert "243.101(e)" in gov04_str, (
+            f"MNPI GOV-04 should cite 17 CFR 243.101(e) (selective disclosure exception), got: {gov04}"
+        )
+
+    def test_securities_mnpi_rs02_cites_reg_fd_and_sox_for_notification(self):
+        """RS-02 (Communication) must cite Reg FD §243.101(e) for simultaneous disclosure."""
+        profiles = load_overlay_profiles()
+        fm = profiles["securities-mnpi"]["framework_mapping"]
+        rs02 = fm["RS-02"]
+        rs02_str = " | ".join(rs02)
+        # Reg FD §243.101(e) governs simultaneous public disclosure when Reg FD is violated
+        assert "243.101(e)" in rs02_str, (
+            f"MNPI RS-02 should cite 17 CFR 243.101(e) (simultaneous disclosure), got: {rs02}"
+        )
+        # SOX §302/§404 governs CEO/CFO certification and disclosure controls
+        assert "SOX" in rs02_str, (
+            f"MNPI RS-02 should cite SOX (disclosure controls certification), got: {rs02}"
+        )
+
+    def test_securities_mnpi_pr01_cites_reg_fd_not_broker_records_rule(self):
+        """PR-01 (Identity) must cite Reg FD 17 CFR 243.100-103, not broker-dealer records rules."""
+        profiles = load_overlay_profiles()
+        fm = profiles["securities-mnpi"]["framework_mapping"]
+        pr01 = fm["PR-01"]
+        pr01_str = " | ".join(pr01)
+        # Reg FD 17 CFR 243.100 is the core prohibition on selective disclosure
+        assert "243.100" in pr01_str, (
+            f"MNPI PR-01 should cite SEC Reg FD 17 CFR 243.100 (disclosure prohibition), got: {pr01}"
+        )
+        # Must NOT cite SEC Rule 17a-3 (broker-dealer records rule — wrong anchor for identity)
+        assert "17a-3" not in pr01_str, (
+            f"MNPI PR-01 must NOT cite SEC Rule 17a-3 (broker records, not identity controls), got: {pr01}"
+        )

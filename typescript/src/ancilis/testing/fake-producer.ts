@@ -1,109 +1,111 @@
-/** FakeProducer — inject synthetic evidence for testing without running real agent code. */
+/** FakeProducer — inject synthetic evidence without running real agent code. */
 
-import { randomUUID } from "node:crypto";
-import { loadConfig } from "../config/index.js";
-import type { ResolvedConfig } from "../config/index.js";
-import { Engine } from "../engine/engine.js";
+import { createHash } from "node:crypto";
+import { ProducerType } from "../producers/protocol.js";
+import type { ActionProducer } from "../producers/protocol.js";
 import type { Action } from "../engine/action.js";
-import type { EvaluationResult } from "../engine/result.js";
-import { MockEvidenceStore } from "./mock-evidence-store.js";
-
-export interface FakeEvaluationResult {
-  action: Action;
-  evaluation: EvaluationResult;
-  record: Awaited<ReturnType<MockEvidenceStore["store"]>>;
-}
+import { ToolRegistry, ToolStatus } from "../engine/registry.js";
+import { makeAction } from "./helpers.js";
 
 /**
- * FakeProducer runs engine evaluations against a `MockEvidenceStore`,
- * letting tests verify control behavior without real agent code or
- * platform connectivity.
+ * Injects synthetic evidence without running real agent code.
+ *
+ * Implements the ActionProducer protocol. Use in tests to produce Action
+ * objects with controlled data, without any real tool connectivity.
  *
  * @example
- * ```ts
- * const producer = new FakeProducer();
- * const { evaluation } = await producer.evaluate("read_file", { path: "/etc/passwd" });
- * expectControlToPass(evaluation, "PR-01");
- * ```
+ * const producer = new FakeProducer("identity");
+ * producer.emit("user.id", "alice");
+ * producer.emit("session.start", { timestamp: "2026-04-11T10:00:00Z" });
  *
- * Supply a custom `ResolvedConfig` to test overlay/control combinations:
- * ```ts
- * const producer = new FakeProducer({ config: ComplianceScenarios.missingIdentity() });
- * const { evaluation } = await producer.evaluate("send_email");
- * expectControlToFail(evaluation, "PR-01");
- * ```
+ * const action = producer.makeAction();
+ * const result = engine.evaluate(action);
  */
-export class FakeProducer {
-  readonly store: MockEvidenceStore;
-  readonly config: ResolvedConfig;
-  private _engine: Engine;
-  private _defaultAgentId: string | null;
+export class FakeProducer implements ActionProducer {
+  private readonly _producerName: string;
+  private readonly _agentId: string;
+  private readonly _agentOwner: string | null;
+  private _emitted: Record<string, unknown> = {};
 
-  constructor(options?: {
-    config?: ResolvedConfig;
-    certifications?: string[];
-    /** Force a specific agentId on every evaluate() call (useful for failure scenarios). */
-    defaultAgentId?: string | null;
-  }) {
-    this.config =
-      options?.config ??
-      loadConfig({ raw: { agent: { name: "test-agent" } } });
-    this.store = new MockEvidenceStore({
-      certifications: options?.certifications ?? this.config.activeCertifications,
+  constructor(
+    producerName: string = "fake",
+    agentId: string = "test-agent",
+    agentOwner: string | null = null,
+  ) {
+    this._producerName = producerName;
+    this._agentId = agentId;
+    this._agentOwner = agentOwner;
+  }
+
+  get producerType(): ProducerType {
+    return ProducerType.MANUAL;
+  }
+
+  get producerVersion(): string {
+    return "0.1.0-test";
+  }
+
+  /** Record a synthetic evidence item. */
+  emit(key: string, value: unknown): void {
+    this._emitted[key] = value;
+  }
+
+  /** All emitted evidence items (read-only copy). */
+  get emittedData(): Record<string, unknown> {
+    return { ...this._emitted };
+  }
+
+  /** Reset all emitted items. */
+  clear(): void {
+    this._emitted = {};
+  }
+
+  /** Create an Action for engine evaluation. */
+  makeAction(options: {
+    toolName?: string;
+    parameters?: Record<string, unknown>;
+    sessionId?: string | null;
+    dataClassifications?: string[];
+    sourceType?: string;
+  } = {}): Action {
+    const merged = { ...this._emitted, ...(options.parameters ?? {}) };
+    return makeAction({
+      toolName: options.toolName ?? this._producerName,
+      agentId: this._agentId,
+      agentOwner: this._agentOwner,
+      parameters: merged,
+      sessionId: options.sessionId,
+      dataClassifications: options.dataClassifications,
+      sourceType: options.sourceType,
     });
-    this._engine = new Engine(this.config);
-    this._defaultAgentId = options?.defaultAgentId ?? null;
   }
 
-  /**
-   * Evaluate a named tool call and store evidence.
-   *
-   * @param toolName  Tool / action name (e.g. `"read_file"`, `"send_email"`).
-   * @param params    Optional raw parameters for the action.
-   * @param agentId   Override the agent identity for this call.
-   */
-  async evaluate(
-    toolName: string,
-    params: Record<string, unknown> = {},
-    agentId?: string,
-  ): Promise<FakeEvaluationResult> {
-    const action: Action = {
-      actionId: randomUUID(),
-      timestamp: new Date().toISOString(),
-      agentId: agentId ?? this._defaultAgentId ?? this.config.agentId ?? this.config.agentName,
-      sourceType: "fake",
-      producerType: "fake",
-      producerVersion: "0.0.0",
-      agentOwner: this.config.agentOwner ?? null,
-      actionType: "tool_call",
-      tool: { name: toolName, descriptionHash: null },
-      parameters: { raw: params, parameterHash: "fake" },
-      context: {
-        dataClassifications: [...this.config.dataClassifications.values()].flat(),
-        activeOverlays: [...this.config.activeOverlays.keys()],
-      },
-    };
+  // --- ActionProducer protocol ---
 
-    const evaluation = this._engine.evaluate(action);
-    const record = await this.store.store(evaluation, toolName);
-    return { action, evaluation, record };
-  }
-
-  /**
-   * Run multiple tool calls in sequence and return all results.
-   */
-  async evaluateAll(
-    calls: Array<{ toolName: string; params?: Record<string, unknown>; agentId?: string }>,
-  ): Promise<FakeEvaluationResult[]> {
-    const results: FakeEvaluationResult[] = [];
-    for (const call of calls) {
-      results.push(await this.evaluate(call.toolName, call.params, call.agentId));
+  translate(rawInvocation: unknown): Action {
+    if (rawInvocation !== null && typeof rawInvocation === "object") {
+      const inv = rawInvocation as Record<string, unknown>;
+      return this.makeAction({
+        toolName: (inv["tool"] as string | undefined) ?? this._producerName,
+        parameters: (inv["parameters"] as Record<string, unknown> | undefined) ?? {},
+      });
     }
-    return results;
+    return this.makeAction();
   }
 
-  /** Reset the in-memory store between test cases. */
-  reset(): void {
-    this.store.clear();
+  computeToolHash(toolIdentifier: unknown): string {
+    return createHash("sha256").update(String(toolIdentifier)).digest("hex");
+  }
+
+  registerTools(registry: ToolRegistry): string[] {
+    const toolName = this._producerName;
+    const now = new Date().toISOString();
+    registry.register({
+      name: toolName,
+      status: ToolStatus.OBSERVED,
+      firstSeen: now,
+      statusChanged: now,
+    });
+    return [toolName];
   }
 }

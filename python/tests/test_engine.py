@@ -1,6 +1,7 @@
 """Tests for ancilis.engine — Unit 2: Control Engine Core."""
 
 import uuid
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -65,6 +66,17 @@ def _make_registry(*tools: tuple) -> ToolRegistry:
             status=ToolStatus.APPROVED,
         ))
     return reg
+
+
+def _make_evidence_store(
+    total: int = 2,
+    chain_valid: bool = True,
+    errors: list[str] | None = None,
+) -> MagicMock:
+    store = MagicMock()
+    store.count.return_value = total
+    store.verify_chain.return_value = (chain_valid, errors or [])
+    return store
 
 
 # --- Action Object Tests ---
@@ -313,6 +325,150 @@ class TestPR04Exposure:
         assert "no data classifications" in pr04.detail.lower()
 
 
+# --- DE-02 Configuration Drift Tests ---
+
+
+class TestDE02ConfigDriftEngine:
+    def test_de02_evaluator_is_active_when_control_enabled(self):
+        config = _make_config()
+        action = _make_action(description_hash="hash-v1")
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        assert "DE-02" in engine._evaluators
+
+        result = engine.evaluate(action)
+        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
+
+        assert de02.result == "PASS"
+        assert de02.evidence_data["first_observation"] is True
+        assert de02.evidence_data["drift_detected"] is False
+
+    def test_de02_detects_description_hash_drift_on_same_engine_instance(self):
+        config = _make_config()
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        engine.evaluate(_make_action(description_hash="hash-v1"))
+        result = engine.evaluate(_make_action(description_hash="hash-v2"))
+
+        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
+        assert de02.result == "FAIL"
+        assert de02.evidence_data["drift_detected"] is True
+        assert "previous_fingerprint" in de02.evidence_data
+
+    def test_de02_missing_description_hash_skips_without_false_drift(self):
+        config = _make_config()
+        action = _make_action(description_hash=None)
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        result = engine.evaluate(action)
+
+        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
+        assert de02.result == "SKIP"
+        assert de02.evidence_data.get("drift_detected") is False
+        assert "cannot compute fingerprint" in de02.detail.lower()
+
+
+# --- DE-04 Integrity Runtime Policy Tests ---
+
+
+class TestDE04IntegrityEngine:
+    def test_de04_policy_skips_for_minimal_config_without_running_evaluator(self):
+        config = _make_config()
+        action = _make_action()
+        store = _make_evidence_store(total=2, chain_valid=True)
+        engine = Engine(config, registry=_make_registry(("test-tool",)), evidence_store=store)
+
+        assert "DE-04" in engine._evaluators
+
+        result = engine.evaluate(action)
+        de04 = next(r for r in result.control_results if r.control_id == "DE-04")
+
+        assert de04.result == "SKIP"
+        assert "policy" in de04.detail.lower()
+        assert de04.evidence_data["activation_sources"] == ["default"]
+        store.count.assert_not_called()
+        store.verify_chain.assert_not_called()
+
+    def test_de04_runs_when_enabled_explicitly_with_evidence_store(self):
+        config = _make_config(
+            security={"controls": {"DE-04": {"enabled": True}}},
+        )
+        action = _make_action()
+        store = _make_evidence_store(total=2, chain_valid=True)
+        engine = Engine(config, registry=_make_registry(("test-tool",)), evidence_store=store)
+
+        result = engine.evaluate(action)
+        de04 = next(r for r in result.control_results if r.control_id == "DE-04")
+
+        assert de04.result == "PASS"
+        assert de04.evidence_data["chain_valid"] is True
+        store.count.assert_called_once_with()
+        store.verify_chain.assert_called_once_with()
+
+    def test_de04_runs_when_required_by_certification_target(self):
+        config = _make_config(certification_targets=["gov-contractor"])
+        action = _make_action()
+        store = _make_evidence_store(total=1, chain_valid=True)
+        engine = Engine(config, registry=_make_registry(("test-tool",)), evidence_store=store)
+
+        result = engine.evaluate(action)
+        de04 = next(r for r in result.control_results if r.control_id == "DE-04")
+
+        assert de04.result == "PASS"
+        assert "certification_targets:gov-contractor" in config.control_activation_sources["DE-04"]
+
+    def test_gov02_policy_skips_for_minimal_config_without_owner_failure(self):
+        config = _make_config()
+        action = _make_action()
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        assert "GOV-02" in engine._evaluators
+
+        result = engine.evaluate(action)
+        gov02 = next(r for r in result.control_results if r.control_id == "GOV-02")
+
+        assert gov02.result == "SKIP"
+        assert "policy" in gov02.detail.lower()
+        assert gov02.evidence_data["activation_sources"] == ["default"]
+
+    def test_gov02_runs_when_enabled_explicitly_with_owner(self):
+        config = _make_config(
+            agent={"name": "test-agent", "owner": "alice@example.com"},
+            security={"controls": {"GOV-02": {"enabled": True}}},
+        )
+        action = _make_action()
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        result = engine.evaluate(action)
+        gov02 = next(r for r in result.control_results if r.control_id == "GOV-02")
+
+        assert gov02.result == "PASS"
+        assert gov02.evidence_data["owner_declared"] is True
+        assert gov02.evidence_data["owner_value"] == "alice@example.com"
+
+    def test_gov02_runs_when_required_by_certification_target(self):
+        config = _make_config(
+            agent={"name": "test-agent", "owner": "alice@example.com"},
+            certification_targets=["gov-contractor"],
+        )
+        action = _make_action()
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        result = engine.evaluate(action)
+        gov02 = next(r for r in result.control_results if r.control_id == "GOV-02")
+
+        assert gov02.result == "PASS"
+        assert "certification_targets:gov-contractor" in config.control_activation_sources["GOV-02"]
+
+    def test_governance_policy_sensitive_evaluators_remain_unregistered(self):
+        config = _make_config(certification_targets=["gov-contractor"])
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+
+        assert "GOV-01" not in engine._evaluators
+        assert "GOV-03" not in engine._evaluators
+        assert "ID-01" not in engine._evaluators
+
+
 # --- Decision Engine Tests ---
 
 
@@ -400,3 +556,58 @@ class TestDecisionEngine:
         assert "pci-dss-v4" in result.active_overlays
         assert "DC-CHD" in result.data_classifications
         assert result.total_duration_ms >= 0
+
+
+# --- detected_data_types (ANC-716) ---
+
+
+class TestDetectedDataTypes:
+    """Engine extraction of PR-04 patterns → DC codes."""
+
+    def _make_action_with_pii(self) -> "Action":
+        return _make_action(
+            params={"text": "SSN: 123-45-6789, email: foo@bar.com"},
+        )
+
+    def test_no_patterns_yields_empty_list(self):
+        config = _make_config()
+        action = _make_action(params={"msg": "hello world"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert result.detected_data_types == []
+
+    def test_ssn_maps_to_dc_pii(self):
+        config = _make_config()
+        action = _make_action(params={"data": "123-45-6789"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert "DC-PII" in result.detected_data_types
+
+    def test_email_maps_to_dc_pii(self):
+        config = _make_config()
+        action = _make_action(params={"to": "user@example.com"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert "DC-PII" in result.detected_data_types
+
+    def test_credit_card_maps_to_dc_chd(self):
+        config = _make_config()
+        action = _make_action(params={"card": "4111111111111111"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert "DC-CHD" in result.detected_data_types
+
+    def test_api_key_maps_to_dc_ip(self):
+        config = _make_config()
+        action = _make_action(params={"key": "sk-" + "a" * 40})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert "DC-IP" in result.detected_data_types
+
+    def test_multiple_pattern_types_deduped(self):
+        """Multiple patterns mapping to same DC code should produce one entry."""
+        config = _make_config()
+        action = _make_action(params={"data": "123-45-6789 foo@bar.com 555-867-5309"})
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        assert result.detected_data_types.count("DC-PII") == 1

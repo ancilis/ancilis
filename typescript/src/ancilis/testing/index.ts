@@ -1,36 +1,37 @@
 /**
- * @ancilis/testing — test utilities for Ancilis SDK.
+ * ancilis/testing — test utilities for agent compliance testing.
  *
- * Import from `ancilis/testing`:
- * ```ts
+ * Provides mocks, assertion helpers, and pre-built scenarios so developers
+ * can write unit tests for their agent code against compliance requirements
+ * without hitting the platform API or writing to disk.
+ *
+ * @example
  * import {
  *   MockEvidenceStore,
  *   FakeProducer,
  *   ComplianceScenarios,
- *   expectControlToPass,
- *   expectControlToFail,
- *   expectPostureAbove,
- *   setupAncilisMatchers,
+ *   assertControlPasses,
+ *   assertPostureAbove,
  * } from "ancilis/testing";
- * ```
  *
- * All utilities work fully offline — no platform API calls or filesystem
- * access required.
+ * test("identity control passes", () => {
+ *   const scenario = ComplianceScenarios.financialCompliant();
+ *   assertControlPasses(scenario, "PR-01");
+ *   assertPostureAbove(scenario, 0.80);
+ * });
  */
 
-export { MockEvidenceStore } from "./mock-evidence-store.js";
+export { MockEvidenceStore } from "./mock-store.js";
 export { FakeProducer } from "./fake-producer.js";
-export type { FakeEvaluationResult } from "./fake-producer.js";
+export { ScanResult } from "./scan-result.js";
 export { ComplianceScenarios } from "./scenarios.js";
 export {
-  AssertionError,
-  expectControlToPass,
-  expectControlToFail,
-  expectControlToSkip,
-  expectDecisionToBe,
-  expectAllowed,
-  expectBlocked,
-  expectPostureAbove,
-  expectAllPassed,
-  setupAncilisMatchers,
-} from "./matchers.js";
+  assertControlPasses,
+  assertControlFails,
+  assertControlFlags,
+  assertPostureAbove,
+  assertDecisionAllows,
+  assertDecisionBlocks,
+} from "./assertions.js";
+export { makeTestConfig, makeAction } from "./helpers.js";
+export type { MakeTestConfigOptions, MakeActionOptions } from "./helpers.js";

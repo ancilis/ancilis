@@ -3,10 +3,22 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { sharedPathFrom } from "../src/ancilis/shared-path.js";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import { ConfigError } from "../src/ancilis/errors.js";
+
+function loadSharedControlIds(): string[] {
+  const controlsDir = sharedPathFrom(import.meta.url, "controls");
+  return readdirSync(controlsDir)
+    .filter(file => file.endsWith(".json"))
+    .map(file => {
+      const raw = readFileSync(sharedPathFrom(import.meta.url, "controls", file), "utf-8");
+      const parsed = JSON.parse(raw) as { id: string };
+      return parsed.id;
+    })
+    .sort();
+}
 
 describe("Minimal Config", () => {
   it("finds packaged shared assets from the installed package root", () => {
@@ -32,6 +44,18 @@ describe("Minimal Config", () => {
     const resolved = loadConfig({ raw: { agent: { name: "my-agent" } } });
     expect(resolved.activeOverlays.size).toBe(0);
     expect(resolved.dataClassifications.size).toBe(0);
+  });
+
+  it("marks default control activation sources", () => {
+    const resolved = loadConfig({ raw: { agent: { name: "my-agent" } } });
+    expect(resolved.controlActivationSources.get("DE-04")).toEqual(new Set(["default"]));
+    expect(
+      resolved.controlHasActivationSource(
+        "DE-04",
+        "explicit:security.controls",
+        "certification_targets:",
+      ),
+    ).toBe(false);
   });
 });
 
@@ -95,6 +119,31 @@ describe("Validation", () => {
         },
       })
     ).toThrow(/Unknown control ID/);
+  });
+
+  it("accepts DE-02 control overrides", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "x" },
+        security: { controls: { "DE-02": { enabled: false } } },
+      },
+    });
+    expect(resolved.controls.get("DE-02")?.enabled).toBe(false);
+  });
+
+  it("accepts control overrides for all shared control definitions", () => {
+    const controlIds = loadSharedControlIds();
+    expect(controlIds).toEqual(expect.arrayContaining(["PR-08", "GOV-01"]));
+
+    for (const controlId of controlIds) {
+      const resolved = loadConfig({
+        raw: {
+          agent: { name: "x" },
+          security: { controls: { [controlId]: { enabled: false } } },
+        },
+      });
+      expect(resolved.controls.get(controlId)?.enabled).toBe(false);
+    }
   });
 
   it("throws ConfigError (not plain Error) for invalid data types", () => {
@@ -212,6 +261,17 @@ describe("Control Override", () => {
     expect(resolved.controls.get("PR-02")?.enabled).toBe(true);
   });
 
+  it("marks enabled control overrides as explicit activation sources", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "x" },
+        security: { controls: { "DE-04": { enabled: true } } },
+      },
+    });
+    expect(resolved.controlActivationSources.get("DE-04")).toContain("explicit:security.controls");
+    expect(resolved.controlHasActivationSource("DE-04", "explicit:security.controls")).toBe(true);
+  });
+
   it("does not apply overlay adjustments to disabled controls", () => {
     const resolved = loadConfig({
       raw: {
@@ -222,6 +282,19 @@ describe("Control Override", () => {
     });
     expect(resolved.controls.get("PR-01")?.enabled).toBe(false);
     expect(resolved.controls.get("PR-01")?.threshold).toBe("standard");
+  });
+});
+
+describe("Certification Targets", () => {
+  it("marks certification-required controls with certification activation sources", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "x" },
+        certification_targets: ["gov-contractor"],
+      },
+    });
+    expect(resolved.controlActivationSources.get("DE-04")).toContain("certification_targets:gov-contractor");
+    expect(resolved.controlHasActivationSource("DE-04", "certification_targets:")).toBe(true);
   });
 });
 

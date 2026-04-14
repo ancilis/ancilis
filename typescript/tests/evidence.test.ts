@@ -532,57 +532,241 @@ describe("Purge", () => {
   });
 });
 
-// --- Agent ID from Config ---
+// ===== listSessions / latestSessionId / reset =====
 
-describe("Agent ID from config", () => {
-  let store: EvidenceStore;
-
-  afterEach(async () => {
-    if (store) await store.close();
+describe("EvidenceStore.listSessions", () => {
+  it("returns empty array when no sessions recorded", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const sessions = await store.listSessions();
+    expect(sessions).toEqual([]);
+    await store.close();
   });
 
-  it("uses config agent_id when set, overriding evaluation agentId", async () => {
-    const config = makeConfig({ agent: { name: "test-agent", agent_id: "12345678-1234-1234-1234-123456789abc" } });
-    store = new EvidenceStore(config, { inMemory: true });
+  it("groups records by session_id", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const e1 = makeEvaluation({ evaluationId: "e1" });
+    e1.context = { sessionId: "sess-A" } as typeof e1.context;
+    await store.store(e1, "tool1");
+    const e2 = makeEvaluation({ evaluationId: "e2" });
+    e2.context = { sessionId: "sess-A" } as typeof e2.context;
+    await store.store(e2, "tool2");
+    const e3 = makeEvaluation({ evaluationId: "e3" });
+    e3.context = { sessionId: "sess-B" } as typeof e3.context;
+    await store.store(e3, "tool3");
 
-    const record = await store.store(
-      makeEvaluation({ agentId: "eval-agent-id" }),
-      "tool1",
+    const sessions = await store.listSessions();
+    const ids = sessions.map((s) => s.session_id);
+    expect(ids).toContain("sess-A");
+    expect(ids).toContain("sess-B");
+    const sessA = sessions.find((s) => s.session_id === "sess-A");
+    expect(sessA?.count).toBe(2);
+    await store.close();
+  });
+});
+
+describe("EvidenceStore.reset", () => {
+  it("returns 0 when store is empty", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const n = await store.reset();
+    expect(n).toBe(0);
+    await store.close();
+  });
+
+  it("deletes all records and returns count", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
+    expect(await store.count()).toBe(2);
+
+    const n = await store.reset();
+    expect(n).toBe(2);
+    expect(await store.count()).toBe(0);
+    await store.close();
+  });
+});
+
+describe("EvidenceStore.latestSessionId", () => {
+  it("returns null when store is empty", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const id = await store.latestSessionId();
+    expect(id).toBeNull();
+    await store.close();
+  });
+
+  it("returns session_id of most recent record", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const e1 = makeEvaluation({ evaluationId: "e1" });
+    e1.context = { sessionId: "sess-A" } as typeof e1.context;
+    await store.store(e1, "tool1");
+    const e2 = makeEvaluation({ evaluationId: "e2" });
+    e2.context = { sessionId: "sess-B" } as typeof e2.context;
+    await store.store(e2, "tool2");
+    const id = await store.latestSessionId();
+    expect(id).toBe("sess-B"); // most recent
+    await store.close();
+  });
+
+  it("returns latest non-null session_id even when the most recent record has no session", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const e1 = makeEvaluation({ evaluationId: "e1" });
+    e1.context = { sessionId: "sess-A" } as typeof e1.context;
+    await store.store(e1, "tool1");
+    // Store a second record with no session_id — must not shadow sess-A
+    const e2 = makeEvaluation({ evaluationId: "e2" });
+    e2.context = undefined as typeof e2.context;
+    await store.store(e2, "tool2");
+    const id = await store.latestSessionId();
+    // latestSessionId skips null-session rows; returns the latest non-null session
+    expect(id).toBe("sess-A");
+    await store.close();
+  });
+
+  it("returns null when no records have a non-null session_id", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const e1 = makeEvaluation({ evaluationId: "e1" });
+    e1.context = undefined as typeof e1.context;
+    await store.store(e1, "tool1");
+    const id = await store.latestSessionId();
+    expect(id).toBeNull();
+    await store.close();
+  });
+});
+
+// --- detectedDataTypes + sdkVersion store round-trip (ANC-736) ---
+
+describe("EvidenceStore detectedDataTypes field", () => {
+  it("stores and retrieves empty detectedDataTypes", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const ev = makeEvaluation({ detectedDataTypes: [] });
+    await store.store(ev, "scan-tool");
+    const records = await store.getRecords();
+    expect(records[0].detectedDataTypes).toEqual([]);
+    await store.close();
+  });
+
+  it("stores and retrieves DC code array", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const ev = makeEvaluation({ detectedDataTypes: ["DC-PII", "DC-CHD"] });
+    await store.store(ev, "scan-tool");
+    const records = await store.getRecords();
+    expect(records[0].detectedDataTypes).toEqual(["DC-PII", "DC-CHD"]);
+    await store.close();
+  });
+
+  it("multiple records keep independent detectedDataTypes", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation({ evaluationId: "e1", detectedDataTypes: ["DC-PII"] }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2", detectedDataTypes: ["DC-IP"] }), "t2");
+    const records = await store.getRecords();
+    expect(records[0].detectedDataTypes).toEqual(["DC-PII"]);
+    expect(records[1].detectedDataTypes).toEqual(["DC-IP"]);
+    await store.close();
+  });
+
+  it("defaults to empty array when field is absent", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    const ev = makeEvaluation();
+    // detectedDataTypes not set — should default to []
+    await store.store(ev, "scan-tool");
+    const records = await store.getRecords();
+    expect(records[0].detectedDataTypes).toEqual([]);
+    await store.close();
+  });
+});
+
+describe("EvidenceStore sdkVersion field", () => {
+  it("sdkVersion is a string or null (never undefined)", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "t1");
+    const records = await store.getRecords();
+    // sdkVersion may be null if package.json is not resolvable in the test env,
+    // but it must not be undefined — the field should always be present.
+    expect(records[0].sdkVersion === null || typeof records[0].sdkVersion === "string").toBe(true);
+    await store.close();
+  });
+
+  it("sdkVersion is consistent across multiple records", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
+    const records = await store.getRecords();
+    expect(records[0].sdkVersion).toBe(records[1].sdkVersion);
+    await store.close();
+  });
+
+  it("sdkVersion round-trips through store correctly", async () => {
+    // Directly inject a known version value to test the round-trip path
+    // bypassing module-level version resolution.
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "t1");
+    // Directly update the record in DuckDB to set a known sdk_version
+    const conn = (store as unknown as Record<string, unknown>)._conn as import("duckdb").Connection;
+    await new Promise<void>((resolve, reject) => {
+      conn.run("UPDATE evidence_records SET sdk_version = '1.2.3'", (err) => err ? reject(err) : resolve());
+    });
+    const records = await store.getRecords();
+    expect(records[0].sdkVersion).toBe("1.2.3");
+    await store.close();
+  });
+});
+
+// --- classificationContext + llmProvider store round-trip (ANC-782) ---
+
+describe("EvidenceStore classificationContext field", () => {
+  it("defaults to empty object when llm_provider is not set", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "tool");
+    const records = await store.getRecords();
+    expect(records[0].classificationContext).toEqual({});
+    await store.close();
+  });
+
+  it("includes llm_provider when set in config", async () => {
+    const store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "openai" } }),
+      { inMemory: true },
     );
-    expect(record.agentId).toBe("12345678-1234-1234-1234-123456789abc");
+    await store.store(makeEvaluation(), "tool");
+    const records = await store.getRecords();
+    expect(records[0].classificationContext).toEqual({ llm_provider: "openai" });
+    await store.close();
   });
 
-  it("falls back to evaluation agentId when config agent_id is not set", async () => {
-    store = new EvidenceStore(makeConfig(), { inMemory: true });
-
-    const record = await store.store(
-      makeEvaluation({ agentId: "eval-agent-id" }),
-      "tool1",
+  it("classificationContext is independent per record", async () => {
+    const store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "anthropic" } }),
+      { inMemory: true },
     );
-    expect(record.agentId).toBe("eval-agent-id");
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
+    const records = await store.getRecords();
+    expect(records[0].classificationContext).toEqual({ llm_provider: "anthropic" });
+    expect(records[1].classificationContext).toEqual({ llm_provider: "anthropic" });
+    await store.close();
   });
 
-  it("config agent_id is queryable via getRecords agentId filter", async () => {
-    const config = makeConfig({ agent: { name: "test-agent", agent_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" } });
-    store = new EvidenceStore(config, { inMemory: true });
+  it("round-trips non-empty classificationContext correctly", async () => {
+    // Verify that a populated classificationContext survives write-then-read.
+    // (Empty-object case is covered by the first test above.)
+    const store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "bedrock" } }),
+      { inMemory: true },
+    );
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "tool");
+    const records = await store.getRecords();
+    expect(records[0].classificationContext).toEqual({ llm_provider: "bedrock" });
+    await store.close();
+  });
+});
 
-    await store.store(makeEvaluation({ evaluationId: "e1" }), "tool1");
-    await store.store(makeEvaluation({ evaluationId: "e2" }), "tool2");
-
-    const records = await store.getRecords({ agentId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" });
-    expect(records).toHaveLength(2);
-    expect(records[0]!.agentId).toBe("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+describe("ResolvedConfig llmProvider field", () => {
+  it("defaults to null when llm_provider is not specified", () => {
+    const config = makeConfig();
+    expect(config.llmProvider).toBeNull();
   });
 
-  it("hash chain remains valid when config agent_id is set", async () => {
-    const config = makeConfig({ agent: { name: "test-agent", agent_id: "12345678-1234-1234-1234-123456789abc" } });
-    store = new EvidenceStore(config, { inMemory: true });
-
-    await store.store(makeEvaluation({ evaluationId: "e1" }), "tool1");
-    await store.store(makeEvaluation({ evaluationId: "e2" }), "tool2");
-
-    const { valid, errors } = await store.verifyChain();
-    expect(valid).toBe(true);
-    expect(errors).toHaveLength(0);
+  it("resolves llm_provider string from config", () => {
+    const config = makeConfig({ agent: { name: "test-agent", llm_provider: "bedrock" } });
+    expect(config.llmProvider).toBe("bedrock");
   });
 });

@@ -1,0 +1,7 @@
+agent:
+  name: langchain-chatbot
+my_agent_handles:
+  - personal_info
+mode: audit
+certification_targets:
+  - soc2

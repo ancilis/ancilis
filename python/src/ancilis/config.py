@@ -4,14 +4,19 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from ancilis.errors import config_invalid
-
 from ancilis._shared import shared_path
+from ancilis.activation.loader import load_overlay_profiles
+from ancilis.errors import config_invalid
+from ancilis.overlays import normalize_overlay_ids
+from ancilis.plugins import PluginRegistry
+
+if TYPE_CHECKING:
+    from ancilis.controls.custom import CustomControlDefinition
 
 # Resolve shared/ directory from packaged assets
 SHARED_DIR = shared_path()
@@ -28,6 +33,7 @@ class AgentConfig(BaseModel):
     description: str = ""
     owner: str = ""
     agent_id: str | None = None
+    llm_provider: str | None = None
 
     @field_validator("name")
     @classmethod
@@ -78,7 +84,7 @@ class ComplianceConfig(BaseModel):
 
 class CliConfig(BaseModel):
     update_check: bool = True
-    update_check_interval: int = 86400  # seconds
+    update_check_interval: int = 86400
 
 
 _VALID_SEVERITY_THRESHOLDS = {"critical", "high", "medium", "low"}
@@ -94,7 +100,7 @@ class ScanDepsConfig(BaseModel):
     def validate_severity_threshold(cls, v: str) -> str:
         if v not in _VALID_SEVERITY_THRESHOLDS:
             raise ValueError(
-                f"scan.dependencies.severity_threshold must be one of: "
+                "scan.dependencies.severity_threshold must be one of: "
                 f"{', '.join(sorted(_VALID_SEVERITY_THRESHOLDS))}"
             )
         return v
@@ -117,7 +123,15 @@ class AncilisConfig(BaseModel):
     @classmethod
     def warn_unknown_keys(cls, values: Any) -> Any:
         if isinstance(values, dict):
-            known = {"agent", "security", "my_agent_handles", "certification_targets", "compliance", "cli", "scan"}
+            known = {
+                "agent",
+                "security",
+                "my_agent_handles",
+                "certification_targets",
+                "compliance",
+                "cli",
+                "scan",
+            }
             unknown = set(values.keys()) - known
             if unknown:
                 # Store warnings for later reporting
@@ -143,6 +157,11 @@ CERTIFICATIONS_DIR = SHARED_DIR / "overlays" / "certifications"
 
 VALID_CERTIFICATION_TARGETS: set[str] = set()
 
+DEFAULT_CONTROL_ACTIVATION_SOURCE = "default"
+EXPLICIT_CONTROL_ACTIVATION_SOURCE = "explicit:security.controls"
+CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX = "certification_targets:"
+CUSTOM_CONTROL_ACTIVATION_SOURCE = "custom:local"
+
 
 def _load_valid_certification_targets() -> set[str]:
     """Discover available certification targets from shared/overlays/certifications/."""
@@ -166,19 +185,40 @@ def load_control_definitions() -> dict[str, dict[str, Any]]:
     return controls
 
 
-def load_overlay_definitions() -> dict[str, dict[str, Any]]:
-    """Load all overlay definitions from shared/overlays/."""
-    overlays: dict[str, dict[str, Any]] = {}
-    for path in sorted(OVERLAYS_DIR.glob("*.json")):
-        data = json.loads(path.read_text())
-        overlays[data["id"]] = data
-    return overlays
+def load_overlay_definitions(
+    *,
+    plugin_registry: PluginRegistry | None = None,
+    plugin_configs: dict[str, dict[str, Any]] | None = None,
+    warnings: list[str] | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Load built-in overlay definitions plus optional plugin overlays."""
+    return load_overlay_profiles(
+        plugin_registry=plugin_registry,
+        plugin_configs=plugin_configs,
+        warnings=warnings,
+    )
 
 
 def load_taxonomy() -> dict[str, Any]:
     """Load the classification taxonomy from shared/classifications/."""
     data = json.loads(CLASSIFICATIONS_FILE.read_text())
     return cast(dict[str, Any], data)
+
+
+def _add_plugin_data_classification_overlays(
+    classification_lookup: dict[str, list[str]],
+    overlay_defs: dict[str, dict[str, Any]],
+) -> None:
+    """Allow plugin overlays to declare data-classification triggers directly."""
+    for oid, profile in overlay_defs.items():
+        if not oid.startswith("plugin:"):
+            continue
+        if profile.get("trigger_type") != "data_classification":
+            continue
+        for dc_code in profile.get("triggered_by", []):
+            overlay_ids = classification_lookup.setdefault(dc_code, [])
+            if oid not in overlay_ids:
+                overlay_ids.append(oid)
 
 
 # --- Resolution Result ---
@@ -227,12 +267,67 @@ class ResolvedConfig:
         self.scope_allowed_destinations: list[str] = []
         self.scope_blocked_destinations: list[str] = []
         self.active_certifications: list[str] = []
+        self.llm_provider: str | None = None
+        self.control_activation_sources: dict[str, set[str]] = {}
+        self.custom_controls: dict[str, CustomControlDefinition] = {}
         # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
         self.overlay_requirements: dict[str, dict[str, Any]] = {}
         # Dependency scan config
         self.scan_dependencies_enabled: bool = True
         self.scan_dependencies_severity_threshold: str = "high"
         self.scan_dependencies_ignore: list[str] = []
+
+    def control_has_activation_source(self, control_id: str, *source_prefixes: str) -> bool:
+        """Return whether a control was activated by any exact source or source prefix."""
+        sources = self.control_activation_sources.get(control_id, set())
+        return any(
+            source == prefix or source.startswith(prefix)
+            for source in sources
+            for prefix in source_prefixes
+        )
+
+
+def _apply_overlay_effects(
+    result: ResolvedConfig,
+    overlay_defs: dict[str, dict[str, Any]],
+    overlay_ids: list[str],
+    max_retention: int,
+) -> int:
+    for oid in overlay_ids:
+        odef = overlay_defs[oid]
+        adjustments = odef.get("control_adjustments", {})
+        for cid, adj in adjustments.items():
+            if cid in result.controls and result.controls[cid].enabled:
+                threshold = adj.get("threshold_adjustment", "standard")
+                citation = adj.get("regulatory_citation", "")
+                # Only upgrade threshold, never downgrade
+                if threshold == "strict" and result.controls[cid].threshold != "strict":
+                    result.controls[cid].threshold = "strict"
+                result.controls[cid].overlay_citations.append(citation)
+                if threshold == "strict":
+                    result.overlay_adjustments.append(
+                        f"{cid}: threshold -> strict ({citation})"
+                    )
+
+        retention = odef.get("evidence_retention_minimum_days", 365)
+        if retention > max_retention:
+            max_retention = retention
+
+        if odef.get("human_oversight_required", False):
+            result.human_oversight_required = True
+
+        controls_section = odef.get("controls", {})
+        for cid, ctrl_data in controls_section.items():
+            if not ctrl_data.get("applicable", True):
+                continue
+            if cid not in result.overlay_requirements:
+                result.overlay_requirements[cid] = {}
+            result.overlay_requirements[cid][oid] = {
+                "evidence_requirements": ctrl_data.get("evidence_requirements", []),
+                "framework_reference": ctrl_data.get("framework_reference", ""),
+            }
+
+    return max_retention
 
 
 # --- Config Parser ---
@@ -247,8 +342,18 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     if isinstance(security, dict):
         controls = security.get("controls", {})
         if isinstance(controls, dict):
+            custom_control_ids: set[str] | None = None
             for key in controls:
-                if key not in VALID_CONTROL_IDS:
+                if key.startswith("custom:"):
+                    if custom_control_ids is None:
+                        from ancilis.controls.custom import list_custom_controls
+
+                        custom_control_ids = set(list_custom_controls())
+                    if key not in custom_control_ids:
+                        raise config_invalid(
+                            f"Unknown custom control ID in security.controls: '{key}'"
+                        )
+                elif key not in VALID_CONTROL_IDS:
                     raise config_invalid(f"Unknown control ID in security.controls: '{key}'")
 
     # Validate my_agent_handles types
@@ -279,12 +384,19 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     return config, warnings
 
 
-def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> ResolvedConfig:
+def resolve_config(
+    config: AncilisConfig,
+    warnings: list[str] | None = None,
+    *,
+    plugin_registry: PluginRegistry | None = None,
+    plugin_configs: dict[str, dict[str, Any]] | None = None,
+) -> ResolvedConfig:
     """Resolve a validated config into full runtime configuration."""
     result = ResolvedConfig()
     result.agent_name = config.agent.name
     result.agent_owner = config.agent.owner
     result.agent_id = config.agent.agent_id
+    result.llm_provider = config.agent.llm_provider
     result.mode = config.security.mode
     result.warnings = warnings or []
     result.tools_allowed = list(config.security.tools.allowed)
@@ -298,7 +410,14 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
 
     # Load shared data
     control_defs = load_control_definitions()
-    overlay_defs = load_overlay_definitions()
+    if plugin_registry is None and plugin_configs is None:
+        overlay_defs = load_overlay_definitions()
+    else:
+        overlay_defs = load_overlay_definitions(
+            plugin_registry=plugin_registry,
+            plugin_configs=plugin_configs,
+            warnings=result.warnings,
+        )
     taxonomy = load_taxonomy()
 
     # Resolve controls
@@ -306,6 +425,27 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
         override = config.security.controls.get(cid)
         enabled = override.enabled if override else cdef.get("default_enabled", True)
         result.controls[cid] = ControlStatus(cid, cdef["name"], enabled)
+        result.control_activation_sources[cid] = set()
+        if enabled:
+            source = (
+                EXPLICIT_CONTROL_ACTIVATION_SOURCE
+                if override is not None
+                else DEFAULT_CONTROL_ACTIVATION_SOURCE
+            )
+            result.control_activation_sources[cid].add(source)
+
+    from ancilis.controls.custom import list_custom_controls
+
+    for cid, definition in sorted(list_custom_controls().items()):
+        override = config.security.controls.get(cid)
+        enabled = override.enabled if override else True
+        result.controls[cid] = ControlStatus(cid, definition.title, enabled)
+        result.control_activation_sources[cid] = set()
+        if enabled:
+            result.control_activation_sources[cid].add(CUSTOM_CONTROL_ACTIVATION_SOURCE)
+            if override is not None:
+                result.control_activation_sources[cid].add(EXPLICIT_CONTROL_ACTIVATION_SOURCE)
+        result.custom_controls[cid] = definition
 
     # Resolve data classifications
     type_mapping = taxonomy["developer_type_mapping"]
@@ -321,7 +461,10 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     # Build classification-to-overlay lookup from taxonomy
     classification_lookup: dict[str, list[str]] = {}
     for cls_entry in taxonomy["classifications"]:
-        classification_lookup[cls_entry["code"]] = cls_entry.get("overlays", [])
+        classification_lookup[cls_entry["code"]] = normalize_overlay_ids(
+            cls_entry.get("overlays", [])
+        )
+    _add_plugin_data_classification_overlays(classification_lookup, overlay_defs)
 
     # Determine which overlays should activate
     overlay_triggers: dict[str, list[str]] = {}  # overlay_id -> ["DC-XXX via data_type", ...]
@@ -336,7 +479,7 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
 
     # If compliance.overlays is set, filter to only those
     if config.compliance.overlays is not None:
-        explicit_overlays = set(config.compliance.overlays)
+        explicit_overlays = set(normalize_overlay_ids(config.compliance.overlays))
         overlay_triggers = {k: v for k, v in overlay_triggers.items() if k in explicit_overlays}
         # Add explicitly requested overlays that aren't triggered by data
         for oid in explicit_overlays:
@@ -359,48 +502,12 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
                     UnavailableOverlay(oid, dc_code, data_type)
                 )
 
-    # Apply overlay adjustments
-    max_retention = config.compliance.evidence.retention_days
-    for oid, _activation in result.active_overlays.items():
-        odef = overlay_defs[oid]
-        adjustments = odef.get("control_adjustments", {})
-        for cid, adj in adjustments.items():
-            if cid in result.controls and result.controls[cid].enabled:
-                threshold = adj.get("threshold_adjustment", "standard")
-                citation = adj.get("regulatory_citation", "")
-                # Only upgrade threshold, never downgrade
-                if threshold == "strict" and result.controls[cid].threshold != "strict":
-                    result.controls[cid].threshold = "strict"
-                result.controls[cid].overlay_citations.append(citation)
-                if threshold == "strict":
-                    result.overlay_adjustments.append(
-                        f"{cid}: threshold -> strict ({citation})"
-                    )
-
-        retention = odef.get("evidence_retention_minimum_days", 365)
-        if retention > max_retention:
-            max_retention = retention
-
-        if odef.get("human_oversight_required", False):
-            result.human_oversight_required = True
-
-    result.evidence_retention_days = max_retention
-
-    # Build per-control overlay requirements from the controls sections of active overlays.
-    # This populates overlay_requirements[control_id][overlay_id] = {evidence_requirements, framework_reference}
-    # so the engine can surface meaningful metadata for controls that have no evaluator yet (SKIP).
-    for oid, _activation in result.active_overlays.items():
-        odef = overlay_defs[oid]
-        controls_section = odef.get("controls", {})
-        for cid, ctrl_data in controls_section.items():
-            if not ctrl_data.get("applicable", True):
-                continue
-            if cid not in result.overlay_requirements:
-                result.overlay_requirements[cid] = {}
-            result.overlay_requirements[cid][oid] = {
-                "evidence_requirements": ctrl_data.get("evidence_requirements", []),
-                "framework_reference": ctrl_data.get("framework_reference", ""),
-            }
+    result.evidence_retention_days = _apply_overlay_effects(
+        result,
+        overlay_defs,
+        list(result.active_overlays),
+        config.compliance.evidence.retention_days,
+    )
 
     # Resolve certification targets — use activation resolver for richer logic
     valid_certs = _load_valid_certification_targets()
@@ -412,16 +519,51 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     if result.active_certifications:
         from ancilis.activation.resolver import ActivationResolver
 
-        resolver = ActivationResolver()
+        resolver = ActivationResolver(
+            plugin_registry=plugin_registry,
+            plugin_configs=plugin_configs,
+            warnings=result.warnings,
+        )
         spec = resolver.resolve(
             my_agent_handles=config.my_agent_handles or None,
             certification_targets=result.active_certifications,
+            compliance_overlays=config.compliance.overlays,
         )
+
+        new_certification_overlays: list[str] = []
+        for oid in spec.active_overlays:
+            source = spec.activation_source.get(oid, "")
+            if (
+                source.startswith("certification_targets:")
+                and oid in overlay_defs
+                and oid not in result.active_overlays
+            ):
+                result.active_overlays[oid] = OverlayActivation(
+                    oid,
+                    overlay_defs[oid]["name"],
+                    [source],
+                )
+                new_certification_overlays.append(oid)
+
+        if new_certification_overlays:
+            result.evidence_retention_days = _apply_overlay_effects(
+                result,
+                overlay_defs,
+                new_certification_overlays,
+                result.evidence_retention_days,
+            )
 
         # Activate any controls required by certifications that aren't already active
         for cid in spec.active_controls:
             if cid in result.controls:
                 result.controls[cid].enabled = True
+                activation_source = spec.activation_source.get(cid)
+                if activation_source and activation_source.startswith(
+                    CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX
+                ):
+                    result.control_activation_sources.setdefault(cid, set()).add(
+                        activation_source
+                    )
             # Apply stricter thresholds from certification profiles
             threshold = spec.control_thresholds.get(cid, "standard")
             if threshold == "strict" and cid in result.controls:
@@ -441,6 +583,9 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
 def load_config(
     path: str | Path | None = None,
     raw: dict[str, Any] | None = None,
+    *,
+    plugin_registry: PluginRegistry | None = None,
+    plugin_configs: dict[str, dict[str, Any]] | None = None,
 ) -> ResolvedConfig:
     """Load and resolve an Ancilis configuration.
 
@@ -451,20 +596,40 @@ def load_config(
     Returns:
         ResolvedConfig with all controls, overlays, and classifications resolved.
     """
+    custom_warnings: list[str] = []
     if raw is not None:
         config_dict = dict(raw)
     elif path is not None:
-        config_dict = yaml.safe_load(Path(path).read_text()) or {}
+        config_path = Path(path)
+        config_dict = yaml.safe_load(config_path.read_text()) or {}
+        from ancilis.controls.custom import load_custom_controls_from_directory
+
+        custom_warnings.extend(
+            load_custom_controls_from_directory(config_path.parent / ".ancilis" / "controls")
+        )
     else:
         # Try to find ancilis.yaml in current directory
         default_path = Path("ancilis.yaml")
         if default_path.exists():
             config_dict = yaml.safe_load(default_path.read_text()) or {}
+            from ancilis.controls.custom import load_custom_controls_from_directory
+
+            custom_warnings.extend(
+                load_custom_controls_from_directory(
+                    default_path.parent / ".ancilis" / "controls"
+                )
+            )
         else:
             raise FileNotFoundError("No ancilis.yaml found and no config provided")
 
     config, warnings = validate_config(config_dict)
-    return resolve_config(config, warnings)
+    warnings.extend(custom_warnings)
+    return resolve_config(
+        config,
+        warnings,
+        plugin_registry=plugin_registry,
+        plugin_configs=plugin_configs,
+    )
 
 
 def format_resolved_config(resolved: ResolvedConfig) -> str:

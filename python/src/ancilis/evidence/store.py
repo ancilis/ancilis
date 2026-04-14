@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import logging
 import os
 import uuid
+from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from pathlib import Path
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import duckdb
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.result import EvaluationResult
+from ancilis.evidence.adapter import EvidenceAdapter, EvidenceAdapterPayload
 from ancilis.evidence.chain import GENESIS_SEED, canonical_payload, compute_hash
 from ancilis.evidence.record import EvidenceRecord
 
@@ -68,7 +70,10 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     previous_hash VARCHAR NOT NULL,
     total_duration_ms DOUBLE NOT NULL,
     output_summary VARCHAR,
-    tenant_id VARCHAR
+    tenant_id VARCHAR,
+    detected_data_types JSON NOT NULL DEFAULT '[]',
+    sdk_version VARCHAR,
+    classification_context JSON NOT NULL DEFAULT '{}'
 );
 """
 
@@ -77,15 +82,16 @@ INSERT INTO evidence_records (
     record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
-    record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
+    detected_data_types, sdk_version, classification_context
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_COLUMNS = """
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary,
-tenant_id
+tenant_id, detected_data_types, sdk_version, classification_context
 """
 
 
@@ -103,6 +109,8 @@ class EvidenceStore:
         in_memory: bool = False,
         tenant_id: str | None = None,
         on_drift: Callable[[DriftReport], None] | None = None,
+        evidence_adapter: EvidenceAdapter | None = None,
+        evidence_adapter_metadata: Mapping[str, Any] | None = None,
     ) -> None:
         self._config = config
         self._certifications: list[str] = list(
@@ -112,6 +120,8 @@ class EvidenceStore:
         self._conn: duckdb.DuckDBPyConnection | None = None
         self._tenant_id = tenant_id
         self._on_drift = on_drift
+        self._evidence_adapter = evidence_adapter
+        self._evidence_adapter_metadata = dict(evidence_adapter_metadata or {})
 
         if in_memory:
             self._db_path = ":memory:"
@@ -145,7 +155,7 @@ class EvidenceStore:
             )
         if "source_type" not in columns:
             self._connection.execute(
-                "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'"
+                "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR DEFAULT 'agent'"
             )
         if "output_summary" not in columns:
             self._connection.execute(
@@ -154,6 +164,18 @@ class EvidenceStore:
         if "tenant_id" not in columns:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN tenant_id VARCHAR"
+            )
+        if "detected_data_types" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN detected_data_types JSON DEFAULT '[]'"
+            )
+        if "sdk_version" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN sdk_version VARCHAR"
+            )
+        if "classification_context" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN classification_context JSON DEFAULT '{}'"
             )
 
     @property
@@ -221,6 +243,19 @@ class EvidenceStore:
             for cr in evaluation.control_results
         ]
 
+        detected_data_types = list(getattr(evaluation, "detected_data_types", None) or [])
+
+        _sdk_ver: str | None
+        try:
+            from ancilis import __version__ as _sdk_ver
+        except Exception:  # noqa: BLE001 — best-effort, never breaks evidence writes
+            _sdk_ver = None
+
+        classification_context: dict[str, Any] = {}
+        llm_provider = getattr(self._config, "llm_provider", None)
+        if llm_provider:
+            classification_context["llm_provider"] = llm_provider
+
         canon = canonical_payload(
             evaluation_id=evaluation.evaluation_id,
             timestamp=evaluation.timestamp,
@@ -238,6 +273,9 @@ class EvidenceStore:
             output_summary=output_summary,
             session_id=session_id,
             tenant_id=self._tenant_id,
+            detected_data_types=detected_data_types,
+            sdk_version=_sdk_ver,
+            classification_context=classification_context,
         )
         record_hash = compute_hash(canon)
 
@@ -260,6 +298,9 @@ class EvidenceStore:
             output_summary=output_summary,
             session_id=session_id,
             tenant_id=self._tenant_id,
+            detected_data_types=detected_data_types,
+            sdk_version=_sdk_ver,
+            classification_context=classification_context,
         )
 
         self._connection.execute(INSERT_SQL, [
@@ -281,10 +322,26 @@ class EvidenceStore:
             record.total_duration_ms,
             record.output_summary,
             record.tenant_id,
+            json.dumps(record.detected_data_types),
+            record.sdk_version,
+            json.dumps(record.classification_context),
         ])
 
         self._maybe_trigger_drift_check()
+        self._forward_to_evidence_adapter(record)
         return record
+
+    def _forward_to_evidence_adapter(self, record: EvidenceRecord) -> None:
+        if self._evidence_adapter is None:
+            return
+        payload = EvidenceAdapterPayload(
+            record=copy.deepcopy(record),
+            adapter_metadata=dict(self._evidence_adapter_metadata),
+        )
+        try:
+            self._evidence_adapter.store(payload)
+        except Exception as exc:  # noqa: BLE001 — plugin hooks must not break DuckDB evidence
+            logger.warning("plugin evidence adapter store hook failed: %s", exc)
 
     def _maybe_trigger_drift_check(self) -> None:
         """Fire the on_drift callback if configured and an active baseline exists."""
@@ -423,8 +480,15 @@ class EvidenceStore:
         self._connection.execute("DELETE FROM evidence_records")
         return n
 
-    def verify_chain(self) -> tuple[bool, list[str]]:
-        """Verify the hash chain integrity. Returns (valid, errors)."""
+    def verify_chain(self, session_id: str | None = None) -> tuple[bool, list[str]]:
+        """Verify the hash chain integrity. Returns (valid, errors).
+
+        Records written before ANC-922 used a narrower canonical payload. Those
+        legacy hashes are accepted only when the stored hash matches that old
+        payload exactly; new writes protect the expanded metadata fields.
+        When session_id is provided, only records in that session are reported;
+        previous_hash links are still checked against the stored global chain.
+        """
         self._ensure_initialized()
         # SELECT_COLUMNS is a constant defined at module level, safe to concatenate
         if self._tenant_id is not None:
@@ -442,9 +506,10 @@ class EvidenceStore:
 
         for row in rows:
             record = self._row_to_record(row)
+            in_scope = session_id is None or record.session_id == session_id
 
             # Check previous_hash links correctly
-            if record.previous_hash != expected_previous:
+            if in_scope and record.previous_hash != expected_previous:
                 errors.append(
                     f"Record {record.record_id}: previous_hash mismatch. "
                     f"Expected {expected_previous[:16]}..., got {record.previous_hash[:16]}..."
@@ -468,14 +533,37 @@ class EvidenceStore:
                 output_summary=record.output_summary,
                 session_id=record.session_id,
                 tenant_id=record.tenant_id,
+                detected_data_types=record.detected_data_types,
+                sdk_version=record.sdk_version,
+                classification_context=record.classification_context,
             )
             expected_hash = compute_hash(canon)
 
-            if record.record_hash != expected_hash:
-                errors.append(
-                    f"Record {record.record_id}: hash mismatch. "
-                    f"Expected {expected_hash[:16]}..., got {record.record_hash[:16]}..."
+            if in_scope and record.record_hash != expected_hash:
+                legacy_canon = canonical_payload(
+                    evaluation_id=record.evaluation_id,
+                    timestamp=record.timestamp,
+                    agent_id=record.agent_id,
+                    source_type=record.source_type,
+                    tool_name=record.tool_name,
+                    decision=record.decision,
+                    mode=record.mode,
+                    control_results=record.control_results,
+                    active_overlays=record.active_overlays,
+                    data_classifications=record.data_classifications,
+                    active_certifications=record.active_certifications,
+                    total_duration_ms=record.total_duration_ms,
+                    previous_hash=record.previous_hash,
+                    output_summary=record.output_summary,
+                    session_id=record.session_id,
+                    tenant_id=record.tenant_id,
                 )
+                legacy_hash = compute_hash(legacy_canon)
+                if record.record_hash != legacy_hash:
+                    errors.append(
+                        f"Record {record.record_id}: hash mismatch. "
+                        f"Expected {expected_hash[:16]}..., got {record.record_hash[:16]}..."
+                    )
 
             expected_previous = record.record_hash
 
@@ -612,8 +700,17 @@ class EvidenceStore:
         Column order: seq_id, record_id, evaluation_id, timestamp, agent_id,
         session_id, source_type, tool_name, decision, mode, control_results,
         active_overlays, data_classifications, active_certifications,
-        record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
+        record_hash, previous_hash, total_duration_ms, output_summary,
+        tenant_id, detected_data_types, sdk_version, classification_context
         """
+        raw_detected = row[19] if len(row) > 19 else None
+        detected_data_types: list[str] = (
+            json.loads(raw_detected) if isinstance(raw_detected, str) else (raw_detected or [])
+        )
+        raw_ctx = row[21] if len(row) > 21 else None
+        classification_context: dict[str, Any] = (
+            json.loads(raw_ctx) if isinstance(raw_ctx, str) else (raw_ctx or {})
+        )
         return EvidenceRecord(
             record_id=row[1],
             evaluation_id=row[2],
@@ -633,4 +730,7 @@ class EvidenceStore:
             output_summary=row[17] if len(row) > 17 else None,
             session_id=row[5] if len(row) > 5 else None,
             tenant_id=row[18] if len(row) > 18 else None,
+            detected_data_types=detected_data_types,
+            sdk_version=row[20] if len(row) > 20 else None,
+            classification_context=classification_context,
         )

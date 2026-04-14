@@ -17,6 +17,11 @@ from ancilis.dependencies import (
 from ancilis.dependencies.detector import (
     Dependency,
     DetectionResult,
+    _normalise_pep508,
+    _parse_pipfile_lock,
+    _parse_poetry_lock,
+    _parse_pyproject_toml,
+    _parse_requirements_txt,
     detect_dependencies,
 )
 from ancilis.dependencies.osv import VulnerabilityFinding, query_osv_batch
@@ -326,3 +331,220 @@ class TestScanDependencies:
             result = scan_dependencies(tmp_path)
         assert result.metadata["dep_count"] == 2
         assert result.metadata["manifest_format"] == "requirements.txt"
+
+
+# ---------------------------------------------------------------------------
+# Branch coverage: detector internals (ANC-827)
+# ---------------------------------------------------------------------------
+
+
+class TestNormalisePep508:
+    """Unit tests for _normalise_pep508 — covers lines 81-88 in detector.py."""
+
+    def test_pinned_dep_returns_name_and_version(self) -> None:
+        name, ver = _normalise_pep508("requests==2.28.0")
+        assert name == "requests"
+        assert ver == "2.28.0"
+
+    def test_extras_are_stripped_before_parsing(self) -> None:
+        name, ver = _normalise_pep508("requests[security]==2.28.0")
+        assert name == "requests"
+        assert ver == "2.28.0"
+
+    def test_env_marker_is_stripped(self) -> None:
+        name, ver = _normalise_pep508("requests==2.28.0; python_version>='3.7'")
+        assert name == "requests"
+        assert ver == "2.28.0"
+
+    def test_unpinned_dep_returns_name_with_none_version(self) -> None:
+        name, ver = _normalise_pep508("requests>=2.0")
+        assert name == "requests"
+        assert ver is None
+
+    def test_bare_name_returns_name_with_none_version(self) -> None:
+        name, ver = _normalise_pep508("requests")
+        assert name == "requests"
+        assert ver is None
+
+    def test_non_matching_spec_returns_spec_with_none_version(self) -> None:
+        # A spec that starts with a non-identifier char hits the final fallback (line 88)
+        name, ver = _normalise_pep508("!invalid-spec!")
+        assert ver is None
+        assert name == "!invalid-spec!"
+
+
+class TestParseRequirementsTxtBranches:
+    """Covers OSError handler and comment/empty line skip in _parse_requirements_txt."""
+
+    def test_oserror_returns_empty_list(self, tmp_path: Path) -> None:
+        path = tmp_path / "requirements.txt"
+        path.write_text("requests==2.28.0\n")
+        with patch.object(path.__class__, "read_text", side_effect=OSError("perm denied")):
+            deps = _parse_requirements_txt(path)
+        assert deps == []
+
+    def test_comment_lines_are_skipped(self, tmp_path: Path) -> None:
+        path = tmp_path / "requirements.txt"
+        path.write_text("# This is a comment\nrequests==2.28.0\n\n")
+        deps = _parse_requirements_txt(path)
+        assert len(deps) == 1
+        assert deps[0].name == "requests"
+
+    def test_dash_option_lines_are_skipped(self, tmp_path: Path) -> None:
+        path = tmp_path / "requirements.txt"
+        path.write_text("-r other.txt\nflask==2.3.0\n")
+        deps = _parse_requirements_txt(path)
+        assert len(deps) == 1
+        assert deps[0].name == "flask"
+
+    def test_empty_lines_are_skipped(self, tmp_path: Path) -> None:
+        path = tmp_path / "requirements.txt"
+        path.write_text("\n\nrequests==2.28.0\n\n")
+        deps = _parse_requirements_txt(path)
+        assert len(deps) == 1
+
+
+class TestParsePipfileLockBranches:
+    """Covers JSONDecodeError and OSError in _parse_pipfile_lock."""
+
+    def test_invalid_json_returns_empty_list(self, tmp_path: Path) -> None:
+        path = tmp_path / "Pipfile.lock"
+        path.write_text("{not valid json{{")
+        deps = _parse_pipfile_lock(path)
+        assert deps == []
+
+    def test_oserror_returns_empty_list(self, tmp_path: Path) -> None:
+        path = tmp_path / "Pipfile.lock"
+        path.write_text('{"default": {}}')
+        with patch.object(path.__class__, "read_text", side_effect=OSError("no access")):
+            deps = _parse_pipfile_lock(path)
+        assert deps == []
+
+    def test_entry_without_version_key_is_skipped(self, tmp_path: Path) -> None:
+        data = {"default": {"requests": {"hash": "sha256:abc"}}, "develop": {}}
+        path = tmp_path / "Pipfile.lock"
+        path.write_text(json.dumps(data))
+        deps = _parse_pipfile_lock(path)
+        assert deps == []
+
+    def test_entry_with_non_pinned_version_is_skipped(self, tmp_path: Path) -> None:
+        data = {"default": {"requests": {"version": "2.28.0"}}, "develop": {}}
+        path = tmp_path / "Pipfile.lock"
+        path.write_text(json.dumps(data))
+        deps = _parse_pipfile_lock(path)
+        # version doesn't match ==X.Y.Z format → skipped
+        assert deps == []
+
+
+class TestParsePoetryLockBranches:
+    """Covers exception path in _parse_poetry_lock."""
+
+    def test_invalid_toml_returns_empty_list(self, tmp_path: Path) -> None:
+        path = tmp_path / "poetry.lock"
+        path.write_text("{{{ definitely not toml }}}")
+        deps = _parse_poetry_lock(path)
+        assert deps == []
+
+    def test_package_without_name_or_version_is_skipped(self, tmp_path: Path) -> None:
+        content = "[[package]]\ndescription = 'no name or version'\n"
+        path = tmp_path / "poetry.lock"
+        path.write_text(content)
+        deps = _parse_poetry_lock(path)
+        assert deps == []
+
+
+class TestParsePyprojectToml:
+    """Covers all branches of _parse_pyproject_toml — lines 92-114."""
+
+    def test_pep621_pinned_deps(self, tmp_path: Path) -> None:
+        content = textwrap.dedent("""\
+            [project]
+            name = "myapp"
+            dependencies = ["requests==2.28.0", "flask==2.3.0"]
+        """)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(content)
+        deps = _parse_pyproject_toml(path)
+        names = [d.name for d in deps]
+        assert "requests" in names
+        assert "flask" in names
+        versions = {d.name: d.version for d in deps}
+        assert versions["requests"] == "2.28.0"
+
+    def test_pep621_unpinned_deps_excluded(self, tmp_path: Path) -> None:
+        content = textwrap.dedent("""\
+            [project]
+            dependencies = ["requests>=2.0", "flask"]
+        """)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(content)
+        deps = _parse_pyproject_toml(path)
+        # unpinned → no exact version → excluded
+        assert deps == []
+
+    def test_pep621_dep_with_extras_and_marker(self, tmp_path: Path) -> None:
+        content = textwrap.dedent("""\
+            [project]
+            dependencies = ["requests[security]==2.28.0; python_version>='3.7'"]
+        """)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(content)
+        deps = _parse_pyproject_toml(path)
+        assert len(deps) == 1
+        assert deps[0].name == "requests"
+        assert deps[0].version == "2.28.0"
+
+    def test_poetry_string_version_with_specifier(self, tmp_path: Path) -> None:
+        content = textwrap.dedent("""\
+            [tool.poetry.dependencies]
+            python = ">=3.8"
+            requests = "==2.28.0"
+        """)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(content)
+        deps = _parse_pyproject_toml(path)
+        # python is skipped; requests==2.28.0 is pinned
+        names = [d.name for d in deps]
+        assert "requests" in names
+        assert "python" not in names
+
+    def test_poetry_string_version_without_specifier_excluded(self, tmp_path: Path) -> None:
+        content = textwrap.dedent("""\
+            [tool.poetry.dependencies]
+            requests = "latest"
+        """)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(content)
+        deps = _parse_pyproject_toml(path)
+        # "latest" doesn't start with a specifier char → no version → excluded
+        assert deps == []
+
+    def test_poetry_dict_version(self, tmp_path: Path) -> None:
+        content = textwrap.dedent("""\
+            [tool.poetry.dependencies]
+            requests = {version = "==2.28.0", optional = false}
+        """)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(content)
+        deps = _parse_pyproject_toml(path)
+        assert len(deps) == 1
+        assert deps[0].name == "requests"
+        assert deps[0].version == "2.28.0"
+
+    def test_invalid_toml_returns_empty_list(self, tmp_path: Path) -> None:
+        path = tmp_path / "pyproject.toml"
+        path.write_text("{{{ not valid toml }}}")
+        deps = _parse_pyproject_toml(path)
+        assert deps == []
+
+    def test_pyproject_toml_detected_via_detect_dependencies(self, tmp_path: Path) -> None:
+        content = textwrap.dedent("""\
+            [project]
+            name = "myapp"
+            dependencies = ["requests==2.28.0"]
+        """)
+        (tmp_path / "pyproject.toml").write_text(content)
+        result = detect_dependencies(tmp_path)
+        assert result is not None
+        assert result.manifest_format == "pyproject.toml"
+        assert any(d.name == "requests" for d in result.dependencies)

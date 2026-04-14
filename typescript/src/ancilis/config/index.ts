@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { sharedPathFrom } from "../shared-path.js";
 import { ConfigError } from "../errors.js";
+import { ActivationResolver } from "../activation/resolver.js";
 
 // Resolve shared/ directory relative to the installed package root
 const SHARED_DIR = sharedPathFrom(import.meta.url);
@@ -16,9 +17,11 @@ const OVERLAYS_DIR = join(SHARED_DIR, "overlays");
 const CERTIFICATIONS_DIR = join(OVERLAYS_DIR, "certifications");
 const CLASSIFICATIONS_FILE = join(SHARED_DIR, "classifications", "taxonomy.json");
 
-// --- Zod Schemas ---
+const DEFAULT_CONTROL_ACTIVATION_SOURCE = "default";
+const EXPLICIT_CONTROL_ACTIVATION_SOURCE = "explicit:security.controls";
+const CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX = "certification_targets:";
 
-const VALID_CONTROL_IDS = ["PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01"] as const;
+// --- Zod Schemas ---
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -70,6 +73,7 @@ const AncilisConfigSchema = z.object({
     description: z.string().default(""),
     owner: z.string().default(""),
     agent_id: z.string().regex(UUID_REGEX, "agent.agent_id must be a valid UUID").optional(),
+    llm_provider: z.string().nullable().default(null),
   }),
   security: SecurityConfigSchema,
   my_agent_handles: z.array(z.string()).default([]),
@@ -196,6 +200,9 @@ export interface ResolvedConfig {
   scopeAllowedDestinations: string[];
   scopeBlockedDestinations: string[];
   activeCertifications: string[];
+  llmProvider: string | null;
+  controlActivationSources: Map<string, Set<string>>;
+  controlHasActivationSource: (controlId: string, ...sourcePrefixes: string[]) => boolean;
   scanDependenciesEnabled: boolean;
   scanDependenciesSeverityThreshold: "critical" | "high" | "medium" | "low";
   scanDependenciesIgnore: string[];
@@ -219,7 +226,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
   if (security && typeof security === "object") {
     const controls = security.controls as Record<string, unknown> | undefined;
     if (controls && typeof controls === "object") {
-      const validIds = new Set<string>(VALID_CONTROL_IDS);
+      const validIds = new Set<string>(loadControlDefinitions().keys());
       for (const key of Object.keys(controls)) {
         if (!validIds.has(key)) {
           throw new ConfigError(`Unknown control ID in security.controls: '${key}'`);
@@ -284,6 +291,17 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
     scopeAllowedDestinations: [...config.security.scope.allowed_destinations],
     scopeBlockedDestinations: [...config.security.scope.blocked_destinations],
     activeCertifications: [],
+    llmProvider: config.agent.llm_provider,
+    controlActivationSources: new Map(),
+    controlHasActivationSource(controlId: string, ...sourcePrefixes: string[]): boolean {
+      const sources = this.controlActivationSources.get(controlId) ?? new Set<string>();
+      for (const source of sources) {
+        for (const prefix of sourcePrefixes) {
+          if (source === prefix || source.startsWith(prefix)) return true;
+        }
+      }
+      return false;
+    },
     scanDependenciesEnabled: config.scan.dependencies.enabled,
     scanDependenciesSeverityThreshold: config.scan.dependencies.severity_threshold,
     scanDependenciesIgnore: [...config.scan.dependencies.ignore],
@@ -297,6 +315,7 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
   for (const [cid, cdef] of [...controlDefs.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const override = config.security.controls[cid];
     const enabled = override ? override.enabled : (cdef.default_enabled ?? true);
+    const sources = new Set<string>();
     result.controls.set(cid, {
       controlId: cid,
       name: cdef.name,
@@ -304,6 +323,10 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
       threshold: "standard",
       overlayCitations: [],
     });
+    result.controlActivationSources.set(cid, sources);
+    if (enabled) {
+      sources.add(override !== undefined ? EXPLICIT_CONTROL_ACTIVATION_SOURCE : DEFAULT_CONTROL_ACTIVATION_SOURCE);
+    }
   }
 
   // Resolve data classifications
@@ -423,6 +446,36 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
   for (const ct of config.certification_targets) {
     if (validCerts.has(ct)) {
       result.activeCertifications.push(ct);
+    }
+  }
+
+  if (result.activeCertifications.length > 0) {
+    const spec = new ActivationResolver().resolve({
+      dataHandling: config.my_agent_handles.length > 0 ? config.my_agent_handles : undefined,
+      certificationTargets: result.activeCertifications,
+    });
+
+    for (const cid of spec.activeControls) {
+      const control = result.controls.get(cid);
+      if (control) {
+        control.enabled = true;
+        const source = spec.activationSource[cid];
+        if (source?.startsWith(CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX)) {
+          const sources = result.controlActivationSources.get(cid) ?? new Set<string>();
+          sources.add(source);
+          result.controlActivationSources.set(cid, sources);
+        }
+        if (spec.controlThresholds[cid] === "strict") {
+          control.threshold = "strict";
+        }
+      }
+    }
+
+    if (spec.evidenceRetentionDays > result.evidenceRetentionDays) {
+      result.evidenceRetentionDays = spec.evidenceRetentionDays;
+    }
+    if (spec.humanOversightRequired) {
+      result.humanOversightRequired = true;
     }
   }
 

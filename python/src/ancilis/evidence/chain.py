@@ -8,6 +8,7 @@ from typing import Any
 
 # Genesis seed — the "previous_hash" for the very first record in any chain.
 GENESIS_SEED = hashlib.sha256(b"ancilis-genesis-v1").hexdigest()
+_MISSING = object()
 
 
 def canonical_payload(
@@ -27,10 +28,18 @@ def canonical_payload(
     output_summary: str | None = None,
     session_id: str | None = None,
     tenant_id: str | None = None,
+    *,
+    detected_data_types: list[str] | None | object = _MISSING,
+    sdk_version: str | None | object = _MISSING,
+    classification_context: dict[str, Any] | None | object = _MISSING,
 ) -> str:
     """Build the canonical JSON string used as hash input.
 
     Fields are sorted alphabetically for determinism.
+    Storage-owned columns are intentionally excluded: seq_id and record_id are
+    persistence addresses, and record_hash is the output of this payload.
+    Omit integrity metadata only when verifying records written before the
+    ANC-922 hash payload expansion.
     """
     payload = {
         "active_certifications": active_certifications,
@@ -53,6 +62,12 @@ def canonical_payload(
         payload["session_id"] = session_id
     if tenant_id is not None:
         payload["tenant_id"] = tenant_id
+    if detected_data_types is not _MISSING:
+        payload["detected_data_types"] = detected_data_types or []
+    if sdk_version is not _MISSING:
+        payload["sdk_version"] = sdk_version
+    if classification_context is not _MISSING:
+        payload["classification_context"] = classification_context or {}
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
 
 

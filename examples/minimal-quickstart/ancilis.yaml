@@ -1,0 +1,6 @@
+agent:
+  name: quickstart-agent
+certification_targets:
+  - soc2
+my_agent_handles:
+  - personal_info

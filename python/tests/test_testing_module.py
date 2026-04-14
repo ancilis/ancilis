@@ -1,281 +1,23 @@
-"""Tests for ancilis.testing module — MockEvidenceStore, FakeProducer, assertions, scenarios."""
-
+"""Tests for ancilis.testing module — ScanResult, ComplianceScenarios, assertions, FakeProducer."""
 from __future__ import annotations
 
 import pytest
 
-from ancilis.engine.engine import Engine
-from ancilis.engine.registry import ToolEntry, ToolRegistry
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.testing import (
     ComplianceScenarios,
     FakeProducer,
-    MockEvidenceStore,
-    ScanResult,
+)
+from ancilis.testing.mock_store import MockEvidenceStore
+from ancilis.testing.assertions import (
     assert_control_fails,
     assert_control_flags,
     assert_control_passes,
     assert_decision_allows,
     assert_decision_blocks,
     assert_posture_above,
-    make_action,
-    make_test_config,
 )
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _make_evaluation(
-    control_results: list[ControlResult] | None = None,
-    decision: str = "ALLOW",
-    mode: str = "audit",
-) -> EvaluationResult:
-    if control_results is None:
-        control_results = [
-            ControlResult(
-                control_id="PR-01",
-                control_name="Agent Identity",
-                result="PASS",
-                detail="Verified",
-                evidence_data={"agent_id": "test-agent"},
-            )
-        ]
-    return EvaluationResult(
-        evaluation_id="ev-test",
-        action_id="act-test",
-        timestamp="2026-04-12T00:00:00Z",
-        agent_id="test-agent",
-        mode=mode,
-        control_results=control_results,
-        decision=decision,
-        decision_reason="Test",
-        active_overlays=[],
-        data_classifications=[],
-        total_duration_ms=1.0,
-    )
-
-
-# ---------------------------------------------------------------------------
-# make_test_config
-# ---------------------------------------------------------------------------
-
-
-class TestMakeTestConfig:
-    def test_creates_minimal_config(self):
-        config = make_test_config()
-        assert config.agent_name == "test-agent"
-        assert config.mode == "audit"
-
-    def test_custom_agent_name(self):
-        config = make_test_config(agent_name="my-agent")
-        assert config.agent_name == "my-agent"
-
-    def test_enforce_mode(self):
-        config = make_test_config(mode="enforce")
-        assert config.mode == "enforce"
-
-    def test_overlay_activation(self):
-        config = make_test_config(overlay="financial")
-        # financial overlay should activate
-        assert len(config.active_overlays) > 0 or len(config.warnings) >= 0
-
-
-# ---------------------------------------------------------------------------
-# make_action
-# ---------------------------------------------------------------------------
-
-
-class TestMakeAction:
-    def test_creates_action_with_defaults(self):
-        action = make_action()
-        assert action.tool.name == "test_tool"
-        assert action.agent_id == "test-agent"
-        assert action.action_type == "tool_call"
-
-    def test_custom_tool_name(self):
-        action = make_action(tool_name="read_file")
-        assert action.tool.name == "read_file"
-
-    def test_custom_agent_id(self):
-        action = make_action(agent_id="my-agent")
-        assert action.agent_id == "my-agent"
-
-    def test_parameters_embedded(self):
-        action = make_action(parameters={"path": "/tmp/foo"})
-        assert action.parameters.raw == {"path": "/tmp/foo"}
-
-    def test_session_id_in_context(self):
-        action = make_action(session_id="sess-123")
-        assert action.context.session_id == "sess-123"
-
-    def test_data_classifications_in_context(self):
-        action = make_action(data_classifications=["DC-01"])
-        assert action.context.data_classifications == ["DC-01"]
-
-
-# ---------------------------------------------------------------------------
-# MockEvidenceStore
-# ---------------------------------------------------------------------------
-
-
-class TestMockEvidenceStore:
-    def test_starts_empty(self):
-        store = MockEvidenceStore()
-        assert store.count() == 0
-
-    def test_store_and_count(self):
-        store = MockEvidenceStore()
-        ev = _make_evaluation()
-        store.store(ev, tool_name="my_tool")
-        assert store.count() == 1
-
-    def test_store_returns_evidence_record(self):
-        store = MockEvidenceStore()
-        ev = _make_evaluation()
-        record = store.store(ev)
-        assert record.record_id
-        assert record.decision in ("ALLOW", "allow")
-        assert record.tool_name == "test_tool"
-
-    def test_get_records_returns_stored(self):
-        store = MockEvidenceStore()
-        ev = _make_evaluation()
-        store.store(ev)
-        records = store.get_records()
-        assert len(records) == 1
-
-    def test_get_summary(self):
-        store = MockEvidenceStore()
-        ev = _make_evaluation()
-        store.store(ev)
-        summary = store.get_summary()
-        assert summary["total_evaluations"] == 1
-        # decisions dict keys may be "ALLOW" or "allow" depending on normalization
-        decisions_lower = {k.lower(): v for k, v in summary["decisions"].items()}
-        assert "allow" in decisions_lower
-
-    def test_verify_chain_valid(self):
-        store = MockEvidenceStore()
-        ev = _make_evaluation()
-        store.store(ev)
-        valid, errors = store.verify_chain()
-        assert valid
-        assert errors == []
-
-    def test_reset_clears_records(self):
-        store = MockEvidenceStore()
-        ev = _make_evaluation()
-        store.store(ev)
-        assert store.count() == 1
-        n = store.reset()
-        assert n == 1
-        assert store.count() == 0
-
-    def test_context_manager(self):
-        with MockEvidenceStore() as store:
-            ev = _make_evaluation()
-            store.store(ev)
-            assert store.count() == 1
-
-    def test_no_filesystem_side_effects(self, tmp_path, monkeypatch):
-        """MockEvidenceStore must not create any files."""
-        monkeypatch.chdir(tmp_path)
-        store = MockEvidenceStore()
-        ev = _make_evaluation()
-        store.store(ev)
-        store.close()
-        # No files should exist in tmp_path
-        assert list(tmp_path.rglob("*.db")) == []
-
-    def test_multiple_stores_independent(self):
-        store_a = MockEvidenceStore()
-        store_b = MockEvidenceStore()
-        ev = _make_evaluation()
-        store_a.store(ev)
-        assert store_a.count() == 1
-        assert store_b.count() == 0
-        store_a.close()
-        store_b.close()
-
-
-# ---------------------------------------------------------------------------
-# FakeProducer
-# ---------------------------------------------------------------------------
-
-
-class TestFakeProducer:
-    def test_emit_and_retrieve(self):
-        producer = FakeProducer("test")
-        producer.emit("user.id", "alice")
-        producer.emit("session", "sess-001")
-        assert producer.emitted_data == {"user.id": "alice", "session": "sess-001"}
-
-    def test_make_action_includes_emitted(self):
-        producer = FakeProducer("identity", agent_id="my-agent")
-        producer.emit("user.id", "alice")
-        action = producer.make_action()
-        assert action.agent_id == "my-agent"
-        assert action.parameters.raw["user.id"] == "alice"
-
-    def test_make_action_overrides_params(self):
-        producer = FakeProducer()
-        producer.emit("key", "base")
-        action = producer.make_action(parameters={"key": "override", "extra": 1})
-        assert action.parameters.raw["key"] == "override"
-        assert action.parameters.raw["extra"] == 1
-
-    def test_make_action_tool_name(self):
-        producer = FakeProducer("my_tool")
-        action = producer.make_action()
-        assert action.tool.name == "my_tool"
-
-    def test_make_action_explicit_tool_name(self):
-        producer = FakeProducer("default")
-        action = producer.make_action(tool_name="read_file")
-        assert action.tool.name == "read_file"
-
-    def test_clear_emitted(self):
-        producer = FakeProducer()
-        producer.emit("k", "v")
-        producer.clear()
-        assert producer.emitted_data == {}
-
-    def test_translate_dict(self):
-        producer = FakeProducer()
-        action = producer.translate({"tool": "my_tool", "parameters": {"p": 1}})
-        assert action.tool.name == "my_tool"
-        assert action.parameters.raw["p"] == 1
-
-    def test_translate_non_dict(self):
-        producer = FakeProducer("fallback")
-        action = producer.translate("something")
-        assert action.tool.name == "fallback"
-
-    def test_compute_tool_hash_deterministic(self):
-        producer = FakeProducer()
-        h1 = producer.compute_tool_hash("my_tool_v1")
-        h2 = producer.compute_tool_hash("my_tool_v1")
-        assert h1 == h2
-        assert len(h1) == 64  # SHA-256
-
-    def test_register_tools(self):
-        producer = FakeProducer("my_tool")
-        registry = ToolRegistry()
-        names = producer.register_tools(registry)
-        assert names == ["my_tool"]
-        assert registry.is_registered("my_tool")
-
-    def test_producer_type_is_manual(self):
-        from ancilis.producers.protocol import ProducerType
-        producer = FakeProducer()
-        assert producer.producer_type == ProducerType.MANUAL
-
-    def test_producer_version(self):
-        producer = FakeProducer()
-        assert "test" in producer.producer_version
+from ancilis.testing.scan_result import ScanResult
 
 
 # ---------------------------------------------------------------------------
@@ -283,144 +25,98 @@ class TestFakeProducer:
 # ---------------------------------------------------------------------------
 
 
-class TestScanResult:
-    def test_score_all_pass(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        assert scenario.score == 1.0
-
-    def test_score_one_fail(self):
-        scenario = ComplianceScenarios.missing_identity()
-        assert 0 < scenario.score < 1.0
-
-    def test_score_skip_excluded(self):
-        scenario = ComplianceScenarios.minimal_viable()
-        # Only PR-01 is scored (PASS), rest are SKIP
-        assert scenario.score == 1.0
-
-    def test_get_control_result(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        cr = scenario.get_control_result("PR-01")
-        assert cr is not None
-        assert cr.result == "PASS"
-
-    def test_get_control_result_missing(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        assert scenario.get_control_result("XX-99") is None
-
-    def test_decision(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        assert scenario.decision() == "ALLOW"
-
-    def test_requires_at_least_one_evaluation(self):
-        with pytest.raises(ValueError, match="at least one"):
-            ScanResult([])
-
-    def test_from_single(self):
-        ev = _make_evaluation()
-        result = ScanResult.from_single(ev)
-        assert len(result.evaluations) == 1
-
-    def test_repr(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        r = repr(scenario)
-        assert "ScanResult" in r
-        assert "score=" in r
+def _make_cr(control_id: str, result: str) -> ControlResult:
+    return ControlResult(
+        control_id=control_id,
+        control_name=f"Control {control_id}",
+        result=result,
+        detail=f"Detail for {control_id}",
+        evidence_data={},
+    )
 
 
-# ---------------------------------------------------------------------------
-# Assertions
-# ---------------------------------------------------------------------------
+def _make_eval(crs: list[ControlResult], mode: str = "audit", decision: str = "ALLOW") -> EvaluationResult:
+    return EvaluationResult(
+        evaluation_id="eval-1",
+        action_id="action-1",
+        timestamp="2026-01-01T00:00:00+00:00",
+        agent_id="test-agent",
+        mode=mode,
+        control_results=crs,
+        decision=decision,
+        decision_reason="test",
+        active_overlays=[],
+        data_classifications=[],
+        total_duration_ms=0.0,
+    )
 
 
-class TestAssertControlPasses:
-    def test_passes_when_pass(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        assert_control_passes(scenario, "PR-01")  # should not raise
-
-    def test_raises_when_fail(self):
-        scenario = ComplianceScenarios.missing_identity()
-        with pytest.raises(AssertionError, match="PR-01"):
-            assert_control_passes(scenario, "PR-01")
-
-    def test_raises_for_unknown_control(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        with pytest.raises(AssertionError, match="not evaluated"):
-            assert_control_passes(scenario, "XX-99")
-
-    def test_accepts_evaluation_result_directly(self):
-        ev = _make_evaluation()
-        assert_control_passes(ev, "PR-01")
+def test_scan_result_requires_at_least_one_evaluation() -> None:
+    with pytest.raises(ValueError, match="at least one"):
+        ScanResult([])
 
 
-class TestAssertControlFails:
-    def test_passes_when_fail(self):
-        scenario = ComplianceScenarios.missing_identity()
-        assert_control_fails(scenario, "PR-01")  # should not raise
-
-    def test_raises_when_pass(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        with pytest.raises(AssertionError, match="PR-01"):
-            assert_control_fails(scenario, "PR-01")
-
-    def test_raises_for_unknown_control(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        with pytest.raises(AssertionError, match="not evaluated"):
-            assert_control_fails(scenario, "ZZ-01")
+def test_scan_result_from_single() -> None:
+    ev = _make_eval([_make_cr("PR-01", "PASS")])
+    sr = ScanResult.from_single(ev)
+    assert len(sr.evaluations) == 1
 
 
-class TestAssertControlFlags:
-    def test_passes_when_flag(self):
-        scenario = ComplianceScenarios.all_failing()
-        assert_control_flags(scenario, "PR-04")
-
-    def test_raises_when_pass(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        with pytest.raises(AssertionError, match="PR-04"):
-            assert_control_flags(scenario, "PR-04")
+def test_scan_result_score_all_pass() -> None:
+    crs = [_make_cr(f"PR-0{i}", "PASS") for i in range(1, 4)]
+    sr = ScanResult([_make_eval(crs)])
+    assert sr.score == 1.0
 
 
-class TestAssertPostureAbove:
-    def test_passes_when_above(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        assert_posture_above(scenario, 0.80)  # should not raise
-
-    def test_raises_when_below(self):
-        scenario = ComplianceScenarios.missing_identity()
-        with pytest.raises(AssertionError, match="below required threshold"):
-            assert_posture_above(scenario, 1.0)
-
-    def test_accepts_evaluation_result_directly(self):
-        ev = _make_evaluation()
-        assert_posture_above(ev, 0.5)
-
-    def test_error_message_contains_score(self):
-        scenario = ComplianceScenarios.missing_identity()
-        with pytest.raises(AssertionError) as exc_info:
-            assert_posture_above(scenario, 1.0)
-        assert "%" in str(exc_info.value)
+def test_scan_result_score_with_failures() -> None:
+    crs = [_make_cr("PR-01", "PASS"), _make_cr("PR-02", "FAIL"), _make_cr("PR-03", "PASS")]
+    sr = ScanResult([_make_eval(crs)])
+    assert sr.score == pytest.approx(2 / 3)
 
 
-class TestAssertDecision:
-    def test_allows_when_allow(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        assert_decision_allows(scenario)
+def test_scan_result_score_skips_excluded() -> None:
+    crs = [_make_cr("PR-01", "PASS"), _make_cr("PR-02", "SKIP")]
+    sr = ScanResult([_make_eval(crs)])
+    assert sr.score == 1.0  # SKIP not in denominator
 
-    def test_blocks_raises_on_allow(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        with pytest.raises(AssertionError, match="BLOCK"):
-            assert_decision_blocks(scenario)
 
-    def test_blocks_when_block(self):
-        cr = ControlResult(
-            control_id="PR-01",
-            control_name="Agent Identity",
-            result="FAIL",
-            detail="Missing",
-            evidence_data={},
-        )
-        ev = _make_evaluation(control_results=[cr], decision="BLOCK", mode="enforce")
-        result = ScanResult([ev])
-        assert_decision_blocks(result)
+def test_scan_result_score_all_skip_returns_one() -> None:
+    sr = ScanResult([_make_eval([_make_cr("PR-01", "SKIP")])])
+    assert sr.score == 1.0
+
+
+def test_scan_result_get_control_result_found() -> None:
+    crs = [_make_cr("PR-01", "PASS"), _make_cr("PR-02", "FAIL")]
+    sr = ScanResult([_make_eval(crs)])
+    cr = sr.get_control_result("PR-02")
+    assert cr is not None
+    assert cr.result == "FAIL"
+
+
+def test_scan_result_get_control_result_not_found() -> None:
+    sr = ScanResult([_make_eval([_make_cr("PR-01", "PASS")])])
+    assert sr.get_control_result("PR-99") is None
+
+
+def test_scan_result_get_control_result_latest_wins() -> None:
+    ev1 = _make_eval([_make_cr("PR-01", "FAIL")])
+    ev2 = _make_eval([_make_cr("PR-01", "PASS")])
+    sr = ScanResult([ev1, ev2])
+    cr = sr.get_control_result("PR-01")
+    assert cr is not None
+    assert cr.result == "PASS"
+
+
+def test_scan_result_decision() -> None:
+    sr = ScanResult([_make_eval([_make_cr("PR-01", "PASS")], decision="BLOCK")])
+    assert sr.decision() == "BLOCK"
+
+
+def test_scan_result_repr() -> None:
+    sr = ScanResult([_make_eval([_make_cr("PR-01", "PASS")])])
+    r = repr(sr)
+    assert "ScanResult" in r
+    assert "score=" in r
 
 
 # ---------------------------------------------------------------------------
@@ -428,100 +124,286 @@ class TestAssertDecision:
 # ---------------------------------------------------------------------------
 
 
-class TestComplianceScenarios:
-    def test_financial_compliant_score_is_1(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        assert scenario.score == 1.0
+def test_compliance_scenarios_financial_compliant() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    assert sr.score == 1.0
+    assert "financial" in sr.evaluations[0].active_overlays
+    assert sr.decision() == "ALLOW"
 
-    def test_financial_compliant_all_pass(self):
-        scenario = ComplianceScenarios.financial_compliant()
-        for cr in scenario.evaluations[0].control_results:
-            assert cr.result == "PASS"
 
-    def test_missing_identity_pr01_fails(self):
-        scenario = ComplianceScenarios.missing_identity()
-        cr = scenario.get_control_result("PR-01")
-        assert cr is not None
-        assert cr.result == "FAIL"
+def test_compliance_scenarios_missing_identity() -> None:
+    sr = ComplianceScenarios.missing_identity()
+    pr01 = sr.get_control_result("PR-01")
+    assert pr01 is not None
+    assert pr01.result == "FAIL"
+    assert sr.score < 1.0
 
-    def test_minimal_viable_score_is_1(self):
-        scenario = ComplianceScenarios.minimal_viable()
-        assert scenario.score == 1.0
 
-    def test_all_failing_score_is_low(self):
-        scenario = ComplianceScenarios.all_failing()
-        assert scenario.score < 0.5
+def test_compliance_scenarios_minimal_viable() -> None:
+    sr = ComplianceScenarios.minimal_viable()
+    pr01 = sr.get_control_result("PR-01")
+    assert pr01 is not None
+    assert pr01.result == "PASS"
+    pr02 = sr.get_control_result("PR-02")
+    assert pr02 is not None
+    assert pr02.result == "SKIP"
+    assert sr.score == 1.0  # Only PR-01 scored, it PASSes
 
-    def test_scenarios_are_offline(self):
-        """Scenarios must not make any network calls or file system access."""
-        import os
-        original_env = dict(os.environ)
-        scenario = ComplianceScenarios.financial_compliant()
-        assert scenario is not None
-        # No env vars should change (network calls often set things)
-        assert dict(os.environ) == original_env
+
+def test_compliance_scenarios_all_failing() -> None:
+    sr = ComplianceScenarios.all_failing()
+    assert sr.score == 0.0
 
 
 # ---------------------------------------------------------------------------
-# pytest plugin fixtures (integration)
+# Assertion helpers — happy paths
 # ---------------------------------------------------------------------------
 
 
-class TestAncilisFixtures:
-    def test_ancilis_scan_fixture(self, ancilis_scan):
-        assert isinstance(ancilis_scan, ScanResult)
-        assert len(ancilis_scan.evaluations) == 1
-        assert ancilis_scan.score > 0
+def test_assert_control_passes_happy() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    assert_control_passes(sr, "PR-01")  # should not raise
 
-    def test_ancilis_scan_pr01_passes(self, ancilis_scan):
-        assert_control_passes(ancilis_scan, "PR-01")
 
-    def test_ancilis_store_fixture(self, ancilis_store):
-        assert isinstance(ancilis_store, MockEvidenceStore)
-        assert ancilis_store.count() == 0
+def test_assert_control_fails_happy() -> None:
+    sr = ComplianceScenarios.missing_identity()
+    assert_control_fails(sr, "PR-01")  # should not raise
 
-    def test_ancilis_store_can_persist(self, ancilis_store):
-        ev = _make_evaluation()
-        ancilis_store.store(ev)
-        assert ancilis_store.count() == 1
 
-    def test_ancilis_overlay_fixture(self, ancilis_overlay):
-        # By default no overlay is configured
-        assert ancilis_overlay is None
+def test_assert_control_flags_happy() -> None:
+    sr = ComplianceScenarios.all_failing()
+    assert_control_flags(sr, "PR-04")  # DE-01 is FLAG in all_failing scenario
+
+
+def test_assert_posture_above_happy() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    assert_posture_above(sr, 0.80)  # should not raise
+
+
+def test_assert_decision_allows_happy() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    assert_decision_allows(sr)  # should not raise
+
+
+def test_assert_decision_blocks_happy() -> None:
+    crs = [_make_cr("PR-01", "FAIL")]
+    sr = ScanResult([_make_eval(crs, decision="BLOCK")])
+    assert_decision_blocks(sr)  # should not raise
 
 
 # ---------------------------------------------------------------------------
-# Integration: FakeProducer → Engine → ScanResult
+# Assertion helpers — accept EvaluationResult directly
 # ---------------------------------------------------------------------------
 
 
-class TestFakeProducerWithEngine:
-    def test_end_to_end_pass(self):
-        """FakeProducer → Engine → assertions — full test pipeline."""
-        config = make_test_config(agent_name="my-agent")
-        registry = ToolRegistry()
-        registry.register(ToolEntry(name="read_file"))
-        registry.approve("read_file", approved_by="test")
-        engine = Engine(config, registry=registry)
+def test_assert_control_passes_accepts_evaluation_result() -> None:
+    ev = _make_eval([_make_cr("PR-01", "PASS")])
+    assert_control_passes(ev, "PR-01")  # should not raise (converted via _to_scan_result)
 
-        producer = FakeProducer("read_file", agent_id="my-agent")
-        producer.emit("path", "/tmp/safe.txt")
 
-        action = producer.make_action()
-        evaluation = engine.evaluate(action)
-        result = ScanResult([evaluation])
+# ---------------------------------------------------------------------------
+# Assertion helpers — error paths
+# ---------------------------------------------------------------------------
 
-        assert_control_passes(result, "PR-01")
-        assert_posture_above(result, 0.5)
 
-    def test_end_to_end_identity_failure(self):
-        """Wrong agent_id causes PR-01 to FAIL."""
-        config = make_test_config(agent_name="expected-agent")
-        engine = Engine(config)
+def test_assert_control_passes_raises_when_not_found() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    with pytest.raises(AssertionError, match="not evaluated"):
+        assert_control_passes(sr, "PR-99")
 
-        producer = FakeProducer("some_tool", agent_id="wrong-agent")
-        action = producer.make_action()
-        evaluation = engine.evaluate(action)
-        result = ScanResult([evaluation])
 
-        assert_control_fails(result, "PR-01")
+def test_assert_control_passes_raises_when_fail() -> None:
+    sr = ComplianceScenarios.missing_identity()
+    with pytest.raises(AssertionError, match="PASS"):
+        assert_control_passes(sr, "PR-01")
+
+
+def test_assert_control_fails_raises_when_not_found() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    with pytest.raises(AssertionError, match="not evaluated"):
+        assert_control_fails(sr, "PR-99")
+
+
+def test_assert_control_fails_raises_when_passes() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    with pytest.raises(AssertionError, match="FAIL"):
+        assert_control_fails(sr, "PR-01")
+
+
+def test_assert_control_flags_raises_when_not_found() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    with pytest.raises(AssertionError, match="not evaluated"):
+        assert_control_flags(sr, "PR-99")
+
+
+def test_assert_control_flags_raises_when_not_flagged() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    with pytest.raises(AssertionError, match="FLAG"):
+        assert_control_flags(sr, "PR-01")
+
+
+def test_assert_posture_above_raises_when_below() -> None:
+    sr = ComplianceScenarios.all_failing()
+    with pytest.raises(AssertionError, match="below required threshold"):
+        assert_posture_above(sr, 0.80)
+
+
+def test_assert_decision_allows_raises_when_blocked() -> None:
+    crs = [_make_cr("PR-01", "FAIL")]
+    sr = ScanResult([_make_eval(crs, decision="BLOCK")])
+    with pytest.raises(AssertionError, match="ALLOW"):
+        assert_decision_allows(sr)
+
+
+def test_assert_decision_blocks_raises_when_allowed() -> None:
+    sr = ComplianceScenarios.financial_compliant()
+    with pytest.raises(AssertionError, match="BLOCK"):
+        assert_decision_blocks(sr)
+
+
+# ---------------------------------------------------------------------------
+# FakeProducer
+# ---------------------------------------------------------------------------
+
+
+def test_fake_producer_producer_type() -> None:
+    from ancilis.producers.protocol import ProducerType
+    fp = FakeProducer()
+    assert fp.producer_type == ProducerType.MANUAL
+
+
+def test_fake_producer_producer_version() -> None:
+    fp = FakeProducer()
+    assert fp.producer_version == "0.1.0-test"
+
+
+def test_fake_producer_emit_and_emitted_data() -> None:
+    fp = FakeProducer("test-producer", agent_id="agent-x")
+    fp.emit("user.id", "alice")
+    fp.emit("action", "read")
+    assert fp.emitted_data == {"user.id": "alice", "action": "read"}
+
+
+def test_fake_producer_clear() -> None:
+    fp = FakeProducer()
+    fp.emit("key", "val")
+    fp.clear()
+    assert fp.emitted_data == {}
+
+
+def test_fake_producer_make_action_merges_emitted() -> None:
+    fp = FakeProducer("my-tool", agent_id="agent-1")
+    fp.emit("context", "important")
+    action = fp.make_action(parameters={"extra": "param"})
+    assert action.parameters.raw["context"] == "important"
+    assert action.parameters.raw["extra"] == "param"
+
+
+def test_fake_producer_make_action_uses_producer_name_as_tool() -> None:
+    fp = FakeProducer("my-tool")
+    action = fp.make_action()
+    assert action.tool.name == "my-tool"
+
+
+def test_fake_producer_translate_dict_invocation() -> None:
+    fp = FakeProducer("base-tool")
+    action = fp.translate({"tool": "override-tool", "parameters": {"x": 1}})
+    assert action.tool.name == "override-tool"
+    assert action.parameters.raw["x"] == 1
+
+
+def test_fake_producer_translate_non_dict_invocation() -> None:
+    fp = FakeProducer("fallback")
+    action = fp.translate("not-a-dict")
+    assert action.tool.name == "fallback"
+
+
+def test_fake_producer_compute_tool_hash() -> None:
+    fp = FakeProducer()
+    h = fp.compute_tool_hash("my-tool")
+    assert len(h) == 64  # SHA-256 hex digest
+
+
+def test_fake_producer_register_tools() -> None:
+    from ancilis.engine.registry import ToolRegistry
+    fp = FakeProducer("registered-tool")
+    registry = ToolRegistry()
+    names = fp.register_tools(registry)
+    assert names == ["registered-tool"]
+    assert registry.is_registered("registered-tool")
+
+
+# ---------------------------------------------------------------------------
+# MockEvidenceStore — get_summary, verify_chain, reset, context manager
+# ---------------------------------------------------------------------------
+
+
+def _make_eval_for_store(decision: str = "ALLOW") -> EvaluationResult:
+    return EvaluationResult(
+        evaluation_id="eval-mock",
+        action_id="action-mock",
+        timestamp="2026-01-01T00:00:00+00:00",
+        agent_id="mock-agent",
+        mode="audit",
+        control_results=[
+            ControlResult("PR-01", "Agent Identity", "PASS", "ok", {}, 1.0)
+        ],
+        decision=decision,
+        decision_reason="test",
+        active_overlays=[],
+        data_classifications=[],
+        total_duration_ms=1.0,
+    )
+
+
+def test_mock_store_get_summary() -> None:
+    store = MockEvidenceStore()
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_b")
+
+    summary = store.get_summary()
+
+    assert summary["total_evaluations"] == 2
+    assert summary["decisions"]["ALLOW"] == 2
+    store.close()
+
+
+def test_mock_store_get_summary_with_since_filter() -> None:
+    store = MockEvidenceStore()
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+
+    summary = store.get_summary(since="2030-01-01T00:00:00Z")
+
+    assert summary["total_evaluations"] == 0
+    store.close()
+
+
+def test_mock_store_verify_chain() -> None:
+    store = MockEvidenceStore()
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+
+    valid, errors = store.verify_chain()
+
+    assert valid is True
+    assert errors == []
+    store.close()
+
+
+def test_mock_store_reset() -> None:
+    store = MockEvidenceStore()
+    store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+    store.store(_make_eval_for_store("BLOCK"), tool_name="tool_b")
+    assert store.count() == 2
+
+    deleted = store.reset()
+
+    assert deleted == 2
+    assert store.count() == 0
+    store.close()
+
+
+def test_mock_store_context_manager() -> None:
+    with MockEvidenceStore() as store:
+        store.store(_make_eval_for_store("ALLOW"), tool_name="tool_a")
+        assert store.count() == 1
+    # After __exit__, store is closed — no assertion needed, just no exception

@@ -6,6 +6,7 @@ import json
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
+from typing import Any
 
 from ancilis.dependencies.detector import Dependency
 
@@ -38,7 +39,7 @@ def _cvss_to_severity(score: float) -> str:
     return "low"
 
 
-def _extract_cvss_score(vuln_data: dict) -> float | None:
+def _extract_cvss_score(vuln_data: dict[str, Any]) -> float | None:
     for sev in vuln_data.get("severity", []):
         score_type = sev.get("type", "")
         score_str = sev.get("score", "")
@@ -50,7 +51,7 @@ def _extract_cvss_score(vuln_data: dict) -> float | None:
     return None
 
 
-def _extract_severity(vuln_data: dict) -> tuple[str, float | None]:
+def _extract_severity(vuln_data: dict[str, Any]) -> tuple[str, float | None]:
     """Return (severity_string, cvss_score_or_None)."""
     score = _extract_cvss_score(vuln_data)
     if score is not None:
@@ -64,19 +65,19 @@ def _extract_severity(vuln_data: dict) -> tuple[str, float | None]:
     return "low", None
 
 
-def _extract_fixed_version(vuln_data: dict, pkg_name: str) -> str | None:
+def _extract_fixed_version(vuln_data: dict[str, Any], pkg_name: str) -> str | None:
     for affected in vuln_data.get("affected", []):
         if affected.get("package", {}).get("name", "").lower() != pkg_name.lower():
             continue
         for rng in affected.get("ranges", []):
             for event in rng.get("events", []):
                 fixed = event.get("fixed")
-                if fixed:
+                if isinstance(fixed, str) and fixed:
                     return fixed
     return None
 
 
-def _affected_summary(vuln_data: dict) -> str:
+def _affected_summary(vuln_data: dict[str, Any]) -> str:
     parts: list[str] = []
     for affected in vuln_data.get("affected", []):
         for rng in affected.get("ranges", []):
@@ -125,7 +126,7 @@ def _query_chunk(
         except json.JSONDecodeError as exc:
             return [], f"Invalid JSON from OSV.dev: {exc}"
     else:
-        return [], last_exc  # type: ignore[return-value]
+        return [], last_exc
 
     findings: list[VulnerabilityFinding] = []
     for dep, result in zip(deps, body.get("results", []), strict=False):

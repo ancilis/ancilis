@@ -5,30 +5,70 @@ from __future__ import annotations
 import time
 import uuid
 from datetime import datetime, timezone
+from typing import Protocol
 
 from ancilis.config import ResolvedConfig, load_control_definitions
+from ancilis.controls.custom import CustomControlEvaluator
 from ancilis.engine.action import Action
+from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
 from ancilis.engine.evaluators.base import ControlEvaluator
+from ancilis.engine.evaluators.gov02_ownership import GOV02OwnershipEvaluator
 from ancilis.engine.evaluators.pr01_identity import PR01IdentityEvaluator
 from ancilis.engine.evaluators.pr02_scope import PR02ScopeEvaluator, RateTracker
 from ancilis.engine.evaluators.pr03_provenance import PR03ProvenanceEvaluator
 from ancilis.engine.evaluators.pr04_exposure import PR04ExposureEvaluator
-from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
-from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
-from ancilis.engine.evaluators.gov01_policy import GOV01PolicyEvaluator
-from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
-from ancilis.engine.evaluators.gov02_ownership import GOV02OwnershipEvaluator
-from ancilis.engine.evaluators.id01_inventory import ID01InventoryEvaluator
-from ancilis.engine.evaluators.pr06_config_baseline import PR06ConfigBaselineEvaluator
-from ancilis.engine.evaluators.gov03_risk_tolerance import GOV03RiskToleranceEvaluator
-from ancilis.engine.evaluators.de02_config_drift import DE02ConfigDriftEvaluator
 from ancilis.engine.registry import ToolRegistry
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.controls.pr05_audit import PR05AuditEvaluator
 from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow
+from ancilis.engine.evaluators.de02_config_drift import DE02ConfigDriftEvaluator
+from ancilis.engine.evaluators.pr06_config_baseline import PR06ConfigBaselineEvaluator
+from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
+from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
 
 # Controls that have evaluators
-EVALUATOR_CONTROL_IDS = {"PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "DE-01", "PR-07", "PR-08", "GOV-01", "DE-04", "GOV-02", "ID-01", "PR-06", "GOV-03", "DE-02"}
+EVALUATOR_CONTROL_IDS = {
+    "DE-01",
+    "DE-02",
+    "DE-04",
+    "GOV-02",
+    "PR-01",
+    "PR-02",
+    "PR-03",
+    "PR-04",
+    "PR-05",
+    "PR-06",
+    "PR-07",
+    "PR-08",
+}
+
+POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS = {
+    "DE-04",
+    "GOV-01",
+    "GOV-02",
+    "GOV-03",
+    "ID-01",
+}
+RUNTIME_POLICY_GATE_SOURCES = (
+    "explicit:security.controls",
+    "certification_targets:",
+)
+
+# Maps PR-04 pattern types to data classification DC codes
+PATTERN_TO_DC: dict[str, str] = {
+    "ssn": "DC-PII",
+    "email": "DC-PII",
+    "phone": "DC-PII",
+    "credit_card": "DC-CHD",
+    "mrn": "DC-PHI",
+    "api_key": "DC-IP",
+}
+
+
+class EvidenceIntegrityStore(Protocol):
+    def count(self) -> int: ...
+
+    def verify_chain(self) -> tuple[bool, list[str]]: ...
 
 
 class Engine:
@@ -40,7 +80,7 @@ class Engine:
         registry: ToolRegistry | None = None,
         rate_tracker: RateTracker | None = None,
         baseline_window: BaselineWindow | None = None,
-        evidence_store: object | None = None,
+        evidence_store: EvidenceIntegrityStore | None = None,
     ) -> None:
         self.config = config
         self.registry = registry or ToolRegistry()
@@ -51,17 +91,16 @@ class Engine:
             "PR-03": PR03ProvenanceEvaluator(registry=self.registry),
             "PR-04": PR04ExposureEvaluator(),
             "PR-05": PR05AuditEvaluator(),
-            "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
+            "PR-06": PR06ConfigBaselineEvaluator(),
             "PR-07": PR07TransportEvaluator(),
             "PR-08": PR08InputEvaluator(),
-            "GOV-01": GOV01PolicyEvaluator(),
-            "DE-04": DE04IntegrityEvaluator(evidence_store=evidence_store),  # type: ignore[arg-type]
-            "GOV-02": GOV02OwnershipEvaluator(),
-            "ID-01": ID01InventoryEvaluator(),
-            "PR-06": PR06ConfigBaselineEvaluator(),
-            "GOV-03": GOV03RiskToleranceEvaluator(),
+            "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
             "DE-02": DE02ConfigDriftEvaluator(),
+            "DE-04": DE04IntegrityEvaluator(evidence_store=evidence_store),
+            "GOV-02": GOV02OwnershipEvaluator(),
         }
+        for control_id, definition in getattr(self.config, "custom_controls", {}).items():
+            self._evaluators[control_id] = CustomControlEvaluator(definition)
 
     def evaluate(self, action: Action) -> EvaluationResult:
         """Evaluate an action against all active controls."""
@@ -82,9 +121,30 @@ class Engine:
                 )
                 continue
 
+            if self._is_policy_gated(control_id):
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=control_status.name,
+                        result="SKIP",
+                        detail=(
+                            "Control is not runtime-active under the explicit/certification "
+                            "policy gate."
+                        ),
+                        evidence_data={
+                            "activation_sources": sorted(
+                                self.config.control_activation_sources.get(control_id, set())
+                            ),
+                            "required_activation_sources": list(RUNTIME_POLICY_GATE_SOURCES),
+                        },
+                        duration_ms=0.0,
+                    )
+                )
+                continue
+
             evaluator = self._evaluators.get(control_id)
             if evaluator is None:
-                # No evaluator for this control yet (PR-05, DE-01 are future units)
+                # No runtime evaluator is active for this control yet.
                 control_results.append(
                     ControlResult(
                         control_id=control_id,
@@ -145,6 +205,16 @@ class Engine:
                 if code not in data_classifications:
                     data_classifications.append(code)
 
+        # Extract detected DC codes from PR-04 pattern scan results
+        detected_data_types: list[str] = []
+        for cr in control_results:
+            if cr.control_id == "PR-04":
+                for pattern in cr.evidence_data.get("patterns_detected", []):
+                    dc_code = PATTERN_TO_DC.get(pattern.get("type", ""))
+                    if dc_code and dc_code not in detected_data_types:
+                        detected_data_types.append(dc_code)
+                break
+
         return EvaluationResult(
             evaluation_id=str(uuid.uuid4()),
             action_id=action.action_id,
@@ -157,6 +227,15 @@ class Engine:
             decision_reason=decision_reason,
             active_overlays=active_overlays,
             data_classifications=data_classifications,
+            detected_data_types=detected_data_types,
             total_duration_ms=total_ms,
             session_id=action.context.session_id,
+        )
+
+    def _is_policy_gated(self, control_id: str) -> bool:
+        if control_id not in POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS:
+            return False
+        return not self.config.control_has_activation_source(
+            control_id,
+            *RUNTIME_POLICY_GATE_SOURCES,
         )

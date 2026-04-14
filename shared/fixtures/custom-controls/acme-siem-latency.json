@@ -1,0 +1,27 @@
+{
+  "id": "custom:siem-latency",
+  "title": "SIEM Event Latency",
+  "description": "Checks that evidence metadata records SIEM forwarding within the expected latency budget.",
+  "category": "detect",
+  "severity": "medium",
+  "evaluator_type": "regex",
+  "evaluator": {
+    "target": "metadata",
+    "pattern": "\"siem_latency_ms\"\\s*:\\s*(?:[0-4]?\\d{1,2}|500)\\b",
+    "flags": ["IGNORECASE"],
+    "pass_when": "matches"
+  },
+  "version": "1.0.0",
+  "owner": "security-ops",
+  "framework_references": ["SOC 2 CC7.2"],
+  "overlay_ids": ["soc2"],
+  "tags": ["siem", "latency"],
+  "evidence_selectors": [
+    {
+      "field": "source_type",
+      "operator": "equals",
+      "value": "tool"
+    }
+  ],
+  "remediation": "Confirm the SIEM forwarder is active and reducing queue latency below 500 ms."
+}

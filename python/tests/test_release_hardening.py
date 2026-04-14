@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import os
+import subprocess
 import sys
 if sys.version_info >= (3, 11):
     import tomllib
@@ -72,6 +74,43 @@ def test_optional_mcp_import_remains_lazy(monkeypatch):
     assert producers.HTTPActionProducer is not None
 
 
+def test_pytest_plugin_import_does_not_preload_runtime_modules():
+    code = """
+import sys
+
+blocked = {
+    "ancilis.config",
+    "ancilis.engine.action",
+    "ancilis.engine.engine",
+    "ancilis.engine.registry",
+    "ancilis.evidence.store",
+    "ancilis.producers.tool",
+    "ancilis.testing._helpers",
+    "ancilis.testing.mock_store",
+    "ancilis.testing.scan_result",
+}
+
+import ancilis.testing.plugin  # noqa: F401
+
+loaded = sorted(blocked & set(sys.modules))
+if loaded:
+    print("\\n".join(loaded), file=sys.stderr)
+    raise SystemExit(1)
+"""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(ROOT / "python" / "src")
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
 def test_source_type_flows_into_evidence_record():
     config = _config()
     registry = ToolRegistry()
@@ -135,6 +174,71 @@ def test_pyproject_has_required_pypi_metadata():
     assert project["authors"] == [{"name": "Kevin Bauer", "email": "kevin@ancilis.ai"}]
     assert project["urls"]["Repository"] == "https://github.com/ancilis/ancilis"
     assert "Programming Language :: Python :: 3.13" in project["classifiers"]
+
+
+@pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")
+def test_dev_extra_includes_watch_dependencies_exercised_by_tests():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    extras = pyproject["project"]["optional-dependencies"]
+
+    assert set(extras["watch"]).issubset(set(extras["dev"]))
+
+
+@pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")
+def test_python_310_declares_tomli_for_pyproject_manifest_parsing():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    dependencies = pyproject["project"]["dependencies"]
+
+    assert "tomli>=2.0; python_version < '3.11'" in dependencies
+
+
+def test_ci_typescript_examples_keeps_deterministic_tarball_name():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+
+    build_step = next(
+        step
+        for step in workflow["jobs"]["typescript-examples"]["steps"]
+        if step.get("name") == "Build SDK tarball"
+    )
+    assert "mv ancilis-*.tgz ancilis-0.1.0.tgz" not in build_step["run"]
+    assert "npm ci --include=dev" in build_step["run"]
+    assert "test -f ancilis-0.1.0.tgz" in build_step["run"]
+
+
+def test_ci_typescript_example_score_steps_tolerate_non_compliant_scan_exit():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+
+    score_steps = [
+        step
+        for step in workflow["jobs"]["typescript-examples"]["steps"]
+        if step.get("name", "").endswith("scan score")
+    ]
+    assert score_steps
+    for step in score_steps:
+        assert "npx ancilis scan --ci --config ancilis.yaml 2>&1 || true" in step["run"]
+
+
+def test_ci_typescript_example_setup_steps_include_dev_dependencies():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+
+    setup_steps = [
+        step
+        for step in workflow["jobs"]["typescript-examples"]["steps"]
+        if step.get("name", "").endswith("setup")
+    ]
+    assert setup_steps
+    for step in setup_steps:
+        assert step["run"] == "npm install --include=dev"
+
+
+def test_ci_typescript_example_fixtures_exist():
+    for example in ["minimal-quickstart-ts", "langchain-ts-chatbot"]:
+        example_dir = ROOT / "examples" / "typescript" / example
+
+        assert (example_dir / "package.json").exists()
+        assert (example_dir / "index.ts").exists()
+        assert (example_dir / "ancilis.yaml").exists()
+        assert not (example_dir / "package-lock.json").exists()
 
 
 def test_publish_script_cleans_dist_and_uploads_selected_artifacts():

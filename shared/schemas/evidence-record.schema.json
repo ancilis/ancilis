@@ -51,27 +51,50 @@
     },
     "decision": {
       "type": "string",
-      "enum": ["ALLOW", "BLOCK", "FLAG"],
+      "enum": [
+        "ALLOW",
+        "BLOCK",
+        "FLAG"
+      ],
       "description": "Final enforcement decision"
     },
     "mode": {
       "type": "string",
-      "enum": ["audit", "enforce"],
+      "enum": [
+        "audit",
+        "enforce"
+      ],
       "description": "Security mode during evaluation"
     },
     "control_results": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["control_id", "control_name", "result", "detail"],
+        "required": [
+          "control_id",
+          "control_name",
+          "result",
+          "detail"
+        ],
         "properties": {
-          "control_id": { "type": "string" },
-          "control_name": { "type": "string" },
+          "control_id": {
+            "type": "string"
+          },
+          "control_name": {
+            "type": "string"
+          },
           "result": {
             "type": "string",
-            "enum": ["PASS", "FAIL", "SKIP", "ERROR"]
+            "enum": [
+              "PASS",
+              "FAIL",
+              "SKIP",
+              "ERROR"
+            ]
           },
-          "detail": { "type": "string" },
+          "detail": {
+            "type": "string"
+          },
           "evidence_data": {
             "type": "object",
             "description": "Control-specific evidence fields"
@@ -85,17 +108,23 @@
     },
     "active_overlays": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Overlay IDs active during evaluation"
     },
     "data_classifications": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "DC codes active during evaluation"
     },
     "active_certifications": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Certification targets active for this agent (always array, never null)"
     },
     "record_hash": {
@@ -109,6 +138,52 @@
     "total_duration_ms": {
       "type": "number",
       "description": "Total evaluation time in milliseconds"
+    },
+    "output_summary": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Summary of the tool output, stored outside the hash chain"
+    },
+    "session_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Session identifier grouping related evaluations"
+    },
+    "tenant_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Tenant identifier for multi-tenant deployments"
+    },
+    "detected_data_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Data type labels detected by DE-01 evaluator (non-authoritative \u2014 not in hash chain)"
+    },
+    "sdk_version": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Version of the Ancilis SDK that produced this record"
+    },
+    "classification_context": {
+      "type": "object",
+      "description": "Additional context for platform classification (e.g. llm_provider)",
+      "properties": {
+        "llm_provider": {
+          "type": "string",
+          "description": "LLM provider identifier (e.g. openai, anthropic, aws-bedrock)"
+        }
+      },
+      "additionalProperties": true
     }
   }
 }

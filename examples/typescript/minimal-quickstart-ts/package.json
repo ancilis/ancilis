@@ -1,0 +1,20 @@
+{
+  "name": "minimal-quickstart-ts",
+  "version": "1.0.0",
+  "description": "Minimal Ancilis TypeScript quickstart - fastest path to first compliance scan",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "tsx index.ts",
+    "scan": "tsx index.ts && ancilis scan --config ancilis.yaml"
+  },
+  "dependencies": {
+    "ancilis": "file:../../../ancilis-0.1.0.tgz"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
