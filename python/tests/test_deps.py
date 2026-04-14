@@ -11,7 +11,7 @@ import pytest
 
 from ancilis.config import ControlStatus, ResolvedConfig
 from ancilis.deps.manifest import Dependency, Manifest, ManifestDetector
-from ancilis.deps.osv import OSVClient, Vuln, _cvss_to_severity
+from ancilis.deps.osv import OSVClient, Vuln, _cvss_to_severity, _extract_severity, _extract_fixed_version
 from ancilis.deps.scanner import DependencyScanner
 
 
@@ -488,3 +488,91 @@ class TestDependencyScanner:
         queried_names = {q["package"]["name"] for q in captured_queries}
         assert "requests" in queried_names
         assert "flask" in queried_names
+
+
+# ---------------------------------------------------------------------------
+# _extract_severity and _extract_fixed_version unit tests (coverage gaps)
+# ---------------------------------------------------------------------------
+
+class TestExtractSeverity:
+    def test_cvss_v3_valid(self):
+        vuln = {"severity": [{"type": "CVSS_V3", "score": "9.8"}]}
+        assert _extract_severity(vuln) == "CRITICAL"
+
+    def test_cvss_score_not_float_falls_through(self):
+        """Lines 45-46: ValueError on non-numeric CVSS score — falls through to next."""
+        vuln = {
+            "severity": [{"type": "CVSS_V3", "score": "not-a-number"}],
+            "database_specific": {"severity": "HIGH"},
+        }
+        # ValueError is caught; fallback to database_specific
+        assert _extract_severity(vuln) == "HIGH"
+
+    def test_database_specific_severity_used(self):
+        """Line 51: database_specific severity mapped when CVSS absent."""
+        vuln = {"database_specific": {"severity": "MEDIUM"}}
+        assert _extract_severity(vuln) == "MEDIUM"
+
+    def test_fallback_low_when_no_severity(self):
+        """Line 52: returns LOW when no usable severity data exists."""
+        assert _extract_severity({}) == "LOW"
+
+    def test_database_specific_unknown_value_returns_low(self):
+        """Line 52: unrecognised db severity also falls through to LOW."""
+        vuln = {"database_specific": {"severity": "INFORMATIONAL"}}
+        assert _extract_severity(vuln) == "LOW"
+
+
+class TestExtractFixedVersion:
+    def test_returns_fixed_version(self):
+        vuln = {
+            "affected": [
+                {
+                    "package": {"name": "requests"},
+                    "ranges": [{"events": [{"introduced": "0"}, {"fixed": "2.28.2"}]}],
+                }
+            ]
+        }
+        assert _extract_fixed_version(vuln, "requests") == "2.28.2"
+
+    def test_name_mismatch_skipped(self):
+        """Line 59: affected entry for different package is skipped."""
+        vuln = {
+            "affected": [
+                {
+                    "package": {"name": "flask"},
+                    "ranges": [{"events": [{"fixed": "2.3.1"}]}],
+                }
+            ]
+        }
+        # Asking for "requests" — flask entry is skipped
+        assert _extract_fixed_version(vuln, "requests") is None
+
+    def test_no_fixed_event_returns_none(self):
+        vuln = {
+            "affected": [
+                {
+                    "package": {"name": "requests"},
+                    "ranges": [{"events": [{"introduced": "0"}]}],
+                }
+            ]
+        }
+        assert _extract_fixed_version(vuln, "requests") is None
+
+
+class TestOSVClientJSONDecodeError:
+    def test_json_decode_error_sets_error(self):
+        """Lines 150-152: JSONDecodeError from OSV response is handled gracefully."""
+        bad_resp = MagicMock()
+        bad_resp.__enter__ = lambda s: s
+        bad_resp.__exit__ = MagicMock(return_value=False)
+        bad_resp.read.return_value = b"not-valid-json{{{"
+
+        with patch("urllib.request.urlopen", return_value=bad_resp):
+            client = OSVClient()
+            dep = Dependency(name="requests", version="2.28.0", source_file="requirements.txt")
+            result = client.query_batch([dep])
+
+        assert result == {}
+        assert client.last_error is not None
+        assert "Invalid JSON" in client.last_error

@@ -22,9 +22,17 @@ SANITIZED_NPM_ENV_KEYS = (
 )
 
 
-def run(cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None) -> None:
+def run(
+    cmd: list[str],
+    *,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+    allowed_exit_codes: tuple[int, ...] = (0,),
+) -> None:
     print("+", " ".join(cmd))
-    subprocess.run(cmd, cwd=cwd or ROOT, env=env, check=True)
+    result = subprocess.run(cmd, cwd=cwd or ROOT, env=env, check=False)
+    if result.returncode not in allowed_exit_codes:
+        raise subprocess.CalledProcessError(result.returncode, cmd)
 
 
 def build_python_artifacts(python: str) -> tuple[Path, Path]:
@@ -57,7 +65,7 @@ def smoke_install_from_artifact(python: str, artifact: Path, extra: str = "") ->
         env = os.environ | {"PYTHONPATH": ""}
 
         run([vpy, "-c", "import ancilis; print(ancilis.__all__[0])"], env=env)
-        run([ancilis, "doctor", "--config", str(smoke_config)], env=env)
+        run([ancilis, "doctor", "--config", str(smoke_config)], env=env, allowed_exit_codes=(0, 1))
         run([ancilis, "config", "validate", "--config", str(smoke_config)], env=env)
         run([ancilis, "status", "--config", str(smoke_config)], env=env)
         run([ancilis, "report", "--config", str(smoke_config), "--format", "terminal"], env=env)

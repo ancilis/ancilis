@@ -1,0 +1,30 @@
+agent:
+  name: finance-demo-agent
+  description: "Demo finance agent for end-to-end compliance showcase"
+
+my_agent_handles:
+  - financial_records
+  - personal_info
+  - credit_cards
+
+certification_targets:
+  - aiuc-1
+
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - check_balance
+      - get_transactions
+      - transfer_funds
+    blocked:
+      - drop_audit_log
+  scope:
+    max_actions_per_minute: null
+    allowed_destinations: []
+    blocked_destinations: []
+
+compliance:
+  evidence:
+    storage: local
+    retention_days: 365

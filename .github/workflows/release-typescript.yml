@@ -15,7 +15,7 @@ jobs:
     name: Verify TypeScript release artifacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Verify version-tag alignment
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
@@ -24,10 +24,10 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
             exit 1
           fi
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
@@ -54,11 +54,15 @@ jobs:
         id: hash
         run: |
           TARBALL=$(ls release-artifacts/*.tgz)
-          sha256sum "$TARBALL" > release-artifacts/SHA256SUMS
+          (cd release-artifacts && sha256sum "$(basename "$TARBALL")") > release-artifacts/SHA256SUMS
           echo "sha256=$(sha256sum "$TARBALL" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           cat release-artifacts/SHA256SUMS
+      - name: Dry-run publish
+        run: npm publish release-artifacts/*.tgz --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: ancilis-typescript-package
           path: |
@@ -71,15 +75,18 @@ jobs:
     needs: verify_typescript_release
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
     environment:
       name: npm
       url: https://www.npmjs.com/package/ancilis
     steps:
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v4
         with:
           name: ancilis-typescript-package
           path: release-artifacts
@@ -91,3 +98,10 @@ jobs:
       - run: npm publish release-artifacts/*.tgz --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-artifacts/*.tgz
+            release-artifacts/SHA256SUMS
+          generate_release_notes: true

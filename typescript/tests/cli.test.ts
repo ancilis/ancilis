@@ -21,7 +21,7 @@ import { runCli } from "../src/cli.js";
 import * as ancilis from "../src/ancilis/index.js";
 import { ReportGenerator, renderTerminal, renderMarkdown, renderPdf, renderNdjson, renderCsv, renderOscalJson } from "../src/ancilis/report/index.js";
 import type { EvidenceSummary, ReportData } from "../src/ancilis/report/index.js";
-import type { RenderPdfResult } from "../src/ancilis/index.js";
+import type { DE04StoreAdapter, RenderPdfResult } from "../src/ancilis/index.js";
 
 // --- Helpers ---
 
@@ -704,10 +704,20 @@ describe("package metadata", () => {
 
     expect(root.ToolStatus).toBeDefined();
     expect(root.scanResponse).toBeDefined();
+    expect(root.DE04IntegrityEvaluator).toBeDefined();
     expect(root.loadCertificationProfile).toBeDefined();
     expect(root.loadCertificationProfiles).toBeDefined();
     expect(root.loadControlDefinitions).toBeDefined();
     expect(root.loadOverlayProfiles).toBeDefined();
+  });
+
+  it("exports the DE-04 store adapter type from the package root", () => {
+    const store: DE04StoreAdapter = {
+      count: () => 0,
+      verifyChain: () => ({ valid: true, errors: [] }),
+    };
+
+    expect(store.verifyChain().valid).toBe(true);
   });
 
   it("exports PDF renderer result types from the package root", () => {

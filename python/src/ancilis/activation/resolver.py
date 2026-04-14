@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -12,6 +13,8 @@ from ancilis.activation.loader import (
     load_overlay_profiles,
     load_taxonomy,
 )
+from ancilis.overlays import normalize_overlay_ids
+from ancilis.plugins import PluginRegistry
 
 logger = logging.getLogger("ancilis.activation")
 
@@ -47,15 +50,26 @@ class ActivationSpec:
 class ActivationResolver:
     """Resolves config into a unified ActivationSpec consumed by the engine."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        plugin_registry: PluginRegistry | None = None,
+        plugin_configs: Mapping[str, Mapping[str, Any]] | None = None,
+        warnings: list[str] | None = None,
+    ) -> None:
         self._control_defs = load_control_definitions()
-        self._overlay_profiles = load_overlay_profiles()
+        self._overlay_profiles = load_overlay_profiles(
+            plugin_registry=plugin_registry,
+            plugin_configs=plugin_configs,
+            warnings=warnings,
+        )
         self._taxonomy = load_taxonomy()
 
     def resolve(
         self,
         my_agent_handles: list[str] | None = None,
         certification_targets: list[str] | None = None,
+        compliance_overlays: list[str] | None = None,
     ) -> ActivationSpec:
         spec = ActivationSpec()
 
@@ -79,6 +93,13 @@ class ActivationResolver:
         if certification_targets:
             self._resolve_certification_path(spec, certification_targets)
 
+        # 5. Explicit compliance overlay config
+        if compliance_overlays:
+            self._resolve_explicit_overlay_path(spec, compliance_overlays)
+
+        # Apply overlays after all activation paths have contributed overlays.
+        self._apply_active_overlays(spec)
+
         # Sort controls for consistency
         spec.active_controls = sorted(set(spec.active_controls))
 
@@ -94,7 +115,10 @@ class ActivationResolver:
         # Build DC code → overlay lookup
         classification_lookup: dict[str, list[str]] = {}
         for entry in self._taxonomy.get("classifications", []):
-            classification_lookup[entry["code"]] = entry.get("overlays", [])
+            classification_lookup[entry["code"]] = normalize_overlay_ids(
+                entry.get("overlays", [])
+            )
+        self._add_plugin_data_classification_overlays(classification_lookup)
 
         all_dc_codes: set[str] = set()
         for data_type in my_agent_handles:
@@ -123,21 +147,6 @@ class ActivationResolver:
 
         spec.data_classifications = sorted(all_dc_codes)
 
-        # Apply overlay control overrides (strictest wins)
-        max_retention = spec.evidence_retention_days
-        for oid in spec.active_overlays:
-            profile = self._overlay_profiles[oid]
-            self._apply_overlay(spec, profile, f"overlay:{oid}")
-
-            retention = profile.get("evidence_retention_minimum_days", 365)
-            if retention > max_retention:
-                max_retention = retention
-
-            if profile.get("human_oversight_required", False):
-                spec.human_oversight_required = True
-
-        spec.evidence_retention_days = max_retention
-
     def _resolve_certification_path(self, spec: ActivationSpec, cert_targets: list[str]) -> None:
         """Path 2: Load certification profiles and activate required controls."""
         cert_profiles = load_certification_profiles(cert_targets)
@@ -164,6 +173,69 @@ class ActivationResolver:
             retention = evidence_packaging.get("retention_days", 365)
             if retention > spec.evidence_retention_days:
                 spec.evidence_retention_days = retention
+
+            for oid in self._plugin_certification_overlays(cid_target):
+                if oid not in spec.active_overlays:
+                    spec.active_overlays.append(oid)
+                    spec.activation_source[oid] = f"certification_targets:{cid_target}"
+
+    def _resolve_explicit_overlay_path(
+        self,
+        spec: ActivationSpec,
+        compliance_overlays: list[str],
+    ) -> None:
+        for oid in normalize_overlay_ids(compliance_overlays):
+            if oid in self._overlay_profiles and oid not in spec.active_overlays:
+                spec.active_overlays.append(oid)
+                spec.activation_source[oid] = "compliance.overlays"
+
+    def _add_plugin_data_classification_overlays(
+        self,
+        classification_lookup: dict[str, list[str]],
+    ) -> None:
+        for oid, profile in self._overlay_profiles.items():
+            if not _is_plugin_overlay(oid):
+                continue
+            if profile.get("trigger_type") != "data_classification":
+                continue
+            for dc_code in profile.get("triggered_by", []):
+                overlays = classification_lookup.setdefault(dc_code, [])
+                if oid not in overlays:
+                    overlays.append(oid)
+
+    def _plugin_certification_overlays(self, cert_target: str) -> dict[str, dict[str, Any]]:
+        overlays: dict[str, dict[str, Any]] = {}
+        for oid, profile in self._overlay_profiles.items():
+            if not _is_plugin_overlay(oid):
+                continue
+            if profile.get("trigger_type") not in {
+                "certification",
+                "certification_target",
+                "certification_targets",
+            }:
+                continue
+            triggered_by = profile.get("triggered_by", [])
+            certification_targets = profile.get("certification_targets", [])
+            if cert_target in triggered_by or cert_target in certification_targets:
+                overlays[oid] = profile
+        return overlays
+
+    def _apply_active_overlays(self, spec: ActivationSpec) -> None:
+        max_retention = spec.evidence_retention_days
+        for oid in spec.active_overlays:
+            profile = self._overlay_profiles.get(oid)
+            if profile is None:
+                continue
+            self._apply_overlay(spec, profile, f"overlay:{oid}")
+
+            retention = profile.get("evidence_retention_minimum_days", 365)
+            if retention > max_retention:
+                max_retention = retention
+
+            if profile.get("human_oversight_required", False):
+                spec.human_oversight_required = True
+
+        spec.evidence_retention_days = max_retention
 
     def _apply_overlay(self, spec: ActivationSpec, profile: dict[str, Any], source: str) -> None:
         """Apply overlay control overrides. Strictest threshold wins."""
@@ -217,3 +289,7 @@ class ActivationResolver:
             summary.append(f"Baseline security active — {count} controls enforcing")
 
         return summary
+
+
+def _is_plugin_overlay(overlay_id: str) -> bool:
+    return overlay_id.startswith("plugin:")

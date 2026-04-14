@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
 from datetime import datetime, timezone
@@ -79,41 +80,70 @@ class CycloneDxImporter:
 
     def parse(self, path: str | Path) -> list[EvaluationResult]:
         """Parse a CycloneDX SBOM file and return EvaluationResults."""
-        with open(path) as f:
-            doc = json.load(f)
-        return self._parse_doc(doc)
+        content = Path(path).read_bytes()
+        doc = json.loads(content.decode("utf-8"))
+        return self._parse_doc(doc, file_sha256=hashlib.sha256(content).hexdigest())
 
     def parse_string(self, content: str) -> list[EvaluationResult]:
         """Parse CycloneDX SBOM JSON from a string."""
         doc = json.loads(content)
         return self._parse_doc(doc)
 
-    def _parse_doc(self, doc: dict[str, Any]) -> list[EvaluationResult]:
+    def _parse_doc(
+        self,
+        doc: dict[str, Any],
+        *,
+        file_sha256: str | None = None,
+    ) -> list[EvaluationResult]:
         results: list[EvaluationResult] = []
 
         # One EvaluationResult for component metadata (provenance evidence)
-        results.append(self._build_component_result(doc))
+        results.append(self._build_component_result(doc, file_sha256=file_sha256))
 
         # One EvaluationResult per vulnerability (if any)
         vulns = doc.get("vulnerabilities", [])
         for vuln in vulns:
-            results.append(self._build_vuln_result(doc, vuln))
+            results.append(self._build_vuln_result(doc, vuln, file_sha256=file_sha256))
 
         return results
 
-    def _source_tool(self, doc: dict[str, Any]) -> str:
+    def _source_tool_metadata(self, doc: dict[str, Any]) -> tuple[str, str]:
         meta = doc.get("metadata", {})
         tools = meta.get("tools", [])
         if tools:
             t = tools[0]
-            name = t.get("name", "cyclonedx-tool")
-            version = t.get("version", "")
-            return f"{name}/{version}" if version else name
-        return "cyclonedx-import"
+            return t.get("name", "cyclonedx-tool"), t.get("version", "")
+        return "cyclonedx-import", ""
 
-    def _build_component_result(self, doc: dict[str, Any]) -> EvaluationResult:
+    def _source_tool(self, doc: dict[str, Any]) -> str:
+        name, version = self._source_tool_metadata(doc)
+        return f"{name}/{version}" if version else name
+
+    def _source_provenance(
+        self,
+        doc: dict[str, Any],
+        *,
+        file_sha256: str | None,
+    ) -> dict[str, Any]:
+        name, version = self._source_tool_metadata(doc)
+        provenance: dict[str, Any] = {
+            "source_format": "cyclonedx",
+            "source_tool_name": name,
+            "source_tool_version": version,
+        }
+        if file_sha256 is not None:
+            provenance["original_file_sha256"] = file_sha256
+        return provenance
+
+    def _build_component_result(
+        self,
+        doc: dict[str, Any],
+        *,
+        file_sha256: str | None,
+    ) -> EvaluationResult:
         """Produce a PASS evidence record representing component inventory."""
         source_tool = self._source_tool(doc)
+        source_provenance = self._source_provenance(doc, file_sha256=file_sha256)
         components = doc.get("components", [])
         meta = doc.get("metadata", {})
         serial = doc.get("serialNumber", "")
@@ -131,6 +161,7 @@ class CycloneDxImporter:
                 detail=f"SBOM component inventory ingested from {source_tool}. {', '.join(summary_parts)}.",
                 evidence_data={
                     "source_tool": source_tool,
+                    "source_provenance": source_provenance,
                     "spec_version": spec_version,
                     "serial_number": serial,
                     "component_count": len(components),
@@ -167,10 +198,15 @@ class CycloneDxImporter:
         )
 
     def _build_vuln_result(
-        self, doc: dict[str, Any], vuln: dict[str, Any]
+        self,
+        doc: dict[str, Any],
+        vuln: dict[str, Any],
+        *,
+        file_sha256: str | None,
     ) -> EvaluationResult:
         """Produce a FLAG/FAIL evidence record for one vulnerability."""
         source_tool = self._source_tool(doc)
+        source_provenance = self._source_provenance(doc, file_sha256=file_sha256)
         vuln_id = vuln.get("id", "UNKNOWN")
         description = vuln.get("description", "")
         cwes = _extract_cwes(vuln)
@@ -200,6 +236,7 @@ class CycloneDxImporter:
                     "score": score,
                     "cwes": cwes,
                     "source_tool": source_tool,
+                    "source_provenance": source_provenance,
                     "affects": [
                         {"ref": a.get("ref", ""), "versions": a.get("versions", [])}
                         for a in vuln.get("affects", [])

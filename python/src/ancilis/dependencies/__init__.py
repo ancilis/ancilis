@@ -37,7 +37,7 @@ class DependencyScanResult:
     sbom: CycloneDxBom | None
     vulnerabilities: list[VulnerabilityFinding]
     osv_error: str | None
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, object] = field(default_factory=dict)
 
 
 def scan_dependencies(project_dir: Path | None = None) -> DependencyScanResult:

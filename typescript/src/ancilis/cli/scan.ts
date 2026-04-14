@@ -29,6 +29,8 @@ export interface ScanOptions {
   db?: string;
   session?: string;
   latest?: boolean;
+  /** Show all sessions — overrides latest-session default */
+  all?: boolean;
   period?: string;
   /** Override project directory for dependency scanning (default: process.cwd()) */
   projectDir?: string;
@@ -51,9 +53,26 @@ function periodToSince(period: string): string {
   return new Date(Date.now() - ms).toISOString();
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function dependencyEvidencePersistenceWarning(error: unknown): string {
+  return `Warning: dependency-scan evidence was not persisted: ${errorMessage(error)}`;
+}
+
 function loadConfigSafe(configPath: string | undefined): ResolvedConfig | null {
   try {
     if (configPath !== undefined) {
+      // If the specified path doesn't exist, fall back to zero-config default instead of failing
+      if (!existsSync(configPath)) {
+        return loadConfig({
+          raw: {
+            agent: { name: basename(process.cwd()) },
+            security: { mode: "audit" },
+          },
+        });
+      }
       return loadConfig({ path: configPath });
     }
     // Zero-config fallback: try ancilis.yaml in cwd, else create minimal in-memory config
@@ -190,7 +209,11 @@ export async function runEvaluation(
         const activeFindings = depResult.vulnerabilities.filter(f => !ignoreSet.has(f.cveId));
         const violating = activeFindings.filter(f => atOrAboveThreshold(f.severity, threshold));
         const depEval = buildDepEvaluationResult(config, activeFindings, depResult.dependencies.length, null, violating);
-        try { await store.store(depEval, "dependency-scanner"); } catch { /* non-fatal */ }
+        try {
+          await store.store(depEval, "dependency-scanner");
+        } catch (error: unknown) {
+          process.stderr.write(`${dependencyEvidencePersistenceWarning(error)}\n`);
+        }
         if (violating.length > 0) anyFailing = true;
       }
     }
@@ -285,6 +308,14 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
       console.log(msg);
     }
   };
+  const err = (msg: string): void => {
+    const line = msg.endsWith("\n") ? msg : `${msg}\n`;
+    if (io) {
+      io.stderr(line);
+    } else {
+      process.stderr.write(line);
+    }
+  };
 
   const config = loadConfigSafe(options.config);
   if (config === null) {
@@ -296,7 +327,18 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
 
   const store = new EvidenceStore(config, options.db !== undefined ? { dbPath: options.db } : undefined);
   try {
-    const rawSummary = await store.getSummary({ since });
+    // Determine session scope: explicit --session > --all (no filter) > default (latest session)
+    let sessionId: string | undefined;
+    if (options.session !== undefined) {
+      sessionId = options.session;
+    } else if (!options.all) {
+      const latestId = await store.latestSessionId();
+      if (latestId !== null) {
+        sessionId = latestId;
+      }
+    }
+
+    const rawSummary = await store.getSummary({ since, sessionId });
     const summary = rawSummary as Record<string, unknown>;
 
     const totalEvaluations = (summary.totalEvaluations as number | undefined) ?? 0;
@@ -413,7 +455,9 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
       );
       try {
         await store.store(depEval, "dependency-scanner");
-      } catch { /* evidence store errors are non-fatal */ }
+      } catch (error: unknown) {
+        err(dependencyEvidencePersistenceWarning(error));
+      }
     } else {
       depSummary = { status: "disabled", findings: [], violatingFindings: [], componentCount: 0, osvError: null };
     }

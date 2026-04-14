@@ -92,6 +92,9 @@ ancilis report --format markdown -o report.md
 # AIUC-1 certification readiness
 ancilis report --format aiuc1-readiness
 
+# OSCAL Assessment Results JSON
+ancilis report generate --format oscal -o report.oscal.json
+
 # PDF for procurement (requires pandoc)
 ancilis report --format pdf -o report.pdf
 
@@ -132,3 +135,16 @@ ancilis report --period 365d  # Last year
 ```
 
 Evidence chain verification always runs against the full store regardless of the period filter.
+
+## Platform exports
+
+Use `ancilis report export` to download server-rendered evidence exports from the Ancilis platform.
+
+```bash
+ancilis report export --format oscal --period 30d \
+  --api-url https://app.ancilis.ai \
+  --auth-token "$ANCILIS_JWT" \
+  --output report.oscal.json
+```
+
+Supported export formats are `csv`, `ndjson`, and `oscal`.

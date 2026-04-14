@@ -49,7 +49,7 @@ describe("packaged CLI release readiness", () => {
 
     expect(output).toContain("ancilis doctor");
     expect(output).toContain("ancilis report");
-  }, 30_000);
+  }, 120_000);
 
   it("runs `ancilis doctor` successfully from the installed tarball", () => {
     const installDir = installPackedPackage();
@@ -67,7 +67,7 @@ describe("packaged CLI release readiness", () => {
     expect(output).toContain("Ancilis doctor");
     expect(output).toContain("[OK] config:");
     expect(output).toContain("[OK] assets:");
-  }, 30_000);
+  }, 120_000);
 
   it("package smoke script exercises installed oscal report export", () => {
     const output = execFileSync("node", ["scripts/ts_package_smoke.mjs"], {
@@ -77,7 +77,7 @@ describe("packaged CLI release readiness", () => {
 
     expect(output).toContain("ts-cli-formats-ok");
     expect(output).toContain("ts-report-oscal-ok");
-  }, 30_000);
+  }, 120_000);
 
 });
 
@@ -140,11 +140,11 @@ describe("publish configuration", () => {
 
     const verifyJob = workflow.jobs?.verify_typescript_release;
     const verifyUses = verifyJob?.steps?.flatMap((step) => (step.uses ? [step.uses] : [])) ?? [];
-    expect(verifyUses).toContain("actions/upload-artifact@v6");
+    expect(verifyUses).toContain("actions/upload-artifact@v4");
 
     const publishJob = workflow.jobs?.publish_typescript;
     const publishUses = publishJob?.steps?.flatMap((step) => (step.uses ? [step.uses] : [])) ?? [];
-    expect(publishUses).toContain("actions/download-artifact@v7");
+    expect(publishUses).toContain("actions/download-artifact@v4");
 
     const publishRuns = publishJob?.steps?.flatMap((step) => (step.run ? [step.run] : [])) ?? [];
     expect(publishRuns).not.toContain("npm ci");

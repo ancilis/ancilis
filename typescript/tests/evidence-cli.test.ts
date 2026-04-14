@@ -88,6 +88,7 @@ async function populateStore(dbPath: string, configPath: string, count = 3): Pro
       tool: { name: "read_file", input: { path: `/file${i}.txt` } },
     };
     const evaluation = engine.evaluate(action);
+    evaluation.context = { sessionId: "test-agent" };
     await store.store(evaluation, "read_file");
   }
   await store.close();

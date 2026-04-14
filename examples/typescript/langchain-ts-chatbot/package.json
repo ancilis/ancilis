@@ -1,0 +1,23 @@
+{
+  "name": "langchain-ts-chatbot",
+  "version": "1.0.0",
+  "description": "LangChain.js chatbot with Ancilis SOC 2 compliance monitoring",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "tsx index.ts",
+    "scan": "tsx index.ts && ancilis scan --config ancilis.yaml"
+  },
+  "dependencies": {
+    "ancilis": "file:../../../ancilis-0.1.0.tgz",
+    "@langchain/core": ">=0.3.0 <0.4.0",
+    "@langchain/openai": ">=0.3.0 <0.4.0",
+    "langchain": ">=0.3.0 <0.4.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

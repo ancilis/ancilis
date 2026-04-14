@@ -1,14 +1,24 @@
 /** DuckDB-backed evidence store with hash chain integrity. */
 
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
+import { packageRootFrom } from "../shared-path.js";
 import duckdb from "duckdb";
 import type { EvaluationResult } from "../engine/result.js";
 import type { ResolvedConfig } from "../config/index.js";
 import { GENESIS_SEED, canonicalJsonStringify, canonicalPayload, computeHash } from "./chain.js";
 import type { EvidenceRecord } from "./record.js";
+
+let _sdkVersion: string | undefined;
+try {
+  _sdkVersion = (JSON.parse(
+    readFileSync(join(packageRootFrom(import.meta.url), "package.json"), "utf-8"),
+  ) as { version: string }).version;
+} catch {
+  _sdkVersion = undefined;
+}
 
 const CREATE_TABLE_SQL = `
 CREATE SEQUENCE IF NOT EXISTS evidence_seq START 1;
@@ -18,6 +28,7 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     evaluation_id VARCHAR NOT NULL,
     timestamp VARCHAR NOT NULL,
     agent_id VARCHAR NOT NULL,
+    session_id VARCHAR,
     source_type VARCHAR NOT NULL DEFAULT 'agent',
     tool_name VARCHAR NOT NULL,
     decision VARCHAR NOT NULL,
@@ -30,23 +41,28 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     previous_hash VARCHAR NOT NULL,
     total_duration_ms DOUBLE NOT NULL,
     output_summary VARCHAR,
-    tenant_id VARCHAR
+    tenant_id VARCHAR,
+    detected_data_types JSON NOT NULL DEFAULT '[]',
+    sdk_version VARCHAR,
+    classification_context JSON NOT NULL DEFAULT '{}'
 );
 `;
 
 const INSERT_SQL = `
 INSERT INTO evidence_records (
-    record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+    record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
-    record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
+    detected_data_types, sdk_version, classification_context
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 `;
 
 const SELECT_COLUMNS = `
-seq_id, record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
-active_certifications, record_hash, previous_hash, total_duration_ms, output_summary, tenant_id
+active_certifications, record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
+detected_data_types, sdk_version, classification_context
 `;
 
 function execAsync(conn: duckdb.Connection, sql: string): Promise<void> {
@@ -90,17 +106,17 @@ export class EvidenceStore {
   private _db: duckdb.Database | null = null;
   private _conn: duckdb.Connection | null = null;
   private _certifications: string[];
+  private _llmProvider: string | null;
   private _initialized: Promise<void> | null = null;
   private _dbPath: string;
   private _inMemory: boolean;
   private _tenantId: string | undefined;
-  private _configAgentId: string | null;
 
   constructor(config: ResolvedConfig, options?: { dbPath?: string; inMemory?: boolean; tenantId?: string }) {
     this._certifications = [...(config.activeCertifications ?? [])];
+    this._llmProvider = config.llmProvider ?? null;
     this._inMemory = options?.inMemory ?? false;
     this._tenantId = options?.tenantId;
-    this._configAgentId = config.agentId ?? null;
 
     if (this._inMemory) {
       this._dbPath = ":memory:";
@@ -131,6 +147,9 @@ export class EvidenceStore {
       await execAsync(this._conn, CREATE_TABLE_SQL);
       const columns = await allAsync(this._conn, "PRAGMA table_info('evidence_records')");
       const names = new Set(columns.map((row) => (row as Record<string, unknown>).name as string));
+      if (!names.has("session_id")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN session_id VARCHAR");
+      }
       if (!names.has("source_type")) {
         await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN source_type VARCHAR NOT NULL DEFAULT 'agent'");
       }
@@ -139,6 +158,15 @@ export class EvidenceStore {
       }
       if (!names.has("tenant_id")) {
         await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN tenant_id VARCHAR");
+      }
+      if (!names.has("detected_data_types")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN detected_data_types JSON DEFAULT '[]'");
+      }
+      if (!names.has("sdk_version")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN sdk_version VARCHAR");
+      }
+      if (!names.has("classification_context")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN classification_context JSON DEFAULT '{}'");
       }
     })();
 
@@ -179,7 +207,7 @@ export class EvidenceStore {
     await this.ensureInitialized();
     const recordId = randomUUID();
     const previousHash = await this.getLastHash();
-    const agentId = this._configAgentId ?? evaluation.agentId;
+    const sessionId = evaluation.context?.sessionId ?? null;
 
     const controlResultsData = evaluation.controlResults.map(cr => ({
       control_id: cr.controlId,
@@ -193,7 +221,7 @@ export class EvidenceStore {
     const canon = canonicalPayload({
       evaluationId: evaluation.evaluationId,
       timestamp: evaluation.timestamp,
-      agentId,
+      agentId: evaluation.agentId,
       sourceType: evaluation.sourceType ?? "agent",
       toolName,
       decision: evaluation.decision,
@@ -205,15 +233,21 @@ export class EvidenceStore {
       totalDurationMs: evaluation.totalDurationMs,
       previousHash,
       outputSummary,
+      sessionId,
       tenantId: this._tenantId,
     });
     const recordHash = computeHash(canon);
+
+    const classificationContext: Record<string, unknown> = {};
+    if (this._llmProvider) {
+      classificationContext.llm_provider = this._llmProvider;
+    }
 
     const record: EvidenceRecord = {
       recordId,
       evaluationId: evaluation.evaluationId,
       timestamp: evaluation.timestamp,
-      agentId,
+      agentId: evaluation.agentId,
       sourceType: evaluation.sourceType ?? "agent",
       toolName,
       decision: evaluation.decision,
@@ -226,7 +260,11 @@ export class EvidenceStore {
       previousHash,
       totalDurationMs: evaluation.totalDurationMs,
       outputSummary: outputSummary ?? null,
+      sessionId,
       tenantId: this._tenantId ?? null,
+      detectedDataTypes: [...(evaluation.detectedDataTypes ?? [])],
+      sdkVersion: _sdkVersion ?? null,
+      classificationContext,
     };
 
     await runAsync(this._conn!, INSERT_SQL, [
@@ -234,6 +272,7 @@ export class EvidenceStore {
       record.evaluationId,
       record.timestamp,
       record.agentId,
+      record.sessionId ?? null,
       record.sourceType ?? "agent",
       record.toolName,
       record.decision,
@@ -247,6 +286,9 @@ export class EvidenceStore {
       record.totalDurationMs,
       record.outputSummary,
       record.tenantId ?? null,
+      JSON.stringify(record.detectedDataTypes ?? []),
+      record.sdkVersion ?? null,
+      JSON.stringify(record.classificationContext ?? {}),
     ]);
 
     return record;
@@ -350,6 +392,7 @@ export class EvidenceStore {
         totalDurationMs: record.totalDurationMs,
         previousHash: record.previousHash,
         outputSummary: record.outputSummary,
+        sessionId: record.sessionId,
         tenantId: record.tenantId,
       });
       const expectedHash = computeHash(canon);
@@ -367,7 +410,7 @@ export class EvidenceStore {
     return { valid: errors.length === 0, errors };
   }
 
-  async getSummary(options?: { since?: string }): Promise<Record<string, unknown>> {
+  async getSummary(options?: { since?: string; sessionId?: string }): Promise<Record<string, unknown>> {
     if (!this._initialized && !this._inMemory && !existsSync(this._dbPath)) {
       return {
         totalEvaluations: 0,
@@ -381,8 +424,17 @@ export class EvidenceStore {
     }
 
     await this.ensureInitialized();
-    const whereClause = options?.since ? " WHERE timestamp >= ?" : "";
-    const params = options?.since ? [options.since] : [];
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    if (options?.since) {
+      conditions.push("timestamp >= ?");
+      params.push(options.since);
+    }
+    if (options?.sessionId !== undefined) {
+      conditions.push("session_id = ?");
+      params.push(options.sessionId);
+    }
+    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
 
     const totalRows = await allAsync(
       this._conn!,
@@ -484,42 +536,52 @@ export class EvidenceStore {
     return runAsync(this._conn!, sql, params);
   }
 
-  async listSessions(): Promise<Array<{ sessionId: string; count: number; firstSeen: string; lastSeen: string }>> {
+  async listSessions(): Promise<Array<{ session_id: string; count: number; first_seen: string; last_seen: string }>> {
     await this.ensureInitialized();
-    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
+    const tenantFilter = this._tenantId ? "AND tenant_id = ?" : "";
     const params = this._tenantId ? [this._tenantId] : [];
     const rows = await allAsync(
       this._conn!,
-      `SELECT agent_id as session_id, COUNT(*)::INTEGER as count, MIN(timestamp) as first_seen, MAX(timestamp) as last_seen FROM evidence_records${whereClause} GROUP BY agent_id ORDER BY MAX(timestamp) DESC`,
+      `SELECT session_id, COUNT(*)::INTEGER as cnt,
+       MIN(timestamp) as first_seen, MAX(timestamp) as last_seen
+       FROM evidence_records
+       WHERE session_id IS NOT NULL ${tenantFilter}
+       GROUP BY session_id ORDER BY last_seen DESC`,
       params,
     );
-    return rows.map((row) => {
-      const r = row as Record<string, unknown>;
-      return {
-        sessionId: r.session_id as string,
-        count: r.count as number,
-        firstSeen: r.first_seen as string,
-        lastSeen: r.last_seen as string,
-      };
-    });
+    return (rows as Array<Record<string, unknown>>).map((r) => ({
+      session_id: r.session_id as string,
+      count: r.cnt as number,
+      first_seen: r.first_seen as string,
+      last_seen: r.last_seen as string,
+    }));
+  }
+
+  async latestSessionId(): Promise<string | null> {
+    await this.ensureInitialized();
+    const conditions = ["session_id IS NOT NULL"];
+    const params: unknown[] = [];
+    if (this._tenantId) {
+      conditions.push("tenant_id = ?");
+      params.push(this._tenantId);
+    }
+    const rows = await allAsync(
+      this._conn!,
+      `SELECT session_id FROM evidence_records WHERE ${conditions.join(" AND ")} ORDER BY timestamp DESC, seq_id DESC LIMIT 1`,
+      params,
+    );
+    const row = (rows as Array<Record<string, unknown>>)[0];
+    return row ? (row.session_id as string) : null;
   }
 
   async reset(): Promise<number> {
     await this.ensureInitialized();
-    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
-    const params = this._tenantId ? [this._tenantId] : [];
-    const countRows = await allAsync(
-      this._conn!,
-      `SELECT COUNT(*)::INTEGER as cnt FROM evidence_records${whereClause}`,
-      params,
-    );
-    const count = (countRows[0] as Record<string, unknown>).cnt as number;
-    if (this._tenantId) {
-      await runAsync(this._conn!, "DELETE FROM evidence_records WHERE tenant_id = ?", [this._tenantId]);
-    } else {
-      await execAsync(this._conn!, "DELETE FROM evidence_records");
+    const countRows = await allAsync(this._conn!, "SELECT COUNT(*)::INTEGER as cnt FROM evidence_records", []);
+    const n = ((countRows[0] as Record<string, unknown>).cnt as number) ?? 0;
+    if (n > 0) {
+      await runAsync(this._conn!, "DELETE FROM evidence_records", []);
     }
-    return count;
+    return n;
   }
 
   async purgeBefore(beforeTimestamp: string): Promise<number> {
@@ -563,7 +625,11 @@ export class EvidenceStore {
       previousHash: row.previous_hash as string,
       totalDurationMs: row.total_duration_ms as number,
       outputSummary: (row.output_summary as string | null | undefined) ?? null,
+      sessionId: (row.session_id as string | null | undefined) ?? null,
       tenantId: (row.tenant_id as string | null | undefined) ?? null,
+      detectedDataTypes: (parseJson(row.detected_data_types) ?? []) as string[],
+      sdkVersion: (row.sdk_version as string | null | undefined) ?? null,
+      classificationContext: (parseJson(row.classification_context) ?? {}) as Record<string, unknown>,
     };
   }
 }

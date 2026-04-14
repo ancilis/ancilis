@@ -14,7 +14,9 @@ import { homedir } from "node:os";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
-import { handleScan } from "../../src/ancilis/cli/scan.js";
+import { handleScan, runEvaluation } from "../../src/ancilis/cli/scan.js";
+import { loadConfig } from "../../src/ancilis/config/index.js";
+import { EvidenceStore } from "../../src/ancilis/evidence/store.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -349,6 +351,26 @@ describe("ancilis scan — CI JSON output", () => {
     expect(finding["fixed_version"]).toBe("4.18.2");
   });
 
+  it("writes dependency evidence persistence failures to stderr without corrupting CI JSON", async () => {
+    const dir = makeTmpDir();
+    writePackageLock(dir, { lodash: "4.17.21" });
+    mockOsvEmpty(1);
+    vi.spyOn(EvidenceStore.prototype, "store").mockRejectedValueOnce(new Error("duckdb locked"));
+
+    const { io, stdout, stderr } = captureIo();
+    const exitCode = await handleScan(
+      { ci: true, config: writeConfig(dir), db: ":memory:", projectDir: dir },
+      io,
+    );
+
+    expect(exitCode).toBe(0);
+    const json = JSON.parse(stdout()) as Record<string, unknown>;
+    expect((json["dependencies"] as Record<string, unknown>)["status"]).toBe("ok");
+    expect(stderr()).toContain("Warning:");
+    expect(stderr()).toContain("dependency-scan evidence");
+    expect(stderr()).toContain("duckdb locked");
+  });
+
   it("CI JSON has no_manifests status when no lockfile found", async () => {
     const dir = makeTmpDir();
     // no lockfile written
@@ -397,5 +419,42 @@ describe("ancilis scan — CI JSON output", () => {
     expect(json["exit_code"]).toBe(1);
     expect(json["posture"]).toBe("non_compliant");
     expect(exitCode).toBe(1);
+  });
+});
+
+describe("ancilis scan — shared evaluation pass", () => {
+  it("warns when dependency evidence persistence fails without changing posture", async () => {
+    const dir = makeTmpDir();
+    writePackageLock(dir, { lodash: "4.17.21" });
+    mockOsvEmpty(1);
+    vi.spyOn(EvidenceStore.prototype, "store").mockRejectedValueOnce(new Error("duckdb locked"));
+
+    const config = loadConfig({ path: writeConfig(dir) });
+    const originalCwd = process.cwd();
+    const stderrWrites: string[] = [];
+    const originalWrite = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: unknown, ..._args: unknown[]) => {
+      stderrWrites.push(String(chunk));
+      return true;
+    }) as typeof process.stderr.write;
+
+    try {
+      process.chdir(dir);
+      const result = await runEvaluation(config, {
+        since: new Date(0).toISOString(),
+        db: ":memory:",
+        runDepScan: true,
+      });
+
+      expect(result.posture).toBe("compliant");
+    } finally {
+      process.chdir(originalCwd);
+      process.stderr.write = originalWrite;
+    }
+
+    const stderr = stderrWrites.join("");
+    expect(stderr).toContain("Warning:");
+    expect(stderr).toContain("dependency-scan evidence");
+    expect(stderr).toContain("duckdb locked");
   });
 });

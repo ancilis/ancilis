@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 
 import click
@@ -13,6 +14,63 @@ from ancilis.evidence.store import EvidenceStore
 @click.group()
 def evidence() -> None:
     """Evidence store management commands."""
+
+
+@evidence.command(name="verify")
+@click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
+@click.option("--db", "db_path", default=None, help="Path to evidence database")
+@click.option("--session-id", default=None, help="Scope verification output to a session")
+@click.option("--json", "json_output", is_flag=True, help="Emit machine-readable JSON")
+def evidence_verify(
+    config_path: str | None,
+    db_path: str | None,
+    session_id: str | None,
+    json_output: bool,
+) -> None:
+    """Verify evidence hash chain integrity."""
+    try:
+        config = load_config(path=config_path) if config_path else load_config()
+    except FileNotFoundError as e:
+        if config_path is not None or db_path is None:
+            click.echo(f"Error: {e}", err=True)
+            click.echo("Suggested fix: pass --config path/to/ancilis.yaml", err=True)
+            raise SystemExit(1) from None
+        config = load_config(raw={"agent": {"name": "evidence-verify"}})
+    except ValueError as e:
+        click.echo(f"Error: {e}", err=True)
+        click.echo("Suggested fix: pass --config path/to/ancilis.yaml", err=True)
+        raise SystemExit(1) from None
+
+    store = EvidenceStore(config, db_path=db_path)
+    try:
+        valid, errors = store.verify_chain(session_id=session_id)
+        record_count = store.count(session_id=session_id)
+    finally:
+        store.close()
+
+    if json_output:
+        click.echo(
+            json.dumps(
+                {
+                    "valid": valid,
+                    "record_count": record_count,
+                    "session_id": session_id,
+                    "errors": errors,
+                },
+                sort_keys=True,
+            )
+        )
+    elif valid:
+        scope = f" for session {session_id}" if session_id else ""
+        click.echo(f"Evidence chain valid{scope}: {record_count} record(s) verified.")
+    else:
+        scope = f" for session {session_id}" if session_id else ""
+        click.echo(f"Evidence chain broken{scope}: {record_count} record(s) checked.", err=True)
+        for error in errors:
+            click.echo(f"- {error}", err=True)
+
+    if not valid:
+        raise SystemExit(1)
 
 
 @evidence.command(name="sessions")

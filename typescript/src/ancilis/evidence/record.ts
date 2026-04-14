@@ -17,5 +17,9 @@ export interface EvidenceRecord {
   previousHash: string;
   totalDurationMs: number;
   outputSummary?: string | null;
+  sessionId?: string | null;
   tenantId?: string | null;
+  detectedDataTypes?: string[];
+  sdkVersion?: string | null;
+  classificationContext?: Record<string, unknown>;
 }

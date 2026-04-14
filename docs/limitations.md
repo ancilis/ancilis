@@ -13,7 +13,7 @@ Ancilis evaluates actions that flow through its explicit producers and middlewar
 
 ## Control evaluator coverage
 
-26 controls are defined in the AKSI taxonomy. 6 have runtime evaluators today:
+26 controls are defined in the AKSI taxonomy. 9 have runtime evaluators today:
 
 | Control | Evaluator | What it checks |
 |---------|-----------|---------------|
@@ -22,13 +22,16 @@ Ancilis evaluates actions that flow through its explicit producers and middlewar
 | PR-03 | Tool provenance | Tool registered and hash-verified |
 | PR-04 | Data exposure scan | Sensitive data patterns in parameters |
 | PR-05 | Audit trail | Evidence record written for this evaluation |
+| PR-06 | Config integrity baseline | Hashes tool config on first call, detects drift on subsequent calls |
+| PR-07 | Transport security | Verifies tool endpoint URLs use HTTPS (localhost exempt) |
+| PR-08 | Input validation | Detects SQL injection, command injection, path traversal in parameters |
 | DE-01 | Baseline detection | Behavioral anomaly detection against established baseline |
 
-The remaining 20 controls (GOV-01 through RC-02) are defined in the control taxonomy, appear in reports with regulatory citations, and produce `SKIP` results. Their evaluators are not yet implemented.
+The remaining 17 controls (GOV-01 through RC-02) are defined in the control taxonomy, appear in reports with regulatory citations, and produce `SKIP` results. Their evaluators are not yet implemented.
 
 This means:
 - Reports show all 26 controls with regulatory mapping
-- Only 6 controls produce PASS/FAIL/FLAG results
+- Only 9 controls produce PASS/FAIL/FLAG results
 - Compliance posture for controls without evaluators shows "no evaluations" rather than false positives
 
 ## TypeScript SDK
@@ -46,14 +49,14 @@ Overlay profiles vary in how many controls they map:
 | Overlay | Controls mapped | Controls with adjustments |
 |---------|----------------|--------------------------|
 | SOC 2 Type II | 26 | 6 |
-| PCI-DSS v4 | 6 | 6 |
-| HIPAA | 6 | 4 |
-| GDPR | 6 | 4 |
-| EU AI Act | 6 | 4 |
-| ISO 42001 | 6 | 4 |
+| PCI-DSS v4 | 26 | 6 |
+| HIPAA | 26 | 4 |
+| GDPR | 26 | 4 |
+| EU AI Act | 26 | 4 |
+| ISO 42001 | 26 | 0 (alignment-based) |
 | NIST CSF 2.0 | 26 | 0 (alignment-based) |
 
-All overlays activate and produce compliance posture reports. SOC 2 and NIST CSF have full 26-control framework mapping. Others currently map the 6 controls with runtime evaluators. Deeper mapping for HIPAA, GDPR, and others is planned.
+All overlays map all 26 controls and produce compliance posture reports. Controls with adjustments have framework-specific thresholds or evidence requirements. Controls without adjustments use the base AKSI definitions.
 
 ## Evidence trust boundary
 
@@ -64,6 +67,25 @@ The SHA-256 hash chain provides tamper detection — if someone modifies a recor
 - Evidence integrity ultimately depends on protecting the underlying host and database file
 
 For stronger guarantees, export evidence to an append-only external store.
+
+### Hash chain field coverage
+
+All evidence record fields relevant to a control decision are included in the SHA-256 hash:
+`evaluation_id`, `timestamp`, `agent_id`, `source_type`, `tool_name`, `decision`, `mode`,
+`control_results`, `active_overlays`, `data_classifications`, `active_certifications`,
+`total_duration_ms`, `previous_hash`, and `output_summary` (when present).
+
+Fields excluded from the hash by design: `record_id`, `sdk_version`, `detected_data_types`,
+`classification_context`. These are supplemental metadata and their modification does not alter
+the tamper-evidence of the control decision record.
+
+**Backward compatibility:** Records created before `output_summary` was added to the hash scheme
+store `NULL` for that field. `verify_chain` uses conditional-inclusion logic — `output_summary`
+is added to the canonical payload only when non-null. This means:
+- Legacy records with `output_summary=NULL` verify correctly against their stored hash.
+- Post-hoc injection of a non-null value into a legacy record is still detected as a hash
+  mismatch, because the recomputed canonical includes the injected value while the stored hash
+  does not.
 
 ## No GUI, no SaaS
 

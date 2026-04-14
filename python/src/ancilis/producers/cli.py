@@ -7,8 +7,8 @@ Usage:
     from ancilis.evidence import EvidenceStore
 
     config = load_config()
-    engine = Engine(config)
     evidence_store = EvidenceStore(config)
+    engine = Engine(config, evidence_store=evidence_store)
     producer = CLIActionProducer(config=config, engine=engine, evidence_store=evidence_store)
 
     # Wrap a subprocess call
@@ -89,6 +89,12 @@ class CLIActionProducer:
         # Create default evidence store if not provided (same as middleware).
         # Lazy init means this doesn't touch the filesystem at construction.
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
+        self._session_id: str = str(uuid.uuid4())
+
+    @property
+    def session_id(self) -> str:
+        """Unique identifier for this producer instance (one per agent run)."""
+        return self._session_id
 
     @property
     def producer_type(self) -> ProducerType:

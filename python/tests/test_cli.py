@@ -7,7 +7,10 @@ import json
 import os
 import tempfile
 import unittest.mock
+import urllib.error
+import urllib.request
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -340,6 +343,16 @@ class TestConfigValidate:
         result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
         assert result.exit_code == 0
         assert "CMMC Level 2" in result.output
+
+    def test_nist_csf_2_overlay_alias_validates_as_nist_csf(self, tmp_path: Path) -> None:
+        data = _minimal_config()
+        data["compliance"] = {"overlays": ["nist-csf-2"]}
+        cfg = _make_config_file(data, tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
+        assert result.exit_code == 0
+        assert "NIST Cybersecurity Framework 2.0" in result.output
+        assert "nist-csf-2" not in result.output
 
 
 # ===== Status Tests =====
@@ -712,6 +725,127 @@ class TestReportBaseline:
 
         assert len(rows) == 101
 
+    def test_oscal_report_cli_writes_assessment_results_json(self, tmp_path: Path) -> None:
+        cfg_path = _make_config_file(_minimal_config(), tmp_path)
+        db = tmp_path / "evidence.db"
+        output_path = tmp_path / "report.oscal.json"
+        config = load_config(path=str(cfg_path))
+        store = EvidenceStore(config, db_path=str(db))
+        registry = ToolRegistry()
+        registry.register(ToolEntry(name="read_file", status=ToolStatus.APPROVED))
+        engine = Engine(config, registry=registry)
+
+        evaluation = engine.evaluate(_make_action(tool_name="read_file", agent_id=config.agent_name))
+        store.store(evaluation, tool_name="read_file", output_summary="oscal-export")
+        store.close()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "report",
+                "generate",
+                "--config",
+                str(cfg_path),
+                "--db",
+                str(db),
+                "--format",
+                "oscal",
+                "--output",
+                str(output_path),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert result.output.strip() == f"Report written to {output_path}"
+        payload = json.loads(output_path.read_text(encoding="utf-8"))
+        assert payload["assessment-results"]["metadata"]["oscal-version"] == "1.1.2"
+        assert payload["assessment-results"]["results"][0]["observations"]
+
+    def test_report_export_downloads_with_jwt_and_query_params(self, tmp_path: Path) -> None:
+        output_path = tmp_path / "export.ndjson"
+
+        class FakeResponse:
+            status = 200
+
+            def __init__(self, body: bytes) -> None:
+                self._body = BytesIO(body)
+
+            def __enter__(self) -> FakeResponse:
+                return self
+
+            def __exit__(self, *exc: object) -> None:
+                return None
+
+            def read(self, size: int = -1) -> bytes:
+                return self._body.read(size)
+
+        requests: list[urllib.request.Request] = []
+
+        def fake_urlopen(request: urllib.request.Request) -> FakeResponse:
+            requests.append(request)
+            return FakeResponse(b'{"record_id":"r1"}\n')
+
+        runner = CliRunner()
+        with unittest.mock.patch("ancilis.cli.report.urllib.request.urlopen", fake_urlopen):
+            result = runner.invoke(
+                cli,
+                [
+                    "report",
+                    "export",
+                    "--format",
+                    "ndjson",
+                    "--period",
+                    "7d",
+                    "--api-url",
+                    "https://app.ancilis.ai/",
+                    "--auth-token",
+                    "jwt-token",
+                    "--output",
+                    str(output_path),
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert result.output.strip() == f"Export written to {output_path}"
+        assert output_path.read_text(encoding="utf-8") == '{"record_id":"r1"}\n'
+        assert len(requests) == 1
+        request = requests[0]
+        assert request.full_url == "https://app.ancilis.ai/v1/evidence/export?format=ndjson&period=7d"
+        assert request.get_method() == "GET"
+        assert request.headers["Authorization"] == "Bearer jwt-token"
+
+    def test_report_export_auth_error_is_clear(self) -> None:
+        def fake_urlopen(_request: urllib.request.Request) -> object:
+            raise urllib.error.HTTPError(
+                url="https://app.ancilis.ai/v1/evidence/export",
+                code=401,
+                msg="Unauthorized",
+                hdrs=None,
+                fp=None,
+            )
+
+        runner = CliRunner()
+        with unittest.mock.patch("ancilis.cli.report.urllib.request.urlopen", fake_urlopen):
+            result = runner.invoke(
+                cli,
+                [
+                    "report",
+                    "export",
+                    "--format",
+                    "csv",
+                    "--period",
+                    "30d",
+                    "--api-url",
+                    "https://app.ancilis.ai",
+                    "--auth-token",
+                    "bad-token",
+                ],
+            )
+
+        assert result.exit_code == 1
+        assert "Authentication failed" in result.output
+
 
 # ===== Report — Compliance Mode Tests =====
 
@@ -781,6 +915,24 @@ class TestReportCompliance:
 
         assert "Compliance Posture" in md
         assert "Citation" in md  # Table header
+        store.close()
+
+    def test_report_uses_canonical_nist_csf_section_for_alias(self, tmp_path: Path) -> None:
+        data = _minimal_config()
+        data["compliance"] = {"overlays": ["nist-csf", "nist-csf-2"]}
+        config = load_config(raw=data)
+        store = EvidenceStore(config, db_path=str(tmp_path / "ev.db"))
+
+        gen = ReportGenerator(config, store)
+        report = gen.generate()
+
+        nist_sections = [
+            section
+            for section in report.compliance_sections
+            if section["overlay_name"] == "NIST Cybersecurity Framework 2.0"
+        ]
+        assert [section["overlay_id"] for section in nist_sections] == ["nist-csf"]
+        assert "nist-csf-2" not in [section["overlay_id"] for section in report.compliance_sections]
         store.close()
 
 

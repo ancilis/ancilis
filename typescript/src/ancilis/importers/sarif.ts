@@ -171,6 +171,7 @@ export class SarifImporter {
       activeOverlays: [],
       dataClassifications: [],
       totalDurationMs: 0,
+      context: { sessionId: this.agentId },
     };
   }
 }

@@ -15,7 +15,7 @@ from ancilis.engine.result import ControlResult
 _LOCALHOST_HOSTS = {"localhost", "127.0.0.1", "::1"}
 
 # Parameter keys that may contain URLs/endpoints
-_URL_KEYS = ("url", "endpoint", "baseUrl", "base_url", "server", "host", "api_url")
+_URL_KEYS = ("url", "endpoint", "baseUrl", "base_url", "server", "host", "api_url", "ws_url", "ws", "websocket_url")
 
 
 def _is_localhost(url: str) -> bool:

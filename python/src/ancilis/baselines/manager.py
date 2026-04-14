@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from ancilis.baselines.drift import DriftDetector, _compute_control_stats, _dominant_result, _pass_rate
 from ancilis.baselines.models import Baseline, ControlSnapshot, DriftReport
+from ancilis.overlays import normalize_overlay_id
 
 if TYPE_CHECKING:
     from ancilis.config import ResolvedConfig
@@ -58,7 +59,7 @@ class BaselineManager:
         conn.execute(_CREATE_BASELINES_IDX_AGENT_ACTIVE)
         conn.execute(_CREATE_BASELINES_IDX_AGENT_OVERLAY)
 
-    def _conn(self):  # type: ignore[return]
+    def _conn(self) -> Any:
         return self._store._connection
 
     def _agent_id(self) -> str:
@@ -79,6 +80,9 @@ class BaselineManager:
 
         Deactivates any existing active baseline for the same agent+overlay pair.
         """
+        if overlay_id is not None:
+            overlay_id = normalize_overlay_id(overlay_id)
+
         agent_id = self._agent_id()
         now = datetime.now(timezone.utc)
         window_start = (now - timedelta(hours=evidence_window_hours)).isoformat()
@@ -159,6 +163,9 @@ class BaselineManager:
 
     def list_baselines(self, overlay_id: str | None = None) -> list[Baseline]:
         """Return baselines for this agent, optionally filtered by overlay."""
+        if overlay_id is not None:
+            overlay_id = normalize_overlay_id(overlay_id)
+
         agent_id = self._agent_id()
         if overlay_id is not None:
             rows = self._conn().execute(
@@ -198,6 +205,9 @@ class BaselineManager:
         If baseline_id is None, uses the most recent active baseline for the
         agent (optionally scoped to overlay_id).
         """
+        if overlay_id is not None:
+            overlay_id = normalize_overlay_id(overlay_id)
+
         agent_id = self._agent_id()
 
         if baseline_id is not None:

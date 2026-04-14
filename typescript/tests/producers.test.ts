@@ -2,7 +2,7 @@
  * Tests for protocol-agnostic producers.
  */
 
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -38,6 +38,11 @@ function makeConfig(options: {
 }
 
 describe("package exports", () => {
+  it("exports the package version from the TypeScript package root", () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as { version: string };
+    expect(ancilis.__version__).toBe(pkg.version);
+  });
+
   it("exports the producer APIs from the TypeScript package root", () => {
     const root = ancilis as Record<string, unknown>;
     expect(ancilis.CLIActionProducer).toBeDefined();
@@ -49,6 +54,24 @@ describe("package exports", () => {
     expect(root.wrapTool).toBeDefined();
     expect(root.tool).toBeDefined();
     expect(root.evaluateAndExecute).toBeDefined();
+  });
+
+  it("exposes sessionId on all non-MCP producers for Python parity", () => {
+    const config = makeConfig({ mode: "audit" });
+    const store = new EvidenceStore(config, { inMemory: true });
+    const cli = new CLIActionProducer(config, new Engine(config), undefined, store);
+    const http = new HTTPActionProducer(config, new Engine(config), undefined, store);
+    const tool = new ToolActionProducer(config, new Engine(config), undefined, store);
+
+    // Each producer gets a unique session id
+    expect(cli.sessionId).toHaveLength(36);
+    expect(http.sessionId).toHaveLength(36);
+    expect(tool.sessionId).toHaveLength(36);
+    expect(cli.sessionId).not.toBe(http.sessionId);
+    expect(cli.sessionId).not.toBe(tool.sessionId);
+
+    // Session id is stable across calls
+    expect(cli.sessionId).toBe(cli.sessionId);
   });
 
   it("exposes a shared producer protocol surface", () => {
@@ -357,6 +380,24 @@ describe("ToolActionProducer", () => {
     expect(producer.registerTools(registry)).toEqual(["tool:payments.refund"]);
   });
 
+  it("propagates sessionId into action context for Python parity", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new ToolActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    const action = producer.translate({
+      fn: (x: unknown) => x,
+      agentName: "runtime-agent",
+      toolName: "tool:demo",
+    });
+
+    expect(action.context?.sessionId).toBe(producer.sessionId);
+  });
+
   it("treats a bare allowlist entry as approval for an explicitly named tool", async () => {
     const config = makeConfig({ mode: "enforce", toolsAllowed: ["payments.refund"] });
     const producer = new ToolActionProducer(
@@ -476,6 +517,28 @@ describe("ToolActionProducer", () => {
 
     expect(await store.count()).toBe(1);
     expect((await store.getRecords())[0]?.toolName).toBe("tool:payments.refund");
+  });
+
+  it("awaits async tool return values before returning execution results", async () => {
+    const config = makeConfig({ mode: "audit" });
+    const store = new EvidenceStore(config, { inMemory: true });
+    const producer = new ToolActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      store,
+    );
+
+    const result = await producer.execute(
+      async (paymentId: string): Promise<string> => `refunded:${paymentId}`,
+      "runtime-agent",
+      ["pay_123"],
+      undefined,
+      "tool:payments.refund_async",
+    );
+
+    expect(result.returnValue).toBe("refunded:pay_123");
+    expect(await store.count()).toBe(1);
   });
 
   it("stores evidence before throwing for blocked tool execution", async () => {

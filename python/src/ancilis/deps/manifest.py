@@ -5,16 +5,23 @@ from __future__ import annotations
 import json
 import re
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import ModuleType
 
+tomllib: ModuleType | None
 if sys.version_info >= (3, 11):
-    import tomllib
+    import tomllib as _tomllib
+
+    tomllib = _tomllib
 else:
     try:
-        import tomllib  # type: ignore[import]
+        import tomli as _tomllib
     except ImportError:
-        tomllib = None  # type: ignore[assignment]
+        tomllib = None
+    else:
+        tomllib = _tomllib
 
 
 @dataclass
@@ -114,7 +121,7 @@ def _parse_poetry_lock(path: Path) -> list[Dependency]:
 class ManifestDetector:
     """Detect and parse Python dependency manifests in a project directory."""
 
-    _HANDLERS: list[tuple[str, str, object]] = [
+    _HANDLERS: list[tuple[str, str, Callable[[Path], list[Dependency]]]] = [
         ("requirements.txt", "requirements.txt", _parse_requirements_txt),
         ("pyproject.toml", "pyproject.toml", _parse_pyproject_toml),
         ("Pipfile.lock", "Pipfile.lock", _parse_pipfile_lock),
@@ -127,6 +134,6 @@ class ManifestDetector:
         for filename, fmt, handler in self._HANDLERS:
             candidate = project_dir / filename
             if candidate.is_file():
-                deps = handler(candidate)  # type: ignore[operator]
+                deps = handler(candidate)
                 manifests.append(Manifest(path=str(candidate), format=fmt, dependencies=deps))
         return manifests

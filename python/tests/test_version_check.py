@@ -13,6 +13,7 @@ import click
 import pytest
 
 from ancilis.cli.version_check import (
+    CI_ENV_VARS,
     check_and_notify,
     fetch_latest_version,
     is_ci_environment,
@@ -48,6 +49,13 @@ def _write_cache_file(path: Path, latest_version: str, age_seconds: float = 0) -
     path.write_text(
         json.dumps({"latest_version": latest_version, "checked_at": time.time() - age_seconds})
     )
+
+
+@pytest.fixture(autouse=True)
+def _clear_ci_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for env_var in CI_ENV_VARS:
+        monkeypatch.delenv(env_var, raising=False)
+    monkeypatch.delenv("ANCILIS_NO_UPDATE_CHECK", raising=False)
 
 
 # ---------------------------------------------------------------------------

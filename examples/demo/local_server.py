@@ -11,7 +11,7 @@ Usage:
 Endpoints:
     GET /         → dashboard.html (static)
     GET /health   → {"status": "ok"}
-    GET /v1/evidence         → list of evidence records (limit 500)
+    GET /v1/evidence         → list of evidence records (limit 500, current session)
     GET /v1/evidence/summary → summary stats (decisions, control pass rates, chain)
 """
 from __future__ import annotations
@@ -54,6 +54,7 @@ class EvidenceHandler(BaseHTTPRequestHandler):
     """Simple JSON + static-file request handler."""
 
     store: Any  # set on class by main()
+    session_id: str | None = None  # set on class by main(); scopes queries to current run
 
     def log_message(self, fmt: str, *args: Any) -> None:  # silence access log
         pass
@@ -86,10 +87,10 @@ class EvidenceHandler(BaseHTTPRequestHandler):
             elif path == "/health":
                 self._send_json({"status": "ok"})
             elif path == "/v1/evidence/summary":
-                summary = self.store.get_summary()
+                summary = self.store.get_summary(session_id=self.session_id)
                 self._send_json(summary)
             elif path == "/v1/evidence":
-                records = self.store.get_records(limit=500)
+                records = self.store.get_records(session_id=self.session_id, limit=500)
                 self._send_json([_record_to_dict(r) for r in records])
             else:
                 self._send_json({"error": "not found"}, 404)
@@ -107,6 +108,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Ancilis local evidence viewer")
     parser.add_argument("--db-path", required=True, help="Path to DuckDB evidence file")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port to bind (default: 8100)")
+    parser.add_argument("--session", default=None, help="Scope display to a specific session ID (default: latest)")
     args = parser.parse_args()
 
     db_path = os.path.abspath(args.db_path)
@@ -114,7 +116,15 @@ def main() -> None:
         print(f"Error: evidence DB not found at {db_path}", file=sys.stderr)
         sys.exit(1)
 
-    EvidenceHandler.store = _load_store(db_path)
+    store = _load_store(db_path)
+    EvidenceHandler.store = store
+
+    # Scope all queries to the specified session, or fall back to the latest known session.
+    # This prevents stale evidence from prior runs inflating dashboard counts.
+    session_id = args.session or store.latest_session_id()
+    EvidenceHandler.session_id = session_id
+    if session_id:
+        print(f"Session: {session_id}", flush=True)
 
     server = HTTPServer(("127.0.0.1", args.port), EvidenceHandler)
     print(f"Evidence viewer: http://127.0.0.1:{args.port}", flush=True)

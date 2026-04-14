@@ -75,7 +75,7 @@ for i in range(5):
 print(f"\n  Total tool calls: 8")
 
 # --- Show evidence summary ---
-summary = evidence.get_summary()
+summary = evidence.get_summary(session_id=producer.session_id)
 print(f"\n=== Evidence Summary ===")
 print(f"  Records: {summary['total_evaluations']}")
 print(f"  Decisions: {summary['decisions']}")

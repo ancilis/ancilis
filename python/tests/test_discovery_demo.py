@@ -24,27 +24,27 @@ EXPECTED_AGENTS = {
     "payments-processor": {
         "runtime_type": "bedrock",
         "data_types": ["credit_cards", "financial_records"],
-        "evidence_summary": {"allow": 0, "block": 1, "flag": 5},
+        "evidence_summary": {"allow": 5, "block": 1, "flag": 0},
     },
     "fraud-sentinel": {
         "runtime_type": "agentcore",
         "data_types": ["financial_records", "personal_info"],
-        "evidence_summary": {"allow": 0, "block": 2, "flag": 4},
+        "evidence_summary": {"allow": 4, "block": 2, "flag": 0},
     },
     "compliance-auditor": {
         "runtime_type": "openclaw",
         "data_types": ["credit_cards", "financial_records", "personal_info"],
-        "evidence_summary": {"allow": 0, "block": 1, "flag": 5},
+        "evidence_summary": {"allow": 5, "block": 1, "flag": 0},
     },
     "invoice-extractor": {
         "runtime_type": "mcp",
         "data_types": ["financial_records", "personal_info"],
-        "evidence_summary": {"allow": 0, "block": 1, "flag": 6},
+        "evidence_summary": {"allow": 5, "block": 1, "flag": 1},
     },
     "customer-assist": {
         "runtime_type": "claude",
         "data_types": ["credit_cards", "financial_records", "personal_info"],
-        "evidence_summary": {"allow": 0, "block": 2, "flag": 5},
+        "evidence_summary": {"allow": 5, "block": 2, "flag": 0},
     },
 }
 

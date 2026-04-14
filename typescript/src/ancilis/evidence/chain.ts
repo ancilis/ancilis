@@ -62,6 +62,7 @@ export function canonicalPayload(fields: {
   totalDurationMs: number;
   previousHash: string;
   outputSummary?: string | null;
+  sessionId?: string | null;
   tenantId?: string | null;
 }): string {
   const payload: Record<string, unknown> = {
@@ -81,6 +82,9 @@ export function canonicalPayload(fields: {
   };
   if (fields.outputSummary !== undefined && fields.outputSummary !== null) {
     payload.output_summary = fields.outputSummary;
+  }
+  if (fields.sessionId !== undefined && fields.sessionId !== null) {
+    payload.session_id = fields.sessionId;
   }
   if (fields.tenantId !== undefined && fields.tenantId !== null) {
     payload.tenant_id = fields.tenantId;
