@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     )
     from ancilis.baselines import BaselineManager, DriftReport
     from ancilis.config import load_config
+    from ancilis.controls.custom import CustomControlDefinition, register_control
     from ancilis.deps.scanner import DependencyScanner
     from ancilis.evidence import (
         EvidenceAdapter,
@@ -65,6 +66,7 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "BlockedActionError": ("ancilis.producers.tool", "BlockedActionError"),
     "DependencyScanner": ("ancilis.deps.scanner", "DependencyScanner"),
     "DriftReport": ("ancilis.baselines", "DriftReport"),
+    "CustomControlDefinition": ("ancilis.controls.custom", "CustomControlDefinition"),
     "EvidenceAdapter": ("ancilis.evidence", "EvidenceAdapter"),
     "EvidenceAdapterExport": ("ancilis.evidence", "EvidenceAdapterExport"),
     "EvidenceAdapterPayload": ("ancilis.evidence", "EvidenceAdapterPayload"),
@@ -87,6 +89,7 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "ToolInvocation": ("ancilis.producers.tool", "ToolInvocation"),
     "evaluate_and_execute": ("ancilis.producers.tool", "evaluate_and_execute"),
     "load_config": ("ancilis.config", "load_config"),
+    "register_control": ("ancilis.controls.custom", "register_control"),
     "resolve_evidence_adapter": ("ancilis.evidence", "resolve_evidence_adapter"),
     "resolve_runtime_producers": ("ancilis.producers.runtime", "resolve_runtime_producers"),
     "tool": ("ancilis.producers.tool", "tool"),

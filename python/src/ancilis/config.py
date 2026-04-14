@@ -155,6 +155,7 @@ VALID_CERTIFICATION_TARGETS: set[str] = set()
 DEFAULT_CONTROL_ACTIVATION_SOURCE = "default"
 EXPLICIT_CONTROL_ACTIVATION_SOURCE = "explicit:security.controls"
 CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX = "certification_targets:"
+CUSTOM_CONTROL_ACTIVATION_SOURCE = "custom:local"
 
 
 def _load_valid_certification_targets() -> set[str]:
@@ -242,6 +243,7 @@ class ResolvedConfig:
         self.active_certifications: list[str] = []
         self.llm_provider: str | None = None
         self.control_activation_sources: dict[str, set[str]] = {}
+        self.custom_controls: dict[str, Any] = {}
         # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
         self.overlay_requirements: dict[str, dict[str, Any]] = {}
         # Dependency scan config
@@ -272,7 +274,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
         controls = security.get("controls", {})
         if isinstance(controls, dict):
             for key in controls:
-                if key not in VALID_CONTROL_IDS:
+                if key not in VALID_CONTROL_IDS and not key.startswith("custom:"):
                     raise config_invalid(f"Unknown control ID in security.controls: '{key}'")
 
     # Validate my_agent_handles types
@@ -339,6 +341,19 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
                 else DEFAULT_CONTROL_ACTIVATION_SOURCE
             )
             result.control_activation_sources[cid].add(source)
+
+    from ancilis.controls.custom import list_custom_controls
+
+    for cid, definition in sorted(list_custom_controls().items()):
+        override = config.security.controls.get(cid)
+        enabled = override.enabled if override else True
+        result.controls[cid] = ControlStatus(cid, definition.title, enabled)
+        result.control_activation_sources[cid] = set()
+        if enabled:
+            result.control_activation_sources[cid].add(CUSTOM_CONTROL_ACTIVATION_SOURCE)
+            if override is not None:
+                result.control_activation_sources[cid].add(EXPLICIT_CONTROL_ACTIVATION_SOURCE)
+        result.custom_controls[cid] = definition
 
     # Resolve data classifications
     type_mapping = taxonomy["developer_type_mapping"]
@@ -489,19 +504,34 @@ def load_config(
     Returns:
         ResolvedConfig with all controls, overlays, and classifications resolved.
     """
+    custom_warnings: list[str] = []
     if raw is not None:
         config_dict = dict(raw)
     elif path is not None:
-        config_dict = yaml.safe_load(Path(path).read_text()) or {}
+        config_path = Path(path)
+        config_dict = yaml.safe_load(config_path.read_text()) or {}
+        from ancilis.controls.custom import load_custom_controls_from_directory
+
+        custom_warnings.extend(
+            load_custom_controls_from_directory(config_path.parent / ".ancilis" / "controls")
+        )
     else:
         # Try to find ancilis.yaml in current directory
         default_path = Path("ancilis.yaml")
         if default_path.exists():
             config_dict = yaml.safe_load(default_path.read_text()) or {}
+            from ancilis.controls.custom import load_custom_controls_from_directory
+
+            custom_warnings.extend(
+                load_custom_controls_from_directory(
+                    default_path.parent / ".ancilis" / "controls"
+                )
+            )
         else:
             raise FileNotFoundError("No ancilis.yaml found and no config provided")
 
     config, warnings = validate_config(config_dict)
+    warnings.extend(custom_warnings)
     return resolve_config(config, warnings)
 
 

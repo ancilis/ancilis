@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Protocol
 
 from ancilis.config import ResolvedConfig, load_control_definitions
+from ancilis.controls.custom import CustomControlEvaluator
 from ancilis.engine.action import Action
 from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
 from ancilis.engine.evaluators.base import ControlEvaluator
@@ -98,6 +99,8 @@ class Engine:
             "DE-04": DE04IntegrityEvaluator(evidence_store=evidence_store),
             "GOV-02": GOV02OwnershipEvaluator(),
         }
+        for control_id, definition in getattr(self.config, "custom_controls", {}).items():
+            self._evaluators[control_id] = CustomControlEvaluator(definition)
 
     def evaluate(self, action: Action) -> EvaluationResult:
         """Evaluate an action against all active controls."""
