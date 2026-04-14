@@ -2,34 +2,24 @@
 
 [![CI](https://github.com/ancilis/ancilis/actions/workflows/ci.yml/badge.svg)](https://github.com/ancilis/ancilis/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ancilis/ancilis/badge)](https://scorecard.dev/viewer/?uri=github.com/ancilis/ancilis)
-[![License](https://img.shields.io/badge/license-BUSL--1.1-blue.svg)](LICENSE)
+[![license](https://img.shields.io/badge/license-BUSL--1.1-blue.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/ancilis.svg)](https://pypi.org/project/ancilis/)
 [![npm](https://img.shields.io/npm/v/ancilis.svg)](https://www.npmjs.com/package/ancilis)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
+[![python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 
-Policy-driven runtime security for AI agents. Automated data type or certification security control selection based on what your agent needs. Audit-ready evidence. Start with security — unlock compliance when your market demands it. Never map or crosswalk control frameworks again.
+Runtime security and compliance evidence for AI agents.
 
----
+Ancilis evaluates every tool call your agent makes against a security policy, produces tamper-evident evidence records, and maps everything to the compliance frameworks your customers care about — SOC 2, HIPAA, PCI-DSS, EU AI Act, and 15 more. No manual framework crosswalking. Declare what data your agent handles; get the right controls automatically.
 
-## The problem
-
-Your agents make tool calls. Those tool calls touch real data, hit real APIs, execute real commands. Right now, nothing evaluates those calls against a policy before they execute. Nothing produces evidence that they were evaluated. When a customer asks "how do you control what your agent does?" — you don't have an answer backed by data.
-
-## What Ancilis does
-
-- **Evaluates every tool call** against declared policy with deterministic pass/fail
-- **Produces hash-chained evidence records** for every evaluation — local DuckDB, no external services
-- **Auto-scopes regulatory overlays** from data classification — declare `health_records`, get HIPAA controls
-- **Supports audit and enforce modes** — log everything first, block violations when ready
-- **Works with MCP, CLI, HTTP, and plain Python tool calls** through pluggable producers
-
-## Quick start
+## Install
 
 ```bash
 pip install ancilis
 ```
 
-Create `ancilis.yaml`:
+## 30-second setup
+
+Create `ancilis.yaml` next to your agent code:
 
 ```yaml
 agent:
@@ -51,18 +41,12 @@ config = load_config()
 engine = Engine(config)
 producer = ToolActionProducer(config=config, engine=engine)
 
-def search_docs(query: str) -> str:
-    return f"Found 3 results for: {query}"
-
-# Wrap the function — every call is now evaluated and evidence-recorded
+# Wrap any function — calls are now evaluated and evidence is recorded
 search_docs = producer.wrap_tool(search_docs, tool_name="search_docs")
-
 result = search_docs("account billing")
-# => "Found 3 results for: account billing"
-# Evidence record written to ~/.ancilis/my-agent-{hash}/evidence.duckdb
 ```
 
-Check your posture:
+Check posture:
 
 ```bash
 ancilis status
@@ -75,188 +59,135 @@ Ancilis — my-agent
   Tool calls: 1 evaluated, 0 blocked
 ```
 
-## The certification path
+That's it. Every tool call is evaluated against 26 security controls and recorded in a local evidence store with SHA-256 hash chaining.
 
-Add one line to your config. Get certification readiness assessment for free.
+## Add compliance
+
+One line turns security controls into compliance evidence. Add a certification target to your config:
 
 ```yaml
 agent:
-  name: my-agent
+  name: payment-agent
 certification_targets:
-  - aiuc-1
-```
-
-AIUC-1 is the first certifiable standard for AI agents. Enterprise buyers are starting to ask for it. Ancilis maps its requirements to 6 security controls that activate automatically from this single config line.
-
-```bash
-ancilis report --format aiuc1-readiness
-```
-
-```
-AIUC-1 AI Agent Certification Standard Readiness
-  Readiness: 85% (17 of 20 requirements passing)
-  Coverage: 85% (17 automated, 3 operator)
-  Evidence records: 8, hash chain intact
-```
-
-See the full walkthrough: [examples/certification-driven/](examples/certification-driven/)
-
-## The data classification path
-
-Declare what data your agent handles. Get the right compliance controls automatically.
-
-```yaml
-agent:
-  name: health-agent
+  - soc2
 my_agent_handles:
-  - health_records
+  - credit_cards
   - personal_info
 ```
 
-HIPAA, GDPR, and SOC 2 overlays activate. Evidence retention extends to 6 years per HIPAA requirements. No framework crosswalking, no manual mapping.
+SOC 2 and PCI-DSS overlays activate automatically from the data declaration. No framework selection, no crosswalk mapping.
 
 ```bash
 ancilis status
 ```
 
 ```
-Ancilis — health-agent
+Ancilis — payment-agent
   Mode: audit
   Controls: 26 active, all passing
-  GDPR: active — triggered by health_records declaration
-  HIPAA Security Rule: active — triggered by health_records declaration
-  SOC 2 Type II: active — triggered by health_records declaration
+  SOC 2 Type II: active — triggered by certification target
+  PCI-DSS v4: active — triggered by credit_cards declaration
+  GDPR: active — triggered by personal_info declaration
 ```
 
-See the full walkthrough: [examples/data-classification/](examples/data-classification/)
-
-## Architecture
-
-```
-Producers (MCP, CLI, HTTP, Tool wrapper)
-    ↓
-Action Objects (protocol-agnostic)
-    ↓
-Engine (26 AKSI controls, deterministic evaluation)
-    ↓
-Evidence Store (DuckDB, SHA-256 hash chain)
-    ↓
-Reports (terminal, markdown, PDF, AIUC-1 readiness)
+```bash
+ancilis report --format markdown
 ```
 
-Producers translate protocol-specific invocations into Action objects. The engine doesn't know or care about the source protocol. Every evaluation is recorded in a local DuckDB evidence store with cryptographic hash chaining. The CLI reads that store to generate status output and compliance reports.
+Generates a compliance posture report with per-control results, evidence chain integrity verification, and framework-specific readiness scores.
 
-Policy data — controls, overlay profiles, data classifications — lives in `shared/` as JSON, consumed by both the Python and TypeScript SDKs.
+## How it works
 
-## Examples
+```
+Your agent calls a tool
+       ↓
+Producer normalizes the call (MCP, CLI, HTTP, or direct wrapper)
+       ↓
+Engine evaluates against 26 AKSI security controls
+       ↓
+Evidence record written to local DuckDB (SHA-256 hash chain)
+       ↓
+CLI reads the store → posture reports, compliance readiness
+```
 
-| Example | What it shows |
-|---------|--------------|
-| [certification-driven](examples/certification-driven/) | One config line → AIUC-1 readiness assessment |
-| [data-classification](examples/data-classification/) | Declare data types → automatic regulatory overlays |
-| [mcp-middleware](examples/mcp-middleware/) | MCP client wrapping with enforce/audit modes |
-| [cli-agent](examples/cli-agent/) | Shell command evaluation and blocking |
+Producers translate protocol-specific invocations into a common Action object. The engine evaluates every Action against active controls and writes the result. The CLI reads the evidence store to generate reports. No external services, no network calls, no data leaves your machine.
 
-Each example has its own README, config, and verified output.
+## Data types → compliance overlays
 
-## CLI
-
-| Command | What it does |
-|---------|-------------|
-| `ancilis status` | Current security posture in plain language |
-| `ancilis status --verbose` | Per-control detail with activation sources |
-| `ancilis config validate` | Validate config with actionable error messages |
-| `ancilis approve-tool <name>` | Add a tool to the approved list |
-| `ancilis report` | Terminal posture report |
-| `ancilis report --format markdown` | Markdown report for review |
-| `ancilis report --format aiuc1-readiness` | AIUC-1 certification readiness |
-| `ancilis report --format pdf` | PDF for procurement/audit (requires pandoc) |
-| `ancilis doctor` | First-run setup check with next steps |
-
-## Configuration
-
-Each level adds one concept. You don't need level N to get value from level N-1.
-
-| Level | Config addition | What activates |
-|-------|----------------|----------------|
-| 0 | Just `agent.name` | 26 baseline security controls |
-| 1 | `certification_targets: [aiuc-1]` | AIUC-1 controls + readiness reporting |
-| 2 | `my_agent_handles: [health_records]` | Regulatory overlays for declared data types |
-| 3 | `security.mode: enforce` | Violations blocked before execution |
-
-Full configuration reference: [docs/configuration.md](docs/configuration.md)
-
-## Data types and overlays
+Declare what data your agent handles. The right regulatory overlays activate automatically.
 
 | Data type | Overlays activated |
 |-----------|-------------------|
 | `credit_cards` | PCI-DSS v4 |
-| `personal_info` | SOC 2 Type II, GDPR |
-| `health_records` | SOC 2 Type II, HIPAA, GDPR |
-| `patient_data` | SOC 2 Type II, HIPAA, GDPR |
-| `ai_training_data` | ISO 42001, EU AI Act |
-| `biometric_data` | EU AI Act |
-| `financial_records` | SOC 2 Type II |
+| `health_records` | HIPAA, GDPR, SOC 2 |
+| `personal_info` | GDPR, SOC 2, CCPA |
+| `ai_training_data` | EU AI Act, ISO 42001 |
+| `financial_records` | GLBA, SOX, DORA |
 | `controlled_unclassified` | CMMC L2 |
-| `government_cui` | CMMC L2 |
-| `material_nonpublic` | Securities MNPI |
-| `mnpi` | Securities MNPI |
-| *(all data types)* | NIST CSF 2.0 (baseline) |
+| `biometric_data` | EU AI Act |
 
-23 data types supported. 12 overlay profiles available. See [docs/configuration.md](docs/configuration.md) for the complete list.
+23 data types supported across 19 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
 
-## Limitations
+## CLI
 
-Honest about what this is and isn't:
+```
+ancilis status                    Current posture
+ancilis status --verbose          Per-control detail
+ancilis report                    Terminal report
+ancilis report --format markdown  Markdown for review
+ancilis report --format pdf       PDF for audit (requires pandoc)
+ancilis config validate           Check your config
+ancilis approve-tool <name>       Approve a discovered tool
+ancilis doctor                    First-run setup check
+```
 
-- **Python is the primary supported path.** TypeScript remains preview, but the current preview includes the core engine, evidence store, CLI/HTTP/tool producers, `doctor`, and report generation/rendering. Parity auditing and release hardening are still in progress.
-- **HTTP is explicit wrapping, not universal interception.** Ancilis does not monkey-patch `requests`, `httpx`, or `aiohttp`. The HTTPActionProducer wraps calls you explicitly pass to it.
-- **Evidence integrity depends on protecting the DB.** The hash chain detects tampering after the fact. It doesn't prevent an attacker with host access from replacing the entire database.
-- **No GUI. No SaaS platform.** Ancilis is an SDK and CLI. The evidence store is local.
-- **Controls without evaluators are recorded as SKIP.** 9 of 26 controls have runtime evaluators today (PR-01 through PR-08, DE-01). The others are defined in the control taxonomy and appear in reports but produce SKIP results until evaluators are implemented.
-- **Overlay depth varies.** SOC 2 maps all 26 controls. HIPAA and GDPR map 6 controls each. PCI-DSS maps 6 controls. All overlays are functional and produce compliance posture — deeper mapping is planned.
-- **PDF export requires pandoc and xelatex.** Without them, PDF falls back to markdown output.
+## Configuration levels
 
-See [docs/limitations.md](docs/limitations.md) for detailed scope boundaries.
+Each level adds one concept. You don't need level 2 to get value from level 1.
+
+| Level | What you add | What you get |
+|-------|-------------|-------------|
+| 1 | `agent.name` + `tools.allowed` | 26 baseline security controls, evidence for every tool call |
+| 2 | `certification_targets: [soc2]` | Certification readiness reporting |
+| 3 | `my_agent_handles: [health_records]` | Automatic regulatory overlay activation |
+| 4 | `security.mode: enforce` | Non-compliant tool calls blocked before execution |
 
 ## TypeScript
 
-> **Preview.** The TypeScript SDK includes the core engine, config loading, evidence store, producers, `doctor`, and reporting, but Python remains the supported path for production use while TypeScript parity auditing and release hardening continue.
+> Preview — Python is the primary path. TypeScript includes the core engine, evidence store, producers, CLI, and reporting.
 
 ```bash
 npm install ancilis
-npx ancilis --help
 npx ancilis doctor
 ```
 
-### Quickstart
-
 ```typescript
-import { loadConfig, Engine, EvidenceStore, ToolActionProducer, BlockedActionError } from "ancilis";
+import { loadConfig, Engine, EvidenceStore, ToolActionProducer } from "ancilis";
 
 const config = loadConfig({
   raw: {
-    agent: { name: "payment-agent" },
-    security: { mode: "enforce", tools: { allowed: ["payments.read"], blocked: ["payments.delete"] } },
+    agent: { name: "my-agent" },
+    security: { mode: "enforce", tools: { allowed: ["read_data"] } },
   },
 });
 
 const store = new EvidenceStore(config, { inMemory: true });
 const producer = new ToolActionProducer(config, new Engine(config), undefined, store);
-
-const readPayment = (id: string) => ({ id, amount: 42.0, status: "settled" });
-
-const result = await producer.execute(readPayment, "payment-agent", ["pay_123"], undefined, "payments.read");
-console.log(result.returnValue); // { id: 'pay_123', amount: 42, status: 'settled' }
-
-const { valid } = await store.verifyChain();
-console.log(`Chain integrity: ${valid ? "valid" : "broken"}`);
+const result = await producer.execute(readData, "my-agent", ["id-123"], undefined, "read_data");
 ```
 
-See [`examples/typescript/`](examples/typescript/) for a runnable end-to-end example.
+## What's honest
 
-## Contributing / Security / License
+- **12 of 26 controls have runtime evaluators.** The other 14 are defined in the framework and appear in reports as SKIP until evaluators ship. No false positives.
+- **19 overlay profiles, all mapping 26 controls.** SOC 2, HIPAA, PCI-DSS, EU AI Act, GDPR, CCPA, CMMC, GLBA, DORA, NIS2, FedRAMP, ISO 27001, ISO 42001, NIST CSF, NIST AI RMF, Colorado AI Act, Singapore IMDA MGF, Securities MNPI, MAS TRM.
+- **Evidence integrity depends on protecting the DB.** The hash chain detects tampering after the fact. It doesn't prevent replacing the entire database.
+- **HTTP wrapping is explicit.** Ancilis doesn't monkey-patch HTTP libraries. You wrap the calls you want evaluated.
+- **PDF export requires pandoc and xelatex.** Falls back to markdown without them.
 
-- Security disclosures: [SECURITY.md](SECURITY.md) — security@ancilis.ai
-- [CONTRIBUTING.md](CONTRIBUTING.md)
-- Business Source License 1.1 — see [LICENSE](LICENSE). Change Date: March 10, 2030. Change License: Apache 2.0.
+## Links
+
+- [Examples](examples/) — certification-driven, data-classification, MCP middleware, CLI agent
+- [Configuration reference](docs/configuration.md)
+- [Security policy](SECURITY.md) — security@ancilis.ai
+- [Contributing](CONTRIBUTING.md)
+- [License](LICENSE) — Business Source License 1.1 (Apache 2.0 on March 10, 2030)
