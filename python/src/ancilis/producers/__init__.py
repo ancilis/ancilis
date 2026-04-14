@@ -25,11 +25,14 @@ __all__ = [
     "HTTPRequest",
     "MCPActionProducer",
     "ProducerType",
+    "RuntimeProducerSelection",
     "ToolActionProducer",
     "ToolExecutionResult",
     "ToolInvocation",
     "evaluate_and_execute",
+    "resolve_runtime_producers",
     "tool",
+    "translate_runtime_action",
     "wrap_tool",
 ]
 
@@ -39,4 +42,13 @@ def __getattr__(name: str) -> object:
         from ancilis.producers.mcp import MCPActionProducer
 
         return MCPActionProducer
+    if name in {
+        "RuntimeProducerSelection",
+        "resolve_runtime_producers",
+        "translate_runtime_action",
+    }:
+        from importlib import import_module
+
+        runtime = import_module("ancilis.producers.runtime")
+        return getattr(runtime, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
