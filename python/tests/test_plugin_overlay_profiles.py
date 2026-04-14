@@ -4,6 +4,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+import pytest
+
 from ancilis.activation.resolver import ActivationResolver
 from ancilis.config import load_config
 from ancilis.plugins import PluginContext, PluginMetadata, PluginRecord, PluginRegistry
@@ -188,3 +190,58 @@ def test_malformed_plugin_overlay_warns_and_skips_without_crashing_config_resolu
     assert config.unavailable_overlays == []
     assert "Skipping Ancilis plugin overlay acme-risk" in caplog.text
     assert any("Skipping Ancilis plugin overlay acme-risk" in warning for warning in config.warnings)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "field_value", "warning_fragment"),
+    [
+        (
+            "control_adjustments",
+            {"PR-01": "strict"},
+            "control_adjustments.PR-01' must be a mapping",
+        ),
+        (
+            "evidence_requirements",
+            {"PR-01": "acme-risk-review"},
+            "evidence_requirements.PR-01' must be a list of strings",
+        ),
+        (
+            "controls",
+            {"PR-01": "applicable"},
+            "controls.PR-01' must be a mapping",
+        ),
+        (
+            "evidence_retention_minimum_days",
+            "730",
+            "evidence_retention_minimum_days' must be an integer",
+        ),
+        (
+            "human_oversight_required",
+            "yes",
+            "human_oversight_required' must be a boolean",
+        ),
+    ],
+)
+def test_malformed_plugin_overlay_nested_fields_warn_and_skip_without_crashing(
+    caplog: Any,
+    field_name: str,
+    field_value: Any,
+    warning_fragment: str,
+) -> None:
+    caplog.set_level(logging.WARNING)
+    profile = _overlay_profile()
+    profile[field_name] = field_value
+    registry = _plugin_registry(FakeOverlayPlugin(profile=profile))
+
+    config = load_config(
+        raw={
+            "agent": {"name": "plugin-overlay-agent"},
+            "compliance": {"overlays": ["plugin:acme-risk"]},
+        },
+        plugin_registry=registry,
+        plugin_configs={"acme-risk": {"tenant": "acme"}},
+    )
+
+    assert config.active_overlays == {}
+    assert warning_fragment in caplog.text
+    assert any(warning_fragment in warning for warning in config.warnings)
