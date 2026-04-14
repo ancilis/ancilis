@@ -210,7 +210,7 @@ function rendererReport(failingControls = 1): ReportData {
 async function populateEvidence(
   config: ResolvedConfig,
   store: EvidenceStore,
-  entries: Array<{ timestamp?: string; toolName?: string; outputSummary?: string }> = [{}],
+  entries: Array<{ timestamp?: string; toolName?: string; outputSummary?: string; sessionId?: string; detectedDataTypes?: string[] }> = [{}],
 ): Promise<void> {
   const registry = new ToolRegistry();
   registry.register({
@@ -230,6 +230,12 @@ async function populateEvidence(
     };
     const evaluation = engine.evaluate(action);
     evaluation.timestamp = entry.timestamp ?? evaluation.timestamp;
+    if (entry.sessionId) {
+      evaluation.context = { ...(evaluation.context ?? {}), sessionId: entry.sessionId };
+    }
+    if (entry.detectedDataTypes) {
+      evaluation.detectedDataTypes = entry.detectedDataTypes;
+    }
     await store.store(evaluation, toolName, entry.outputSummary);
   }
 }
@@ -252,6 +258,11 @@ function sampleEvidenceRecord(overrides: Partial<EvidenceRecord> = {}): Evidence
     previousHash: "prev-1",
     totalDurationMs: 5,
     outputSummary: "sample-output",
+    sessionId: "session-1",
+    tenantId: "tenant-1",
+    detectedDataTypes: ["DC-PII"],
+    sdkVersion: "0.1.0",
+    classificationContext: { llm_provider: "openai" },
     ...overrides,
   };
 }
@@ -622,7 +633,7 @@ describe("runReport", () => {
     expect(result.ok).toBe(true);
     expect(existsSync(outputPath)).toBe(true);
     const rows = readFileSync(outputPath, "utf-8").trim().split("\n");
-    expect(rows[0]).toContain("record_id,evaluation_id,timestamp,agent_id,source_type,tool_name,decision,mode");
+    expect(rows[0]).toContain("record_id,evaluation_id,timestamp,agent_id,session_id,source_type,tool_name,decision,mode");
     expect(rows).toHaveLength(2);
     expect(rows[1]).toContain("read_file");
     expect(rows[1]).toContain("ALLOW");
@@ -631,12 +642,15 @@ describe("runReport", () => {
   });
 
   it("writes oscal json output to a file", async () => {
-    const configPath = writeConfig(dir, fullConfig());
+    const configPath = writeConfig(dir, {
+      ...fullConfig(),
+      agent: { name: "test-agent", llm_provider: "openai" },
+    });
     const dbPath = join(dir, "report.duckdb");
     const outputPath = join(dir, "report-oscal.json");
     const config = loadConfig({ path: configPath });
     const store = new EvidenceStore(config, { dbPath });
-    await populateEvidence(config, store);
+    await populateEvidence(config, store, [{ sessionId: "session-oscal", detectedDataTypes: ["DC-PII"] }]);
     await store.close();
 
     const result = await runReport({
@@ -652,7 +666,10 @@ describe("runReport", () => {
     const document = JSON.parse(readFileSync(outputPath, "utf-8")) as {
       "assessment-results"?: {
         metadata?: { title?: string };
-        results?: Array<{ findings?: Array<{ target?: { type?: string } }> }>;
+        results?: Array<{
+          findings?: Array<{ target?: { type?: string } }>;
+          observations?: Array<{ props?: Array<{ name?: string; value?: string }> }>;
+        }>;
       };
     };
     expect(document["assessment-results"]?.metadata?.title).toContain("test-agent");
@@ -661,6 +678,14 @@ describe("runReport", () => {
         (finding) => finding.target?.type === "baseline_control",
       ),
     ).toBe(true);
+
+    const props = document["assessment-results"]?.results?.[0]?.observations
+      ?.flatMap((observation) => observation.props ?? []) ?? [];
+    expect(props.find((prop) => prop.name === "evidence-record-hash")?.value).toBeTruthy();
+    expect(props.find((prop) => prop.name === "evidence-previous-hash")?.value).toBeTruthy();
+    expect(props.find((prop) => prop.name === "evidence-session-id")?.value).toBe("session-oscal");
+    expect(props.find((prop) => prop.name === "detected-data-types")?.value).toContain("DC-PII");
+    expect(props.find((prop) => prop.name === "classification-context")?.value).toContain("openai");
   });
 
   it("reports a markdown fallback when pdf tooling is unavailable", async () => {
@@ -834,6 +859,11 @@ describe("Report — Baseline", () => {
 // ===== Report — Compliance Tests =====
 
 describe("Report — Compliance", () => {
+  it("exports overlay alias normalization helpers from the root entrypoint", () => {
+    expect(ancilis.normalizeOverlayId("nist-csf-2")).toBe("nist-csf");
+    expect(ancilis.normalizeOverlayIds(["nist-csf", "nist-csf-2"])).toEqual(["nist-csf"]);
+  });
+
   it("overlays produce compliance sections", () => {
     const config = loadConfig({ raw: fullConfig() });
     const gen = new ReportGenerator(config, populatedSummary(3));
@@ -861,6 +891,23 @@ describe("Report — Compliance", () => {
     const report = gen.generate();
     // credit_cards and personal_info trigger SOC 2 and GDPR
     expect(report.complianceSections.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("uses the canonical NIST CSF section for the nist-csf-2 alias", () => {
+    const config = loadConfig({
+      raw: {
+        ...minimalConfig(),
+        compliance: { overlays: ["nist-csf-2"] },
+      },
+    });
+    const gen = new ReportGenerator(config, populatedSummary(2));
+    const report = gen.generate();
+
+    const nistSections = report.complianceSections.filter(
+      section => section.overlayName === "NIST Cybersecurity Framework 2.0",
+    );
+    expect(nistSections.map(section => section.overlayId)).toEqual(["nist-csf"]);
+    expect(report.complianceSections.map(section => section.overlayId)).not.toContain("nist-csf-2");
   });
 
   it("compliance markdown", () => {
@@ -1083,19 +1130,28 @@ describe("Output Formats", () => {
     expect(rows[0]?.record_id).toBe("record-1");
     expect(rows[0]?.agent_id).toBe("test-agent");
     expect(rows[0]?.tool_name).toBe("read_file");
+    expect(rows[0]?.session_id).toBe("session-1");
+    expect(rows[0]?.tenant_id).toBe("tenant-1");
+    expect(rows[0]?.detected_data_types).toEqual(["DC-PII"]);
+    expect(rows[0]?.sdk_version).toBe("0.1.0");
+    expect(rows[0]?.classification_context).toEqual({ llm_provider: "openai" });
     expect(rows[1]?.output_summary).toBe("second-output");
   });
 
   it("csv emits a stable evidence export schema", () => {
     const rows = renderCsv([sampleEvidenceRecord()]).trim().split("\n");
 
-    expect(rows[0]).toContain("record_id,evaluation_id,timestamp,agent_id,source_type,tool_name,decision,mode");
+    expect(rows[0]).toContain("record_id,evaluation_id,timestamp,agent_id,session_id,source_type,tool_name,decision,mode");
     expect(rows[0]).toContain("control_results,active_overlays,data_classifications,active_certifications");
-    expect(rows[0]).toContain("record_hash,previous_hash,total_duration_ms,output_summary");
+    expect(rows[0]).toContain("record_hash,previous_hash,total_duration_ms,output_summary,tenant_id,detected_data_types,sdk_version,classification_context");
     expect(rows[1]).toContain("record-1");
     expect(rows[1]).toContain("test-agent");
+    expect(rows[1]).toContain("session-1");
+    expect(rows[1]).toContain("tenant-1");
     expect(rows[1]).toContain("read_file");
     expect(rows[1]).toContain("sample-output");
+    expect(rows[1]).toContain("DC-PII");
+    expect(rows[1]).toContain("llm_provider");
   });
 
   it("oscal json emits assessment results with control findings", () => {

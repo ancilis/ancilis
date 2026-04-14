@@ -1,7 +1,7 @@
 /** SARIF v2.1.0 importer — parses findings and maps them to AKSI controls. */
 
 import { readFileSync } from "node:fs";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { sharedPathFrom } from "../shared-path.js";
 import type { ControlResult, EvaluationResult } from "../engine/result.js";
 
@@ -73,8 +73,10 @@ export class SarifImporter {
   }
 
   parse(path: string): EvaluationResult[] {
-    const doc = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
-    return this._parseDoc(doc);
+    const content = readFileSync(path);
+    const fileSha256 = createHash("sha256").update(content).digest("hex");
+    const doc = JSON.parse(content.toString("utf-8")) as Record<string, unknown>;
+    return this._parseDoc(doc, fileSha256);
   }
 
   parseString(content: string): EvaluationResult[] {
@@ -82,17 +84,25 @@ export class SarifImporter {
     return this._parseDoc(doc);
   }
 
-  private _parseDoc(doc: Record<string, unknown>): EvaluationResult[] {
+  private _parseDoc(doc: Record<string, unknown>, fileSha256?: string): EvaluationResult[] {
     const runs = (doc["runs"] as Record<string, unknown>[]) ?? [];
-    return runs.map((run) => this._parseRun(run));
+    return runs.map((run) => this._parseRun(run, fileSha256));
   }
 
-  private _parseRun(run: Record<string, unknown>): EvaluationResult {
+  private _parseRun(run: Record<string, unknown>, fileSha256?: string): EvaluationResult {
     const tool = (run["tool"] as Record<string, unknown>) ?? {};
     const driver = (tool["driver"] as Record<string, unknown>) ?? {};
     const toolName = (driver["name"] as string) ?? "unknown-sarif-tool";
     const toolVersion = (driver["version"] as string) ?? "";
     const sourceTool = toolVersion ? `${toolName}/${toolVersion}` : toolName;
+    const sourceProvenance: Record<string, unknown> = {
+      source_format: "sarif",
+      source_tool_name: toolName,
+      source_tool_version: toolVersion,
+    };
+    if (fileSha256) {
+      sourceProvenance.original_file_sha256 = fileSha256;
+    }
 
     // Build rule-id → rule-metadata index
     const rules = (driver["rules"] as Record<string, unknown>[]) ?? [];
@@ -135,6 +145,7 @@ export class SarifImporter {
           rule_id: ruleId,
           level,
           source_tool: sourceTool,
+          source_provenance: sourceProvenance,
           message: (message["text"] as string) ?? "",
         },
         durationMs: 0,
@@ -147,7 +158,7 @@ export class SarifImporter {
         controlName: CONTROL_NAMES["PR-01"]!,
         result: "PASS",
         detail: `No findings reported by ${sourceTool}`,
-        evidenceData: { source_tool: sourceTool },
+        evidenceData: { source_tool: sourceTool, source_provenance: sourceProvenance },
         durationMs: 0,
       });
     }

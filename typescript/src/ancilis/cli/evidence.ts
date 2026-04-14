@@ -6,6 +6,7 @@ import { loadConfig } from "../config/index.js";
 import { EvidenceStore } from "../evidence/store.js";
 import { SarifImporter } from "../importers/sarif.js";
 import { CycloneDxImporter } from "../importers/cyclonedx.js";
+import { canonicalJsonStringify } from "../evidence/chain.js";
 
 interface EvidenceIo {
   stdout(message: string): void;
@@ -32,6 +33,52 @@ function loadConfigSafe(configPath?: string): ReturnType<typeof loadConfig> | nu
     return loadConfig(configPath ? { path: configPath } : {});
   } catch (err: unknown) {
     return null;
+  }
+}
+
+/** ancilis evidence verify */
+export async function runEvidenceVerify(options: {
+  configPath?: string;
+  dbPath?: string;
+  sessionId?: string;
+  json?: boolean;
+}, _io?: EvidenceIo): Promise<{ ok: boolean; output: string }> {
+  const config = loadConfigSafe(options.configPath);
+  if (config === null) {
+    return { ok: false, output: "Error: Could not load config. Run `ancilis init` or pass --config." };
+  }
+
+  const store = new EvidenceStore(config, options.dbPath ? { dbPath: options.dbPath } : undefined);
+  try {
+    const scope = options.sessionId ? { sessionId: options.sessionId } : undefined;
+    const { valid, errors } = await store.verifyChain(scope);
+    const recordCount = await store.count(scope);
+
+    if (options.json) {
+      return {
+        ok: valid,
+        output: canonicalJsonStringify({
+          errors,
+          record_count: recordCount,
+          session_id: options.sessionId ?? null,
+          valid,
+        }),
+      };
+    }
+
+    const scopeText = options.sessionId ? ` for session ${options.sessionId}` : "";
+    if (valid) {
+      return { ok: true, output: `Evidence chain valid${scopeText}: ${recordCount} record(s) verified.` };
+    }
+    return {
+      ok: false,
+      output: [
+        `Evidence chain broken${scopeText}: ${recordCount} record(s) checked.`,
+        ...errors.map(error => `- ${error}`),
+      ].join("\n"),
+    };
+  } finally {
+    await store.close();
   }
 }
 
@@ -172,6 +219,7 @@ export async function handleEvidence(
   if (!subcommand || subcommand === "--help" || subcommand === "-h") {
     print(io.stdout, [
       "Usage:",
+      "  ancilis evidence verify [--config <path>] [--db <path>] [--session-id <id>] [--json]",
       "  ancilis evidence sessions [--config <path>] [--db <path>]",
       "  ancilis evidence reset [--config <path>] [--db <path>] [--yes|-y]",
       "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--config <path>] [--db <path>] [--agent-id <id>]",
@@ -180,6 +228,23 @@ export async function handleEvidence(
   }
 
   const rest = args.slice(1);
+
+  if (subcommand === "verify") {
+    let configPath: string | undefined;
+    let dbPath: string | undefined;
+    let sessionId: string | undefined;
+    let json = false;
+    for (let i = 0; i < rest.length; i++) {
+      if (rest[i] === "--config") { configPath = rest[++i]; }
+      else if (rest[i] === "--db") { dbPath = rest[++i]; }
+      else if (rest[i] === "--session-id") { sessionId = rest[++i]; }
+      else if (rest[i] === "--json") { json = true; }
+      else { throw new Error(`Unknown option for evidence verify: ${rest[i]}`); }
+    }
+    const result = await runEvidenceVerify({ configPath, dbPath, sessionId, json }, io);
+    print(result.ok ? io.stdout : io.stderr, result.output);
+    return result.ok ? 0 : 1;
+  }
 
   if (subcommand === "sessions") {
     let configPath: string | undefined;

@@ -87,6 +87,20 @@ describe("Full Config", () => {
     expect(resolved.activeOverlays.has("hipaa")).toBe(true);
     expect(resolved.activeOverlays.has("gdpr")).toBe(true);
   });
+
+  it("normalizes the NIST CSF 2.0 overlay alias to the canonical overlay", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "claims-processor" },
+        compliance: { overlays: ["nist-csf-2"] },
+      },
+    });
+
+    expect([...resolved.activeOverlays.keys()]).toEqual(["nist-csf"]);
+    expect(resolved.activeOverlays.get("nist-csf")?.overlayId).toBe("nist-csf");
+    expect(resolved.activeOverlays.get("nist-csf")?.name).toBe("NIST Cybersecurity Framework 2.0");
+    expect(resolved.unavailableOverlays.some(item => item.overlayId === "nist-csf-2")).toBe(false);
+  });
 });
 
 describe("Validation", () => {

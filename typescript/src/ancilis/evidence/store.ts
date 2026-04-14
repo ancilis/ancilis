@@ -102,6 +102,13 @@ function normalizeDecisionKey(decision: string): string {
   return decision.trim().toUpperCase();
 }
 
+type SessionScope = { sessionId?: string | null } | string | undefined;
+
+function sessionIdFrom(scope: SessionScope): string | null | undefined {
+  if (typeof scope === "string") return scope;
+  return scope?.sessionId;
+}
+
 export class EvidenceStore {
   private _db: duckdb.Database | null = null;
   private _conn: duckdb.Connection | null = null;
@@ -208,6 +215,12 @@ export class EvidenceStore {
     const recordId = randomUUID();
     const previousHash = await this.getLastHash();
     const sessionId = evaluation.context?.sessionId ?? null;
+    const detectedDataTypes = [...(evaluation.detectedDataTypes ?? [])];
+    const sdkVersion = _sdkVersion ?? null;
+    const classificationContext: Record<string, unknown> = {};
+    if (this._llmProvider) {
+      classificationContext.llm_provider = this._llmProvider;
+    }
 
     const controlResultsData = evaluation.controlResults.map(cr => ({
       control_id: cr.controlId,
@@ -235,13 +248,11 @@ export class EvidenceStore {
       outputSummary,
       sessionId,
       tenantId: this._tenantId,
+      detectedDataTypes,
+      sdkVersion,
+      classificationContext,
     });
     const recordHash = computeHash(canon);
-
-    const classificationContext: Record<string, unknown> = {};
-    if (this._llmProvider) {
-      classificationContext.llm_provider = this._llmProvider;
-    }
 
     const record: EvidenceRecord = {
       recordId,
@@ -262,8 +273,8 @@ export class EvidenceStore {
       outputSummary: outputSummary ?? null,
       sessionId,
       tenantId: this._tenantId ?? null,
-      detectedDataTypes: [...(evaluation.detectedDataTypes ?? [])],
-      sdkVersion: _sdkVersion ?? null,
+      detectedDataTypes,
+      sdkVersion,
       classificationContext,
     };
 
@@ -299,6 +310,7 @@ export class EvidenceStore {
     toolName?: string;
     decision?: string;
     since?: string;
+    sessionId?: string;
     limit?: number | null;
   }): Promise<EvidenceRecord[]> {
     await this.ensureInitialized();
@@ -321,6 +333,10 @@ export class EvidenceStore {
       conditions.push("decision = ?");
       params.push(filters.decision);
     }
+    if (filters?.sessionId) {
+      conditions.push("session_id = ?");
+      params.push(filters.sessionId);
+    }
     if (filters?.since) {
       conditions.push("timestamp >= ?");
       params.push(filters.since);
@@ -342,18 +358,29 @@ export class EvidenceStore {
     return rows.map(row => this.rowToRecord(row as Record<string, unknown>));
   }
 
-  async count(): Promise<number> {
+  async count(scope?: SessionScope): Promise<number> {
     await this.ensureInitialized();
-    const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
-    const params = this._tenantId ? [this._tenantId] : [];
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    const sessionId = sessionIdFrom(scope);
+    if (this._tenantId) {
+      conditions.push("tenant_id = ?");
+      params.push(this._tenantId);
+    }
+    if (sessionId !== undefined && sessionId !== null) {
+      conditions.push("session_id = ?");
+      params.push(sessionId);
+    }
+    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
     const rows = await allAsync(this._conn!, `SELECT COUNT(*)::INTEGER as cnt FROM evidence_records${whereClause}`, params);
     return (rows[0] as Record<string, unknown>).cnt as number;
   }
 
-  async verifyChain(): Promise<{ valid: boolean; errors: string[] }> {
+  async verifyChain(scope?: SessionScope): Promise<{ valid: boolean; errors: string[] }> {
     await this.ensureInitialized();
     const whereClause = this._tenantId ? " WHERE tenant_id = ?" : "";
     const params = this._tenantId ? [this._tenantId] : [];
+    const sessionId = sessionIdFrom(scope);
     const rows = await allAsync(
       this._conn!,
       `SELECT ${SELECT_COLUMNS} FROM evidence_records${whereClause} ORDER BY seq_id ASC`,
@@ -369,8 +396,9 @@ export class EvidenceStore {
 
     for (const row of rows) {
       const record = this.rowToRecord(row as Record<string, unknown>);
+      const inScope = sessionId === undefined || sessionId === null || record.sessionId === sessionId;
 
-      if (record.previousHash !== expectedPrevious) {
+      if (inScope && record.previousHash !== expectedPrevious) {
         errors.push(
           `Record ${record.recordId}: previous_hash mismatch. ` +
           `Expected ${expectedPrevious.slice(0, 16)}..., got ${record.previousHash.slice(0, 16)}...`
@@ -394,14 +422,38 @@ export class EvidenceStore {
         outputSummary: record.outputSummary,
         sessionId: record.sessionId,
         tenantId: record.tenantId,
+        detectedDataTypes: record.detectedDataTypes,
+        sdkVersion: record.sdkVersion,
+        classificationContext: record.classificationContext,
       });
       const expectedHash = computeHash(canon);
 
-      if (record.recordHash !== expectedHash) {
-        errors.push(
-          `Record ${record.recordId}: hash mismatch. ` +
-          `Expected ${expectedHash.slice(0, 16)}..., got ${record.recordHash.slice(0, 16)}...`
-        );
+      if (inScope && record.recordHash !== expectedHash) {
+        const legacyCanon = canonicalPayload({
+          evaluationId: record.evaluationId,
+          timestamp: record.timestamp,
+          agentId: record.agentId,
+          sourceType: record.sourceType ?? "agent",
+          toolName: record.toolName,
+          decision: record.decision,
+          mode: record.mode,
+          controlResults: record.controlResults,
+          activeOverlays: record.activeOverlays,
+          dataClassifications: record.dataClassifications,
+          activeCertifications: record.activeCertifications,
+          totalDurationMs: record.totalDurationMs,
+          previousHash: record.previousHash,
+          outputSummary: record.outputSummary,
+          sessionId: record.sessionId,
+          tenantId: record.tenantId,
+        });
+        const legacyHash = computeHash(legacyCanon);
+        if (record.recordHash !== legacyHash) {
+          errors.push(
+            `Record ${record.recordId}: hash mismatch. ` +
+            `Expected ${expectedHash.slice(0, 16)}..., got ${record.recordHash.slice(0, 16)}...`
+          );
+        }
       }
 
       expectedPrevious = record.recordHash;

@@ -108,6 +108,31 @@ describe("Hash Chain", () => {
     expect(keys).toEqual([...keys].sort());
   });
 
+  it("canonical payload includes hash-covered persisted metadata when provided", () => {
+    const payload = canonicalPayload({
+      evaluationId: "e1",
+      timestamp: "2025-01-01T00:00:00Z",
+      agentId: "agent",
+      sourceType: "agent",
+      toolName: "tool",
+      decision: "ALLOW",
+      mode: "audit",
+      controlResults: [] as Array<Record<string, unknown>>,
+      activeOverlays: [] as string[],
+      dataClassifications: [] as string[],
+      activeCertifications: [] as string[],
+      totalDurationMs: 1.0,
+      previousHash: GENESIS_SEED,
+      detectedDataTypes: ["DC-PII"],
+      sdkVersion: "0.1.0",
+      classificationContext: { llm_provider: "openai" },
+    });
+
+    expect(payload).toBe(
+      `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","classification_context":{"llm_provider":"openai"},"control_results":[],"data_classifications":[],"decision":"ALLOW","detected_data_types":["DC-PII"],"evaluation_id":"e1","mode":"audit","previous_hash":"${GENESIS_SEED}","sdk_version":"0.1.0","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":1.0}`,
+    );
+  });
+
   it("canonical payload matches Python-style recursive JSON canonicalization", () => {
     const payload = canonicalPayload({
       evaluationId: "e1",
@@ -298,6 +323,68 @@ describe("Evidence Store", () => {
     expect(errors.some(error => error.includes("hash mismatch"))).toBe(true);
   });
 
+  it("store hashes detected data types, SDK version, and classification context", async () => {
+    store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "openai" } }),
+      { inMemory: true },
+    );
+
+    const record = await store.store(
+      makeEvaluation({ evaluationId: "metadata-e1", detectedDataTypes: ["DC-PII"] }),
+      "metadata-tool",
+    );
+
+    const expected = computeHash(canonicalPayload({
+      evaluationId: record.evaluationId,
+      timestamp: record.timestamp,
+      agentId: record.agentId,
+      sourceType: record.sourceType,
+      toolName: record.toolName,
+      decision: record.decision,
+      mode: record.mode,
+      controlResults: record.controlResults,
+      activeOverlays: record.activeOverlays,
+      dataClassifications: record.dataClassifications,
+      activeCertifications: record.activeCertifications,
+      totalDurationMs: record.totalDurationMs,
+      previousHash: record.previousHash,
+      outputSummary: record.outputSummary,
+      sessionId: record.sessionId,
+      tenantId: record.tenantId,
+      detectedDataTypes: record.detectedDataTypes,
+      sdkVersion: record.sdkVersion,
+      classificationContext: record.classificationContext,
+    }));
+
+    expect(record.classificationContext).toEqual({ llm_provider: "openai" });
+    expect(record.detectedDataTypes).toEqual(["DC-PII"]);
+    expect(record.recordHash).toBe(expected);
+  });
+
+  it("verify chain detects persisted metadata tampering", async () => {
+    store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "openai" } }),
+      { inMemory: true },
+    );
+
+    const record = await store.store(
+      makeEvaluation({ evaluationId: "metadata-tamper", detectedDataTypes: ["DC-PII"] }),
+      "metadata-tool",
+    );
+    await new Promise<void>((resolve, reject) => {
+      (store as unknown as { _conn: duckdb.Connection })._conn.run(
+        "UPDATE evidence_records SET detected_data_types = ? WHERE record_id = ?",
+        JSON.stringify(["DC-CHD"]),
+        record.recordId,
+        (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
+      );
+    });
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(false);
+    expect(errors.some(error => error.includes("hash mismatch"))).toBe(true);
+  });
+
   it("verify chain accepts Python-style unicode escapes and nested float literals from the shared store", async () => {
     store = new EvidenceStore(makeConfig(), { inMemory: true });
     await store.count();
@@ -332,6 +419,51 @@ describe("Evidence Store", () => {
         GENESIS_SEED,
         5.0,
         null,
+        (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
+      );
+    });
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it("verify chain accepts legacy hashes that omit expanded metadata", async () => {
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.count();
+
+    const recordId = randomUUID();
+    const canonical =
+      `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","control_results":[],"data_classifications":[],"decision":"ALLOW","evaluation_id":"legacy-e1","mode":"audit","previous_hash":"${GENESIS_SEED}","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":5.0}`;
+
+    await new Promise<void>((resolve, reject) => {
+      (store as unknown as { _conn: duckdb.Connection })._conn.run(
+        `INSERT INTO evidence_records (
+          record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
+          decision, mode, control_results, active_overlays,
+          data_classifications, active_certifications,
+          record_hash, previous_hash, total_duration_ms, output_summary,
+          detected_data_types, sdk_version, classification_context
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        recordId,
+        "legacy-e1",
+        "2025-01-01T00:00:00Z",
+        "agent",
+        "agent",
+        "tool",
+        "ALLOW",
+        "audit",
+        "[]",
+        "[]",
+        "[]",
+        "[]",
+        computeHash(canonical),
+        GENESIS_SEED,
+        5.0,
+        null,
+        JSON.stringify(["DC-PII"]),
+        "0.1.0",
+        JSON.stringify({ llm_provider: "openai" }),
         (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
       );
     });

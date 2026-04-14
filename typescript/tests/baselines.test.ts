@@ -285,6 +285,15 @@ describe("BaselineManager", () => {
     expect(list[0]?.label).toBe("v2");
   });
 
+  it("stores and queries overlay baselines using canonical overlay IDs", async () => {
+    const baseline = await manager.create({ label: "nist", overlayId: "nist-csf-2" });
+
+    expect(baseline.overlayId).toBe("nist-csf");
+    expect(await manager.listBaselines("nist-csf-2")).toHaveLength(1);
+    const report = await manager.checkDrift({ overlayId: "nist-csf-2" });
+    expect(report.baselineId).toBe(baseline.baselineId);
+  });
+
   it("throws on getBaseline with unknown id", async () => {
     await expect(manager.getBaseline("nonexistent")).rejects.toThrow("Baseline not found");
   });

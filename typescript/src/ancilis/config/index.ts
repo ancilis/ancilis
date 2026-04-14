@@ -9,6 +9,7 @@ import { parse as parseYaml } from "yaml";
 import { sharedPathFrom } from "../shared-path.js";
 import { ConfigError } from "../errors.js";
 import { ActivationResolver } from "../activation/resolver.js";
+import { normalizeOverlayIds } from "../overlays/index.js";
 
 // Resolve shared/ directory relative to the installed package root
 const SHARED_DIR = sharedPathFrom(import.meta.url);
@@ -346,7 +347,7 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
   // Build classification-to-overlay lookup
   const classificationLookup = new Map<string, string[]>();
   for (const entry of taxonomy.classifications) {
-    classificationLookup.set(entry.code, entry.overlays);
+    classificationLookup.set(entry.code, normalizeOverlayIds(entry.overlays));
   }
 
   // Determine which overlays should activate
@@ -370,7 +371,7 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
   // If compliance.overlays is set, filter
   let filteredTriggers: Map<string, string[]>;
   if (config.compliance.overlays !== null) {
-    const explicitOverlays = new Set(config.compliance.overlays);
+    const explicitOverlays = new Set(normalizeOverlayIds(config.compliance.overlays));
     filteredTriggers = new Map<string, string[]>();
     for (const [k, v] of overlayTriggers) {
       if (explicitOverlays.has(k)) {

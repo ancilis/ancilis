@@ -64,6 +64,9 @@ export function canonicalPayload(fields: {
   outputSummary?: string | null;
   sessionId?: string | null;
   tenantId?: string | null;
+  detectedDataTypes?: string[] | null;
+  sdkVersion?: string | null;
+  classificationContext?: Record<string, unknown> | null;
 }): string {
   const payload: Record<string, unknown> = {
     active_certifications: fields.activeCertifications,
@@ -88,6 +91,15 @@ export function canonicalPayload(fields: {
   }
   if (fields.tenantId !== undefined && fields.tenantId !== null) {
     payload.tenant_id = fields.tenantId;
+  }
+  if (fields.detectedDataTypes !== undefined) {
+    payload.detected_data_types = fields.detectedDataTypes ?? [];
+  }
+  if (fields.sdkVersion !== undefined) {
+    payload.sdk_version = fields.sdkVersion;
+  }
+  if (fields.classificationContext !== undefined) {
+    payload.classification_context = fields.classificationContext ?? {};
   }
   return canonicalJsonStringify(payload);
 }

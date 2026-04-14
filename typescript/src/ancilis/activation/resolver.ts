@@ -5,6 +5,7 @@ import {
   loadOverlayProfiles,
   loadTaxonomy,
 } from "./loader.js";
+import { normalizeOverlayIds } from "../overlays/index.js";
 
 export const ALL_AKSI_CONTROLS = new Set([
   "GOV-01", "GOV-02", "GOV-03", "GOV-04",
@@ -90,7 +91,7 @@ export class ActivationResolver {
     const typeMapping = (this.taxonomy as Record<string, Record<string, string[]>>).developer_type_mapping ?? {};
     const classificationLookup = new Map<string, string[]>();
     for (const entry of ((this.taxonomy as Record<string, Array<Record<string, unknown>>>).classifications ?? [])) {
-      classificationLookup.set(entry.code as string, (entry.overlays ?? []) as string[]);
+      classificationLookup.set(entry.code as string, normalizeOverlayIds((entry.overlays ?? []) as string[]));
     }
 
     const allDcCodes = new Set<string>();

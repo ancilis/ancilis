@@ -37,6 +37,7 @@ function usage(): string {
     "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
     "  ancilis baseline list [--overlay <id>] [--config <path>] [--db <path>]",
     "  ancilis baseline drift [--id <baseline-id>] [--overlay <id>] [--format terminal|json] [--config <path>] [--db <path>]",
+    "  ancilis evidence verify [--config <path>] [--db <path>] [--session-id <id>] [--json]",
     "  ancilis evidence sessions [--config <path>] [--db <path>]",
     "  ancilis evidence reset [--yes] [--config <path>] [--db <path>]",
     "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--agent-id <id>] [--config <path>] [--db <path>]",
@@ -325,6 +326,7 @@ async function handleEvidence(args: string[], io: CliIo): Promise<number> {
   if (!subcommand || subcommand === "--help" || subcommand === "-h") {
     print(io.stdout, [
       "Usage:",
+      "  ancilis evidence verify [--config <path>] [--db <path>] [--session-id <id>] [--json]",
       "  ancilis evidence sessions [--config <path>] [--db <path>]",
       "  ancilis evidence reset [--yes] [--config <path>] [--db <path>]",
       "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--agent-id <id>] [--config <path>] [--db <path>]",
@@ -338,6 +340,8 @@ async function handleEvidence(args: string[], io: CliIo): Promise<number> {
   let yes = false;
   let fmt = "auto";
   let agentId = "import";
+  let sessionId: string | undefined;
+  let jsonOutput = false;
   let positional: string | undefined;
 
   for (let i = 0; i < rest.length; i++) {
@@ -347,6 +351,8 @@ async function handleEvidence(args: string[], io: CliIo): Promise<number> {
     else if (arg === "--yes" || arg === "-y") { yes = true; }
     else if (arg === "--format") { fmt = readOption(rest, i, arg); i++; }
     else if (arg === "--agent-id") { agentId = readOption(rest, i, arg); i++; }
+    else if (arg === "--session-id") { sessionId = readOption(rest, i, arg); i++; }
+    else if (arg === "--json") { jsonOutput = true; }
     else if (!arg.startsWith("--")) { positional = arg; }
     else { throw new Error(`Unknown option for evidence ${subcommand}: ${arg}`); }
   }
@@ -362,6 +368,29 @@ async function handleEvidence(args: string[], io: CliIo): Promise<number> {
   const store = new EvidenceStore(config, dbPath ? { dbPath } : undefined);
   try {
     switch (subcommand) {
+      case "verify": {
+        const scope = sessionId ? { sessionId } : undefined;
+        const { valid, errors } = await store.verifyChain(scope);
+        const recordCount = await store.count(scope);
+        if (jsonOutput) {
+          print(io.stdout, JSON.stringify({
+            errors,
+            record_count: recordCount,
+            session_id: sessionId ?? null,
+            valid,
+          }));
+        } else if (valid) {
+          const scopeText = sessionId ? ` for session ${sessionId}` : "";
+          print(io.stdout, `Evidence chain valid${scopeText}: ${recordCount} record(s) verified.`);
+        } else {
+          const scopeText = sessionId ? ` for session ${sessionId}` : "";
+          print(io.stderr, [
+            `Evidence chain broken${scopeText}: ${recordCount} record(s) checked.`,
+            ...errors.map(error => `- ${error}`),
+          ].join("\n"));
+        }
+        return valid ? 0 : 1;
+      }
       case "sessions": {
         const sessions = await store.listSessions();
         if (sessions.length === 0) {

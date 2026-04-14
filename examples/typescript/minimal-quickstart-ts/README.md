@@ -55,6 +55,12 @@ Ancilis scan - quickstart-agent
 ```yaml
 agent:
   name: quickstart-agent
+security:
+  mode: audit
+  tools:
+    allowed:
+      - search_web
+      - send_reply
 certification_targets:
   - soc2
 my_agent_handles:

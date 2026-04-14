@@ -76,6 +76,8 @@ export type { ReportData, EvidenceSummary, RenderPdfOptions, RenderPdfResult } f
 export { BaselineManager } from "./baselines/index.js";
 export type { Baseline, ControlSnapshot, ControlDrift, DriftReport, DriftSummary, EvidenceDelta } from "./baselines/index.js";
 
+export { OVERLAY_ID_ALIASES, normalizeOverlayId, normalizeOverlayIds } from "./overlays/index.js";
+
 export { MockEvidenceStore, FakeProducer, ScanResult as ComplianceScanResult, ComplianceScenarios } from "./testing/index.js";
 export {
   assertControlPasses,
@@ -98,7 +100,7 @@ export type { Dependency, Manifest, Vuln } from "./deps/index.js";
 export { scanDependencies, detectDependencies, buildSbom, queryOsvBatch } from "./dependencies/index.js";
 export type { VulnerabilityFinding, CycloneDxBom, CycloneDxComponent, DetectionResult, DependencyScanResult } from "./dependencies/index.js";
 
-export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan } from "./cli/index.js";
+export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan, runEvidenceVerify } from "./cli/index.js";
 export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
 export {
   CLIActionProducer,

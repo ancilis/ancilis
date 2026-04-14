@@ -58,6 +58,7 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
       }
 
       if (format === "oscal-json") {
+        reportData.evidenceRecords = await store.getRecords({ since, limit: null });
         const oscal = renderOscalJson(reportData);
         if (options.outputPath) {
           writeFileSync(options.outputPath, oscal);
