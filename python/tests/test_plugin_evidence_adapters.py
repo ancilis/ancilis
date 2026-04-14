@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from ancilis.config import load_config
+from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.adapter import (
     EvidenceAdapterExport,
@@ -17,7 +17,7 @@ from ancilis.evidence.store import EvidenceStore
 from ancilis.plugins import PluginContext, PluginMetadata, PluginRecord, PluginRegistry
 
 
-def _config() -> object:
+def _config() -> ResolvedConfig:
     return load_config(
         raw={
             "agent": {"name": "adapter-agent"},
