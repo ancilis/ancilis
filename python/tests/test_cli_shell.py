@@ -9,12 +9,12 @@ from click.testing import CliRunner
 
 from ancilis.cli.main import cli
 from ancilis.cli.shell import AncilisShell
-from ancilis.config import load_config
+from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 
 
-def _config():
+def _config() -> ResolvedConfig:
     return load_config(
         raw={
             "agent": {"name": "shell-agent"},
@@ -115,6 +115,35 @@ def test_shell_evidence_list_show_and_evaluate_records() -> None:
     assert "PR-01" in text
     assert "Agent Identity" in text
     assert "PASS" in text
+    store.close()
+
+
+def test_shell_evaluate_respects_session_scope() -> None:
+    config = _config()
+    store = EvidenceStore(config, in_memory=True)
+    store.store(
+        _evaluation(
+            evaluation_id="eval-session-a",
+            session_id="session-a",
+            control_result="PASS",
+        ),
+        tool_name="read_file",
+    )
+    store.store(
+        _evaluation(
+            evaluation_id="eval-session-b",
+            session_id="session-b",
+            control_result="FAIL",
+        ),
+        tool_name="read_file",
+    )
+    shell, output = _shell(store, session_id="session-a")
+
+    shell.onecmd("evaluate PR-01")
+
+    text = output.getvalue()
+    assert '"result": "PASS"' in text
+    assert '"result": "FAIL"' not in text
     store.close()
 
 

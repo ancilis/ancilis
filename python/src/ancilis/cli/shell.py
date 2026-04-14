@@ -46,7 +46,7 @@ class AncilisShell(cmd.Cmd):
         if not self.enable_history:
             return
         try:
-            import readline  # type: ignore[import-not-found]
+            import readline
 
             HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
             if HISTORY_PATH.exists():
@@ -58,15 +58,15 @@ class AncilisShell(cmd.Cmd):
         if not self.enable_history:
             return
         try:
-            import readline  # type: ignore[import-not-found]
+            import readline
 
             HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
             readline.write_history_file(str(HISTORY_PATH))
         except Exception:
             return
 
-    def emptyline(self) -> None:
-        return None
+    def emptyline(self) -> bool:
+        return False
 
     def do_help(self, arg: str) -> None:
         """List available shell commands."""
@@ -156,7 +156,7 @@ class AncilisShell(cmd.Cmd):
         if not control_id:
             self._write("Usage: evaluate <control_id>")
             return
-        records = self._records_or_empty(limit=None)
+        records = self._records_or_empty(limit=None, session_id=self.session_id)
         for record in reversed(records):
             for result in reversed(record.control_results):
                 if result.get("control_id") == control_id:
@@ -222,7 +222,7 @@ class AncilisShell(cmd.Cmd):
             self._write("Usage: evidence show <record_id>")
             return
         record_id = args[0]
-        for record in self._records_or_empty(limit=None):
+        for record in self._records_or_empty(limit=None, session_id=self.session_id):
             if record.record_id == record_id:
                 self._write(json.dumps(asdict(record), indent=2, sort_keys=True))
                 return
