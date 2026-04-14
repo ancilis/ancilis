@@ -30,7 +30,13 @@ def evidence_verify(
     """Verify evidence hash chain integrity."""
     try:
         config = load_config(path=config_path) if config_path else load_config()
-    except (FileNotFoundError, ValueError) as e:
+    except FileNotFoundError as e:
+        if config_path is not None or db_path is None:
+            click.echo(f"Error: {e}", err=True)
+            click.echo("Suggested fix: pass --config path/to/ancilis.yaml", err=True)
+            raise SystemExit(1) from None
+        config = load_config(raw={"agent": {"name": "evidence-verify"}})
+    except ValueError as e:
         click.echo(f"Error: {e}", err=True)
         click.echo("Suggested fix: pass --config path/to/ancilis.yaml", err=True)
         raise SystemExit(1) from None
