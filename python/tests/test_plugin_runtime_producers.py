@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
-from ancilis.config import load_config
+from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
 from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
@@ -17,7 +17,7 @@ from ancilis.producers.protocol import ProducerType
 from ancilis.producers.runtime import resolve_runtime_producers, translate_runtime_action
 
 
-def _config() -> object:
+def _config() -> ResolvedConfig:
     return load_config(
         raw={
             "agent": {"name": "runtime-agent"},
@@ -190,10 +190,11 @@ def test_builtin_selection_uses_explicit_registry_without_engine() -> None:
 
 
 def test_runtime_selection_helpers_are_exported() -> None:
-    import ancilis
+    from ancilis import resolve_runtime_producers as root_resolve_runtime_producers
+    from ancilis import translate_runtime_action as root_translate_runtime_action
     import ancilis.producers as producers
 
     assert producers.resolve_runtime_producers is resolve_runtime_producers
     assert producers.translate_runtime_action is translate_runtime_action
-    assert ancilis.resolve_runtime_producers is resolve_runtime_producers
-    assert ancilis.translate_runtime_action is translate_runtime_action
+    assert root_resolve_runtime_producers is resolve_runtime_producers
+    assert root_translate_runtime_action is translate_runtime_action

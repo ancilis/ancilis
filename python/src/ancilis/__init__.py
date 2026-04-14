@@ -36,9 +36,9 @@ if TYPE_CHECKING:
     from ancilis.producers.mcp import MCPActionProducer
     from ancilis.producers.protocol import ActionProducer, ProducerType
     from ancilis.producers.runtime import (
-        RuntimeProducerSelection,
-        resolve_runtime_producers,
-        translate_runtime_action,
+        RuntimeProducerSelection as RuntimeProducerSelection,
+        resolve_runtime_producers as resolve_runtime_producers,
+        translate_runtime_action as translate_runtime_action,
     )
     from ancilis.producers.tool import (
         BlockedActionError,
