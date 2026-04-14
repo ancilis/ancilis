@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from jsonschema import Draft7Validator  # type: ignore[import-untyped]
+from jsonschema import Draft7Validator
 
 from ancilis._shared import shared_path
 

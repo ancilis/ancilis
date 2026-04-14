@@ -10,7 +10,7 @@ from ancilis.engine.action import Action
 from ancilis.engine.result import ControlResult
 
 if TYPE_CHECKING:
-    from ancilis.evidence.store import EvidenceStore
+    from ancilis.engine.engine import EvidenceIntegrityStore
 
 
 class DE04IntegrityEvaluator:
@@ -23,7 +23,7 @@ class DE04IntegrityEvaluator:
     control_id = "DE-04"
     control_name = "Evidence Integrity Verification"
 
-    def __init__(self, evidence_store: EvidenceStore | None = None) -> None:
+    def __init__(self, evidence_store: EvidenceIntegrityStore | None = None) -> None:
         self._store = evidence_store
 
     def evaluate(self, action: Action, config: ResolvedConfig) -> ControlResult:
