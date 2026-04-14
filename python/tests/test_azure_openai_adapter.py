@@ -1,24 +1,18 @@
 from __future__ import annotations
 
 import json
-from importlib import import_module
-from typing import Any
 
+from ancilis.adapters.azure_openai import AzureOpenAIActionProducer, AzureOpenAIInvocation
 from ancilis.config import load_config
 from ancilis.engine.engine import Engine
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.protocol import ActionProducer, ProducerType
 
 
-def _azure_module() -> Any:
-    return import_module("ancilis.adapters.azure_openai")
-
-
-def _producer(deployment_model_map: dict[str, str] | None = None) -> Any:
-    azure = _azure_module()
+def _producer(deployment_model_map: dict[str, str] | None = None) -> AzureOpenAIActionProducer:
     config = load_config(raw={"agent": {"name": "azure-agent"}})
     store = EvidenceStore(config, in_memory=True)
-    return azure.AzureOpenAIActionProducer(
+    return AzureOpenAIActionProducer(
         config=config,
         engine=Engine(config),
         evidence_store=store,
@@ -29,20 +23,18 @@ def _producer(deployment_model_map: dict[str, str] | None = None) -> Any:
 def test_azure_openai_producer_satisfies_protocol_without_openai_package() -> None:
     import ancilis
 
-    azure = _azure_module()
     producer = _producer()
 
     assert isinstance(producer, ActionProducer)
     assert producer.producer_type == ProducerType.FRAMEWORK
-    assert ancilis.__getattr__("AzureOpenAIActionProducer") is azure.AzureOpenAIActionProducer
+    assert ancilis.__getattr__("AzureOpenAIActionProducer") is AzureOpenAIActionProducer
 
 
 def test_chat_completions_normalizes_deployment_metadata_without_prompt_or_api_key() -> None:
-    azure = _azure_module()
     producer = _producer()
 
     action = producer.translate(
-        azure.AzureOpenAIInvocation(
+        AzureOpenAIInvocation(
             operation="chat.completions.create",
             azure_deployment="customer-chat",
             endpoint_host="https://customer.openai.azure.com",
@@ -181,6 +173,34 @@ def test_azure_credentials_and_token_provider_outputs_are_redacted() -> None:
     assert "token_provider_output" not in serialized
 
 
+def test_endpoint_userinfo_is_not_persisted_from_url_or_endpoint() -> None:
+    producer = _producer()
+
+    url_action = producer.translate(
+        {
+            "url": "https://client:secret-pass@secure.openai.azure.com/openai/deployments/secure-chat/chat/completions?api-version=2024-02-15-preview",
+            "request_body": {"messages": [{"role": "user", "content": "hello"}]},
+        }
+    )
+    endpoint_action = producer.translate(
+        {
+            "operation": "responses.create",
+            "azure_deployment": "secure-responses",
+            "endpoint": "https://client:secret-pass@secure-responses.openai.azure.com:443",
+        }
+    )
+
+    url_raw = url_action.parameters.raw
+    endpoint_raw = endpoint_action.parameters.raw
+    assert url_raw["endpoint_host"] == "secure.openai.azure.com"
+    assert url_raw["destination"] == "secure.openai.azure.com"
+    assert endpoint_raw["endpoint_host"] == "secure-responses.openai.azure.com:443"
+    assert endpoint_raw["destination"] == "secure-responses.openai.azure.com:443"
+    serialized = json.dumps({"url": url_raw, "endpoint": endpoint_raw}).lower()
+    assert "secret-pass" not in serialized
+    assert "client:" not in serialized
+
+
 def test_unrecognized_azure_auth_mode_is_not_persisted() -> None:
     producer = _producer()
 
@@ -211,4 +231,5 @@ def test_observe_records_azure_openai_evidence_summary() -> None:
     assert observation.action.tool.name == "azure-openai:chat.completions.create"
     assert observation.evaluation.source_type == "framework"
     assert observation.evidence.tool_name == "azure-openai:chat.completions.create"
+    assert observation.evidence.output_summary is not None
     assert "azure-openai chat.completions.create gpt-4.1-mini" in observation.evidence.output_summary

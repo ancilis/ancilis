@@ -9,7 +9,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import ParseResult, parse_qs, urlparse
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
@@ -321,7 +321,7 @@ def _normalize_invocation(
         )
     )
     endpoint_host = _host_from_endpoint(endpoint_reference) or _host_from_url(url)
-    operation = _optional_str(
+    operation = str(
         _first_present(raw_invocation, "operation", "method")
         or _operation_from_url(url)
         or "chat.completions.create"
@@ -567,16 +567,25 @@ def _host_from_endpoint(endpoint: str | None) -> str | None:
     if not endpoint:
         return None
     parsed = urlparse(endpoint)
-    if parsed.netloc:
-        return parsed.netloc
-    return endpoint.split("/", 1)[0]
+    host = _host_from_parsed_url(parsed)
+    if host is not None:
+        return host
+    return endpoint.split("/", 1)[0].rsplit("@", 1)[-1]
 
 
 def _host_from_url(url: str | None) -> str | None:
     if not url:
         return None
     parsed = urlparse(url)
-    return parsed.netloc or None
+    return _host_from_parsed_url(parsed)
+
+
+def _host_from_parsed_url(parsed: ParseResult) -> str | None:
+    if parsed.hostname is None:
+        return None
+    if parsed.port is None:
+        return parsed.hostname
+    return f"{parsed.hostname}:{parsed.port}"
 
 
 def _api_version_from_url(url: str | None) -> str | None:
