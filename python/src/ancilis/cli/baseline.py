@@ -10,6 +10,7 @@ import click
 
 from ancilis.config import load_config
 from ancilis.evidence.store import EvidenceStore
+from ancilis.overlays import normalize_overlay_id
 
 if TYPE_CHECKING:
     from ancilis.baselines.manager import BaselineManager
@@ -52,6 +53,7 @@ def baseline_create(
     db_path: str | None,
 ) -> None:
     """Snapshot current control posture into a named baseline."""
+    overlay_id = normalize_overlay_id(overlay_id) if overlay_id else None
     mgr, store = _make_manager(config_path, db_path)
     try:
         b = mgr.create(label=label, overlay_id=overlay_id, evidence_window_hours=window_hours)
@@ -76,6 +78,7 @@ def baseline_list(
     db_path: str | None,
 ) -> None:
     """List stored baselines."""
+    overlay_id = normalize_overlay_id(overlay_id) if overlay_id else None
     mgr, store = _make_manager(config_path, db_path)
     try:
         baselines = mgr.list_baselines(overlay_id=overlay_id)
@@ -109,6 +112,7 @@ def baseline_drift(
     db_path: str | None,
 ) -> None:
     """Check for control regressions against the active baseline."""
+    overlay_id = normalize_overlay_id(overlay_id) if overlay_id else None
     mgr, store = _make_manager(config_path, db_path)
     try:
         try:

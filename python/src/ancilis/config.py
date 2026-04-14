@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ancilis._shared import shared_path
 from ancilis.errors import config_invalid
+from ancilis.overlays import normalize_overlay_ids
 
 # Resolve shared/ directory from packaged assets
 SHARED_DIR = shared_path()
@@ -353,7 +354,9 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
     # Build classification-to-overlay lookup from taxonomy
     classification_lookup: dict[str, list[str]] = {}
     for cls_entry in taxonomy["classifications"]:
-        classification_lookup[cls_entry["code"]] = cls_entry.get("overlays", [])
+        classification_lookup[cls_entry["code"]] = normalize_overlay_ids(
+            cls_entry.get("overlays", [])
+        )
 
     # Determine which overlays should activate
     overlay_triggers: dict[str, list[str]] = {}  # overlay_id -> ["DC-XXX via data_type", ...]
@@ -368,7 +371,7 @@ def resolve_config(config: AncilisConfig, warnings: list[str] | None = None) -> 
 
     # If compliance.overlays is set, filter to only those
     if config.compliance.overlays is not None:
-        explicit_overlays = set(config.compliance.overlays)
+        explicit_overlays = set(normalize_overlay_ids(config.compliance.overlays))
         overlay_triggers = {k: v for k, v in overlay_triggers.items() if k in explicit_overlays}
         # Add explicitly requested overlays that aren't triggered by data
         for oid in explicit_overlays:

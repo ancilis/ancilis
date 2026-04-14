@@ -301,6 +301,33 @@ def test_init_all_overlays_valid(overlay: str, tmp_path: Path) -> None:
         assert overlay in content
 
 
+def test_init_accepts_nist_csf_2_alias_as_canonical_overlay(tmp_path: Path) -> None:
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        td_path = Path(td)
+        result = runner.invoke(
+            cli,
+            [
+                "init",
+                "--framework",
+                "generic",
+                "--overlay",
+                "nist-csf-2",
+                "--agent-name",
+                "agent",
+                "--dir",
+                str(td_path),
+            ],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0, result.output
+        content = (td_path / "ancilis.yaml").read_text()
+        assert "nist-csf" in content
+        assert "nist-csf-2" not in content
+        config = load_config(path=str(td_path / "ancilis.yaml"))
+        assert list(config.active_overlays) == ["nist-csf"]
+
+
 # ---------------------------------------------------------------------------
 # 14. sanitize_agent_name
 # ---------------------------------------------------------------------------

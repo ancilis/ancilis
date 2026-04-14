@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from ancilis.config import SHARED_DIR, load_config, validate_config
+from ancilis.config import SHARED_DIR, load_config, load_overlay_definitions, validate_config
 from ancilis.errors import ConfigError
 
 
@@ -137,6 +137,34 @@ class TestOverlayActivation:
             raw={"agent": {"name": "x"}, "my_agent_handles": ["ai_training_data"]}
         )
         assert "eu-ai-act" in resolved.active_overlays
+
+    def test_nist_csf_2_alias_resolves_to_canonical_overlay(self):
+        resolved = load_config(
+            raw={
+                "agent": {"name": "x"},
+                "compliance": {"overlays": ["nist-csf-2"]},
+            }
+        )
+
+        assert list(resolved.active_overlays) == ["nist-csf"]
+        assert resolved.active_overlays["nist-csf"].overlay_id == "nist-csf"
+        assert resolved.active_overlays["nist-csf"].name == "NIST Cybersecurity Framework 2.0"
+        assert all(item.overlay_id != "nist-csf-2" for item in resolved.unavailable_overlays)
+        assert "nist-csf" in resolved.overlay_requirements["GOV-01"]
+        assert "nist-csf-2" not in resolved.overlay_requirements["GOV-01"]
+
+    def test_nist_csf_2_alias_deduplicates_with_canonical_overlay(self):
+        resolved = load_config(
+            raw={
+                "agent": {"name": "x"},
+                "compliance": {"overlays": ["nist-csf", "nist-csf-2"]},
+            }
+        )
+
+        assert list(resolved.active_overlays) == ["nist-csf"]
+
+    def test_nist_csf_overlay_version_matches_framework_version(self):
+        assert load_overlay_definitions()["nist-csf"]["version"] == "2.0"
 
     def test_hipaa_sets_strict_thresholds(self):
         resolved = load_config(
