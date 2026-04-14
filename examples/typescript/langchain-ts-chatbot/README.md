@@ -97,6 +97,11 @@ const searchTool = tool(
 ```yaml
 agent:
   name: langchain-chatbot
+security:
+  tools:
+    allowed:
+      - search_web
+      - calculator
 my_agent_handles:
   - personal_info
 mode: audit
