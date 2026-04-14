@@ -440,6 +440,23 @@ class TestBaselineManager:
         assert r_none.is_active is True
         store.close()
 
+    def test_overlay_alias_is_canonicalized_for_baseline_api(self):
+        mgr, store = self._make_mgr()
+        store.store(
+            make_evaluation(active_overlays=["nist-csf"]),
+            tool_name="test_tool",
+        )
+
+        baseline = mgr.create(label="nist-baseline", overlay_id="nist-csf-2")
+
+        assert baseline.overlay_id == "nist-csf"
+        assert len(baseline.control_snapshots) == 1
+        assert len(mgr.list_baselines(overlay_id="nist-csf-2")) == 1
+        report = mgr.check_drift(overlay_id="nist-csf-2")
+        assert report.baseline_id == baseline.baseline_id
+        assert report.overlay_id == "nist-csf"
+        store.close()
+
 
 # ---------------------------------------------------------------------------
 # Integration: on_drift callback
