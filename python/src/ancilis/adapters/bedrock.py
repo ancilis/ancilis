@@ -35,6 +35,7 @@ _SENSITIVE_KEY_PARTS = (
     "signed_headers",
     "x-amz-security-token",
 )
+_SAFE_AUTH_MODES = {"iam", "session", "role"}
 
 
 @dataclass
@@ -508,13 +509,20 @@ def _resolve_auth_mode(
     headers: Mapping[str, Any],
 ) -> str | None:
     if invocation.auth_mode:
-        return invocation.auth_mode.lower()
+        explicit_mode = _safe_auth_mode(invocation.auth_mode)
+        if explicit_mode is not None:
+            return explicit_mode
     if _header_value(headers, "x-amz-security-token"):
         return "session"
     authorization = _header_value(headers, "authorization")
     if authorization and "AWS4-HMAC-SHA256" in authorization:
         return "iam"
     return None
+
+
+def _safe_auth_mode(value: str) -> str | None:
+    mode = value.strip().lower().replace("_", "-")
+    return mode if mode in _SAFE_AUTH_MODES else None
 
 
 def _nested_auth_mode(raw: Mapping[str, Any]) -> str | None:
