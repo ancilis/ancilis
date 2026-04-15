@@ -1,10 +1,11 @@
 agent:
   name: payments-processor
-  description: Processes card payments and refunds via Stripe API
+  description: AWS Bedrock payment assistant for card authorization, refunds, and merchant settlement checks
   owner: finops-team
 my_agent_handles:
   - credit_cards
   - financial_records
+  - personal_info
 certification_targets:
   - aiuc-1
 security:
