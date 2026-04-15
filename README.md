@@ -80,6 +80,23 @@ async with AncilisMiddleware(mcp_session, config_path="ancilis.yaml") as middlew
 
 Works with any MCP server. Supports audit mode (log everything) and enforce mode (block policy violations before they reach the server). See [examples/mcp-middleware/](examples/mcp-middleware/) for a full walkthrough.
 
+## CLI agents
+
+If your agent runs shell commands — `kubectl`, `curl`, database queries, file operations — the CLI producer wraps subprocess execution with the same policy evaluation:
+
+```python
+from ancilis import CLIActionProducer, load_config
+from ancilis.engine import Engine
+
+config = load_config()
+producer = CLIActionProducer(config=config, engine=Engine(config))
+
+# Evaluated against policy before execution — blocked commands never run
+result = producer.execute(["kubectl", "get", "pods", "-n", "production"])
+```
+
+Allowed commands execute normally. Blocked commands are intercepted before the subprocess runs. Every evaluation is evidence-recorded. See [examples/cli-agent/](examples/cli-agent/).
+
 ## Add compliance
 
 One line turns security controls into compliance evidence. Add a certification target to your config:
@@ -146,6 +163,8 @@ Declare what data your agent handles. The right regulatory overlays activate aut
 | `biometric_data` | EU AI Act |
 
 23 data types supported across 19 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
+
+> **Roadmap: automatic classification.** Today you declare what data your agent handles in config. We're building runtime classification that detects data types automatically from tool call payloads and responses — regex patterns, Luhn checksums, co-occurrence analysis. When the SDK detects health records flowing through an agent you declared as general-purpose, it surfaces the finding for you to confirm. Confirmed findings activate the right overlays without config changes. Declaration gets you started; auto-classification keeps you accurate.
 
 ## CLI
 
