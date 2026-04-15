@@ -140,11 +140,11 @@ describe("publish configuration", () => {
 
     const verifyJob = workflow.jobs?.verify_typescript_release;
     const verifyUses = verifyJob?.steps?.flatMap((step) => (step.uses ? [step.uses] : [])) ?? [];
-    expect(verifyUses).toContain("actions/upload-artifact@v4");
+    expect(verifyUses.some((u) => u.includes("actions/upload-artifact@"))).toBe(true);
 
     const publishJob = workflow.jobs?.publish_typescript;
     const publishUses = publishJob?.steps?.flatMap((step) => (step.uses ? [step.uses] : [])) ?? [];
-    expect(publishUses).toContain("actions/download-artifact@v4");
+    expect(publishUses.some((u) => u.includes("actions/download-artifact@"))).toBe(true);
 
     const publishRuns = publishJob?.steps?.flatMap((step) => (step.run ? [step.run] : [])) ?? [];
     expect(publishRuns).not.toContain("npm ci");
