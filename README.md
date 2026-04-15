@@ -61,6 +61,25 @@ Ancilis — my-agent
 
 That's it. Every tool call is evaluated against 26 security controls and recorded in a local evidence store with SHA-256 hash chaining.
 
+## MCP agents
+
+If your agent uses [Model Context Protocol](https://modelcontextprotocol.io), Ancilis wraps the MCP client session transparently — your agent and the MCP server don't know it's there:
+
+```bash
+pip install ancilis[mcp]
+```
+
+```python
+from ancilis import AncilisMiddleware
+
+# Wraps any MCP ClientSession — every tool call is now evaluated
+async with AncilisMiddleware(mcp_session, config_path="ancilis.yaml") as middleware:
+    result = await middleware.call_tool("query_database", {"sql": "SELECT ..."})
+    # Tool call evaluated against policy, evidence recorded, then forwarded to MCP server
+```
+
+Works with any MCP server. Supports audit mode (log everything) and enforce mode (block policy violations before they reach the server). See [examples/mcp-middleware/](examples/mcp-middleware/) for a full walkthrough.
+
 ## Add compliance
 
 One line turns security controls into compliance evidence. Add a certification target to your config:
