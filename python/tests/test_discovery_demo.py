@@ -23,27 +23,32 @@ DISCOVERY_AGENT_ROOT = DISCOVERY_ROOT / "agents"
 EXPECTED_AGENTS = {
     "payments-processor": {
         "runtime_type": "bedrock",
-        "data_types": ["credit_cards", "financial_records"],
+        "data_types": ["credit_cards", "financial_records", "personal_info"],
+        "detected_data_types": ["DC-CHD", "DC-PII"],
         "evidence_summary": {"allow": 5, "block": 1, "flag": 0},
     },
     "fraud-sentinel": {
-        "runtime_type": "agentcore",
-        "data_types": ["financial_records", "personal_info"],
+        "runtime_type": "cli",
+        "data_types": ["credit_cards", "financial_records", "personal_info"],
+        "detected_data_types": ["DC-CHD", "DC-PII"],
         "evidence_summary": {"allow": 4, "block": 2, "flag": 0},
     },
     "compliance-auditor": {
-        "runtime_type": "openclaw",
-        "data_types": ["credit_cards", "financial_records", "personal_info"],
+        "runtime_type": "framework",
+        "data_types": ["financial_records", "health_records", "personal_info"],
+        "detected_data_types": ["DC-PHI", "DC-PII"],
         "evidence_summary": {"allow": 5, "block": 1, "flag": 0},
     },
     "invoice-extractor": {
         "runtime_type": "mcp",
         "data_types": ["financial_records", "personal_info"],
+        "detected_data_types": ["DC-PII"],
         "evidence_summary": {"allow": 5, "block": 1, "flag": 1},
     },
     "customer-assist": {
-        "runtime_type": "claude",
-        "data_types": ["credit_cards", "financial_records", "personal_info"],
+        "runtime_type": "http",
+        "data_types": ["credit_cards", "health_records", "personal_info"],
+        "detected_data_types": ["DC-CHD", "DC-PHI", "DC-PII"],
         "evidence_summary": {"allow": 5, "block": 2, "flag": 0},
     },
 }
@@ -110,7 +115,9 @@ def test_run_discovery_generates_expected_evidence_and_manifest(tmp_path: Path, 
         agent = agents_by_name[agent_name]
         assert agent.runtime_type == expected["runtime_type"]
         assert sorted(agent.data_types) == expected["data_types"]
+        assert sorted(agent.detected_data_types) == expected["detected_data_types"]
         assert agent.evidence_summary == expected["evidence_summary"]
+        assert agent.first_seen < agent.last_seen
 
         config = load_config(path=agent.config_path)
         store = EvidenceStore(config, db_path=agent.db_path)
@@ -118,6 +125,9 @@ def test_run_discovery_generates_expected_evidence_and_manifest(tmp_path: Path, 
             records = store.get_records(limit=None)
             assert len(records) == sum(expected["evidence_summary"].values())
             assert _posture_summary(records) == expected["evidence_summary"]
+            assert sorted({record.source_type for record in records}) == [expected["runtime_type"]]
+            assert sorted({dt for record in records for dt in record.detected_data_types}) == expected["detected_data_types"]
+            assert records[0].timestamp < records[-1].timestamp
             valid, errors = store.verify_chain()
             assert valid, errors
         finally:
@@ -131,12 +141,30 @@ def test_run_discovery_manifest_has_expected_structure(tmp_path: Path, monkeypat
 
     assert manifest["total_evidence_records"] == 32
     assert len(manifest["agents"]) == 5
+    assert {agent["runtime_type"] for agent in manifest["agents"]} == {
+        "mcp",
+        "bedrock",
+        "cli",
+        "framework",
+        "http",
+    }
+    assert manifest["sdk_direct_integration"]["source_type"] == "sdk_direct"
+    assert manifest["sdk_direct_integration"]["config"]["transport"]["mode"] == "local_file"
+    assert sorted(manifest["sdk_direct_integration"]["config"]["transport"]["paths"]) == sorted(
+        agent["db_path"] for agent in manifest["agents"]
+    )
 
     for item in manifest["agents"]:
         expected = EXPECTED_AGENTS[item["name"]]
         assert item["runtime_type"] == expected["runtime_type"]
         assert sorted(item["data_types"]) == expected["data_types"]
+        assert sorted(item["detected_data_types"]) == expected["detected_data_types"]
+        assert item["first_seen"] < item["last_seen"]
         assert item["evidence_summary"] == expected["evidence_summary"]
+        assert item["classification_findings"]
+        assert {finding["status"] for finding in item["classification_findings"]} == {
+            "pending_confirmation"
+        }
         assert Path(item["config_path"]).exists()
         assert Path(item["db_path"]).exists()
         assert item["tool_count"] >= 6
