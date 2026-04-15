@@ -179,6 +179,20 @@ ancilis approve-tool <name>       Approve a discovered tool
 ancilis doctor                    First-run setup check
 ```
 
+## CI/CD
+
+Check agent posture on every pull request with the [GitHub Action](https://github.com/ancilis/scan-action):
+
+```yaml
+- uses: ancilis/scan-action@v1
+  with:
+    fail-on: high
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Posts posture results as a PR comment and fails the build if findings exceed your threshold. Or skip the action and call the CLI directly: `pip install ancilis && ancilis scan --ci`.
+
 ## Configuration levels
 
 Each level adds one concept. You don't need level 2 to get value from level 1.
