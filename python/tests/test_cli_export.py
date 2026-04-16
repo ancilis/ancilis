@@ -104,3 +104,23 @@ def test_export_cli_writes_csv_to_output_path(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert f"Export written to {output_path}" in result.output
     assert "row-1" in output_path.read_text(encoding="utf-8")
+
+
+def test_export_cli_errors_when_db_path_is_missing(tmp_path: Path) -> None:
+    missing_db = tmp_path / "missing.duckdb"
+
+    result = CliRunner().invoke(
+        cli,
+        [
+            "export",
+            "--format",
+            "ndjson",
+            "--db",
+            str(missing_db),
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "Evidence database not found" in result.output
+    assert str(missing_db) in result.output
+    assert not missing_db.exists()

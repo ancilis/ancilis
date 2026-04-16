@@ -22,6 +22,10 @@ def export_records(
     quiet: bool = False,
 ) -> int:
     """Export local evidence records and return the emitted record count."""
+    if db_path is not None and not Path(db_path).expanduser().exists():
+        click.echo(f"Error: Evidence database not found: {db_path}", err=True)
+        raise SystemExit(1) from None
+
     try:
         config = load_config(path=config_path) if config_path else load_config()
     except FileNotFoundError as exc:
