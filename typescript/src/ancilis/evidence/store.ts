@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { packageRootFrom } from "../shared-path.js";
-import duckdb from "duckdb";
+import { DuckDBInstance, type DuckDBConnection, type DuckDBValue } from "@duckdb/node-api";
 import type { EvaluationResult } from "../engine/result.js";
 import type { ResolvedConfig } from "../config/index.js";
 import { GENESIS_SEED, canonicalJsonStringify, canonicalPayload, computeHash } from "./chain.js";
@@ -65,31 +65,23 @@ active_certifications, record_hash, previous_hash, total_duration_ms, output_sum
 detected_data_types, sdk_version, classification_context
 `;
 
-function execAsync(conn: duckdb.Connection, sql: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    conn.exec(sql, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+type DuckDBRow = Record<string, unknown>;
+
+function toDuckDBValues(params: unknown[]): DuckDBValue[] | undefined {
+  return params.length > 0 ? params as DuckDBValue[] : undefined;
 }
 
-function allAsync(conn: duckdb.Connection, sql: string, params: unknown[] = []): Promise<duckdb.TableData> {
-  return new Promise((resolve, reject) => {
-    conn.all(sql, ...params, (err: duckdb.DuckDbError | null, rows: duckdb.TableData) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
+async function execAsync(conn: DuckDBConnection, sql: string): Promise<void> {
+  await conn.run(sql);
 }
 
-function runAsync(conn: duckdb.Connection, sql: string, params: unknown[] = []): Promise<void> {
-  return new Promise((resolve, reject) => {
-    conn.run(sql, ...params, (err: duckdb.DuckDbError | null) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+async function allAsync(conn: DuckDBConnection, sql: string, params: unknown[] = []): Promise<DuckDBRow[]> {
+  const reader = await conn.runAndReadAll(sql, toDuckDBValues(params));
+  return reader.getRowObjectsJson() as DuckDBRow[];
+}
+
+async function runAsync(conn: DuckDBConnection, sql: string, params: unknown[] = []): Promise<void> {
+  await conn.run(sql, toDuckDBValues(params));
 }
 
 function agentDbPath(agentName: string): string {
@@ -110,8 +102,8 @@ function sessionIdFrom(scope: SessionScope): string | null | undefined {
 }
 
 export class EvidenceStore {
-  private _db: duckdb.Database | null = null;
-  private _conn: duckdb.Connection | null = null;
+  private _db: DuckDBInstance | null = null;
+  private _conn: DuckDBConnection | null = null;
   private _certifications: string[];
   private _llmProvider: string | null;
   private _initialized: Promise<void> | null = null;
@@ -145,12 +137,12 @@ export class EvidenceStore {
 
     this._initialized = (async () => {
       if (this._inMemory) {
-        this._db = new duckdb.Database(":memory:");
+        this._db = await DuckDBInstance.create(":memory:");
       } else {
         mkdirSync(dirname(this._dbPath), { recursive: true });
-        this._db = new duckdb.Database(this._dbPath);
+        this._db = await DuckDBInstance.create(this._dbPath);
       }
-      this._conn = this._db.connect();
+      this._conn = await this._db.connect();
       await execAsync(this._conn, CREATE_TABLE_SQL);
       const columns = await allAsync(this._conn, "PRAGMA table_info('evidence_records')");
       const names = new Set(columns.map((row) => (row as Record<string, unknown>).name as string));
@@ -183,15 +175,11 @@ export class EvidenceStore {
   async close(): Promise<void> {
     if (!this._initialized) return;
     await this._initialized;
-    return new Promise((resolve) => {
-      if (this._conn && this._db) {
-        this._conn.close(() => {
-          this._db!.close(() => resolve());
-        });
-      } else {
-        resolve();
-      }
-    });
+    this._conn?.disconnectSync();
+    this._db?.closeSync();
+    this._conn = null;
+    this._db = null;
+    this._initialized = null;
   }
 
   private async getLastHash(): Promise<string> {
@@ -577,7 +565,7 @@ export class EvidenceStore {
   }
 
   /** Run a parameterised query and return all rows. */
-  async query(sql: string, params: unknown[] = []): Promise<duckdb.TableData> {
+  async query(sql: string, params: unknown[] = []): Promise<DuckDBRow[]> {
     await this.ensureInitialized();
     return allAsync(this._conn!, sql, params);
   }

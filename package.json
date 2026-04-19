@@ -68,8 +68,8 @@
     "provenance": true
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
-    "duckdb": "^1.0.0",
+    "@duckdb/node-api": "^1.5.2-r.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "yaml": "^2.8.3",
     "zod": "^3.23.0"
   },
