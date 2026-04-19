@@ -1,6 +1,12 @@
 # Release Checklist
 
 - [ ] `python -m pytest python/tests -v`
+- [ ] `npm ci --include=dev`
+- [ ] `npm run security:audit:npm`
+- [ ] `cd scan-action && npm ci --include=dev`
+- [ ] `cd scan-action && npm run security:audit`
+- [ ] `python -m pip install pip-audit`
+- [ ] `npm run security:audit:python-lock`
 - [ ] `npm test`
 - [ ] `python scripts/release_check.py`
 - [ ] `python -m twine check dist/*`
@@ -14,3 +20,5 @@
 - [ ] `CHANGELOG.md` updated
 - [ ] Release tag created as `vX.Y.Z`
 - [ ] TypeScript package still labeled preview unless explicitly re-approved
+- [ ] TypeScript npm publish, if approved, uses the verified workflow artifact `.tgz` and does not rebuild or repack during publish
+- [ ] Any direct-main emergency merge has CTO exception approval and the full release checklist was rerun afterward

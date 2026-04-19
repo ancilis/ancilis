@@ -47,7 +47,19 @@ jobs:
           fi
           echo "Version check passed: $PKG_VERSION"
 
-      - run: npm ci
+      - name: Install root Node dependencies
+        run: npm ci --include=dev
+
+      - name: Root TypeScript SDK dependency audit
+        run: npm run security:audit:npm
+
+      - name: Install scan-action dependencies
+        run: npm ci --include=dev
+        working-directory: scan-action
+
+      - name: scan-action dependency audit
+        run: npm run security:audit
+        working-directory: scan-action
 
       - name: Build
         run: npm run build

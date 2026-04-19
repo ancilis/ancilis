@@ -31,6 +31,12 @@ jobs:
             echo "::error::TypeScript ($TS_VERSION) and Python ($PY_VERSION) versions diverged"
             exit 1
           fi
+      - name: Install Python audit tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pip-audit
+      - name: Python requirements lock audit
+        run: npm run security:audit:python-lock
       - name: Run local release check
         run: python scripts/release_check.py
       - name: Upload artifacts
