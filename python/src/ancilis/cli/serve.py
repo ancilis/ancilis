@@ -38,4 +38,4 @@ def serve(config_path: str | None, transport: str, port: int) -> None:
         )
 
     server = create_mcp_server(config_path=config_path)
-    server.run(transport=transport)
+    server.run(transport="stdio")
