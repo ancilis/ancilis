@@ -3,12 +3,21 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, cast
 
 from click.testing import CliRunner
+from pytest import MonkeyPatch
 
+from ancilis.activation.loader import load_overlay_profiles
 from ancilis.cli.main import cli
-from ancilis.mcp_server import create_mcp_server
+from ancilis.config import load_config
+from ancilis.engine.engine import Engine
+from ancilis.engine.result import ControlResult, EvaluationResult
+from ancilis.evidence.store import EvidenceStore
+from ancilis.mcp_server import MCPServerContext, create_mcp_server
+from ancilis.producers.tool import ToolActionProducer
 
 
 EXPECTED_TOOL_NAMES = {
@@ -36,7 +45,13 @@ def _write_config(tmp_path: Path) -> Path:
     return config_path
 
 
-def _write_evaluate_config(tmp_path: Path, *, mode: str, allowed: list[str] | None = None, blocked: list[str] | None = None) -> Path:
+def _write_evaluate_config(
+    tmp_path: Path,
+    *,
+    mode: str,
+    allowed: list[str] | None = None,
+    blocked: list[str] | None = None,
+) -> Path:
     config_path = tmp_path / "ancilis.yaml"
     lines = [
         "agent:",
@@ -59,7 +74,70 @@ def _write_evaluate_config(tmp_path: Path, *, mode: str, allowed: list[str] | No
     return config_path
 
 
-def test_create_mcp_server_registers_placeholder_tools(tmp_path: Path) -> None:
+def _financial_context() -> MCPServerContext:
+    config = load_config(
+        raw={
+            "agent": {"name": "mcp-test-agent", "agent_id": "agent-1"},
+            "my_agent_handles": ["financial_data"],
+            "security": {"mode": "audit"},
+        }
+    )
+    store = EvidenceStore(config, in_memory=True)
+    engine = Engine(config, evidence_store=store)
+    return MCPServerContext(
+        config=config,
+        engine=engine,
+        evidence_store=store,
+        action_producer=ToolActionProducer(
+            config,
+            engine,
+            registry=engine.registry,
+            evidence_store=store,
+        ),
+    )
+
+
+def _evaluation(
+    *,
+    evaluation_id: str,
+    session_id: str,
+    timestamp: str,
+    control_results: list[ControlResult],
+) -> EvaluationResult:
+    return EvaluationResult(
+        evaluation_id=evaluation_id,
+        action_id=f"action-{evaluation_id}",
+        timestamp=timestamp,
+        agent_id="agent-1",
+        source_type="tool",
+        mode="audit",
+        control_results=control_results,
+        decision="ALLOW",
+        decision_reason="test",
+        active_overlays=["glba", "soc2"],
+        data_classifications=["DC-FIN"],
+        total_duration_ms=1.0,
+        session_id=session_id,
+    )
+
+
+def _iso(hour: int) -> str:
+    return datetime(2026, 1, 1, hour, tzinfo=timezone.utc).isoformat()
+
+
+def _call_tool_structured(
+    server: Any,
+    tool_name: str,
+    arguments: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    _content, structured = cast(
+        tuple[list[Any], dict[str, Any]],
+        asyncio.run(server.call_tool(tool_name, arguments or {})),
+    )
+    return structured
+
+
+def test_create_mcp_server_registers_tools(tmp_path: Path) -> None:
     server = create_mcp_server(config_path=str(_write_config(tmp_path)))
 
     assert server.name == "ancilis"
@@ -67,8 +145,105 @@ def test_create_mcp_server_registers_placeholder_tools(tmp_path: Path) -> None:
     tool_names = {tool.name for tool in tools}
     assert EXPECTED_TOOL_NAMES.issubset(tool_names)
 
-    _content, structured = asyncio.run(server.call_tool("ancilis_check_posture", {}))
-    assert structured == {"status": "not_implemented"}
+
+def test_check_posture_returns_latest_session_active_evaluator_results() -> None:
+    context = _financial_context()
+    context.evidence_store.store(
+        _evaluation(
+            evaluation_id="older",
+            session_id="older-session",
+            timestamp=_iso(1),
+            control_results=[
+                ControlResult("PR-01", "Tool Identity & Allowlist", "PASS", "older pass"),
+            ],
+        ),
+        tool_name="old_tool",
+    )
+    context.evidence_store.store(
+        _evaluation(
+            evaluation_id="latest",
+            session_id="latest-session",
+            timestamp=_iso(2),
+            control_results=[
+                ControlResult("PR-01", "Tool Identity & Allowlist", "PASS", "allowlisted"),
+                ControlResult("PR-02", "Scoped Permissions", "FAIL", "scope violation"),
+                ControlResult("PR-05", "Audit Logging", "SKIP", "disabled in action"),
+                ControlResult("GOV-01", "Governance", "FAIL", "not runtime active"),
+            ],
+        ),
+        tool_name="latest_tool",
+    )
+    server = create_mcp_server(context=context)
+
+    structured = _call_tool_structured(server, "ancilis_check_posture")
+
+    assert structured["session_id"] == "latest-session"
+    assert structured["posture_score"] == 0.1
+    assert structured["active_overlays"] == ["glba", "soc2"]
+    assert structured["evaluated_at"]
+    assert [control["id"] for control in structured["controls"]] == ["PR-01", "PR-02"]
+    assert [control["name"] for control in structured["controls"]] == [
+        "Tool Identity & Allowlist",
+        "Scoped Permissions",
+    ]
+    assert [control["status"] for control in structured["controls"]] == ["PASS", "FAIL"]
+
+
+def test_check_posture_handles_no_evidence() -> None:
+    server = create_mcp_server(context=_financial_context())
+
+    structured = _call_tool_structured(server, "ancilis_check_posture")
+
+    assert structured["session_id"] is None
+    assert structured["posture_score"] == 0.0
+    assert structured["controls"] == []
+    assert structured["active_overlays"] == ["glba", "soc2"]
+
+
+def test_list_overlays_reports_active_overlay_coverage() -> None:
+    context = _financial_context()
+    context.evidence_store.store(
+        _evaluation(
+            evaluation_id="coverage",
+            session_id="coverage-session",
+            timestamp=_iso(3),
+            control_results=[
+                ControlResult("PR-01", "Tool Identity & Allowlist", "PASS", "allowlisted"),
+                ControlResult("PR-05", "Audit Logging", "FAIL", "missing log sink"),
+                ControlResult("GOV-01", "Governance", "SKIP", "no runtime evaluator"),
+            ],
+        ),
+        tool_name="coverage_tool",
+    )
+    server = create_mcp_server(context=context)
+
+    structured = _call_tool_structured(server, "ancilis_list_overlays")
+
+    overlays = {overlay["name"]: overlay for overlay in structured["overlays"]}
+    overlay_profiles = load_overlay_profiles()
+    for overlay_id in ("glba", "soc2"):
+        expected_controls = {
+            control_id
+            for control_id, control_data in overlay_profiles[overlay_id].get("controls", {}).items()
+            if control_data.get("applicable", True)
+        }
+        expected_covered = len({"PR-01", "PR-05"} & expected_controls)
+        expected_percent = round((expected_covered / len(expected_controls)) * 100, 2)
+
+        assert overlays[overlay_id]["controls_covered"] == expected_covered
+        assert overlays[overlay_id]["controls_total"] == len(expected_controls)
+        assert overlays[overlay_id]["coverage_pct"] == expected_percent
+
+
+def test_list_overlays_handles_no_evidence() -> None:
+    server = create_mcp_server(context=_financial_context())
+
+    structured = _call_tool_structured(server, "ancilis_list_overlays")
+
+    assert {
+        (overlay["name"], overlay["coverage_pct"], overlay["controls_covered"])
+        for overlay in structured["overlays"]
+    } == {("glba", 0.0, 0), ("soc2", 0.0, 0)}
 
 
 def test_serve_help_shows_transport_options() -> None:
@@ -80,7 +255,7 @@ def test_serve_help_shows_transport_options() -> None:
     assert "--port" in result.output
 
 
-def test_serve_stdio_runs_created_server(monkeypatch, tmp_path: Path) -> None:
+def test_serve_stdio_runs_created_server(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     config_path = _write_config(tmp_path)
     calls: dict[str, object] = {}
 
@@ -88,7 +263,7 @@ def test_serve_stdio_runs_created_server(monkeypatch, tmp_path: Path) -> None:
         def run(self, *, transport: str) -> None:
             calls["transport"] = transport
 
-    def fake_create_mcp_server(config_path: str | None = None):
+    def fake_create_mcp_server(config_path: str | None = None) -> DummyServer:
         calls["config_path"] = config_path
         return DummyServer()
 
@@ -114,15 +289,14 @@ def test_evaluate_action_returns_blocked_for_blocked_tool(tmp_path: Path) -> Non
         )
     )
 
-    _content, structured = asyncio.run(
-        server.call_tool(
-            "ancilis_evaluate_action",
-            {
-                "tool_name": "dangerous_delete",
-                "parameters": {"path": "/etc/passwd"},
-                "description": "Delete a sensitive file",
-            },
-        )
+    structured = _call_tool_structured(
+        server,
+        "ancilis_evaluate_action",
+        {
+            "tool_name": "dangerous_delete",
+            "parameters": {"path": "/etc/passwd"},
+            "description": "Delete a sensitive file",
+        },
     )
 
     assert structured["verdict"] == "blocked"
@@ -143,15 +317,14 @@ def test_evaluate_action_returns_allowed_for_approved_tool(tmp_path: Path) -> No
         )
     )
 
-    _content, structured = asyncio.run(
-        server.call_tool(
-            "ancilis_evaluate_action",
-            {
-                "tool_name": "safe_read",
-                "parameters": {"path": "README.md"},
-                "description": "Read project documentation",
-            },
-        )
+    structured = _call_tool_structured(
+        server,
+        "ancilis_evaluate_action",
+        {
+            "tool_name": "safe_read",
+            "parameters": {"path": "README.md"},
+            "description": "Read project documentation",
+        },
     )
 
     assert structured["verdict"] == "allowed"
@@ -170,14 +343,13 @@ def test_evaluate_action_handles_unknown_tool_without_error(tmp_path: Path) -> N
         )
     )
 
-    _content, structured = asyncio.run(
-        server.call_tool(
-            "ancilis_evaluate_action",
-            {
-                "tool_name": "mystery_tool",
-                "parameters": {"query": "hello"},
-            },
-        )
+    structured = _call_tool_structured(
+        server,
+        "ancilis_evaluate_action",
+        {
+            "tool_name": "mystery_tool",
+            "parameters": {"query": "hello"},
+        },
     )
 
     assert structured["verdict"] == "warning"
@@ -187,11 +359,14 @@ def test_evaluate_action_handles_unknown_tool_without_error(tmp_path: Path) -> N
     assert structured["recommendation"] == "Proceed with caution"
 
 
-def test_evaluate_action_does_not_persist_synthetic_action(monkeypatch, tmp_path: Path) -> None:
+def test_evaluate_action_does_not_persist_synthetic_action(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     stores: list[FakeEvidenceStore] = []
 
     class FakeEvidenceStore:
-        def __init__(self, config):
+        def __init__(self, config: object) -> None:
             self.config = config
             self.store_calls = 0
             stores.append(self)
@@ -202,7 +377,7 @@ def test_evaluate_action_does_not_persist_synthetic_action(monkeypatch, tmp_path
         def verify_chain(self) -> tuple[bool, list[str]]:
             return True, []
 
-        def store(self, *args, **kwargs):
+        def store(self, *args: object, **kwargs: object) -> None:
             self.store_calls += 1
 
     monkeypatch.setattr("ancilis.mcp_server.EvidenceStore", FakeEvidenceStore)
@@ -216,14 +391,13 @@ def test_evaluate_action_does_not_persist_synthetic_action(monkeypatch, tmp_path
         )
     )
 
-    _content, structured = asyncio.run(
-        server.call_tool(
-            "ancilis_evaluate_action",
-            {
-                "tool_name": "safe_read",
-                "parameters": {"path": "README.md"},
-            },
-        )
+    structured = _call_tool_structured(
+        server,
+        "ancilis_evaluate_action",
+        {
+            "tool_name": "safe_read",
+            "parameters": {"path": "README.md"},
+        },
     )
 
     assert structured["verdict"] == "allowed"
