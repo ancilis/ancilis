@@ -1121,7 +1121,7 @@ class TestAdvisoryReports:
         store.store(advisory_eval, tool_name="read_file")
 
         gen = ReportGenerator(config, store)
-        report = gen.generate(report_format="markdown")
+        report = gen.generate(period="365d", report_format="markdown")
         md = render_markdown(report)
 
         assert report.advisory is not None
