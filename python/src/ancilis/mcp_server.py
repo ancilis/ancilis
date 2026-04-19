@@ -20,6 +20,8 @@ from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.record import EvidenceRecord
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.tool import ToolActionProducer, ToolInvocation
+from ancilis.report.generator import ReportGenerator
+from ancilis.report.renderer import render_markdown
 
 
 @dataclass(frozen=True)
@@ -58,8 +60,28 @@ class MCPOverlayListResponse(BaseModel):
     overlays: list[MCPOverlayCoverage] = Field(default_factory=list)
 
 
-def _not_implemented(_context: MCPServerContext) -> dict[str, str]:
-    return {"status": "not_implemented"}
+class MCPEvidenceItem(BaseModel):
+    id: str
+    timestamp: str
+    action_type: str
+    tool_name: str | None = None
+    control_id: str | None = None
+    result: str | None = None
+    chain_hash: str
+
+
+class MCPEvidenceResponse(BaseModel):
+    evidence: list[MCPEvidenceItem] = Field(default_factory=list)
+    total_count: int = 0
+    returned_count: int = 0
+    session_id: str | None = None
+
+
+class MCPReportResponse(BaseModel):
+    report: str
+    format: str
+    session_id: str | None = None
+    generated_at: str
 
 
 def _json_response(model: BaseModel) -> dict[str, Any]:
@@ -330,6 +352,104 @@ def _build_overlay_list_response(context: MCPServerContext) -> MCPOverlayListRes
     return MCPOverlayListResponse(overlays=overlays)
 
 
+def _selected_session_id(context: MCPServerContext, session_id: str | None) -> str | None:
+    if session_id is not None:
+        return session_id
+    return context.evidence_store.latest_session_id()
+
+
+def _evidence_items_for(
+    records: list[EvidenceRecord],
+    *,
+    control_id: str | None,
+) -> list[MCPEvidenceItem]:
+    items: list[MCPEvidenceItem] = []
+    for record in sorted(records, key=lambda item: item.timestamp, reverse=True):
+        control_results = record.control_results or []
+        if not control_results and control_id is None:
+            items.append(
+                MCPEvidenceItem(
+                    id=record.record_id,
+                    timestamp=record.timestamp,
+                    action_type=record.source_type,
+                    tool_name=record.tool_name,
+                    chain_hash=record.record_hash,
+                )
+            )
+            continue
+
+        for result in control_results:
+            result_control_id = result.get("control_id")
+            if control_id is not None and result_control_id != control_id:
+                continue
+            raw_result = result.get("result")
+            items.append(
+                MCPEvidenceItem(
+                    id=record.record_id,
+                    timestamp=record.timestamp,
+                    action_type=record.source_type,
+                    tool_name=record.tool_name,
+                    control_id=result_control_id if isinstance(result_control_id, str) else None,
+                    result=str(raw_result).lower() if raw_result is not None else None,
+                    chain_hash=record.record_hash,
+                )
+            )
+    return items
+
+
+def _build_evidence_response(
+    context: MCPServerContext,
+    *,
+    limit: int,
+    control_id: str | None,
+    session_id: str | None,
+) -> MCPEvidenceResponse:
+    selected_session_id = _selected_session_id(context, session_id)
+    if selected_session_id is None:
+        return MCPEvidenceResponse()
+
+    records = context.evidence_store.get_records(session_id=selected_session_id, limit=None)
+    items = _evidence_items_for(records, control_id=control_id)
+    bounded_limit = max(limit, 0)
+    returned = items[:bounded_limit]
+    return MCPEvidenceResponse(
+        evidence=returned,
+        total_count=len(items),
+        returned_count=len(returned),
+        session_id=selected_session_id,
+    )
+
+
+def _build_report_response(
+    context: MCPServerContext,
+    *,
+    session_id: str | None,
+    report_format: str,
+) -> dict[str, Any]:
+    if report_format != "markdown":
+        return {
+            "error": "unsupported_format",
+            "format": report_format,
+            "supported_formats": ["markdown"],
+        }
+
+    selected_session_id = _selected_session_id(context, session_id)
+    generator = ReportGenerator(context.config, context.evidence_store)
+    report_data = generator.generate(
+        period="365d",
+        report_format="markdown",
+        session_id=selected_session_id,
+    )
+    return _json_response(
+        MCPReportResponse(
+            report=render_markdown(report_data),
+            format="markdown",
+            session_id=selected_session_id,
+            generated_at=report_data.generated_at,
+        )
+    )
+
+
 def create_mcp_server(
     config_path: str | None = None,
     context: MCPServerContext | None = None,
@@ -372,12 +492,30 @@ def create_mcp_server(
         )
 
     @server.tool(name="ancilis_get_evidence")
-    async def ancilis_get_evidence() -> dict[str, str]:
-        return _not_implemented(context)
+    async def ancilis_get_evidence(
+        limit: int = 50,
+        control_id: str | None = None,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        return _json_response(
+            _build_evidence_response(
+                context,
+                limit=limit,
+                control_id=control_id,
+                session_id=session_id,
+            )
+        )
 
     @server.tool(name="ancilis_report")
-    async def ancilis_report() -> dict[str, str]:
-        return _not_implemented(context)
+    async def ancilis_report(
+        session_id: str | None = None,
+        format: str = "markdown",
+    ) -> dict[str, Any]:
+        return _build_report_response(
+            context,
+            session_id=session_id,
+            report_format=format,
+        )
 
     @server.tool(name="ancilis_list_overlays")
     async def ancilis_list_overlays() -> dict[str, Any]:

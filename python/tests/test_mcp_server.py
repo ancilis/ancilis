@@ -403,3 +403,132 @@ def test_evaluate_action_does_not_persist_synthetic_action(
     assert structured["verdict"] == "allowed"
     assert stores
     assert stores[0].store_calls == 0
+
+
+def test_get_evidence_returns_latest_session_records_descending_with_limit() -> None:
+    context = _financial_context()
+    context.evidence_store.store(
+        _evaluation(
+            evaluation_id="older",
+            session_id="older-session",
+            timestamp=_iso(1),
+            control_results=[
+                ControlResult("PR-01", "Tool Identity & Allowlist", "PASS", "older"),
+            ],
+        ),
+        tool_name="older_tool",
+    )
+    context.evidence_store.store(
+        _evaluation(
+            evaluation_id="latest-one",
+            session_id="latest-session",
+            timestamp=_iso(2),
+            control_results=[
+                ControlResult("PR-01", "Tool Identity & Allowlist", "PASS", "first"),
+            ],
+        ),
+        tool_name="first_tool",
+    )
+    context.evidence_store.store(
+        _evaluation(
+            evaluation_id="latest-two",
+            session_id="latest-session",
+            timestamp=_iso(3),
+            control_results=[
+                ControlResult("PR-02", "Scoped Permissions", "FAIL", "second"),
+            ],
+        ),
+        tool_name="second_tool",
+    )
+    server = create_mcp_server(context=context)
+
+    structured = _call_tool_structured(server, "ancilis_get_evidence", {"limit": 1})
+
+    assert structured["session_id"] == "latest-session"
+    assert structured["total_count"] == 2
+    assert structured["returned_count"] == 1
+    assert structured["evidence"][0]["timestamp"] == _iso(3)
+    assert structured["evidence"][0]["tool_name"] == "second_tool"
+    assert structured["evidence"][0]["control_id"] == "PR-02"
+    assert structured["evidence"][0]["result"] == "fail"
+    assert len(structured["evidence"][0]["chain_hash"]) == 64
+
+
+def test_get_evidence_filters_by_control_id() -> None:
+    context = _financial_context()
+    context.evidence_store.store(
+        _evaluation(
+            evaluation_id="record-one",
+            session_id="filter-session",
+            timestamp=_iso(1),
+            control_results=[
+                ControlResult("PR-01", "Tool Identity & Allowlist", "PASS", "allowlisted"),
+                ControlResult("PR-02", "Scoped Permissions", "FAIL", "scope violation"),
+            ],
+        ),
+        tool_name="mixed_tool",
+    )
+    server = create_mcp_server(context=context)
+
+    structured = _call_tool_structured(
+        server,
+        "ancilis_get_evidence",
+        {"session_id": "filter-session", "control_id": "PR-01"},
+    )
+
+    assert structured["session_id"] == "filter-session"
+    assert structured["total_count"] == 1
+    assert structured["returned_count"] == 1
+    assert [item["control_id"] for item in structured["evidence"]] == ["PR-01"]
+
+
+def test_get_evidence_handles_empty_store() -> None:
+    server = create_mcp_server(context=_financial_context())
+
+    structured = _call_tool_structured(server, "ancilis_get_evidence")
+
+    assert structured == {
+        "evidence": [],
+        "total_count": 0,
+        "returned_count": 0,
+        "session_id": None,
+    }
+
+
+def test_report_generates_markdown_for_latest_session() -> None:
+    context = _financial_context()
+    context.evidence_store.store(
+        _evaluation(
+            evaluation_id="report-record",
+            session_id="report-session",
+            timestamp=_iso(1),
+            control_results=[
+                ControlResult("PR-01", "Tool Identity & Allowlist", "PASS", "allowlisted"),
+                ControlResult("PR-02", "Scoped Permissions", "FAIL", "scope violation"),
+            ],
+        ),
+        tool_name="report_tool",
+    )
+    server = create_mcp_server(context=context)
+
+    structured = _call_tool_structured(server, "ancilis_report")
+
+    assert structured["format"] == "markdown"
+    assert structured["session_id"] == "report-session"
+    assert structured["generated_at"]
+    assert "# Ancilis Posture Report" in structured["report"]
+    assert "## Executive Summary" in structured["report"]
+    assert "Baseline Security" in structured["report"]
+    assert "Evidence Integrity" in structured["report"]
+
+
+def test_report_rejects_non_markdown_format() -> None:
+    server = create_mcp_server(context=_financial_context())
+
+    structured = _call_tool_structured(server, "ancilis_report", {"format": "json"})
+
+    assert structured == {
+        "error": "unsupported_format",
+        "format": "json",
+        "supported_formats": ["markdown"],
+    }
