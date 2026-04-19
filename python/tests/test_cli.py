@@ -1094,7 +1094,7 @@ class TestAdvisoryReports:
         advisory_eval = EvaluationResult(
             evaluation_id="advisory-eval",
             action_id="action-1",
-            timestamp="2026-03-20T00:00:00Z",
+            timestamp=datetime.now(timezone.utc).isoformat(),
             agent_id=config.agent_name,
             mode=config.mode,
             control_results=[
