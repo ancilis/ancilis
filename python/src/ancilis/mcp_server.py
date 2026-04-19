@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
+from ancilis.activation.loader import load_overlay_profiles
+from ancilis.activation.resolver import ActivationResolver
 from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.action import Action
 from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolStatus
 from ancilis.engine.result import ControlResult, EvaluationResult
+from ancilis.evidence.record import EvidenceRecord
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.tool import ToolActionProducer, ToolInvocation
 
@@ -24,8 +30,42 @@ class MCPServerContext:
     action_producer: ToolActionProducer
 
 
+class MCPControlPosture(BaseModel):
+    control_id: str
+    control_name: str
+    status: str
+    detail: str = ""
+    evidence_count: int = 0
+    latest_evaluated_at: str | None = None
+
+
+class MCPPostureResponse(BaseModel):
+    posture_score: float = 0.0
+    controls: list[MCPControlPosture] = Field(default_factory=list)
+    active_overlays: list[str] = Field(default_factory=list)
+    session_id: str | None = None
+    evaluated_at: datetime
+
+
+class MCPOverlayCoverage(BaseModel):
+    overlay_id: str
+    name: str
+    coverage_percent: float
+    controls_with_evidence: int
+    total_controls: int
+    active_controls: list[str] = Field(default_factory=list)
+
+
+class MCPOverlayListResponse(BaseModel):
+    overlays: list[MCPOverlayCoverage] = Field(default_factory=list)
+
+
 def _not_implemented(_context: MCPServerContext) -> dict[str, str]:
     return {"status": "not_implemented"}
+
+
+def _json_response(model: BaseModel) -> dict[str, Any]:
+    return model.model_dump(mode="json")
 
 
 def _synthetic_tool(**_kwargs: Any) -> None:
@@ -150,29 +190,173 @@ def _evaluate_action(
     }
 
 
-def create_mcp_server(config_path: str | None = None) -> FastMCP:
-    """Create an Ancilis MCP server with placeholder tool registrations."""
-    config = load_config(path=config_path) if config_path is not None else load_config()
-    evidence_store = EvidenceStore(config)
-    engine = Engine(config, evidence_store=evidence_store)
-    action_producer = ToolActionProducer(
-        config,
-        engine,
-        registry=engine.registry,
-        evidence_store=evidence_store,
+def _active_runtime_evaluator_ids(context: MCPServerContext) -> set[str]:
+    evaluator_ids = set(getattr(context.engine, "_evaluators", {}))
+    is_policy_gated = getattr(context.engine, "_is_policy_gated", None)
+    active_ids: set[str] = set()
+    for control_id, control_status in context.config.controls.items():
+        if not control_status.enabled or control_id not in evaluator_ids:
+            continue
+        if callable(is_policy_gated) and is_policy_gated(control_id):
+            continue
+        active_ids.add(control_id)
+    return active_ids
+
+
+def _latest_session_records(context: MCPServerContext) -> tuple[str | None, list[EvidenceRecord]]:
+    session_id = context.evidence_store.latest_session_id()
+    if session_id is None:
+        return None, []
+    return session_id, context.evidence_store.get_records(session_id=session_id, limit=None)
+
+
+def _active_overlay_ids(context: MCPServerContext) -> list[str]:
+    return sorted(context.config.active_overlays)
+
+
+def _build_posture_response(context: MCPServerContext) -> MCPPostureResponse:
+    session_id, records = _latest_session_records(context)
+    active_evaluator_ids = _active_runtime_evaluator_ids(context)
+    evidence_counts: Counter[str] = Counter()
+    latest_results: dict[str, dict[str, Any]] = {}
+
+    for record in records:
+        for raw_result in record.control_results:
+            control_id = raw_result.get("control_id")
+            if control_id not in active_evaluator_ids:
+                continue
+            status = str(raw_result.get("result", "SKIP")).upper()
+            if status == "SKIP":
+                continue
+            evidence_counts[control_id] += 1
+            latest_results[control_id] = {
+                "control_id": control_id,
+                "control_name": raw_result.get("control_name", control_id),
+                "status": status,
+                "detail": raw_result.get("detail", ""),
+                "evidence_count": evidence_counts[control_id],
+                "latest_evaluated_at": record.timestamp,
+            }
+
+    controls = [
+        MCPControlPosture(**latest_results[control_id])
+        for control_id in sorted(latest_results)
+    ]
+    passing = sum(1 for control in controls if control.status == "PASS")
+    posture_score = round(passing / len(controls), 4) if controls else 0.0
+
+    return MCPPostureResponse(
+        posture_score=posture_score,
+        controls=controls,
+        active_overlays=_active_overlay_ids(context),
+        session_id=session_id,
+        evaluated_at=datetime.now(timezone.utc),
     )
-    context = MCPServerContext(
-        config=config,
-        engine=engine,
-        evidence_store=evidence_store,
-        action_producer=action_producer,
+
+
+def _overlay_control_ids(profile: dict[str, Any]) -> list[str]:
+    controls = {
+        control_id
+        for control_id, control_data in profile.get("controls", {}).items()
+        if control_data.get("applicable", True)
+    }
+    if not controls:
+        controls.update(profile.get("control_adjustments", {}).keys())
+        controls.update(profile.get("evidence_requirements", {}).keys())
+    return sorted(controls)
+
+
+def _evidenced_control_ids(records: list[EvidenceRecord]) -> set[str]:
+    control_ids: set[str] = set()
+    for record in records:
+        for raw_result in record.control_results:
+            status = str(raw_result.get("result", "SKIP")).upper()
+            if status == "SKIP":
+                continue
+            control_id = raw_result.get("control_id")
+            if isinstance(control_id, str):
+                control_ids.add(control_id)
+    return control_ids
+
+
+def _resolved_overlay_ids(context: MCPServerContext) -> list[str]:
+    configured_overlay_ids = _active_overlay_ids(context)
+    resolver = ActivationResolver()
+    spec = resolver.resolve(
+        my_agent_handles=list(context.config.data_classifications) or None,
+        certification_targets=list(context.config.active_certifications) or None,
+        compliance_overlays=configured_overlay_ids or None,
     )
+    active = [
+        overlay_id
+        for overlay_id in spec.active_overlays
+        if overlay_id in configured_overlay_ids
+    ]
+    for overlay_id in configured_overlay_ids:
+        if overlay_id not in active:
+            active.append(overlay_id)
+    return sorted(active)
+
+
+def _build_overlay_list_response(context: MCPServerContext) -> MCPOverlayListResponse:
+    _session_id, records = _latest_session_records(context)
+    evidenced_controls = _evidenced_control_ids(records)
+    overlay_profiles = load_overlay_profiles()
+    overlays: list[MCPOverlayCoverage] = []
+
+    for overlay_id in _resolved_overlay_ids(context):
+        profile = overlay_profiles.get(overlay_id)
+        if profile is None:
+            continue
+        active_controls = _overlay_control_ids(profile)
+        total_controls = len(active_controls)
+        controls_with_evidence = len(set(active_controls) & evidenced_controls)
+        coverage_percent = (
+            round((controls_with_evidence / total_controls) * 100, 2)
+            if total_controls
+            else 0.0
+        )
+        overlays.append(
+            MCPOverlayCoverage(
+                overlay_id=overlay_id,
+                name=profile.get("name", overlay_id),
+                coverage_percent=coverage_percent,
+                controls_with_evidence=controls_with_evidence,
+                total_controls=total_controls,
+                active_controls=active_controls,
+            )
+        )
+
+    return MCPOverlayListResponse(overlays=overlays)
+
+
+def create_mcp_server(
+    config_path: str | None = None,
+    context: MCPServerContext | None = None,
+) -> FastMCP:
+    """Create an Ancilis MCP server."""
+    if context is None:
+        config = load_config(path=config_path) if config_path is not None else load_config()
+        evidence_store = EvidenceStore(config)
+        engine = Engine(config, evidence_store=evidence_store)
+        action_producer = ToolActionProducer(
+            config,
+            engine,
+            registry=engine.registry,
+            evidence_store=evidence_store,
+        )
+        context = MCPServerContext(
+            config=config,
+            engine=engine,
+            evidence_store=evidence_store,
+            action_producer=action_producer,
+        )
 
     server = FastMCP(name="ancilis")
 
     @server.tool(name="ancilis_check_posture")
-    def ancilis_check_posture() -> dict[str, str]:
-        return _not_implemented(context)
+    async def ancilis_check_posture() -> dict[str, Any]:
+        return _json_response(_build_posture_response(context))
 
     @server.tool(name="ancilis_evaluate_action")
     async def ancilis_evaluate_action(
@@ -188,15 +372,15 @@ def create_mcp_server(config_path: str | None = None) -> FastMCP:
         )
 
     @server.tool(name="ancilis_get_evidence")
-    def ancilis_get_evidence() -> dict[str, str]:
+    async def ancilis_get_evidence() -> dict[str, str]:
         return _not_implemented(context)
 
     @server.tool(name="ancilis_report")
-    def ancilis_report() -> dict[str, str]:
+    async def ancilis_report() -> dict[str, str]:
         return _not_implemented(context)
 
     @server.tool(name="ancilis_list_overlays")
-    def ancilis_list_overlays() -> dict[str, str]:
-        return _not_implemented(context)
+    async def ancilis_list_overlays() -> dict[str, Any]:
+        return _json_response(_build_overlay_list_response(context))
 
     return server
