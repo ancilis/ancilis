@@ -435,8 +435,7 @@ class EvidenceStore:
         self._ensure_initialized()
         effective_now = now or self._now_iso()
         conditions = [
-            "ss.status IN (?, ?)",
-            "(ss.next_retry_at IS NULL OR ss.next_retry_at <= ?)",
+            "(ss.status = ? OR (ss.status = ? AND ss.next_retry_at IS NOT NULL AND ss.next_retry_at <= ?))",
         ]
         params: list[Any] = [SYNC_STATUS_PENDING, SYNC_STATUS_FAILED, effective_now]
         if self._tenant_id is not None:
@@ -508,6 +507,8 @@ class EvidenceStore:
 
     def get_sync_summary(self) -> EvidenceSyncSummary:
         """Return aggregate sync metadata without contacting any platform service."""
+        if self._conn is None and not self._in_memory and not Path(self._db_path).exists():
+            return EvidenceSyncSummary(pending_count=0, failed_count=0)
         self._ensure_initialized()
         if self._tenant_id is not None:
             join = " JOIN evidence_records er ON er.record_id = ss.record_id"

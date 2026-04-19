@@ -16,6 +16,7 @@ from ancilis.cli.baseline import baseline
 from ancilis.cli.init import init
 from ancilis.cli.plugins import plugins
 from ancilis.cli.shell import shell
+from ancilis.cli.sync import sync
 
 
 @click.group()
@@ -43,6 +44,7 @@ cli.add_command(baseline)
 cli.add_command(init)
 cli.add_command(plugins)
 cli.add_command(shell)
+cli.add_command(sync)
 
 
 @cli.group(name="config")
