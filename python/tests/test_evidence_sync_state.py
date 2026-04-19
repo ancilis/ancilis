@@ -78,6 +78,30 @@ class TestEvidenceSyncMetadata:
         assert state.attempt_count == 0
         store.close()
 
+    def test_opening_existing_db_backfills_missing_pending_sync_rows(
+        self, tmp_path: Path
+    ) -> None:
+        db_file = tmp_path / "evidence.duckdb"
+        config = make_config()
+        store = EvidenceStore(config, db_path=db_file)
+        record = store.store(make_evaluation("e1", "2025-01-01T00:00:00Z"), tool_name="t1")
+        store._connection.execute("DROP TABLE evidence_sync_state")
+        store._connection.execute("DROP TABLE evidence_sync_meta")
+        store.close()
+
+        upgraded_store = EvidenceStore(config, db_path=db_file)
+
+        state = upgraded_store.get_sync_state(record.record_id)
+        pending = upgraded_store.get_pending_sync_records()
+        valid, errors = upgraded_store.verify_chain()
+        assert state is not None
+        assert state.status == SYNC_STATUS_PENDING
+        assert state.attempt_count == 0
+        assert [pending_record.record_id for pending_record in pending] == [record.record_id]
+        assert valid is True
+        assert errors == []
+        upgraded_store.close()
+
     def test_pending_records_return_in_sequence_order(self) -> None:
         store = EvidenceStore(make_config(), in_memory=True)
         first = store.store(make_evaluation("e1", "2025-01-01T00:00:00Z"), tool_name="t1")

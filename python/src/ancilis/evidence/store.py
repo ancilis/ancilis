@@ -214,6 +214,7 @@ class EvidenceStore:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN classification_context JSON DEFAULT '{}'"
             )
+        self._backfill_missing_sync_state_rows()
 
     @property
     def db_path(self) -> str:
@@ -380,6 +381,16 @@ class EvidenceStore:
             "INSERT INTO evidence_sync_state (record_id, status, attempt_count) "
             "VALUES (?, ?, 0)",
             [record_id, SYNC_STATUS_PENDING],
+        )
+
+    def _backfill_missing_sync_state_rows(self) -> None:
+        self._connection.execute(
+            "INSERT INTO evidence_sync_state (record_id, status, attempt_count) "
+            "SELECT er.record_id, ?, 0 FROM evidence_records er "
+            "WHERE NOT EXISTS ("
+            "SELECT 1 FROM evidence_sync_state ss WHERE ss.record_id = er.record_id"
+            ")",
+            [SYNC_STATUS_PENDING],
         )
 
     def _require_sync_state(self, record_id: str) -> None:
