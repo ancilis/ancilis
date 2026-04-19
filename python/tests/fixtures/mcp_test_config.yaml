@@ -1,0 +1,12 @@
+agent:
+  name: mcp-test-agent
+  agent_id: agent-1
+my_agent_handles:
+  - financial_data
+security:
+  mode: enforce
+  tools:
+    allowed:
+      - safe_read
+    blocked:
+      - dangerous_delete
