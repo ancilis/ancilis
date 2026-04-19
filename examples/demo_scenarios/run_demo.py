@@ -15,7 +15,7 @@ import urllib.request
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -34,7 +34,7 @@ from ancilis.evidence.store import EvidenceStore
 from scenarios import code_review, data_pipeline, hr_onboarding, patient_intake, payment_processor
 from scenarios.common import DemoCall, DemoScenario
 
-DEMO_START = datetime(2026, 4, 15, 9, 0, tzinfo=UTC)
+DEMO_START = datetime(2026, 4, 15, 9, 0, tzinfo=timezone.utc)
 FULL_TIMELINE_SPAN = timedelta(hours=23, minutes=30)
 DEFAULT_DB_PATH = Path.home() / ".ancilis" / "demo-scenarios" / "evidence.duckdb"
 SCENARIO_FACTORIES = (
