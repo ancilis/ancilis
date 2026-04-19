@@ -12,7 +12,7 @@ from pytest import MonkeyPatch
 
 from ancilis.activation.loader import load_overlay_profiles
 from ancilis.cli.main import cli
-from ancilis.config import load_config
+from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.engine import Engine
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.store import EvidenceStore
@@ -83,6 +83,24 @@ def _financial_context() -> MCPServerContext:
         }
     )
     store = EvidenceStore(config, in_memory=True)
+    engine = Engine(config, evidence_store=store)
+    return MCPServerContext(
+        config=config,
+        engine=engine,
+        evidence_store=store,
+        action_producer=ToolActionProducer(
+            config,
+            engine,
+            registry=engine.registry,
+            evidence_store=store,
+        ),
+    )
+
+
+def _financial_context_with_store(
+    config: ResolvedConfig,
+    store: EvidenceStore,
+) -> MCPServerContext:
     engine = Engine(config, evidence_store=store)
     return MCPServerContext(
         config=config,
@@ -493,6 +511,23 @@ def test_get_evidence_handles_empty_store() -> None:
         "returned_count": 0,
         "session_id": None,
     }
+
+
+def test_read_only_tools_do_not_create_missing_evidence_db(tmp_path: Path) -> None:
+    config = load_config(raw={"agent": {"name": "mcp-test-agent", "agent_id": "agent-1"}})
+    db_file = tmp_path / "missing.duckdb"
+    store = EvidenceStore(config, db_path=db_file)
+    server = create_mcp_server(context=_financial_context_with_store(config, store))
+
+    evidence = _call_tool_structured(server, "ancilis_get_evidence")
+    report = _call_tool_structured(server, "ancilis_report")
+
+    assert evidence["evidence"] == []
+    assert evidence["session_id"] is None
+    assert report["session_id"] is None
+    assert "# Ancilis Posture Report" in report["report"]
+    assert not db_file.exists()
+    store.close()
 
 
 def test_report_generates_markdown_for_latest_session() -> None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -352,9 +353,17 @@ def _build_overlay_list_response(context: MCPServerContext) -> MCPOverlayListRes
     return MCPOverlayListResponse(overlays=overlays)
 
 
+def _evidence_store_has_materialized_data(store: EvidenceStore) -> bool:
+    if store.db_path == ":memory:":
+        return getattr(store, "_conn", None) is not None
+    return getattr(store, "_conn", None) is not None or Path(store.db_path).exists()
+
+
 def _selected_session_id(context: MCPServerContext, session_id: str | None) -> str | None:
     if session_id is not None:
         return session_id
+    if not _evidence_store_has_materialized_data(context.evidence_store):
+        return None
     return context.evidence_store.latest_session_id()
 
 
