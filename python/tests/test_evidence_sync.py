@@ -239,7 +239,7 @@ def test_sync_transient_network_error_records_retry_metadata() -> None:
     store.close()
 
 
-def test_sync_permanent_validation_error_does_not_hot_loop() -> None:
+def test_sync_auto_permanent_validation_error_reports_pending_without_hot_loop() -> None:
     store = EvidenceStore(make_config(), in_memory=True)
     record_id = store_records(store, 1)[0]
     client = RecordingClient(
@@ -259,7 +259,8 @@ def test_sync_permanent_validation_error_does_not_hot_loop() -> None:
     result = SyncEngine(make_config(), store, client=client, now=fixed_now).sync_once()
 
     state = store.get_sync_state(record_id)
-    assert result.status == "failed"
+    assert result.status == "pending"
+    assert result.errors == ["permanent: schema validation failed"]
     assert state is not None
     assert state.status == SYNC_STATUS_FAILED
     assert state.last_error == "schema validation failed"

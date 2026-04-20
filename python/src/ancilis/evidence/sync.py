@@ -107,10 +107,9 @@ class SyncEngine:
             self._apply_item_results(batch, response, result)
 
         if result.failed:
-            has_permanent = any(error.startswith("permanent:") for error in result.errors)
             result.status = (
                 "failed"
-                if has_permanent or self._config.sync_offline_mode == "always_online"
+                if self._config.sync_offline_mode == "always_online"
                 else "pending"
             )
             result.message = "sync completed with failures; evidence remains local"
