@@ -100,7 +100,8 @@ export type { Dependency, Manifest, Vuln } from "./deps/index.js";
 export { scanDependencies, detectDependencies, buildSbom, queryOsvBatch } from "./dependencies/index.js";
 export type { VulnerabilityFinding, CycloneDxBom, CycloneDxComponent, DetectionResult, DependencyScanResult } from "./dependencies/index.js";
 
-export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan, runEvidenceVerify } from "./cli/index.js";
+export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan, runEvidenceVerify, runChangelog } from "./cli/index.js";
+export type { ChangelogPayload } from "./cli/index.js";
 export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
 export {
   BedrockActionProducer,

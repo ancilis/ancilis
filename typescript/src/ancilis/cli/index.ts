@@ -12,6 +12,20 @@ export type { ScanOptions, ControlResult2, EvaluationSummary } from "./scan.js";
 export { handleEvidence, runEvidenceVerify, runEvidenceSessions, runEvidenceReset, runEvidenceImport } from "./evidence.js";
 export { runConnect } from "./connect.js";
 export type { ConnectOptions } from "./connect.js";
+export {
+  addLimitToUrl,
+  CHANGELOG_MAX_LIMIT,
+  CHANGELOG_TIMEOUT_MS,
+  CHANGELOG_URL_ENV,
+  ChangelogError,
+  DEFAULT_CHANGELOG_URL,
+  fetchChangelog,
+  normalizeChangelogPayload,
+  renderChangelog,
+  resolveChangelogUrl,
+  runChangelog,
+} from "./changelog.js";
+export type { ChangelogFetch, ChangelogPayload } from "./changelog.js";
 export { WatchRunner, getProducersForPaths } from "./watch.js";
 export type { WatchRunnerOptions } from "./watch.js";
 export { formatHeader, formatDelta, printScanResult, printSessionSummary } from "./watch-display.js";

@@ -3,7 +3,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { approveTool, formatStatus, handleScan, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
+import { approveTool, formatStatus, handleScan, runChangelog, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
@@ -27,6 +27,7 @@ function print(writer: (message: string) => void, message: string): void {
 function usage(): string {
   return [
     "Usage:",
+    "  ancilis changelog [--limit <n>] [--url <url>] [--json]",
     "  ancilis doctor [--config <path>] [--db <path>]",
     "  ancilis report [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
     "  ancilis report generate [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
@@ -626,6 +627,8 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
     switch (command) {
       case "doctor":
         return await handleDoctor(rest, io);
+      case "changelog":
+        return await runChangelog(rest, io);
       case "report":
         return await handleReport(rest, io);
       case "status":
