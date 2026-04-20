@@ -1,12 +1,13 @@
 import * as z from "zod/v4";
 
 export const mcpModeSchema = z.enum(["audit", "enforce"]);
-export const mcpDecisionSchema = z.enum(["ALLOW", "BLOCK"]);
+export const mcpDecisionSchema = z.enum(["ALLOW", "BLOCK", "FLAG"]);
 
 export const checkPostureInputSchema = z.object({
   config_path: z.string().optional(),
   db_path: z.string().optional(),
   agent_id: z.string().optional(),
+  session_id: z.string().optional(),
 });
 
 export const evaluateActionInputSchema = z.object({
@@ -34,18 +35,18 @@ export const checkPostureOutputSchema = z.object({
     owner: z.string().nullable(),
   }),
   mode: mcpModeSchema,
-  posture: z.enum(["pass", "warn", "fail", "not_evaluated"]),
+  posture: z.enum(["not_evaluated", "compliant", "non_compliant"]),
   summary: z.object({
     total_evaluations: z.number().int().nonnegative(),
     decisions: z.record(z.string(), z.number().int().nonnegative()),
     tools_evaluated: z.array(z.string()),
-    control_pass_rates: z.record(z.string(), z.number().nonnegative()),
+    control_pass_rates: z.record(z.string(), z.record(z.string(), z.number().int().nonnegative())),
   }),
   controls: z.array(z.object({
     control_id: z.string(),
     name: z.string(),
     enabled: z.boolean(),
-    status: z.enum(["pass", "warn", "fail", "not_evaluated"]),
+    status: z.enum(["not_evaluated", "pass", "fail", "flag", "skip"]),
     pass: z.number().int().nonnegative(),
     fail: z.number().int().nonnegative(),
     flag: z.number().int().nonnegative(),
@@ -74,11 +75,14 @@ export const evaluateActionOutputSchema = z.object({
     detail: z.string(),
     evidence_data: z.record(z.string(), z.unknown()),
     duration_ms: z.number().nonnegative(),
+    display_name: z.string().optional(),
+    display_detail: z.string().optional(),
+    remediation_hint: z.string().optional(),
   })),
   active_overlays: z.array(z.string()),
   data_classifications: z.array(z.string()),
   detected_data_types: z.array(z.string()),
-  would_store_evidence: z.boolean(),
+  would_store_evidence: z.literal(false),
 });
 
 export const evidenceRecordOutputSchema = z.object({

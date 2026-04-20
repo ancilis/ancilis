@@ -375,6 +375,68 @@ describe("Evidence Store", () => {
     expect(errors.some(error => error.includes("hash mismatch"))).toBe(true);
   });
 
+  it.each([
+    ["detected_data_types", JSON.stringify(["DC-CHD"]), true],
+    ["sdk_version", "9.9.9", false],
+    ["classification_context", JSON.stringify({ llm_provider: "tampered" }), true],
+  ])("verify chain detects %s tampering", async (column, tamperedValue, isJsonColumn) => {
+    store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "openai" } }),
+      { inMemory: true },
+    );
+
+    const record = await store.store(
+      makeEvaluation({ evaluationId: "e1", detectedDataTypes: ["DC-PII"] }),
+      "t1",
+    );
+    const sql = isJsonColumn
+      ? `UPDATE evidence_records SET ${column} = ?::JSON WHERE record_id = ?`
+      : `UPDATE evidence_records SET ${column} = ? WHERE record_id = ?`;
+    await store.run(sql, [tamperedValue, record.recordId]);
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(false);
+    expect(errors.some(error => error.includes("hash mismatch"))).toBe(true);
+  });
+
+  it("verify chain accepts legacy hash without integrity metadata", async () => {
+    store = new EvidenceStore(
+      makeConfig({ agent: { name: "test-agent", llm_provider: "openai" } }),
+      { inMemory: true },
+    );
+
+    const record = await store.store(
+      makeEvaluation({ evaluationId: "e1", detectedDataTypes: ["DC-PII"] }),
+      "t1",
+    );
+    const legacyCanon = canonicalPayload({
+      evaluationId: record.evaluationId,
+      timestamp: record.timestamp,
+      agentId: record.agentId,
+      sourceType: record.sourceType,
+      toolName: record.toolName,
+      decision: record.decision,
+      mode: record.mode,
+      controlResults: record.controlResults,
+      activeOverlays: record.activeOverlays,
+      dataClassifications: record.dataClassifications,
+      activeCertifications: record.activeCertifications,
+      totalDurationMs: record.totalDurationMs,
+      previousHash: record.previousHash,
+      outputSummary: record.outputSummary,
+      sessionId: record.sessionId,
+      tenantId: record.tenantId,
+    });
+    await store.run(
+      "UPDATE evidence_records SET record_hash = ? WHERE record_id = ?",
+      [computeHash(legacyCanon), record.recordId],
+    );
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
   it("verify chain accepts Python-style unicode escapes and nested float literals from the shared store", async () => {
     store = new EvidenceStore(makeConfig(), { inMemory: true });
     await store.count();
