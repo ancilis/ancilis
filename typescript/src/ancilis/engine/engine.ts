@@ -27,6 +27,14 @@ import type { ControlResult, EvaluationResult } from "./result.js";
 const CONTROLS_DIR = sharedPathFrom(import.meta.url, "controls");
 const POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS = new Set(["DE-04", "GOV-01", "GOV-02", "GOV-03", "ID-01"]);
 const RUNTIME_POLICY_GATE_SOURCES = ["explicit:security.controls", "certification_targets:"];
+const PATTERN_TO_DC: Record<string, string> = {
+  ssn: "DC-PII",
+  email: "DC-PII",
+  phone: "DC-PII",
+  credit_card: "DC-CHD",
+  mrn: "DC-PHI",
+  api_key: "DC-IP",
+};
 
 function loadControlDefs(): Map<string, Record<string, unknown>> {
   const controls = new Map<string, Record<string, unknown>>();
@@ -176,6 +184,7 @@ export class Engine {
         }
       }
     }
+    const detectedDataTypes = extractDetectedDataTypes(controlResults);
 
     return {
       evaluationId: randomUUID(),
@@ -189,6 +198,7 @@ export class Engine {
       decisionReason,
       activeOverlays,
       dataClassifications,
+      detectedDataTypes,
       totalDurationMs: performance.now() - start,
       context: { sessionId: action.context?.sessionId ?? undefined },
     };
@@ -203,4 +213,26 @@ export class Engine {
     if (!POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS.has(controlId)) return false;
     return !this.config.controlHasActivationSource(controlId, ...RUNTIME_POLICY_GATE_SOURCES);
   }
+}
+
+function extractDetectedDataTypes(controlResults: ControlResult[]): string[] {
+  const pr04 = controlResults.find(result => result.controlId === "PR-04");
+  const patterns = pr04?.evidenceData["patterns_detected"];
+  if (!Array.isArray(patterns)) return [];
+
+  const detected: string[] = [];
+  for (const pattern of patterns) {
+    if (!isRecord(pattern)) continue;
+    const type = pattern["type"];
+    if (typeof type !== "string") continue;
+    const dcCode = PATTERN_TO_DC[type];
+    if (dcCode && !detected.includes(dcCode)) {
+      detected.push(dcCode);
+    }
+  }
+  return detected;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
