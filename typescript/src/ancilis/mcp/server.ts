@@ -1,8 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { loadConfig, type ResolvedConfig } from "../config/index.js";
+import type { Action } from "../engine/action.js";
 import { Engine } from "../engine/engine.js";
 import type { ControlResult } from "../engine/result.js";
 import { ToolRegistry, ToolStatus } from "../engine/registry.js";
@@ -40,6 +42,9 @@ type SummaryShape = {
   chain_errors: string[];
 };
 
+const DETERMINISTIC_TIMESTAMP_BASE_MS = Date.UTC(2026, 0, 1);
+const DETERMINISTIC_TIMESTAMP_WINDOW_MS = 366 * 24 * 60 * 60 * 1000;
+
 function textResult<T extends Record<string, unknown>>(structuredContent: T): CallToolResult {
   return {
     content: [{
@@ -48,6 +53,36 @@ function textResult<T extends Record<string, unknown>>(structuredContent: T): Ca
     }],
     structuredContent,
   };
+}
+
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) {
+      if (item !== undefined) out[key] = canonicalize(item);
+    }
+    return out;
+  }
+  if (typeof value === "bigint") return value.toString();
+  return value;
+}
+
+function deterministicHash(namespace: string, payload: unknown): string {
+  return createHash("sha256")
+    .update(namespace)
+    .update("\0")
+    .update(JSON.stringify(canonicalize(payload)))
+    .digest("hex");
+}
+
+function deterministicId(prefix: string, hash: string): string {
+  return `${prefix}-${hash.slice(0, 32)}`;
+}
+
+function deterministicTimestamp(hash: string): string {
+  const offset = Number(BigInt(`0x${hash.slice(0, 12)}`) % BigInt(DETERMINISTIC_TIMESTAMP_WINDOW_MS));
+  return new Date(DETERMINISTIC_TIMESTAMP_BASE_MS + offset).toISOString();
 }
 
 function loadMcpConfig(input: Pick<CheckPostureInput, "config_path" | "agent_id">, options: AncilisMcpServerOptions): ResolvedConfig {
@@ -202,19 +237,47 @@ function preseedApprovedTools(config: ResolvedConfig, registry: ToolRegistry): v
   }
 }
 
-function controlResultOutput(result: ControlResult): EvaluateActionOutput["control_results"][number] {
+function controlResultOutput(result: ControlResult, stableDuration = false): EvaluateActionOutput["control_results"][number] {
   const output: EvaluateActionOutput["control_results"][number] = {
     control_id: result.controlId,
     control_name: result.controlName,
     result: result.result,
     detail: result.detail,
     evidence_data: result.evidenceData,
-    duration_ms: result.durationMs,
+    duration_ms: stableDuration ? 0 : result.durationMs,
   };
   if (result.displayName !== undefined) output.display_name = result.displayName;
   if (result.displayDetail !== undefined) output.display_detail = result.displayDetail;
   if (result.remediationHint !== undefined) output.remediation_hint = result.remediationHint;
   return output;
+}
+
+function deterministicActionHash(config: ResolvedConfig, input: EvaluateActionInput, action: Action): string {
+  return deterministicHash("ancilis-mcp-proposed-action-v1", {
+    agent: {
+      name: config.agentName,
+      id: config.agentId,
+      owner: config.agentOwner || null,
+    },
+    mode: config.mode,
+    input: {
+      tool_name: input.tool_name,
+      arguments: input.arguments ?? {},
+      agent_id: input.agent_id ?? null,
+      session_id: input.session_id ?? null,
+      source_type: input.source_type ?? null,
+    },
+    action: {
+      agent_id: action.agentId,
+      source_type: action.sourceType ?? null,
+      producer_type: action.producerType ?? null,
+      producer_version: action.producerVersion ?? null,
+      action_type: action.actionType,
+      tool: action.tool,
+      parameters: action.parameters,
+      context: action.context ?? {},
+    },
+  });
 }
 
 function evaluateProposedAction(input: EvaluateActionInput, options: AncilisMcpServerOptions): EvaluateActionOutput {
@@ -237,14 +300,27 @@ function evaluateProposedAction(input: EvaluateActionInput, options: AncilisMcpS
 
   const engine = new Engine(config, { registry });
   const evaluation = engine.evaluate(action);
-  return {
-    action_id: evaluation.actionId,
-    evaluation_id: evaluation.evaluationId,
-    timestamp: evaluation.timestamp,
+  const stableControlResults = evaluation.controlResults.map(result => controlResultOutput(result, true));
+  const actionHash = deterministicActionHash(config, input, action);
+  const evaluationHash = deterministicHash("ancilis-mcp-evaluation-v1", {
+    action_id: deterministicId("mcp-action", actionHash),
     decision: evaluation.decision,
     decision_reason: evaluation.decisionReason,
     mode: evaluation.mode,
-    control_results: evaluation.controlResults.map(controlResultOutput),
+    control_results: stableControlResults,
+    active_overlays: evaluation.activeOverlays,
+    data_classifications: evaluation.dataClassifications,
+    detected_data_types: evaluation.detectedDataTypes ?? [],
+  });
+
+  return {
+    action_id: deterministicId("mcp-action", actionHash),
+    evaluation_id: deterministicId("mcp-evaluation", evaluationHash),
+    timestamp: deterministicTimestamp(evaluationHash),
+    decision: evaluation.decision,
+    decision_reason: evaluation.decisionReason,
+    mode: evaluation.mode,
+    control_results: stableControlResults,
     active_overlays: [...evaluation.activeOverlays],
     data_classifications: [...evaluation.dataClassifications],
     detected_data_types: [...(evaluation.detectedDataTypes ?? [])],
