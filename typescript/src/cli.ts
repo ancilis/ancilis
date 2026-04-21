@@ -7,6 +7,7 @@ import { approveTool, formatStatus, handleScan, runDoctor, runReport, validateAn
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
+import { runAncilisMcpServer } from "./ancilis/mcp/index.js";
 import type { EvidenceSummary } from "./ancilis/report/index.js";
 import { packageRootFrom } from "./ancilis/shared-path.js";
 
@@ -34,6 +35,7 @@ function usage(): string {
     "  ancilis config validate [--config <path>]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
     "  ancilis scan [--period <window>] [--ci] [--config <path>] [--db <path>]",
+    "  ancilis serve [--transport stdio] [--config <path>] [--db <path>]",
     "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
     "  ancilis baseline list [--overlay <id>] [--config <path>] [--db <path>]",
     "  ancilis baseline drift [--id <baseline-id>] [--overlay <id>] [--format terminal|json] [--config <path>] [--db <path>]",
@@ -145,6 +147,39 @@ async function handleReport(args: string[], io: CliIo): Promise<number> {
   const result = await runReport({ period, format, configPath, dbPath, outputPath });
   print(result.ok ? io.stdout : io.stderr, result.output);
   return result.ok ? 0 : 1;
+}
+
+async function handleServe(args: string[]): Promise<number> {
+  let transport = "stdio";
+  let configPath: string | undefined;
+  let dbPath: string | undefined;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--transport") {
+      transport = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--config") {
+      configPath = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--db") {
+      dbPath = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    throw new Error(`Unknown option for serve: ${arg}`);
+  }
+
+  if (transport !== "stdio") {
+    throw new Error(`Unsupported serve transport: ${transport}`);
+  }
+
+  await runAncilisMcpServer({ configPath, dbPath });
+  return 0;
 }
 
 async function handleStatus(args: string[], io: CliIo): Promise<number> {
@@ -628,6 +663,8 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
         return await handleDoctor(rest, io);
       case "report":
         return await handleReport(rest, io);
+      case "serve":
+        return await handleServe(rest);
       case "status":
         return await handleStatus(rest, io);
       case "approve-tool":

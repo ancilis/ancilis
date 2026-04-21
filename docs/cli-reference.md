@@ -42,6 +42,83 @@ The shell is read-only. It does not activate overlays, change config, rerun eval
 
 ---
 
+## `ancilis serve`
+
+Start the local Ancilis stdio MCP server so MCP clients can inspect posture, evaluate a proposed action, and read evidence without mutating policy or writing evidence.
+
+```bash
+ancilis serve [OPTIONS]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--transport TEXT` | Transport to use. Only `stdio` is supported. Default: `stdio` |
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+
+**Examples:**
+
+```bash
+# Start the stdio MCP server with default transport
+ancilis serve --config /absolute/path/to/ancilis.yaml --db /absolute/path/to/ancilis-evidence.duckdb
+
+# Explicit stdio transport
+ancilis serve --transport stdio --config /absolute/path/to/ancilis.yaml
+
+# Run with npx from Claude Desktop / Cursor
+npx ancilis serve --transport stdio --config /absolute/path/to/ancilis.yaml
+```
+
+**Claude Desktop config example:**
+
+```json
+{
+  "mcpServers": {
+    "ancilis": {
+      "command": "npx",
+      "args": [
+        "ancilis",
+        "serve",
+        "--transport",
+        "stdio",
+        "--config",
+        "/absolute/path/to/ancilis.yaml"
+      ]
+    }
+  }
+}
+```
+
+**Cursor config example:**
+
+```json
+{
+  "mcpServers": {
+    "ancilis": {
+      "command": "npx",
+      "args": [
+        "ancilis",
+        "serve",
+        "--transport",
+        "stdio",
+        "--config",
+        "/absolute/path/to/ancilis.yaml"
+      ]
+    }
+  }
+}
+```
+
+The stdio server exposes three read-only MCP tools:
+
+- `ancilis_check_posture`
+- `ancilis_evaluate_action`
+- `ancilis_get_evidence`
+
+Use this mode for local agent self-inspection only. It does not execute customer tools, upload evidence, mutate policy, or expose HTTP/SSE transports.
+
+---
+
 ## `ancilis status`
 
 Show current agent security posture.

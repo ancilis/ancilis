@@ -1288,6 +1288,15 @@ describe("Report Renderer UX", () => {
 });
 
 describe("runCli", () => {
+  it("rejects unsupported serve transports with a clear parser error", async () => {
+    const { io, stdout, stderr } = captureIo();
+    const exitCode = await runCli(["serve", "--transport", "http"], io);
+
+    expect(exitCode).toBe(1);
+    expect(stdout()).toBe("");
+    expect(stderr()).toContain("Unsupported serve transport: http");
+  });
+
   it("accepts report generate as an alias for the report command", async () => {
     const dir = tmpDir();
     const configPath = writeConfig(dir, fullConfig());
