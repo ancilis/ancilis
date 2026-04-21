@@ -220,6 +220,32 @@ describe("Ancilis MCP server", () => {
     }
   });
 
+  it("returns deterministic structured output for identical proposed actions", async () => {
+    const dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const { client, server } = await connectTestClient({ configPath });
+    const call = {
+      name: "ancilis_evaluate_action",
+      arguments: {
+        tool_name: "demo.tool",
+        arguments: { contents: "4111 1111 1111 1111", path: "/tmp/card.txt" },
+        session_id: "proposed-session",
+      },
+    };
+
+    try {
+      const first = await client.callTool(call);
+      const second = await client.callTool(call);
+      const firstParsed = evaluateActionOutputSchema.parse(first.structuredContent);
+      const secondParsed = evaluateActionOutputSchema.parse(second.structuredContent);
+
+      expect(secondParsed).toEqual(firstParsed);
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+
   it("summarizes seeded evidence into compliant and non-compliant posture states", async () => {
     const dir = tmpDir();
     const configPath = writeConfig(dir);
