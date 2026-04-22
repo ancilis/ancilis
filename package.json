@@ -37,6 +37,9 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist ancilis-*.tgz",
     "pack:smoke": "npm run build && node scripts/ts_package_smoke.mjs",
+    "security:audit:npm": "npm audit --audit-level=high",
+    "security:audit:scan-action": "npm --prefix scan-action run security:audit",
+    "security:audit:python-lock": "pip-audit --desc --requirement requirements-lock.txt --ignore-vuln CVE-2026-4539",
     "prepack": "npm run build",
     "prepublishOnly": "npm run build && npm test && node scripts/ts_package_smoke.mjs"
   },

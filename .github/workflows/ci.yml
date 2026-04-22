@@ -133,8 +133,14 @@ jobs:
           python -m pip install .
           python -m pip install pip-audit
       - name: Python audit
-        run: pip-audit --desc --ignore-vuln CVE-2026-4539
-      - name: Install Node dependencies
-        run: npm ci
-      - name: Node audit
-        run: npm audit --audit-level=critical --omit=dev
+        run: npm run security:audit:python-lock
+      - name: Install root Node dependencies
+        run: npm ci --include=dev
+      - name: Root TypeScript SDK audit
+        run: npm run security:audit:npm
+      - name: Install scan-action dependencies
+        run: npm ci --include=dev
+        working-directory: scan-action
+      - name: scan-action audit
+        run: npm run security:audit
+        working-directory: scan-action
