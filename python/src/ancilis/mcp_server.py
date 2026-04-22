@@ -493,6 +493,7 @@ def create_mcp_server(
 
     @server.tool(name="ancilis_check_posture")
     async def ancilis_check_posture() -> dict[str, Any]:
+        """Return current session posture, active control status, and overlays."""
         return _json_response(_build_posture_response(context))
 
     @server.tool(name="ancilis_evaluate_action")
@@ -501,6 +502,7 @@ def create_mcp_server(
         parameters: dict[str, Any] | None = None,
         description: str | None = None,
     ) -> dict[str, Any]:
+        """Evaluate a proposed tool action without writing evidence."""
         return _evaluate_action(
             context,
             tool_name=tool_name,
@@ -514,6 +516,7 @@ def create_mcp_server(
         control_id: str | None = None,
         session_id: str | None = None,
     ) -> dict[str, Any]:
+        """Return recent evidence records for the selected or latest session."""
         return _json_response(
             _build_evidence_response(
                 context,
@@ -528,6 +531,7 @@ def create_mcp_server(
         session_id: str | None = None,
         format: str = "markdown",
     ) -> dict[str, Any]:
+        """Generate a posture report for the selected or latest session."""
         return _build_report_response(
             context,
             session_id=session_id,
@@ -536,6 +540,7 @@ def create_mcp_server(
 
     @server.tool(name="ancilis_list_overlays")
     async def ancilis_list_overlays() -> dict[str, Any]:
+        """List active overlays and evidence coverage percentages."""
         return _json_response(_build_overlay_list_response(context))
 
     return server
