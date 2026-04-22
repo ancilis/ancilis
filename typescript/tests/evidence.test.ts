@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
-import duckdb from "duckdb";
+import { DuckDBInstance } from "@duckdb/node-api";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
 import type { EvaluationResult } from "../src/ancilis/engine/result.js";
@@ -45,19 +45,17 @@ function makeEvaluation(overrides: Partial<EvaluationResult> = {}): EvaluationRe
   };
 }
 
-function queryOneString(dbPath: string, sql: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const db = new duckdb.Database(dbPath);
-    const conn = db.connect();
-    conn.all(sql, (err: duckdb.DuckDbError | null, rows: duckdb.TableData) => {
-      if (err) {
-        conn.close(() => db.close(() => reject(err)));
-        return;
-      }
-      const value = ((rows[0] as Record<string, unknown> | undefined)?.control_results ?? "") as string;
-      conn.close(() => db.close(() => resolve(value)));
-    });
-  });
+async function queryOneString(dbPath: string, sql: string): Promise<string> {
+  const db = await DuckDBInstance.create(dbPath);
+  const conn = await db.connect();
+  try {
+    const reader = await conn.runAndReadAll(sql);
+    const rows = reader.getRowObjectsJson();
+    return ((rows[0] as Record<string, unknown> | undefined)?.control_results ?? "") as string;
+  } finally {
+    conn.disconnectSync();
+    db.closeSync();
+  }
 }
 
 // --- Hash Chain ---
@@ -309,14 +307,10 @@ describe("Evidence Store", () => {
     store = new EvidenceStore(makeConfig(), { inMemory: true });
 
     const record = await store.store(makeEvaluation({ evaluationId: "e1" }), "t1", "safe summary");
-    await new Promise<void>((resolve, reject) => {
-      (store as unknown as { _conn: duckdb.Connection })._conn.run(
-        "UPDATE evidence_records SET output_summary = ? WHERE record_id = ?",
-        "tampered summary",
-        record.recordId,
-        (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
-      );
-    });
+    await store.run("UPDATE evidence_records SET output_summary = ? WHERE record_id = ?", [
+      "tampered summary",
+      record.recordId,
+    ]);
 
     const { valid, errors } = await store.verifyChain();
     expect(valid).toBe(false);
@@ -371,14 +365,10 @@ describe("Evidence Store", () => {
       makeEvaluation({ evaluationId: "metadata-tamper", detectedDataTypes: ["DC-PII"] }),
       "metadata-tool",
     );
-    await new Promise<void>((resolve, reject) => {
-      (store as unknown as { _conn: duckdb.Connection })._conn.run(
-        "UPDATE evidence_records SET detected_data_types = ? WHERE record_id = ?",
-        JSON.stringify(["DC-CHD"]),
-        record.recordId,
-        (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
-      );
-    });
+    await store.run("UPDATE evidence_records SET detected_data_types = ? WHERE record_id = ?", [
+      JSON.stringify(["DC-CHD"]),
+      record.recordId,
+    ]);
 
     const { valid, errors } = await store.verifyChain();
     expect(valid).toBe(false);
@@ -395,14 +385,14 @@ describe("Evidence Store", () => {
     const canonical =
       `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","control_results":${controlResultsJson},"data_classifications":[],"decision":"ALLOW","evaluation_id":"e1","mode":"audit","previous_hash":"${GENESIS_SEED}","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":5.0}`;
 
-    await new Promise<void>((resolve, reject) => {
-      (store as unknown as { _conn: duckdb.Connection })._conn.run(
-        `INSERT INTO evidence_records (
+    await store.run(
+      `INSERT INTO evidence_records (
           record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
           decision, mode, control_results, active_overlays,
           data_classifications, active_certifications,
           record_hash, previous_hash, total_duration_ms, output_summary
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
         recordId,
         "e1",
         "2025-01-01T00:00:00Z",
@@ -419,9 +409,8 @@ describe("Evidence Store", () => {
         GENESIS_SEED,
         5.0,
         null,
-        (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
-      );
-    });
+      ],
+    );
 
     const { valid, errors } = await store.verifyChain();
     expect(valid).toBe(true);
@@ -436,15 +425,15 @@ describe("Evidence Store", () => {
     const canonical =
       `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","control_results":[],"data_classifications":[],"decision":"ALLOW","evaluation_id":"legacy-e1","mode":"audit","previous_hash":"${GENESIS_SEED}","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":5.0}`;
 
-    await new Promise<void>((resolve, reject) => {
-      (store as unknown as { _conn: duckdb.Connection })._conn.run(
-        `INSERT INTO evidence_records (
+    await store.run(
+      `INSERT INTO evidence_records (
           record_id, evaluation_id, timestamp, agent_id, source_type, tool_name,
           decision, mode, control_results, active_overlays,
           data_classifications, active_certifications,
           record_hash, previous_hash, total_duration_ms, output_summary,
           detected_data_types, sdk_version, classification_context
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
         recordId,
         "legacy-e1",
         "2025-01-01T00:00:00Z",
@@ -464,9 +453,8 @@ describe("Evidence Store", () => {
         JSON.stringify(["DC-PII"]),
         "0.1.0",
         JSON.stringify({ llm_provider: "openai" }),
-        (err: duckdb.DuckDbError | null) => (err ? reject(err) : resolve()),
-      );
-    });
+      ],
+    );
 
     const { valid, errors } = await store.verifyChain();
     expect(valid).toBe(true);
@@ -832,10 +820,7 @@ describe("EvidenceStore sdkVersion field", () => {
     const store = new EvidenceStore(makeConfig(), { inMemory: true });
     await store.store(makeEvaluation(), "t1");
     // Directly update the record in DuckDB to set a known sdk_version
-    const conn = (store as unknown as Record<string, unknown>)._conn as import("duckdb").Connection;
-    await new Promise<void>((resolve, reject) => {
-      conn.run("UPDATE evidence_records SET sdk_version = '1.2.3'", (err) => err ? reject(err) : resolve());
-    });
+    await store.run("UPDATE evidence_records SET sdk_version = '1.2.3'");
     const records = await store.getRecords();
     expect(records[0].sdkVersion).toBe("1.2.3");
     await store.close();
