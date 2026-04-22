@@ -115,15 +115,27 @@ export type { MakeTestConfigOptions, MakeActionOptions } from "./testing/index.j
 export { SarifImporter } from "./importers/sarif.js";
 export { CycloneDxImporter } from "./importers/cyclonedx.js";
 
+export { PluginRegistry } from "./plugins/index.js";
+export type {
+  AdapterPlugin,
+  OverlayPlugin,
+  PluginContext,
+  PluginDiscoveryOptions,
+  PluginMetadata,
+  PluginRecord,
+  PluginType,
+  ProducerPlugin,
+} from "./plugins/index.js";
+
 export { DependencyScanner, ManifestDetector, OSVClient } from "./deps/index.js";
 export type { Dependency, Manifest, Vuln } from "./deps/index.js";
 
 export { scanDependencies, detectDependencies, buildSbom, queryOsvBatch } from "./dependencies/index.js";
 export type { VulnerabilityFinding, CycloneDxBom, CycloneDxComponent, DetectionResult, DependencyScanResult } from "./dependencies/index.js";
 
-export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan, runEvidenceVerify, runChangelog } from "./cli/index.js";
+export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan, runEvidenceVerify, runChangelog, handlePlugins, runPluginsList, runPluginsValidate } from "./cli/index.js";
 export type { ChangelogPayload } from "./cli/index.js";
-export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
+export type { DoctorResult, PluginsCommandResult, PluginsListOptions, PluginsValidateOptions, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
 export {
   BedrockActionProducer,
   BedrockAdapter,
