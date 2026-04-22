@@ -94,6 +94,23 @@ def _format_status(
     else:
         lines.append("  No evaluations recorded yet. Run your agent with Ancilis to start collecting evidence.")
 
+    sync_summary = evidence.get_sync_summary()
+    if (
+        sync_summary.pending_count
+        or sync_summary.failed_count
+        or sync_summary.last_sync_at
+        or sync_summary.last_error
+    ):
+        parts = [
+            f"{sync_summary.pending_count} pending",
+            f"{sync_summary.failed_count} failed",
+        ]
+        if sync_summary.last_sync_at:
+            parts.append(f"last synced {sync_summary.last_sync_at}")
+        lines.append(f"  Sync: {', '.join(parts)}")
+        if sync_summary.last_error:
+            lines.append(f"  Last sync error: {sync_summary.last_error}")
+
     # Verbose: per-control detail
     if verbose:
         lines.append("")

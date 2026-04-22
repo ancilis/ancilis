@@ -35,8 +35,11 @@ if TYPE_CHECKING:
         EvidenceAdapterSelection,
         EvidenceRecord,
         EvidenceStore,
+        SyncEngine,
+        SyncResult,
         resolve_evidence_adapter,
     )
+    from ancilis.platform import PlatformClient
     from ancilis.middleware.middleware import AncilisMiddleware
     from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
     from ancilis.producers.http import (
@@ -97,12 +100,15 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "CLIInvocation": ("ancilis.producers.cli", "CLIInvocation"),
     "EvidenceRecord": ("ancilis.evidence", "EvidenceRecord"),
     "EvidenceStore": ("ancilis.evidence", "EvidenceStore"),
+    "SyncEngine": ("ancilis.evidence", "SyncEngine"),
+    "SyncResult": ("ancilis.evidence", "SyncResult"),
     "HTTPActionProducer": ("ancilis.producers.http", "HTTPActionProducer"),
     "HTTPExecutionResult": ("ancilis.producers.http", "HTTPExecutionResult"),
     "HTTPObservation": ("ancilis.producers.http", "HTTPObservation"),
     "HTTPRequest": ("ancilis.producers.http", "HTTPRequest"),
     "MCPActionProducer": ("ancilis.producers.mcp", "MCPActionProducer"),
     "ProducerType": ("ancilis.producers.protocol", "ProducerType"),
+    "PlatformClient": ("ancilis.platform", "PlatformClient"),
     "RuntimeProducerSelection": ("ancilis.producers.runtime", "RuntimeProducerSelection"),
     "ToolActionProducer": ("ancilis.producers.tool", "ToolActionProducer"),
     "ToolExecutionResult": ("ancilis.producers.tool", "ToolExecutionResult"),
