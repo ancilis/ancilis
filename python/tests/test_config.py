@@ -40,6 +40,15 @@ class TestFullConfig:
     def test_full_config_loads(self):
         raw = {
             "agent": {"name": "claims-processor", "description": "Test agent", "owner": "team"},
+            "platform": {"url": "https://app.ancilis.ai", "api_key_env": "ANCILIS_TOKEN"},
+            "sync": {
+                "offline_mode": "always_online",
+                "interval_seconds": 60,
+                "max_retries": 3,
+                "backoff_base_seconds": 5,
+                "max_queue_size": 500,
+                "batch_size": 25,
+            },
             "security": {
                 "mode": "enforce",
                 "controls": {"PR-01": {"enabled": True}, "DE-01": {"enabled": False}},
@@ -62,6 +71,57 @@ class TestFullConfig:
         assert resolved.controls["DE-01"].enabled is False
         assert "hipaa" in resolved.active_overlays
         assert "gdpr" in resolved.active_overlays
+        assert resolved.platform_url == "https://app.ancilis.ai"
+        assert resolved.platform_api_key_env == "ANCILIS_TOKEN"
+        assert resolved.sync_offline_mode == "always_online"
+        assert resolved.sync_interval_seconds == 60
+        assert resolved.sync_max_retries == 3
+        assert resolved.sync_backoff_base_seconds == 5
+        assert resolved.sync_max_queue_size == 500
+        assert resolved.sync_batch_size == 25
+
+
+class TestSyncConfig:
+    def test_default_platform_and_sync_config(self):
+        resolved = load_config(raw={"agent": {"name": "my-agent"}})
+
+        assert resolved.platform_url is None
+        assert resolved.platform_api_key_env == "ANCILIS_API_KEY"
+        assert resolved.sync_offline_mode == "auto"
+        assert resolved.sync_interval_seconds == 300
+        assert resolved.sync_max_retries == 8
+        assert resolved.sync_backoff_base_seconds == 2
+        assert resolved.sync_max_queue_size == 10000
+        assert resolved.sync_batch_size == 100
+
+    def test_invalid_sync_offline_mode_raises(self):
+        with pytest.raises(ValidationError):
+            load_config(
+                raw={
+                    "agent": {"name": "x"},
+                    "sync": {"offline_mode": "sometimes_online"},
+                }
+            )
+
+    @pytest.mark.parametrize(
+        "field,value",
+        [
+            ("interval_seconds", 0),
+            ("max_retries", -1),
+            ("backoff_base_seconds", -1),
+            ("max_queue_size", 0),
+            ("batch_size", 0),
+            ("batch_size", 101),
+        ],
+    )
+    def test_invalid_sync_numeric_values_raise(self, field, value):
+        with pytest.raises(ValidationError):
+            load_config(
+                raw={
+                    "agent": {"name": "x"},
+                    "sync": {field: value},
+                }
+            )
 
 
 class TestValidation:

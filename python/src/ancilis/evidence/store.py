@@ -23,6 +23,13 @@ from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.adapter import EvidenceAdapter, EvidenceAdapterPayload
 from ancilis.evidence.chain import GENESIS_SEED, canonical_payload, compute_hash
 from ancilis.evidence.record import EvidenceRecord
+from ancilis.evidence.sync_state import (
+    SYNC_STATUS_FAILED,
+    SYNC_STATUS_PENDING,
+    SYNC_STATUS_SYNCED,
+    EvidenceSyncState,
+    EvidenceSyncSummary,
+)
 
 logger = logging.getLogger("ancilis.evidence")
 
@@ -94,6 +101,33 @@ active_certifications, record_hash, previous_hash, total_duration_ms, output_sum
 tenant_id, detected_data_types, sdk_version, classification_context
 """
 
+SYNC_SELECT_COLUMNS = """
+er.seq_id, er.record_id, er.evaluation_id, er.timestamp, er.agent_id,
+er.session_id, er.source_type, er.tool_name, er.decision, er.mode,
+er.control_results, er.active_overlays, er.data_classifications,
+er.active_certifications, er.record_hash, er.previous_hash, er.total_duration_ms,
+er.output_summary, er.tenant_id, er.detected_data_types, er.sdk_version,
+er.classification_context
+"""
+
+CREATE_SYNC_TABLES_SQL = """
+CREATE TABLE IF NOT EXISTS evidence_sync_state (
+    record_id VARCHAR PRIMARY KEY,
+    status VARCHAR NOT NULL,
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    last_attempt_at VARCHAR,
+    last_synced_at VARCHAR,
+    last_error VARCHAR,
+    next_retry_at VARCHAR,
+    remote_status_code INTEGER,
+    remote_evidence_id VARCHAR
+);
+CREATE TABLE IF NOT EXISTS evidence_sync_meta (
+    key VARCHAR PRIMARY KEY,
+    value VARCHAR
+);
+"""
+
 
 class EvidenceStore:
     """Persists evidence records in DuckDB with cryptographic hash chaining.
@@ -150,6 +184,7 @@ class EvidenceStore:
             logger.info("Evidence store: %s", self._db_path)
 
         self._connection.execute(CREATE_TABLE_SQL)
+        self._connection.execute(CREATE_SYNC_TABLES_SQL)
         columns = {row[1] for row in self._connection.execute("PRAGMA table_info('evidence_records')").fetchall()}
         if "session_id" not in columns:
             self._connection.execute(
@@ -179,6 +214,7 @@ class EvidenceStore:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN classification_context JSON DEFAULT '{}'"
             )
+        self._backfill_missing_sync_state_rows()
 
     @property
     def db_path(self) -> str:
@@ -328,10 +364,200 @@ class EvidenceStore:
             record.sdk_version,
             json.dumps(record.classification_context),
         ])
+        self._create_sync_state_row(record.record_id)
 
         self._maybe_trigger_drift_check()
         self._forward_to_evidence_adapter(record)
         return record
+
+    def _create_sync_state_row(self, record_id: str) -> None:
+        row = self._connection.execute(
+            "SELECT record_id FROM evidence_sync_state WHERE record_id = ?",
+            [record_id],
+        ).fetchone()
+        if row is not None:
+            return
+        self._connection.execute(
+            "INSERT INTO evidence_sync_state (record_id, status, attempt_count) "
+            "VALUES (?, ?, 0)",
+            [record_id, SYNC_STATUS_PENDING],
+        )
+
+    def _backfill_missing_sync_state_rows(self) -> None:
+        self._connection.execute(
+            "INSERT INTO evidence_sync_state (record_id, status, attempt_count) "
+            "SELECT er.record_id, ?, 0 FROM evidence_records er "
+            "WHERE NOT EXISTS ("
+            "SELECT 1 FROM evidence_sync_state ss WHERE ss.record_id = er.record_id"
+            ")",
+            [SYNC_STATUS_PENDING],
+        )
+
+    def _require_sync_state(self, record_id: str) -> None:
+        row = self._connection.execute(
+            "SELECT record_id FROM evidence_sync_state WHERE record_id = ?",
+            [record_id],
+        ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown evidence record_id: {record_id}")
+
+    @staticmethod
+    def _sync_state_from_row(row: tuple[Any, ...]) -> EvidenceSyncState:
+        return EvidenceSyncState(
+            record_id=row[0],
+            status=row[1],
+            attempt_count=row[2],
+            last_attempt_at=row[3],
+            last_synced_at=row[4],
+            last_error=row[5],
+            next_retry_at=row[6],
+            remote_status_code=row[7],
+            remote_evidence_id=row[8],
+        )
+
+    @staticmethod
+    def _now_iso() -> str:
+        return datetime.now(timezone.utc).isoformat()
+
+    def get_sync_state(self, record_id: str) -> EvidenceSyncState | None:
+        """Return mutable sync metadata for an evidence record."""
+        self._ensure_initialized()
+        row = self._connection.execute(
+            "SELECT record_id, status, attempt_count, last_attempt_at, "
+            "last_synced_at, last_error, next_retry_at, remote_status_code, "
+            "remote_evidence_id FROM evidence_sync_state WHERE record_id = ?",
+            [record_id],
+        ).fetchone()
+        return self._sync_state_from_row(row) if row else None
+
+    def get_pending_sync_records(self, now: str | None = None) -> list[EvidenceRecord]:
+        """Return records eligible for sync, ordered by immutable evidence sequence."""
+        self._ensure_initialized()
+        effective_now = now or self._now_iso()
+        conditions = [
+            "ss.status IN (?, ?)",
+            "(ss.next_retry_at IS NULL OR ss.next_retry_at <= ?)",
+        ]
+        params: list[Any] = [SYNC_STATUS_PENDING, SYNC_STATUS_FAILED, effective_now]
+        if self._tenant_id is not None:
+            conditions.append("er.tenant_id = ?")
+            params.append(self._tenant_id)
+        params.append(getattr(self._config, "sync_max_queue_size", 10000))
+        query = (
+            "SELECT "
+            + SYNC_SELECT_COLUMNS
+            + " FROM evidence_records er "
+            "JOIN evidence_sync_state ss ON ss.record_id = er.record_id "
+            "WHERE "
+            + " AND ".join(conditions)
+            + " ORDER BY er.seq_id ASC LIMIT ?"
+        )
+        rows = self._connection.execute(query, params).fetchall()  # nosemgrep
+        return [self._row_to_record(row) for row in rows]
+
+    def mark_sync_synced(
+        self,
+        record_id: str,
+        *,
+        synced_at: str | None = None,
+        remote_status_code: int | None = None,
+        remote_evidence_id: str | None = None,
+    ) -> None:
+        """Mark an evidence record as successfully synced."""
+        self._ensure_initialized()
+        self._require_sync_state(record_id)
+        self._connection.execute(
+            "UPDATE evidence_sync_state SET status = ?, last_synced_at = ?, "
+            "last_error = NULL, next_retry_at = NULL, remote_status_code = ?, "
+            "remote_evidence_id = ? WHERE record_id = ?",
+            [
+                SYNC_STATUS_SYNCED,
+                synced_at or self._now_iso(),
+                remote_status_code,
+                remote_evidence_id,
+                record_id,
+            ],
+        )
+
+    def mark_sync_failed(
+        self,
+        record_id: str,
+        *,
+        error: str,
+        attempted_at: str | None = None,
+        next_retry_at: str | None = None,
+        remote_status_code: int | None = None,
+    ) -> None:
+        """Record a failed sync attempt and optional retry time."""
+        self._ensure_initialized()
+        self._require_sync_state(record_id)
+        self._connection.execute(
+            "UPDATE evidence_sync_state SET status = ?, "
+            "attempt_count = attempt_count + 1, last_attempt_at = ?, "
+            "last_error = ?, next_retry_at = ?, remote_status_code = ? "
+            "WHERE record_id = ?",
+            [
+                SYNC_STATUS_FAILED,
+                attempted_at or self._now_iso(),
+                error,
+                next_retry_at,
+                remote_status_code,
+                record_id,
+            ],
+        )
+
+    def get_sync_summary(self) -> EvidenceSyncSummary:
+        """Return aggregate sync metadata without contacting any platform service."""
+        self._ensure_initialized()
+        if self._tenant_id is not None:
+            join = " JOIN evidence_records er ON er.record_id = ss.record_id"
+            params: list[Any] = [self._tenant_id]
+            tenant_conditions = ["er.tenant_id = ?"]
+        else:
+            join = ""
+            params = []
+            tenant_conditions = []
+        base_from = " FROM evidence_sync_state ss" + join
+        status_where = (
+            " WHERE " + " AND ".join(tenant_conditions)
+            if tenant_conditions
+            else ""
+        )
+        counts = dict(
+            self._connection.execute(  # nosemgrep
+                "SELECT ss.status, COUNT(*)"
+                + base_from
+                + status_where
+                + " GROUP BY ss.status",
+                params,
+            ).fetchall()
+        )
+        last_sync = self._connection.execute(  # nosemgrep
+            "SELECT MAX(ss.last_synced_at)" + base_from + status_where,
+            params,
+        ).fetchone()
+        last_error_conditions = [*tenant_conditions, "ss.last_error IS NOT NULL"]
+        last_error_where = " WHERE " + " AND ".join(last_error_conditions)
+        last_error = self._connection.execute(  # nosemgrep
+            "SELECT ss.last_error"
+            + base_from
+            + last_error_where
+            + " ORDER BY ss.last_attempt_at DESC NULLS LAST LIMIT 1",
+            params,
+        ).fetchone()
+        next_retry_conditions = [*tenant_conditions, "ss.next_retry_at IS NOT NULL"]
+        next_retry_where = " WHERE " + " AND ".join(next_retry_conditions)
+        next_retry = self._connection.execute(  # nosemgrep
+            "SELECT MIN(ss.next_retry_at)" + base_from + next_retry_where,
+            params,
+        ).fetchone()
+        return EvidenceSyncSummary(
+            pending_count=counts.get(SYNC_STATUS_PENDING, 0),
+            failed_count=counts.get(SYNC_STATUS_FAILED, 0),
+            last_sync_at=last_sync[0] if last_sync else None,
+            last_error=last_error[0] if last_error else None,
+            next_retry_at=next_retry[0] if next_retry else None,
+        )
 
     def _forward_to_evidence_adapter(self, record: EvidenceRecord) -> None:
         if self._evidence_adapter is None:
@@ -480,6 +706,8 @@ class EvidenceStore:
         """
         self._ensure_initialized()
         n = self.count()
+        self._connection.execute("DELETE FROM evidence_sync_state")
+        self._connection.execute("DELETE FROM evidence_sync_meta")
         self._connection.execute("DELETE FROM evidence_records")
         return n
 
@@ -689,6 +917,12 @@ class EvidenceStore:
         count = row[0] if row else 0
 
         if count > 0:
+            self._connection.execute(
+                "DELETE FROM evidence_sync_state WHERE record_id IN ("
+                "SELECT record_id FROM evidence_records WHERE timestamp < ?"
+                ")",
+                [before_timestamp],
+            )
             self._connection.execute(
                 "DELETE FROM evidence_records WHERE timestamp < ?",
                 [before_timestamp],

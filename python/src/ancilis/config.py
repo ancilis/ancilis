@@ -87,6 +87,54 @@ class CliConfig(BaseModel):
     update_check_interval: int = 86400
 
 
+class PlatformConfig(BaseModel):
+    url: str | None = None
+    api_key_env: str = "ANCILIS_API_KEY"
+
+
+_VALID_SYNC_OFFLINE_MODES = {"auto", "always_offline", "always_online"}
+
+
+class SyncConfig(BaseModel):
+    offline_mode: str = "auto"
+    interval_seconds: int = 300
+    max_retries: int = 8
+    backoff_base_seconds: int = 2
+    max_queue_size: int = 10000
+    batch_size: int = 100
+
+    @field_validator("offline_mode")
+    @classmethod
+    def validate_offline_mode(cls, v: str) -> str:
+        if v not in _VALID_SYNC_OFFLINE_MODES:
+            raise ValueError(
+                "sync.offline_mode must be one of: "
+                f"{', '.join(sorted(_VALID_SYNC_OFFLINE_MODES))}"
+            )
+        return v
+
+    @field_validator("interval_seconds", "max_queue_size", "batch_size")
+    @classmethod
+    def validate_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("sync numeric values must be positive")
+        return v
+
+    @field_validator("max_retries", "backoff_base_seconds")
+    @classmethod
+    def validate_non_negative(cls, v: int) -> int:
+        if v < 0:
+            raise ValueError("sync retry values must be non-negative")
+        return v
+
+    @field_validator("batch_size")
+    @classmethod
+    def validate_batch_size_cap(cls, v: int) -> int:
+        if v > 100:
+            raise ValueError("sync.batch_size must be <= 100")
+        return v
+
+
 _VALID_SEVERITY_THRESHOLDS = {"critical", "high", "medium", "low"}
 
 
@@ -116,6 +164,8 @@ class AncilisConfig(BaseModel):
     my_agent_handles: list[str] = Field(default_factory=list)
     certification_targets: list[str] = Field(default_factory=list)
     compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
+    platform: PlatformConfig = Field(default_factory=PlatformConfig)
+    sync: SyncConfig = Field(default_factory=SyncConfig)
     cli: CliConfig = Field(default_factory=CliConfig)
     scan: ScanConfig = Field(default_factory=ScanConfig)
 
@@ -129,6 +179,8 @@ class AncilisConfig(BaseModel):
                 "my_agent_handles",
                 "certification_targets",
                 "compliance",
+                "platform",
+                "sync",
                 "cli",
                 "scan",
             }
@@ -268,6 +320,14 @@ class ResolvedConfig:
         self.scope_blocked_destinations: list[str] = []
         self.active_certifications: list[str] = []
         self.llm_provider: str | None = None
+        self.platform_url: str | None = None
+        self.platform_api_key_env: str = "ANCILIS_API_KEY"
+        self.sync_offline_mode: str = "auto"
+        self.sync_interval_seconds: int = 300
+        self.sync_max_retries: int = 8
+        self.sync_backoff_base_seconds: int = 2
+        self.sync_max_queue_size: int = 10000
+        self.sync_batch_size: int = 100
         self.control_activation_sources: dict[str, set[str]] = {}
         self.custom_controls: dict[str, CustomControlDefinition] = {}
         # Per-control overlay requirements: control_id -> {overlay_id: {evidence_requirements, framework_reference}}
@@ -403,6 +463,14 @@ def resolve_config(
     result.scan_dependencies_enabled = config.scan.dependencies.enabled
     result.scan_dependencies_severity_threshold = config.scan.dependencies.severity_threshold
     result.scan_dependencies_ignore = list(config.scan.dependencies.ignore)
+    result.platform_url = config.platform.url
+    result.platform_api_key_env = config.platform.api_key_env
+    result.sync_offline_mode = config.sync.offline_mode
+    result.sync_interval_seconds = config.sync.interval_seconds
+    result.sync_max_retries = config.sync.max_retries
+    result.sync_backoff_base_seconds = config.sync.backoff_base_seconds
+    result.sync_max_queue_size = config.sync.max_queue_size
+    result.sync_batch_size = config.sync.batch_size
     result.tools_blocked = list(config.security.tools.blocked)
     result.scope_max_actions_per_minute = config.security.scope.max_actions_per_minute
     result.scope_allowed_destinations = list(config.security.scope.allowed_destinations)
