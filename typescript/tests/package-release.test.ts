@@ -82,6 +82,17 @@ describe("packaged CLI release readiness", () => {
 });
 
 describe("publish configuration", () => {
+  it("exports the public plugin contract entrypoint", () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as {
+      exports?: Record<string, unknown>;
+    };
+
+    expect(pkg.exports?.["./plugins"]).toMatchObject({
+      import: "./dist/ancilis/plugins/index.js",
+      types: "./dist/ancilis/plugins/index.d.ts",
+    });
+  });
+
   it("defines a prepublishOnly gate that builds, tests, and runs the package smoke check", () => {
     const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as {
       scripts?: Record<string, string>;

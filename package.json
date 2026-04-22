@@ -17,6 +17,10 @@
       "import": "./dist/ancilis/testing/index.js",
       "types": "./dist/ancilis/testing/index.d.ts"
     },
+    "./plugins": {
+      "import": "./dist/ancilis/plugins/index.js",
+      "types": "./dist/ancilis/plugins/index.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "files": [

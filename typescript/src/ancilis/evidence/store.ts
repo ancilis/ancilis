@@ -410,9 +410,9 @@ export class EvidenceStore {
         outputSummary: record.outputSummary,
         sessionId: record.sessionId,
         tenantId: record.tenantId,
-        detectedDataTypes: record.detectedDataTypes,
-        sdkVersion: record.sdkVersion,
-        classificationContext: record.classificationContext,
+        detectedDataTypes: record.detectedDataTypes ?? [],
+        sdkVersion: record.sdkVersion ?? null,
+        classificationContext: record.classificationContext ?? {},
       });
       const expectedHash = computeHash(canon);
 
