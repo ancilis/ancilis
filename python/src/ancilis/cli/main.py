@@ -10,12 +10,14 @@ from ancilis.cli.validate import validate
 from ancilis.cli.approve import approve_tool
 from ancilis.cli.doctor import doctor
 from ancilis.cli.evidence import evidence
+from ancilis.cli.export import export
 from ancilis.cli.connect import connect
 from ancilis.cli.scan import scan
 from ancilis.cli.baseline import baseline
 from ancilis.cli.init import init
 from ancilis.cli.plugins import plugins
 from ancilis.cli.shell import shell
+from ancilis.cli.serve import serve
 
 
 @click.group()
@@ -37,12 +39,14 @@ cli.add_command(report)
 cli.add_command(approve_tool)
 cli.add_command(doctor)
 cli.add_command(evidence)
+cli.add_command(export)
 cli.add_command(connect)
 cli.add_command(scan)
 cli.add_command(baseline)
 cli.add_command(init)
 cli.add_command(plugins)
 cli.add_command(shell)
+cli.add_command(serve)
 
 
 @cli.group(name="config")

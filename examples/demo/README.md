@@ -58,6 +58,16 @@ ANCILIS_DEMO_SKIP_STACK_START=1
 
 Set `ANCILIS_DEMO_SKIP_STACK_START=1` when the Platform API and dashboard are already running. In that mode, `run-all.sh` skips the local `docker compose up` step and reuses the stack exposed at `ANCILIS_DEMO_BACKEND_URL` and `ANCILIS_DEMO_DASHBOARD_URL`.
 
+## Screen-Recording Discovery Path
+
+Use this for the acquirer-facing flow where the platform discovers a realistic agent fleet, surfaces data classifications, and syncs SDK evidence through the SDK Direct adapter:
+
+```bash
+bash examples/demo/run-discovery.sh
+```
+
+The discovery demo seeds five agents across MCP, Bedrock, CLI, Framework, and HTTP architectures. Each agent emits hash-chained evidence over a simulated multi-day timeline, includes real pattern detections for PHI, PII, or cardholder data, and writes a manifest that contains the local DuckDB paths for SDK Direct ingestion.
+
 When the full walkthrough is up, the default local endpoints are:
 - Dashboard: `http://localhost:3000`
 - Backend API: `http://localhost:8000`

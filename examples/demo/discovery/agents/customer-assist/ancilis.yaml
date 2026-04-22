@@ -1,11 +1,11 @@
 agent:
   name: customer-assist
-  description: Customer support agent with payment account access
+  description: HTTP support copilot that calls CRM, billing, and patient-support APIs
   owner: support-team
 my_agent_handles:
+  - health_records
   - personal_info
   - credit_cards
-  - financial_records
 certification_targets:
   - aiuc-1
 security:

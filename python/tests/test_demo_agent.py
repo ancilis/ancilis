@@ -387,6 +387,7 @@ def test_demo_readme_surfaces_end_to_end_walkthrough() -> None:
     assert "5-Minute Demo Path" in readme
     assert "bash examples/demo/setup.sh" in readme
     assert "bash examples/demo/run-all.sh" in readme
+    assert "bash examples/demo/run-discovery.sh" in readme
     assert "ANCILIS_PLATFORM_DIR" in readme
     assert "ANCILIS_DEMO_BACKEND_URL" in readme
     assert "ANCILIS_DEMO_DASHBOARD_URL" in readme
@@ -403,6 +404,7 @@ def test_demo_readme_surfaces_end_to_end_walkthrough() -> None:
     assert "ALLOW/BLOCK counts" not in readme
     assert "tool registry" in readme
     assert "summary block" in readme
+    assert "MCP, Bedrock, CLI, Framework, and HTTP" in readme
     assert "ancilis report generate" in readme
 
 

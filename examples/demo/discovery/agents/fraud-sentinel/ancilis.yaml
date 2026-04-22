@@ -1,8 +1,9 @@
 agent:
   name: fraud-sentinel
-  description: Real-time fraud detection and transaction risk scoring
+  description: CLI risk agent scoring card transactions and identity signals from batch jobs
   owner: risk-team
 my_agent_handles:
+  - credit_cards
   - financial_records
   - personal_info
 certification_targets:
