@@ -43,8 +43,16 @@ export type { Action, ToolInfo, ActionParameters, ActionContext, ControlResult, 
 export { AncilisMiddleware, BlockedToolCallError, scanResponse } from "./middleware/index.js";
 export type { AncilisMiddlewareOptions, McpClientLike, ScanResult, EncryptionFinding, DriftEvent } from "./middleware/index.js";
 
-export { EvidenceStore, GENESIS_SEED, canonicalPayload, computeHash } from "./evidence/index.js";
-export type { EvidenceRecord } from "./evidence/index.js";
+export { EvidenceStore, GENESIS_SEED, canonicalPayload, computeHash, resolveEvidenceAdapter } from "./evidence/index.js";
+export type {
+  EvidenceAdapter,
+  EvidenceAdapterExport,
+  EvidenceAdapterPayload,
+  EvidenceAdapterQuery,
+  EvidenceAdapterSelection,
+  EvidenceRecord,
+  ResolveEvidenceAdapterOptions,
+} from "./evidence/index.js";
 
 export {
   ActivationResolver,
@@ -117,12 +125,15 @@ export type { DoctorResult, PluginsCommandResult, PluginsListOptions, PluginsVal
 export {
   BedrockActionProducer,
   BedrockAdapter,
+  BUILTIN_PRODUCER_NAMES,
   CLIActionProducer,
   HTTPActionProducer,
   MCPActionProducer,
   ToolActionProducer,
   BlockedActionError,
   ProducerType,
+  resolveRuntimeProducers,
+  translateRuntimeAction,
   wrapTool,
   tool,
   evaluateAndExecute,
@@ -139,6 +150,8 @@ export type {
   HTTPObservation,
   HTTPRequest,
   MCPInvocation,
+  ResolveRuntimeProducersOptions,
+  RuntimeProducerSelection,
   ToolExecutionResult,
   ToolInvocation,
   ToolWrapOptions,
