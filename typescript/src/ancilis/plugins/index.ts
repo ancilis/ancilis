@@ -1,7 +1,7 @@
 /** Plugin contracts and metadata-first discovery for TypeScript SDK extensions. */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { ActionProducer } from "../producers/protocol.js";
 import { packageRootFrom } from "../shared-path.js";
@@ -99,14 +99,14 @@ function packageVersionOf(pkg: PackageJson): string {
   return typeof pkg.version === "string" && pkg.version.length > 0 ? pkg.version : "0.0.0";
 }
 
-function rawPluginsFrom(pkg: PackageJson): RawPluginMetadata[] {
+function rawPluginsFrom(pkg: PackageJson): unknown[] {
   if (!isRecord(pkg.ancilis)) return [];
   const plugins = pkg.ancilis.plugins;
   if (Array.isArray(plugins)) {
-    return plugins.filter(isRecord) as RawPluginMetadata[];
+    return plugins;
   }
-  if (isRecord(pkg.ancilis.plugin)) {
-    return [pkg.ancilis.plugin as RawPluginMetadata];
+  if (Object.hasOwn(pkg.ancilis, "plugin")) {
+    return [pkg.ancilis.plugin];
   }
   return [];
 }
@@ -273,6 +273,23 @@ async function validatePluginExport(
   }
 }
 
+function fallbackPackageName(packageDir: string): string {
+  return basename(packageDir) || "unknown";
+}
+
+function packageReadErrorRecord(candidate: PackageCandidate, error: unknown): PluginRecord {
+  return {
+    name: fallbackPackageName(candidate.packageDir),
+    pluginType: "unknown",
+    packageName: fallbackPackageName(candidate.packageDir),
+    packageVersion: "0.0.0",
+    packageDir: candidate.packageDir,
+    metadata: null,
+    compatible: false,
+    skipReason: `failed to read package metadata: ${(error as Error).message ?? String(error)}`,
+  };
+}
+
 function malformedRecord(packageName: string, packageVersion: string, packageDir: string, index: number): PluginRecord {
   return {
     name: `${packageName}#${index}`,
@@ -306,13 +323,28 @@ export class PluginRegistry {
     const records: PluginRecord[] = [];
 
     for (const candidate of discoverPackageCandidates(rootDir, options.packageOrPath)) {
-      const pkg = readJson(candidate.packageJsonPath) as PackageJson;
-      const packageName = packageNameOf(pkg, candidate.packageDir.split(/[\\/]/).at(-1) ?? "unknown");
+      let parsedPackage: unknown;
+      try {
+        parsedPackage = readJson(candidate.packageJsonPath);
+      } catch (error: unknown) {
+        records.push(packageReadErrorRecord(candidate, error));
+        continue;
+      }
+
+      if (!isRecord(parsedPackage)) {
+        records.push(packageReadErrorRecord(candidate, new Error("package.json must be an object")));
+        continue;
+      }
+
+      const pkg = parsedPackage as PackageJson;
+      const packageName = packageNameOf(pkg, fallbackPackageName(candidate.packageDir));
       const packageVersion = packageVersionOf(pkg);
       const rawPlugins = rawPluginsFrom(pkg);
 
       rawPlugins.forEach((raw, index) => {
-        const metadata = normalizePluginMetadata(raw, packageName, packageVersion);
+        const metadata = isRecord(raw)
+          ? normalizePluginMetadata(raw as RawPluginMetadata, packageName, packageVersion)
+          : null;
         if (!metadata) {
           records.push(malformedRecord(packageName, packageVersion, candidate.packageDir, index));
           return;
