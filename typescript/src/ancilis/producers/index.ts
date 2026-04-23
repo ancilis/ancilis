@@ -23,3 +23,6 @@ export type { HTTPRequest, HTTPObservation, HTTPExecutionResult } from "./http.j
 
 export { BedrockActionProducer, BedrockAdapter } from "./bedrock.js";
 export type { BedrockInvocation, BedrockObservation } from "./bedrock.js";
+
+export { BUILTIN_PRODUCER_NAMES, resolveRuntimeProducers, translateRuntimeAction } from "./runtime.js";
+export type { RuntimeProducerSelection, ResolveRuntimeProducersOptions } from "./runtime.js";

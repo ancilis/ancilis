@@ -200,7 +200,7 @@ export class Engine {
       dataClassifications,
       detectedDataTypes,
       totalDurationMs: performance.now() - start,
-      context: { sessionId: action.context?.sessionId ?? undefined },
+      context: action.context?.sessionId ? { sessionId: action.context.sessionId } : undefined,
     };
   }
 

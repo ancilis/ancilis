@@ -5,6 +5,7 @@ import {
   loadOverlayProfiles,
   loadTaxonomy,
 } from "./loader.js";
+import type { LoadOverlayProfilesOptions } from "./loader.js";
 import { normalizeOverlayIds } from "../overlays/index.js";
 
 export const ALL_AKSI_CONTROLS = new Set([
@@ -31,12 +32,16 @@ export interface ActivationSpec {
   humanOversightRequired: boolean;
 }
 
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
 export class ActivationResolver {
   private overlayProfiles: Map<string, Record<string, unknown>>;
   private taxonomy: Record<string, unknown>;
 
-  constructor() {
-    this.overlayProfiles = loadOverlayProfiles();
+  constructor(options: LoadOverlayProfilesOptions = {}) {
+    this.overlayProfiles = loadOverlayProfiles(options);
     this.taxonomy = loadTaxonomy();
   }
 
@@ -92,6 +97,19 @@ export class ActivationResolver {
     const classificationLookup = new Map<string, string[]>();
     for (const entry of ((this.taxonomy as Record<string, Array<Record<string, unknown>>>).classifications ?? [])) {
       classificationLookup.set(entry.code as string, normalizeOverlayIds((entry.overlays ?? []) as string[]));
+    }
+
+    for (const [overlayId, profile] of this.overlayProfiles.entries()) {
+      const triggerType = profile.trigger_type;
+      if (triggerType !== "data_classification") continue;
+      const triggeredBy = stringList(profile.triggered_by ?? profile.triggered_by_classifications);
+      for (const classification of triggeredBy) {
+        const overlayIds = classificationLookup.get(classification) ?? [];
+        if (!overlayIds.includes(overlayId)) {
+          overlayIds.push(overlayId);
+          classificationLookup.set(classification, overlayIds);
+        }
+      }
     }
 
     const allDcCodes = new Set<string>();
@@ -156,6 +174,26 @@ export class ActivationResolver {
       const retention = (evidencePackaging.retention_days as number) ?? 365;
       if (retention > spec.evidenceRetentionDays) {
         spec.evidenceRetentionDays = retention;
+      }
+    }
+
+    for (const [overlayId, profile] of this.overlayProfiles.entries()) {
+      if (profile.trigger_type !== "certification_target") continue;
+      const triggeredBy = stringList(profile.triggered_by);
+      for (const target of certTargets) {
+        if (!triggeredBy.includes(target)) continue;
+        if (!spec.activeOverlays.includes(overlayId)) {
+          spec.activeOverlays.push(overlayId);
+          spec.activationSource[overlayId] = `certification_targets:${target}`;
+        }
+        this.applyOverlay(spec, profile, `overlay:${overlayId}`);
+        const retention = (profile.evidence_retention_minimum_days as number) ?? 365;
+        if (retention > spec.evidenceRetentionDays) {
+          spec.evidenceRetentionDays = retention;
+        }
+        if (profile.human_oversight_required === true) {
+          spec.humanOversightRequired = true;
+        }
       }
     }
   }

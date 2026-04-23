@@ -48,6 +48,7 @@ export interface PluginRecord {
   readonly packageDir: string;
   readonly metadata: PluginMetadata | null;
   readonly compatible: boolean;
+  readonly plugin?: unknown;
   readonly skipReason?: string;
 }
 
@@ -258,18 +259,18 @@ function moduleSpecifier(packageDir: string, metadata: PluginMetadata): string {
   return metadata.module;
 }
 
-async function validatePluginExport(
+async function importPluginExport(
   packageDir: string,
   metadata: PluginMetadata,
-): Promise<string | undefined> {
+): Promise<{ plugin?: unknown; skipReason?: string }> {
   try {
     const mod = await import(moduleSpecifier(packageDir, metadata));
     if (!(metadata.exportName in mod)) {
-      return `missing plugin export: ${metadata.exportName}`;
+      return { skipReason: `missing plugin export: ${metadata.exportName}` };
     }
-    return undefined;
+    return { plugin: mod[metadata.exportName] };
   } catch (error: unknown) {
-    return `failed to load plugin module: ${(error as Error).message ?? String(error)}`;
+    return { skipReason: `failed to load plugin module: ${(error as Error).message ?? String(error)}` };
   }
 }
 
@@ -371,9 +372,10 @@ export class PluginRegistry {
           validatedRecords.push(record);
           continue;
         }
-        const exportSkipReason = await validatePluginExport(record.packageDir, record.metadata);
+        const { plugin, skipReason: exportSkipReason } = await importPluginExport(record.packageDir, record.metadata);
         validatedRecords.push({
           ...record,
+          plugin,
           compatible: exportSkipReason === undefined,
           skipReason: exportSkipReason,
         });
@@ -400,5 +402,24 @@ export class PluginRegistry {
 
   warnings(): string[] {
     return this.skipped().map((record) => `${record.name}: ${record.skipReason ?? "skipped"}`);
+  }
+
+  async load(record: PluginRecord): Promise<unknown> {
+    if (record.plugin !== undefined) return record.plugin;
+    if (!record.compatible || !record.metadata) {
+      throw new Error(record.skipReason ?? `Plugin '${record.name}' is not loadable.`);
+    }
+
+    const { plugin, skipReason } = await importPluginExport(record.packageDir, record.metadata);
+    if (skipReason !== undefined) {
+      throw new Error(skipReason);
+    }
+
+    this.records = this.records.map((candidate) => (
+      candidate === record
+        ? { ...candidate, plugin }
+        : candidate
+    ));
+    return plugin;
   }
 }

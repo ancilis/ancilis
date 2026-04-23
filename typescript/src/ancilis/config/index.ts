@@ -9,7 +9,9 @@ import { parse as parseYaml } from "yaml";
 import { sharedPathFrom } from "../shared-path.js";
 import { ConfigError } from "../errors.js";
 import { ActivationResolver } from "../activation/resolver.js";
+import { loadOverlayProfiles } from "../activation/loader.js";
 import { normalizeOverlayIds } from "../overlays/index.js";
+import type { PluginRegistry } from "../plugins/index.js";
 
 // Resolve shared/ directory relative to the installed package root
 const SHARED_DIR = sharedPathFrom(import.meta.url);
@@ -98,20 +100,6 @@ interface ControlDefinition {
   [key: string]: unknown;
 }
 
-interface OverlayDefinition {
-  id: string;
-  name: string;
-  triggered_by_classifications: string[];
-  control_adjustments: Record<string, {
-    threshold_adjustment: string;
-    additional_evidence_fields: string[];
-    regulatory_citation: string;
-  }>;
-  evidence_retention_minimum_days: number;
-  human_oversight_required: boolean;
-  [key: string]: unknown;
-}
-
 interface ClassificationEntry {
   code: string;
   name: string;
@@ -133,16 +121,6 @@ function loadControlDefinitions(): Map<string, ControlDefinition> {
     controls.set(data.id, data);
   }
   return controls;
-}
-
-function loadOverlayDefinitions(): Map<string, OverlayDefinition> {
-  const overlays = new Map<string, OverlayDefinition>();
-  const files = readdirSync(OVERLAYS_DIR).filter(f => f.endsWith(".json")).sort();
-  for (const file of files) {
-    const data = JSON.parse(readFileSync(join(OVERLAYS_DIR, file), "utf-8")) as OverlayDefinition;
-    overlays.set(data.id, data);
-  }
-  return overlays;
 }
 
 function loadTaxonomy(): Taxonomy {
@@ -209,6 +187,10 @@ export interface ResolvedConfig {
   scanDependenciesIgnore: string[];
 }
 
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
 // --- Validation ---
 
 function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; warnings: string[] } {
@@ -272,7 +254,14 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
 
 // --- Config Resolution ---
 
-function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfig {
+function resolveConfig(
+  config: AncilisConfig,
+  warnings: string[],
+  options: {
+    pluginRegistry?: PluginRegistry;
+    pluginConfigs?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+  } = {},
+): ResolvedConfig {
   const result: ResolvedConfig = {
     agentName: config.agent.name,
     agentId: config.agent.agent_id ?? null,
@@ -309,7 +298,11 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
   };
 
   const controlDefs = loadControlDefinitions();
-  const overlayDefs = loadOverlayDefinitions();
+  const overlayDefs = loadOverlayProfiles({
+    pluginRegistry: options.pluginRegistry,
+    pluginConfigs: options.pluginConfigs,
+    warnings,
+  });
   const taxonomy = loadTaxonomy();
 
   // Resolve controls
@@ -344,25 +337,59 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
     }
   }
 
+  // Resolve certification targets before overlay activation so plugin overlays can trigger from them.
+  const validCerts = loadValidCertTargets();
+  for (const ct of config.certification_targets) {
+    if (validCerts.has(ct)) {
+      result.activeCertifications.push(ct);
+    }
+  }
+
   // Build classification-to-overlay lookup
   const classificationLookup = new Map<string, string[]>();
   for (const entry of taxonomy.classifications) {
     classificationLookup.set(entry.code, normalizeOverlayIds(entry.overlays));
   }
 
-  // Determine which overlays should activate
+  const addOverlayTrigger = (overlayId: string, trigger: string): void => {
+    if (!overlayTriggers.has(overlayId)) {
+      overlayTriggers.set(overlayId, []);
+    }
+    const triggers = overlayTriggers.get(overlayId)!;
+    if (!triggers.includes(trigger)) {
+      triggers.push(trigger);
+    }
+  };
+
+  // Determine which overlays should activate.
   const overlayTriggers = new Map<string, string[]>();
   for (const [dataType, dcCodes] of result.dataClassifications) {
     for (const dcCode of dcCodes) {
       const overlayIds = classificationLookup.get(dcCode) ?? [];
       for (const oid of overlayIds) {
-        if (!overlayTriggers.has(oid)) {
-          overlayTriggers.set(oid, []);
+        addOverlayTrigger(oid, `${dcCode} via ${dataType}`);
+      }
+    }
+  }
+
+  for (const [overlayId, profile] of overlayDefs.entries()) {
+    if (profile.trigger_type === "data_classification") {
+      const triggeredBy = stringList(profile.triggered_by ?? profile.triggered_by_classifications);
+      for (const [dataType, dcCodes] of result.dataClassifications) {
+        for (const dcCode of dcCodes) {
+          if (triggeredBy.includes(dcCode)) {
+            addOverlayTrigger(overlayId, `${dcCode} via ${dataType}`);
+          }
         }
-        const triggerStr = `${dcCode} via ${dataType}`;
-        const triggers = overlayTriggers.get(oid)!;
-        if (!triggers.includes(triggerStr)) {
-          triggers.push(triggerStr);
+      }
+      continue;
+    }
+
+    if (profile.trigger_type === "certification_target") {
+      const triggeredBy = stringList(profile.triggered_by);
+      for (const certTarget of result.activeCertifications) {
+        if (triggeredBy.includes(certTarget)) {
+          addOverlayTrigger(overlayId, `certification_targets:${certTarget}`);
         }
       }
     }
@@ -394,14 +421,16 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
       const odef = overlayDefs.get(oid)!;
       result.activeOverlays.set(oid, {
         overlayId: oid,
-        name: odef.name,
+        name: typeof odef.name === "string" ? odef.name : oid,
         triggeredBy: triggers,
       });
     } else {
       for (const trigger of triggers) {
         const parts = trigger.split(" via ");
         const dcCode = parts[0]!;
-        const dataType = parts.length > 1 ? parts[1]! : "unknown";
+        const dataType = trigger.startsWith("certification_targets:")
+          ? "certification_target"
+          : (parts.length > 1 ? parts[1]! : "unknown");
         result.unavailableOverlays.push({
           overlayId: oid,
           triggeredBy: dcCode,
@@ -415,7 +444,10 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
   let maxRetention = config.compliance.evidence.retention_days;
   for (const [oid] of result.activeOverlays) {
     const odef = overlayDefs.get(oid)!;
-    const adjustments = odef.control_adjustments ?? {};
+    const adjustments = (odef.control_adjustments ?? {}) as Record<string, {
+      threshold_adjustment?: string;
+      regulatory_citation?: string;
+    }>;
     for (const [cid, adj] of Object.entries(adjustments)) {
       const control = result.controls.get(cid);
       if (control && control.enabled) {
@@ -431,7 +463,9 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
       }
     }
 
-    const retention = odef.evidence_retention_minimum_days ?? 365;
+    const retention = typeof odef.evidence_retention_minimum_days === "number"
+      ? odef.evidence_retention_minimum_days
+      : 365;
     if (retention > maxRetention) {
       maxRetention = retention;
     }
@@ -442,16 +476,12 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
   }
   result.evidenceRetentionDays = maxRetention;
 
-  // Resolve certification targets
-  const validCerts = loadValidCertTargets();
-  for (const ct of config.certification_targets) {
-    if (validCerts.has(ct)) {
-      result.activeCertifications.push(ct);
-    }
-  }
-
   if (result.activeCertifications.length > 0) {
-    const spec = new ActivationResolver().resolve({
+    const spec = new ActivationResolver({
+      pluginRegistry: options.pluginRegistry,
+      pluginConfigs: options.pluginConfigs,
+      warnings,
+    }).resolve({
       dataHandling: config.my_agent_handles.length > 0 ? config.my_agent_handles : undefined,
       certificationTargets: result.activeCertifications,
     });
@@ -488,6 +518,8 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
 export interface LoadConfigOptions {
   path?: string;
   raw?: Record<string, unknown>;
+  pluginRegistry?: PluginRegistry;
+  pluginConfigs?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 }
 
 export function loadConfig(options: LoadConfigOptions = {}): ResolvedConfig {
@@ -503,7 +535,10 @@ export function loadConfig(options: LoadConfigOptions = {}): ResolvedConfig {
   }
 
   const { config, warnings } = validateConfig(configDict);
-  return resolveConfig(config, warnings);
+  return resolveConfig(config, warnings, {
+    pluginRegistry: options.pluginRegistry,
+    pluginConfigs: options.pluginConfigs,
+  });
 }
 
 export function formatResolvedConfig(resolved: ResolvedConfig): string {

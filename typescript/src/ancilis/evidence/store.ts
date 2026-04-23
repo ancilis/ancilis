@@ -10,6 +10,7 @@ import type { EvaluationResult } from "../engine/result.js";
 import type { ResolvedConfig } from "../config/index.js";
 import { GENESIS_SEED, canonicalJsonStringify, canonicalPayload, computeHash } from "./chain.js";
 import type { EvidenceRecord } from "./record.js";
+import type { EvidenceAdapter, EvidenceAdapterPayload } from "./adapter.js";
 
 let _sdkVersion: string | undefined;
 try {
@@ -104,6 +105,8 @@ function sessionIdFrom(scope: SessionScope): string | null | undefined {
 export class EvidenceStore {
   private _db: DuckDBInstance | null = null;
   private _conn: DuckDBConnection | null = null;
+  private _evidenceAdapter: EvidenceAdapter | null;
+  private _evidenceAdapterMetadata: Readonly<Record<string, unknown>>;
   private _certifications: string[];
   private _llmProvider: string | null;
   private _initialized: Promise<void> | null = null;
@@ -111,8 +114,16 @@ export class EvidenceStore {
   private _inMemory: boolean;
   private _tenantId: string | undefined;
 
-  constructor(config: ResolvedConfig, options?: { dbPath?: string; inMemory?: boolean; tenantId?: string }) {
+  constructor(config: ResolvedConfig, options?: {
+    dbPath?: string;
+    inMemory?: boolean;
+    tenantId?: string;
+    evidenceAdapter?: EvidenceAdapter | null;
+    evidenceAdapterMetadata?: Readonly<Record<string, unknown>>;
+  }) {
     this._certifications = [...(config.activeCertifications ?? [])];
+    this._evidenceAdapter = options?.evidenceAdapter ?? null;
+    this._evidenceAdapterMetadata = options?.evidenceAdapterMetadata ?? {};
     this._llmProvider = config.llmProvider ?? null;
     this._inMemory = options?.inMemory ?? false;
     this._tenantId = options?.tenantId;
@@ -289,6 +300,20 @@ export class EvidenceStore {
       record.sdkVersion ?? null,
       JSON.stringify(record.classificationContext ?? {}),
     ]);
+
+    if (this._evidenceAdapter !== null) {
+      const payload: EvidenceAdapterPayload = {
+        record,
+        adapterMetadata: this._evidenceAdapterMetadata,
+      };
+      try {
+        await Promise.resolve(this._evidenceAdapter.store(payload));
+      } catch (error: unknown) {
+        console.warn(
+          `[ancilis] plugin evidence adapter store hook failed: ${(error as Error).message ?? String(error)}`,
+        );
+      }
+    }
 
     return record;
   }
