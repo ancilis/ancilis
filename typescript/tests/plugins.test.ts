@@ -143,6 +143,43 @@ describe("PluginRegistry", () => {
     expect(registry.skipped()[1]!.skipReason).toContain("requires Ancilis SDK >=99.0.0");
   });
 
+  it("keeps discovering plugins when a package has invalid JSON metadata", async () => {
+    const rootDir = makeTempProject();
+    mkdirSync(join(rootDir, "node_modules", "ancilis-invalid-json"), { recursive: true });
+    writeFileSync(join(rootDir, "node_modules", "ancilis-invalid-json", "package.json"), "{ bad json");
+    writePluginPackage(rootDir, "ancilis-good", [
+      pluginMetadata({ name: "good-producer", type: "producer" }),
+    ]);
+
+    const { PluginRegistry } = await import("../src/ancilis/plugins/index.js");
+    const registry = await PluginRegistry.discover({ rootDir });
+
+    expect(registry.compatible().map((record) => record.name)).toEqual(["good-producer"]);
+    expect(registry.skipped().map((record) => record.name)).toContain("ancilis-invalid-json");
+    expect(registry.skipped().find((record) => record.name === "ancilis-invalid-json")!.skipReason).toContain(
+      "failed to read package metadata",
+    );
+  });
+
+  it("records non-object plugin metadata entries as skipped records", async () => {
+    const rootDir = makeTempProject();
+    writePluginPackage(rootDir, "ancilis-weird", [
+      null,
+      "not metadata",
+      pluginMetadata({ name: "valid-weird-producer", type: "producer" }),
+    ]);
+
+    const { PluginRegistry } = await import("../src/ancilis/plugins/index.js");
+    const registry = await PluginRegistry.discover({ rootDir });
+
+    expect(registry.compatible().map((record) => record.name)).toEqual(["valid-weird-producer"]);
+    expect(registry.skipped().map((record) => record.name)).toEqual(["ancilis-weird#0", "ancilis-weird#1"]);
+    expect(registry.skipped().map((record) => record.skipReason)).toEqual([
+      "missing PluginMetadata",
+      "missing PluginMetadata",
+    ]);
+  });
+
   it("validates dynamic imports and reports missing exports or import failures as skipped records", async () => {
     const rootDir = makeTempProject();
     writePluginPackage(rootDir, "ancilis-imports", [
@@ -176,7 +213,7 @@ describe("ancilis plugins CLI", () => {
     expect(stdout()).toContain("cli-producer");
     expect(stdout()).toContain("compatible");
     expect(stdout()).toContain("cli-future");
-    expect(stdout()).toContain("requires Ancilis SDK >=99.0.0");
+    expect(stdout()).toContain("skipped: requires Ancilis SDK >=99.0.0");
   });
 
   it("validates a plugin package by path", async () => {

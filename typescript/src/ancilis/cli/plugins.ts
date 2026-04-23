@@ -42,7 +42,7 @@ function pluginsUsage(): string {
 }
 
 function recordStatus(record: PluginRecord): string {
-  return record.compatible ? "compatible" : (record.skipReason ?? "skipped");
+  return record.compatible ? "compatible" : `skipped: ${record.skipReason ?? "skipped"}`;
 }
 
 function renderRecords(records: PluginRecord[]): string {
