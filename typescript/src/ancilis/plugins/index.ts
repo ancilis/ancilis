@@ -365,27 +365,29 @@ export class PluginRegistry {
       });
     }
 
-    if (options.validateExports) {
-      const validatedRecords: PluginRecord[] = [];
-      for (const record of records) {
-        if (!record.compatible || !record.metadata) {
-          validatedRecords.push(record);
-          continue;
-        }
-        const { plugin, skipReason: exportSkipReason } = await importPluginExport(record.packageDir, record.metadata);
-        validatedRecords.push({
-          ...record,
-          plugin,
-          compatible: exportSkipReason === undefined,
-          skipReason: exportSkipReason,
-        });
+    const resolvedRecords: PluginRecord[] = [];
+    for (const record of records) {
+      if (!record.compatible || !record.metadata) {
+        resolvedRecords.push(record);
+        continue;
       }
-      this.records = validatedRecords;
-      this.sdkVersion = sdkVersion;
-      return this;
+
+      const shouldLoadExport = options.validateExports || record.metadata.pluginType === "overlay";
+      if (!shouldLoadExport) {
+        resolvedRecords.push(record);
+        continue;
+      }
+
+      const { plugin, skipReason: exportSkipReason } = await importPluginExport(record.packageDir, record.metadata);
+      resolvedRecords.push({
+        ...record,
+        plugin,
+        compatible: exportSkipReason === undefined,
+        skipReason: exportSkipReason,
+      });
     }
 
-    this.records = records;
+    this.records = resolvedRecords;
     this.sdkVersion = sdkVersion;
     return this;
   }
