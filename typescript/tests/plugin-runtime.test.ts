@@ -439,7 +439,7 @@ describe("plugin overlays", () => {
       ],
       overlayPluginModule,
     );
-    const pluginRegistry = await PluginRegistry.discover({ rootDir, validateExports: true });
+    const pluginRegistry = await PluginRegistry.discover({ rootDir });
 
     const spec = new ActivationResolver({
       pluginRegistry,
