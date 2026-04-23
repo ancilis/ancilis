@@ -46,6 +46,16 @@ The shell is read-only. It does not activate overlays, change config, rerun eval
 
 Start the local Ancilis stdio MCP server so MCP clients can inspect posture, evaluate a proposed action, and read evidence without mutating policy or writing evidence.
 
+`ancilis serve` is provided by the TypeScript/npm CLI. For local MCP clients, install or run the npm package and point the client at an absolute config path:
+
+```bash
+npm install -g ancilis
+# or run without a global install
+npx ancilis serve --transport stdio --config /absolute/path/to/ancilis.yaml
+```
+
+This MVP supports only the `stdio` transport. HTTP and SSE transports are not available.
+
 ```bash
 ancilis serve [OPTIONS]
 ```
@@ -71,6 +81,8 @@ npx ancilis serve --transport stdio --config /absolute/path/to/ancilis.yaml
 
 **Claude Desktop config example:**
 
+Add this server entry to your Claude Desktop MCP configuration:
+
 ```json
 {
   "mcpServers": {
@@ -90,6 +102,8 @@ npx ancilis serve --transport stdio --config /absolute/path/to/ancilis.yaml
 ```
 
 **Cursor config example:**
+
+Add the same local server entry to Cursor's MCP configuration:
 
 ```json
 {
