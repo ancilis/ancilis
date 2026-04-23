@@ -3,6 +3,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
+import process from "node:process";
+import type { Readable, Writable } from "node:stream";
 import { loadConfig, type ResolvedConfig } from "../config/index.js";
 import type { Action } from "../engine/action.js";
 import { Engine } from "../engine/engine.js";
@@ -31,6 +33,8 @@ export interface AncilisMcpServerOptions {
   dbPath?: string;
   name?: string;
   version?: string;
+  stdin?: Readable;
+  stdout?: Writable;
 }
 
 type SummaryShape = {
@@ -466,8 +470,48 @@ export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): M
   return server;
 }
 
+function waitForStdioShutdown(stdin: Readable): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+
+    const cleanup = (): void => {
+      stdin.off("end", handleShutdown);
+      stdin.off("close", handleShutdown);
+      stdin.off("error", handleError);
+    };
+
+    const handleShutdown = (): void => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve();
+    };
+
+    const handleError = (error: Error): void => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    stdin.once("end", handleShutdown);
+    stdin.once("close", handleShutdown);
+    stdin.once("error", handleError);
+    stdin.resume();
+  });
+}
+
 export async function runAncilisMcpServer(options: AncilisMcpServerOptions = {}): Promise<McpServer> {
+  const stdin = options.stdin ?? process.stdin;
+  const stdout = options.stdout ?? process.stdout;
   const server = createAncilisMcpServer(options);
-  await server.connect(new StdioServerTransport());
+  await server.connect(new StdioServerTransport(stdin, stdout));
+
+  try {
+    await waitForStdioShutdown(stdin);
+  } finally {
+    await server.close();
+  }
+
   return server;
 }

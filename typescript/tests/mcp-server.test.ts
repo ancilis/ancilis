@@ -3,6 +3,8 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { PassThrough } from "node:stream";
+import { setTimeout as delay } from "node:timers/promises";
 import { describe, expect, it } from "vitest";
 import * as ancilis from "../src/ancilis/index.js";
 import { loadConfig } from "../src/ancilis/config/index.js";
@@ -13,6 +15,7 @@ import {
   createAncilisMcpServer,
   evaluateActionOutputSchema,
   getEvidenceOutputSchema,
+  runAncilisMcpServer,
 } from "../src/ancilis/mcp/index.js";
 
 function tmpDir(): string {
@@ -122,6 +125,23 @@ describe("Ancilis MCP server", () => {
   it("exports MCP server helpers from the package root", () => {
     expect(ancilis.createAncilisMcpServer).toBe(createAncilisMcpServer);
     expect(ancilis.runAncilisMcpServer).toBeDefined();
+  });
+
+  it("keeps the stdio server alive until stdin closes", async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    let settled = false;
+
+    const serverPromise = runAncilisMcpServer({ stdin, stdout }).then(() => {
+      settled = true;
+    });
+
+    await delay(25);
+    expect(settled).toBe(false);
+
+    stdin.end();
+    await serverPromise;
+    expect(settled).toBe(true);
   });
 
   it("lists exactly the Ancilis assessment tools with explicit schemas", async () => {
