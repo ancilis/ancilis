@@ -1,24 +1,25 @@
 {
   "id": "dora",
   "name": "EU DORA — Digital Operational Resilience Act",
-  "version": "0.1",
+  "version": "0.3",
   "trigger_type": "data_classification",
-  "triggered_by": ["DC-FIN"],
-  "description": "Standalone DORA overlay for EU financial entities subject to the Digital Operational Resilience Act (Regulation (EU) 2022/2554). Enforcement date: January 17, 2025. Applies to banks, investment firms, insurance undertakings, payment institutions, electronic money institutions, crypto-asset service providers, and critical ICT third-party service providers. This overlay provides DORA-specific evidence requirements beyond the combined GLBA/SOX/DORA bundle — use when the regulated entity is an EU financial entity and DORA-specific auditor evidence is required. Key additions: ICT incident notification timeline requirements (Art. 19), DORA testing program (Arts. 24-26), and ICT third-party risk management (Arts. 28-30).",
+  "triggered_by": ["DC-FIN", "DC-PAY"],
+  "description": "DORA overlay for EU financial entities subject to the Digital Operational Resilience Act (Regulation (EU) 2022/2554). Enforcement date: January 17, 2025. Applies to banks, investment firms, insurance undertakings, payment institutions, electronic money institutions, crypto-asset service providers, and critical ICT third-party service providers. Updated to AKSI v0.3 (31 controls, 17 classifications). Key v0.3 additions: PR-09 (sandbox enforcement), PR-10 (memory integrity), RS-04 (cascade containment), PAY-01/PAY-02 (payment controls), DC-PAY trigger for payment entities under Art. 2(1)(d/e). Companion crosswalk: aksi-changes/crosswalks/aksi-dora-pillar-crosswalk.md v2.0.",
   "jurisdiction": "eu",
   "enforcement_date": "2025-01-17",
   "applicable_data_types": [
     "financial_data",
-    "financial_records"
+    "financial_records",
+    "payment_instruction_data"
   ],
   "reporting_obligations": {
     "breach_notification_hours": 4,
-    "assessment_type": "ICT-related incident classification and reporting per DORA Art. 18-19. Major incidents require: initial notification within 4 hours of classification, intermediate report within 72 hours, and final report within 1 month. Competent authorities are the relevant national supervisory authority (e.g., national central bank, financial regulator). EBA/ESMA/EIOPA exercise supervisory convergence.",
-    "reporting_entity": "Competent authority designated under DORA Art. 46 in the member state where the financial entity is established. EBA single point of entry for cross-sector incidents under Art. 19(6)."
+    "assessment_type": "ICT-related incident classification and reporting per DORA Art. 18-19. Major incidents require: initial notification within 4 hours of classification, intermediate report within 72 hours, and final report within 1 month. Competent authorities are the relevant national supervisory authority (e.g., national central bank, financial regulator). EBA/ESMA/EIOPA exercise supervisory convergence. Payment-related incidents (Art. 23) follow PSD2 reporting to payment competent authority.",
+    "reporting_entity": "Competent authority designated under DORA Art. 46 in the member state where the financial entity is established. EBA single point of entry for cross-sector incidents under Art. 19(6). Payment entities also report to PSD2 competent authority per Art. 23."
   },
   "human_oversight_mandates": {
     "required": true,
-    "description": "DORA Art. 5(2) assigns direct responsibility for ICT risk management to the management body. Art. 17(3) requires the ICT-related incident management process to include management escalation and oversight. Art. 15 requires anomaly and deviation management with management body review of outcomes. Management body members must maintain sufficient knowledge of ICT risk (Art. 5(4))."
+    "description": "DORA Art. 5(2) assigns direct responsibility for ICT risk management to the management body. Art. 17(3) requires the ICT-related incident management process to include management escalation and oversight. Art. 15 requires anomaly and deviation management with management body review of outcomes. Management body members must maintain sufficient knowledge of ICT risk (Art. 5(4)). For payment entities, GOV-04 SoD requirements apply to payment policy vs. execution decisions."
   },
   "controls": {
     "GOV-01": {
@@ -38,10 +39,11 @@
         "Roles and responsibilities for ICT risk management defined and assigned per Art. 5(2)(a)",
         "Management body member(s) with ICT risk responsibility identified by name and role (Art. 5(2)(b))",
         "Segregation of duties between ICT risk oversight and operational ICT functions documented (Art. 5(2))",
-        "Annual management body training or awareness program for ICT risk topics (Art. 5(4))"
+        "Annual management body training or awareness program for ICT risk topics (Art. 5(4))",
+        "Designated contact for Art. 45 information sharing arrangements where applicable"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DORA Art. 5(2), Art. 5(4)"
+      "framework_reference": "DORA Art. 5(2), Art. 5(4), Art. 45(3)"
     },
     "GOV-03": {
       "applicable": true,
@@ -50,10 +52,11 @@
         "ICT risk register or equivalent maintained with identified assets, threats, and risk ratings (Art. 8(3))",
         "Risk assessment results used to prioritize ICT security measures and investments (Art. 6(2))",
         "Risk tolerance defined by management body and documented in ICT risk management framework (Art. 6(8))",
-        "Assessment covers legacy ICT systems and technology obsolescence risks (Art. 8(7))"
+        "Assessment covers legacy ICT systems and technology obsolescence risks (Art. 8(7))",
+        "Concentration risk assessment for critical ICT third-party dependencies (Art. 28(4))"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DORA Art. 6(2), Art. 8(1), Art. 8(3), Art. 8(7)"
+      "framework_reference": "DORA Art. 6(2), Art. 8(1), Art. 8(3), Art. 8(7), Art. 28(4)"
     },
     "GOV-04": {
       "applicable": true,
@@ -61,7 +64,9 @@
         "Anomaly and deviation management process documented with management escalation path per Art. 15",
         "Human review gate for automated ICT decisions that could affect operational resilience (Art. 5(2)(d))",
         "Management body briefed on ICT risk management outcomes at least quarterly (Art. 5(2)(c))",
-        "Documented evidence of management body review and approval of major ICT risk decisions"
+        "Documented evidence of management body review and approval of major ICT risk decisions",
+        "Reviewer rationale and confidence/uncertainty indicators surfaced for high-risk agent approvals",
+        "SoD enforced for payment policy-definition vs. execution actions where DC-PAY is present"
       ],
       "threshold_adjustments": {},
       "framework_reference": "DORA Art. 5(2)(c), Art. 5(2)(d), Art. 15"
@@ -80,19 +85,21 @@
     "ID-02": {
       "applicable": true,
       "evidence_requirements": [
-        "Software and model inventory maintained as part of ICT asset management per Art. 8(1)",
-        "Authorized ICT systems and components documented with version and patch status (Art. 9(4)(a))",
+        "Registry maintained for all tools, MCP servers, models, prompt packs, agent cards, personas, and orchestration dependencies per Art. 8(1)",
+        "Each registered artifact has provenance, version pin, approval status, and description content hash (Art. 9(4)(a))",
         "ICT software lifecycle managed per documented policy including end-of-support tracking (Art. 8(7))",
-        "Agent AI model versions and configurations tracked as ICT assets"
+        "Registry serves as Art. 28(3) information register for ICT third-party arrangements",
+        "CTPP-designated providers flagged across all artifact types (Art. 31)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DORA Art. 8(1), Art. 8(7), Art. 9(4)(a)"
+      "framework_reference": "DORA Art. 8(1), Art. 8(7), Art. 9(4)(a), Art. 28(3), Art. 31"
     },
     "ID-03": {
       "applicable": true,
       "evidence_requirements": [
         "Data classification scheme applied per sensitivity and regulatory category (Art. 8(1))",
         "Classification covers financial customer data, transaction data, and ICT operational data",
+        "DC-PAY classification applied to payment instruction data for DORA payment entities",
         "Data processing activities mapped to ICT assets supporting critical or important functions (Art. 8(4))",
         "Cross-border data flows identified and assessed for DORA third-party risk implications (Art. 28)"
       ],
@@ -107,7 +114,8 @@
         "Contractual arrangements with ICT third-party providers include DORA Art. 30 mandatory provisions",
         "Concentration risk analysis performed for critical ICT third-party service providers (Art. 29)",
         "ICT third-party risk management strategy reviewed and reported to management body (Art. 28(2))",
-        "Critical ICT third-party service providers identified per EBA/ESMA/EIOPA designation criteria (Art. 31)"
+        "Critical ICT third-party service providers identified per EBA/ESMA/EIOPA designation criteria (Art. 31)",
+        "Risk assessment scope includes models, MCP servers, prompt packs, and orchestration dependencies"
       ],
       "threshold_adjustments": {
         "review_frequency": "annual_minimum"
@@ -120,10 +128,11 @@
         "ICT risk assessment methodology documented per Art. 6(2) covering cyber threats and operational risks",
         "Risk scenarios relevant to the financial entity's operations identified and assessed (Art. 8(3))",
         "Agent AI system risk profiling performed covering autonomous decision-making risks",
-        "Risk assessment updated following significant changes to ICT environment or business activities (Art. 6(5))"
+        "Risk assessment updated following significant changes to ICT environment or business activities (Art. 6(5))",
+        "Risk profile drives incident classification thresholds per Art. 18 criteria"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DORA Art. 6(2), Art. 6(5), Art. 8(3)"
+      "framework_reference": "DORA Art. 6(2), Art. 6(5), Art. 8(3), Art. 18"
     },
     "PR-01": {
       "applicable": true,
@@ -131,7 +140,8 @@
         "IAM policies and access controls implemented per Art. 9(2) protecting ICT assets",
         "Privileged access management procedures documented and enforced (Art. 9(2))",
         "Authentication mechanisms commensurate with ICT asset criticality (Art. 9(2))",
-        "Access reviews conducted at defined frequencies for critical function access (Art. 9(2))"
+        "Access reviews conducted at defined frequencies for critical function access (Art. 9(2))",
+        "Per-agent credentials with audience binding for inter-agent delegation"
       ],
       "threshold_adjustments": {
         "threshold_adjustment": "strict"
@@ -144,7 +154,9 @@
         "Least privilege principle applied to ICT system access per Art. 9(2)",
         "Privileged access rights inventory maintained and reviewed (Art. 9(2))",
         "Segregation of duties enforced between ICT development, operations, and oversight roles (Art. 9(2))",
-        "Timely deprovisioning of access for separated staff and service terminations documented"
+        "Timely deprovisioning of access for separated staff and service terminations documented",
+        "Trajectory-level scope checks prevent cumulative-privilege drift across agent actions",
+        "Payment-specific scope: per-transaction, per-hour, per-day, per-month limits where DC-PAY present"
       ],
       "threshold_adjustments": {
         "threshold_adjustment": "strict"
@@ -157,35 +169,40 @@
         "ICT change management process documented covering testing, approval, and release (Art. 9(4)(a))",
         "Changes to ICT systems supporting critical or important functions follow documented approval workflow",
         "Emergency change procedures documented with post-implementation review requirements",
-        "Change records retained demonstrating authorization and testing results"
+        "Change records retained demonstrating authorization and testing results",
+        "Tool provenance hash verified on every invocation against ID-02 registry baseline"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DORA Art. 9(4)(a)"
+      "framework_reference": "DORA Art. 9(4)(a), Art. 29(2)(b)"
     },
     "PR-04": {
       "applicable": true,
       "evidence_requirements": [
+        "Three-layer DLP implemented: outbound action scanning, output scanning, context ingestion evaluation",
         "Encryption applied to financial customer data at rest and in transit per Art. 9(2)",
         "Data minimisation and purpose limitation controls for financial data processing",
         "Data integrity controls implemented for transaction and financial record processing",
-        "Data loss prevention mechanisms in place for critical financial data flows"
+        "Payment payload DLP: invoice/description scanning, X-PAYMENT header inspection where DC-PAY present"
       ],
       "threshold_adjustments": {
         "threshold_adjustment": "strict"
       },
-      "framework_reference": "DORA Art. 9(2)"
+      "framework_reference": "DORA Art. 9(2), Art. 9(4)(a)"
     },
     "PR-05": {
       "applicable": true,
       "evidence_requirements": [
         "Logging and monitoring mechanisms implemented per Art. 10 covering ICT events and anomalies",
-        "Audit logs capture user actions, system events, and ICT incidents for ICT systems supporting critical functions",
+        "Audit logs capture agent actions, system events, and ICT incidents with 100% action coverage",
         "Log retention period meets DORA requirements (minimum 5 years for critical functions per Art. 12(6))",
         "Log integrity protection implemented to prevent tampering (Art. 10)",
-        "Logs forwarded to SIEM or equivalent for centralized analysis"
+        "Logs forwarded to SIEM or equivalent for centralized analysis",
+        "Delegation-chain traces captured for multi-agent incident forensics",
+        "Extended payment audit: counterparty ID, settlement hash, sanctions result, 7-year retention where DC-PAY present"
       ],
       "threshold_adjustments": {
-        "retention_days": 1825
+        "retention_days": 1825,
+        "payment_retention_days": 2555
       },
       "framework_reference": "DORA Art. 10, Art. 12(6)"
     },
@@ -206,7 +223,8 @@
         "Cryptographic key management policy documented covering key generation, rotation, and revocation (Art. 9(2))",
         "Encryption algorithms and key lengths appropriate to data sensitivity and current standards",
         "End-to-end encryption implemented for financial data in transit between systems",
-        "Cryptographic controls reviewed following advances in threat landscape (Art. 9(4)(b))"
+        "Cryptographic controls reviewed following advances in threat landscape (Art. 9(4)(b))",
+        "Inter-agent mutual authentication with signed envelopes, anti-replay, and task-window binding"
       ],
       "threshold_adjustments": {
         "threshold_adjustment": "strict"
@@ -217,12 +235,39 @@
       "applicable": true,
       "evidence_requirements": [
         "Network security controls implemented per Art. 9(4)(b) protecting ICT infrastructure",
-        "Input validation implemented for ICT systems processing financial transactions",
+        "Input validation implemented on all direct and indirect agent input channels",
         "Network segmentation applied to isolate critical ICT systems from general networks (Art. 9(4)(b))",
-        "Vulnerability management covering ICT systems supporting critical or important functions (Art. 9(4)(b))"
+        "Vulnerability management covering ICT systems supporting critical or important functions (Art. 9(4)(b))",
+        "Goal-diff detection active across multi-turn agent state"
       ],
       "threshold_adjustments": {},
       "framework_reference": "DORA Art. 9(4)(b)"
+    },
+    "PR-09": {
+      "applicable": true,
+      "evidence_requirements": [
+        "All agent-generated code runs inside approved execution classes with trust tiers per Art. 9(4)(a)",
+        "Sandbox enforcement with network and filesystem boundaries documented and tested",
+        "Dangerous execution classes require human approval or policy-backed allowlisting (Art. 9(4)(e))",
+        "Execution telemetry immutable and feeds anomaly detection per Art. 10",
+        "Sandbox boundary testing performed as part of Art. 24/25 resilience testing program",
+        "Blocked execution events logged with policy evaluation decision"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 9(4)(a), Art. 9(4)(e), Art. 10, Art. 24"
+    },
+    "PR-10": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Memory writes and retrieved context carry source provenance, trust labels, and freshness windows per Art. 9(3)",
+        "Policy engine validates external content before promotion to persistent memory (Art. 9(4)(a))",
+        "Quarantine behavior for untrusted or low-trust content with human review option",
+        "Memory integrity verification as part of Art. 12 backup and restoration procedures",
+        "Memory poisoning classified as data loss event per Art. 18(1)(e) incident classification",
+        "Memory rollback records maintained with integrity checks"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 9(3), Art. 9(4)(a), Art. 12, Art. 18(1)(e)"
     },
     "DE-01": {
       "applicable": true,
@@ -230,10 +275,14 @@
         "Threat detection mechanisms implemented per Art. 10 for ICT systems supporting critical functions",
         "Security event monitoring active with alerting for anomalies and suspicious activity",
         "ICT-related incident detection procedures defined including classification criteria per Art. 18",
-        "Threat intelligence feeds incorporated into detection capabilities (Art. 8(3))"
+        "Threat intelligence feeds incorporated into detection capabilities (Art. 8(3))",
+        "Behavioral manifest validation and rogue-agent detection active",
+        "Kill-switch posture verified and current",
+        "Payment-specific baselines: velocity, amount distribution, recipient diversity where DC-PAY present"
       ],
       "threshold_adjustments": {
-        "threshold_adjustment": "strict"
+        "threshold_adjustment": "strict",
+        "detection_sla_hours": 24
       },
       "framework_reference": "DORA Art. 8(3), Art. 10, Art. 18"
     },
@@ -242,7 +291,8 @@
       "evidence_requirements": [
         "Configuration change monitoring implemented for ICT systems per Art. 10",
         "Unauthorized configuration changes detected and alerted within defined timeframes",
-        "Monitoring scope covers ICT assets identified in asset inventory per Art. 8(1)"
+        "Monitoring scope covers all registered artifacts in ID-02 registry per Art. 8(1)",
+        "Description hash comparison on every invocation for all MCP servers, tools, models, prompt packs"
       ],
       "threshold_adjustments": {},
       "framework_reference": "DORA Art. 8(1), Art. 10"
@@ -252,17 +302,19 @@
       "evidence_requirements": [
         "Continuous monitoring program documented per Art. 10 for ICT environment",
         "Monitoring coverage verified periodically against asset inventory (Art. 8(1))",
-        "DORA digital operational resilience testing results inform detection capability improvements (Art. 24)"
+        "DORA digital operational resilience testing results inform detection capability improvements (Art. 24)",
+        "Test findings tracked and remediated per Art. 25(2)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DORA Art. 10, Art. 24"
+      "framework_reference": "DORA Art. 10, Art. 24, Art. 25(2)"
     },
     "DE-04": {
       "applicable": true,
       "evidence_requirements": [
         "Audit log integrity protection implemented to prevent unauthorized modification (Art. 10)",
         "Log availability and integrity verified as part of ICT risk management framework (Art. 6)",
-        "Access to audit logs restricted to authorized roles with separation from production systems"
+        "Access to audit logs restricted to authorized roles with separation from production systems",
+        "Hash chain or Merkle tree integrity mechanism on all evidence records"
       ],
       "threshold_adjustments": {},
       "framework_reference": "DORA Art. 6, Art. 10"
@@ -274,7 +326,9 @@
         "Incident classification applied per Art. 18 criteria (impact on services, financial losses, clients affected)",
         "Initial notification to competent authority within 4 hours of major incident classification (Art. 19(3)(a))",
         "Incident response procedures tested at least annually (Art. 25)",
-        "ICT crisis communication plan covering internal escalation and external notifications (Art. 17(6))"
+        "ICT crisis communication plan covering internal escalation and external notifications (Art. 17(6))",
+        "Rogue-agent kill-switch behavior defined and functional",
+        "Payment response playbook: sanctions hit triggers block+preserve+SAR-ready where DC-PAY present"
       ],
       "threshold_adjustments": {
         "notification_hours_initial": 4,
@@ -291,7 +345,8 @@
         "Intermediate report within 72 hours with updated impact assessment (Art. 19(3)(b))",
         "Final report within 1 month of intermediate report with root cause analysis (Art. 19(3)(c))",
         "Voluntary notification of significant cyber threats per Art. 20 documented",
-        "Client notification procedures for major incidents impacting financial services (Art. 17(6))"
+        "Client notification procedures for major incidents impacting financial services (Art. 17(6))",
+        "Supervisory feedback receipt and response records per Art. 22"
       ],
       "threshold_adjustments": {
         "threshold_adjustment": "strict",
@@ -299,7 +354,7 @@
         "notification_hours_intermediate": 72,
         "notification_days_final": 30
       },
-      "framework_reference": "DORA Art. 19, Art. 20"
+      "framework_reference": "DORA Art. 19, Art. 20, Art. 22"
     },
     "RS-03": {
       "applicable": true,
@@ -307,12 +362,27 @@
         "ICT-related incident documentation preserved per Art. 17(4) including timeline, impact, and actions taken",
         "Root cause analysis records retained for major incidents (Art. 19(3)(c))",
         "Evidence preservation procedures prevent tampering during and after incidents",
-        "Incident records retained for minimum statutory period (5 years for critical function records per Art. 12(6))"
+        "Incident records retained for minimum 5 years for critical function records (Art. 12(6))",
+        "Evidence structured for potential sharing under Art. 45 arrangements"
       ],
       "threshold_adjustments": {
         "retention_days": 1825
       },
-      "framework_reference": "DORA Art. 17(4), Art. 19(3)(c)"
+      "framework_reference": "DORA Art. 17(4), Art. 19(3)(c), Art. 12(6)"
+    },
+    "RS-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Failure domains defined for multi-agent systems per Art. 11(1) business continuity requirements",
+        "Circuit breakers configured with trip thresholds aligned to ICT risk tolerance (Art. 6(8))",
+        "Trust zone isolation procedures documented and tested (Art. 11(4) recovery plans)",
+        "Fan-out ceilings and coordinated kill-switch paths defined for agent orchestration",
+        "Downstream action suppression logs maintained when cascade containment activates",
+        "Containment telemetry structured for Art. 45 threat intelligence sharing",
+        "Reintegration approval required after zone isolation"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "DORA Art. 6(8), Art. 11(1), Art. 11(4), Art. 15, Art. 17"
     },
     "RC-01": {
       "applicable": true,
@@ -321,12 +391,13 @@
         "Backup and restoration procedures tested at minimum annually (Art. 12)",
         "Recovery time objectives (RTO) and recovery point objectives (RPO) defined and tested for critical functions (Art. 12(4))",
         "BCP covers activation of redundant infrastructure and geographic redundancy where applicable (Art. 11(6))",
-        "Crisis management procedures documented and management body notified of activation (Art. 11(3))"
+        "Crisis management procedures documented and management body notified of activation (Art. 11(3))",
+        "Exit strategy documented for critical third-party AI providers (Art. 30(2)(i/j))"
       ],
       "threshold_adjustments": {
         "threshold_adjustment": "strict"
       },
-      "framework_reference": "DORA Art. 11, Art. 12"
+      "framework_reference": "DORA Art. 11, Art. 12, Art. 30(2)(i)"
     },
     "RC-02": {
       "applicable": true,
@@ -334,10 +405,43 @@
         "Post-incident review conducted per Art. 13 following major ICT-related incidents",
         "Lessons learned documented and ICT risk management framework updated accordingly (Art. 13(2))",
         "Changes implemented from lessons learned tracked to completion",
-        "Periodic testing program outcomes documented and used to improve resilience (Art. 25, Art. 26)"
+        "Periodic testing program outcomes documented and used to improve resilience (Art. 25, Art. 26)",
+        "Supervisory feedback integrated into post-incident improvements (Art. 22)"
       ],
       "threshold_adjustments": {},
-      "framework_reference": "DORA Art. 13, Art. 25, Art. 26"
+      "framework_reference": "DORA Art. 13, Art. 22, Art. 25, Art. 26"
+    },
+    "PAY-01": {
+      "applicable": true,
+      "applicable_when": "DC-PAY present or agent certification targets include AML/BSA/SOX obligations",
+      "evidence_requirements": [
+        "Multi-source recipient attestation for payment counterparties per DORA Art. 28-30 third-party risk principles",
+        "Sanctions screening (OFAC SDN, EU, UK, UN consolidated lists) per AML obligations",
+        "KYB verification for payment recipients with attestation age within per-jurisdiction TTL",
+        "Counterparty attestation records linked to ICT third-party risk register (Art. 28(3))",
+        "Stale attestation triggers re-screening before next payment authorization"
+      ],
+      "threshold_adjustments": {
+        "attestation_refresh_days": 30,
+        "sanctions_screening_frequency": "per_transaction"
+      },
+      "framework_reference": "DORA Art. 28, Art. 29, Art. 30"
+    },
+    "PAY-02": {
+      "applicable": true,
+      "applicable_when": "DC-PAY present or agent certification targets include AML/BSA/SOX obligations",
+      "evidence_requirements": [
+        "Post-payment reconciliation against ground-truth settlement source per Art. 10 monitoring requirements",
+        "Confirmation thresholds enforced before reconciliation complete (on-chain: block confirmations)",
+        "Discrepancy alerts generated with retry or compensating-action workflow",
+        "Settlement reconciliation records retained per DORA record-keeping (Art. 12(6))",
+        "Payment settlement discrepancies classified as operational incidents per Art. 23 where applicable"
+      ],
+      "threshold_adjustments": {
+        "reconciliation_window_hours": 24,
+        "retention_days": 1825
+      },
+      "framework_reference": "DORA Art. 10, Art. 12(6), Art. 23"
     }
   },
   "control_adjustments": {
@@ -346,7 +450,8 @@
       "additional_evidence_fields": [
         "mfa_enforced",
         "privileged_access_review_date",
-        "access_recertification_completed"
+        "access_recertification_completed",
+        "audience_binding_verified"
       ],
       "regulatory_citation": "DORA Art. 9(2)"
     },
@@ -355,7 +460,8 @@
       "additional_evidence_fields": [
         "log_retention_years",
         "log_integrity_verified",
-        "audit_chain_complete"
+        "audit_chain_complete",
+        "delegation_chain_captured"
       ],
       "regulatory_citation": "DORA Art. 10, Art. 12(6)"
     },
@@ -364,7 +470,8 @@
       "additional_evidence_fields": [
         "incident_classification_applied",
         "initial_notification_timestamp",
-        "competent_authority_notified"
+        "competent_authority_notified",
+        "kill_switch_posture_verified"
       ],
       "regulatory_citation": "DORA Art. 17, Art. 18, Art. 19"
     },
@@ -373,66 +480,107 @@
       "additional_evidence_fields": [
         "notification_timeline_4h_met",
         "notification_timeline_72h_met",
-        "final_report_submitted"
+        "final_report_submitted",
+        "supervisory_feedback_processed"
       ],
-      "regulatory_citation": "DORA Art. 19(3)"
+      "regulatory_citation": "DORA Art. 19(3), Art. 22"
+    },
+    "RS-04": {
+      "threshold_adjustment": "standard",
+      "additional_evidence_fields": [
+        "failure_domains_defined",
+        "circuit_breakers_configured",
+        "trust_zones_documented",
+        "cascade_containment_tested"
+      ],
+      "regulatory_citation": "DORA Art. 11, Art. 15, Art. 17"
     },
     "ID-04": {
       "threshold_adjustment": "strict",
       "additional_evidence_fields": [
         "ict_tpsp_register_complete",
         "critical_tpsp_identified",
-        "art30_contractual_provisions_verified"
+        "art30_contractual_provisions_verified",
+        "ctpp_designation_assessed"
       ],
-      "regulatory_citation": "DORA Art. 28, Art. 29, Art. 30"
+      "regulatory_citation": "DORA Art. 28, Art. 29, Art. 30, Art. 31"
     },
     "RC-01": {
       "threshold_adjustment": "strict",
       "additional_evidence_fields": [
         "rto_defined_and_tested",
         "rpo_defined_and_tested",
-        "bcp_tested_date"
+        "bcp_tested_date",
+        "exit_strategy_documented"
       ],
-      "regulatory_citation": "DORA Art. 11, Art. 12"
+      "regulatory_citation": "DORA Art. 11, Art. 12, Art. 30(2)(i)"
+    },
+    "PAY-01": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "sanctions_screening_result",
+        "kyb_verification_status",
+        "attestation_age_days",
+        "counterparty_confidence_score"
+      ],
+      "regulatory_citation": "DORA Art. 28, Art. 29"
+    },
+    "PAY-02": {
+      "threshold_adjustment": "strict",
+      "additional_evidence_fields": [
+        "settlement_verified",
+        "confirmation_threshold_met",
+        "discrepancy_detected",
+        "compensating_action_taken"
+      ],
+      "regulatory_citation": "DORA Art. 10, Art. 23"
     }
   },
   "evidence_requirements": {
-    "PR-01": ["mfa_enforced", "privileged_access_review_date", "access_recertification_completed"],
-    "PR-05": ["log_retention_years", "log_integrity_verified", "audit_chain_complete"],
-    "RS-01": ["incident_classification_applied", "initial_notification_timestamp", "competent_authority_notified"],
-    "RS-02": ["notification_timeline_4h_met", "notification_timeline_72h_met", "final_report_submitted"],
-    "ID-04": ["ict_tpsp_register_complete", "critical_tpsp_identified", "art30_contractual_provisions_verified"],
-    "RC-01": ["rto_defined_and_tested", "rpo_defined_and_tested", "bcp_tested_date"]
+    "PR-01": ["mfa_enforced", "privileged_access_review_date", "access_recertification_completed", "audience_binding_verified"],
+    "PR-05": ["log_retention_years", "log_integrity_verified", "audit_chain_complete", "delegation_chain_captured"],
+    "RS-01": ["incident_classification_applied", "initial_notification_timestamp", "competent_authority_notified", "kill_switch_posture_verified"],
+    "RS-02": ["notification_timeline_4h_met", "notification_timeline_72h_met", "final_report_submitted", "supervisory_feedback_processed"],
+    "RS-04": ["failure_domains_defined", "circuit_breakers_configured", "trust_zones_documented", "cascade_containment_tested"],
+    "ID-04": ["ict_tpsp_register_complete", "critical_tpsp_identified", "art30_contractual_provisions_verified", "ctpp_designation_assessed"],
+    "RC-01": ["rto_defined_and_tested", "rpo_defined_and_tested", "bcp_tested_date", "exit_strategy_documented"],
+    "PAY-01": ["sanctions_screening_result", "kyb_verification_status", "attestation_age_days", "counterparty_confidence_score"],
+    "PAY-02": ["settlement_verified", "confirmation_threshold_met", "discrepancy_detected", "compensating_action_taken"]
   },
   "framework_mapping": {
     "GOV-01": ["DORA Art. 5(1)", "DORA Art. 6(1)", "DORA Art. 6(5)"],
-    "GOV-02": ["DORA Art. 5(2)", "DORA Art. 5(4)"],
-    "GOV-03": ["DORA Art. 6(2)", "DORA Art. 8(1)", "DORA Art. 8(3)"],
+    "GOV-02": ["DORA Art. 5(2)", "DORA Art. 5(4)", "DORA Art. 45(3)"],
+    "GOV-03": ["DORA Art. 6(2)", "DORA Art. 8(1)", "DORA Art. 8(3)", "DORA Art. 8(7)", "DORA Art. 28(4)"],
     "GOV-04": ["DORA Art. 5(2)(c)", "DORA Art. 5(2)(d)", "DORA Art. 15"],
     "ID-01": ["DORA Art. 8(1)", "DORA Art. 8(4)"],
-    "ID-02": ["DORA Art. 8(1)", "DORA Art. 8(7)", "DORA Art. 9(4)(a)"],
+    "ID-02": ["DORA Art. 8(1)", "DORA Art. 8(7)", "DORA Art. 9(4)(a)", "DORA Art. 28(3)", "DORA Art. 31"],
     "ID-03": ["DORA Art. 8(1)", "DORA Art. 8(4)", "DORA Art. 28"],
     "ID-04": ["DORA Art. 28", "DORA Art. 29", "DORA Art. 30", "DORA Art. 31"],
-    "ID-05": ["DORA Art. 6(2)", "DORA Art. 6(5)", "DORA Art. 8(3)"],
+    "ID-05": ["DORA Art. 6(2)", "DORA Art. 6(5)", "DORA Art. 8(3)", "DORA Art. 18"],
     "PR-01": ["DORA Art. 9(2)"],
     "PR-02": ["DORA Art. 9(2)"],
-    "PR-03": ["DORA Art. 9(4)(a)"],
-    "PR-04": ["DORA Art. 9(2)"],
+    "PR-03": ["DORA Art. 9(4)(a)", "DORA Art. 29(2)(b)"],
+    "PR-04": ["DORA Art. 9(2)", "DORA Art. 9(4)(a)"],
     "PR-05": ["DORA Art. 10", "DORA Art. 12(6)"],
     "PR-06": ["DORA Art. 9(4)(a)"],
     "PR-07": ["DORA Art. 9(2)", "DORA Art. 9(4)(b)"],
     "PR-08": ["DORA Art. 9(4)(b)"],
+    "PR-09": ["DORA Art. 9(4)(a)", "DORA Art. 9(4)(e)", "DORA Art. 10", "DORA Art. 24"],
+    "PR-10": ["DORA Art. 9(3)", "DORA Art. 9(4)(a)", "DORA Art. 12", "DORA Art. 18(1)(e)"],
     "DE-01": ["DORA Art. 8(3)", "DORA Art. 10", "DORA Art. 18"],
     "DE-02": ["DORA Art. 8(1)", "DORA Art. 10"],
-    "DE-03": ["DORA Art. 10", "DORA Art. 24"],
+    "DE-03": ["DORA Art. 10", "DORA Art. 24", "DORA Art. 25(2)"],
     "DE-04": ["DORA Art. 6", "DORA Art. 10"],
     "RS-01": ["DORA Art. 17", "DORA Art. 18", "DORA Art. 19"],
-    "RS-02": ["DORA Art. 19(3)", "DORA Art. 20"],
-    "RS-03": ["DORA Art. 17(4)", "DORA Art. 19(3)(c)"],
-    "RC-01": ["DORA Art. 11", "DORA Art. 12"],
-    "RC-02": ["DORA Art. 13", "DORA Art. 25", "DORA Art. 26"]
+    "RS-02": ["DORA Art. 19(3)", "DORA Art. 20", "DORA Art. 22"],
+    "RS-03": ["DORA Art. 17(4)", "DORA Art. 19(3)(c)", "DORA Art. 12(6)"],
+    "RS-04": ["DORA Art. 6(8)", "DORA Art. 11(1)", "DORA Art. 11(4)", "DORA Art. 15", "DORA Art. 17"],
+    "RC-01": ["DORA Art. 11", "DORA Art. 12", "DORA Art. 30(2)(i)"],
+    "RC-02": ["DORA Art. 13", "DORA Art. 22", "DORA Art. 25", "DORA Art. 26"],
+    "PAY-01": ["DORA Art. 28", "DORA Art. 29", "DORA Art. 30"],
+    "PAY-02": ["DORA Art. 10", "DORA Art. 12(6)", "DORA Art. 23"]
   },
   "evidence_retention_minimum_days": 1825,
   "human_oversight_required": true,
-  "notes": "DORA (Regulation (EU) 2022/2554) is a directly applicable EU regulation — no transposition required. Enforcement began January 17, 2025. The management body of the financial entity has direct personal accountability under Art. 5(2). Key DORA-specific items not covered in the GLBA bundle: (1) ICT incident notification timeline — 4h initial alert, 72h intermediate, 1 month final to competent authority; (2) DORA digital operational resilience testing program including TLPT for significant entities; (3) ICT third-party service provider register and Art. 30 mandatory contract provisions; (4) Concentration risk management for critical ICT third-party service providers; (5) 5-year record retention for critical function records (Art. 12(6)). This overlay is DORA-standalone. The glba.json combined overlay remains appropriate for entities facing combined GLBA/SOX/DORA evidence requirements."
+  "notes": "DORA (Regulation (EU) 2022/2554) is a directly applicable EU regulation — no transposition required. Enforcement began January 17, 2025. Updated to AKSI v0.3 (April 22, 2026). Key v0.3 changes: (1) PR-09 sandbox enforcement addresses Art. 9 protective measures and Art. 24/25 resilience testing for agent-generated code; (2) PR-10 memory integrity addresses Art. 9 data integrity and Art. 18 incident classification for context poisoning; (3) RS-04 cascade containment addresses Art. 11 business continuity and Art. 17 incident management for multi-agent propagation; (4) DC-PAY classification triggers this overlay alongside DC-FIN for payment entities under Art. 2(1)(d/e); (5) PAY-01/PAY-02 provide payment-specific controls mapping to Art. 28-30 and Art. 23; (6) ID-02 expanded scope covers all ICT third-party artifact types for Art. 28(3) register and Art. 31 CTPP analysis. 5-year retention for critical function records per Art. 12(6); 7-year retention for payment audit records where DC-PAY present. The management body has direct personal accountability under Art. 5(2)."
 }
