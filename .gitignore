@@ -61,3 +61,7 @@ workspace/
 /.cocoindex_code/
 .dual-graph/
 .grepai/
+
+# Agent / tooling state — not source code
+.claude/worktrees/
+.serena/
