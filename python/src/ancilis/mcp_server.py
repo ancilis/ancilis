@@ -361,12 +361,6 @@ def _build_overlay_list_response(context: MCPServerContext) -> MCPOverlayListRes
     return MCPOverlayListResponse(overlays=overlays)
 
 
-def _evidence_store_has_materialized_data(store: EvidenceStore) -> bool:
-    if store.db_path == ":memory:":
-        return getattr(store, "_conn", None) is not None
-    return getattr(store, "_conn", None) is not None or Path(store.db_path).exists()
-
-
 def _selected_session_id(context: MCPServerContext, session_id: str | None) -> str | None:
     if session_id is not None:
         return session_id
