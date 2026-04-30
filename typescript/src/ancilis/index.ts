@@ -103,6 +103,8 @@ export type { VulnerabilityFinding, CycloneDxBom, CycloneDxComponent, DetectionR
 export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan, runEvidenceVerify } from "./cli/index.js";
 export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
 export {
+  BedrockActionProducer,
+  BedrockAdapter,
   CLIActionProducer,
   HTTPActionProducer,
   MCPActionProducer,
@@ -116,6 +118,8 @@ export {
 export type {
   ActionProducer,
   AnyFn,
+  BedrockInvocation,
+  BedrockObservation,
   CLIExecutionResult,
   CLIInvocation,
   EvaluateAndExecuteOptions,

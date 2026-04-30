@@ -20,3 +20,6 @@ export type { CLIInvocation, CLIExecutionResult } from "./cli.js";
 
 export { HTTPActionProducer } from "./http.js";
 export type { HTTPRequest, HTTPObservation, HTTPExecutionResult } from "./http.js";
+
+export { BedrockActionProducer, BedrockAdapter } from "./bedrock.js";
+export type { BedrockInvocation, BedrockObservation } from "./bedrock.js";
