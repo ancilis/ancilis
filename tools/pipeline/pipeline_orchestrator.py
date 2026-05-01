@@ -46,7 +46,7 @@ You are working on Ancilis (ancilis.ai), an agent-native GRC platform ("Vanta fo
 
 Two products:
 - Ancilis Platform: hosted SaaS, assessment-first (not enforcement). FastAPI + PostgreSQL + Alembic + React + shadcn/ui.
-- Ancilis SDK: open source (BSL 1.1), pip/npm installable. Python + TypeScript. DuckDB evidence store.
+- Ancilis SDK: open source (AGPL-3.0-or-later, dual-licensed commercial), pip/npm installable. Python + TypeScript. DuckDB evidence store.
 
 AKSI Framework: 26 controls, 16-type data classification taxonomy, 3-layer architecture.
 Key patterns: AOA (Action Object Abstraction), ADR-005 producer protocol, data-classification-driven auto-scoping.
