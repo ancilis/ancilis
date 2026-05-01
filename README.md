@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ancilis/ancilis/actions/workflows/ci.yml/badge.svg)](https://github.com/ancilis/ancilis/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ancilis/ancilis/badge)](https://scorecard.dev/viewer/?uri=github.com/ancilis/ancilis)
-[![license](https://img.shields.io/badge/license-BUSL--1.1-blue.svg)](LICENSE)
+[![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/ancilis.svg)](https://pypi.org/project/ancilis/)
 [![npm](https://img.shields.io/npm/v/ancilis.svg)](https://www.npmjs.com/package/ancilis)
 [![python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
@@ -242,4 +242,4 @@ const result = await producer.execute(readData, "my-agent", ["id-123"], undefine
 - [Configuration reference](docs/configuration.md)
 - [Security policy](SECURITY.md) — security@ancilis.ai
 - [Contributing](CONTRIBUTING.md)
-- [License](LICENSE) — Business Source License 1.1 (Apache 2.0 on March 10, 2030)
+- [License](LICENSE) — GNU Affero General Public License v3.0 or later. Commercial licensing available; contact licensing@ancilis.ai.

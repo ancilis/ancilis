@@ -35,4 +35,4 @@ Framework examples (LangChain, CrewAI) include simulated tools that run without 
 
 ## License
 
-BSL 1.1 — see [LICENSE](../LICENSE).
+AGPL-3.0-or-later — see [LICENSE](../LICENSE).

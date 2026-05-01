@@ -2,9 +2,34 @@
 
 Thanks for your interest in contributing.
 
-## License
+## License and Contributor Grant
 
-This project is licensed under Business Source License 1.1. By submitting a pull request, you agree that your contributions will be licensed under the same terms. See [LICENSE](LICENSE) for details.
+This project is dual-licensed: GNU Affero General Public License v3.0 or
+later (AGPL-3.0-or-later) for open source use, and a separate commercial
+license available from the Licensor. See [LICENSE](LICENSE) for details.
+
+By submitting a contribution to this project (a pull request, patch, or
+any other form of contribution), you agree that:
+
+1. **AGPL grant.** You license your contribution to the public under the
+   AGPL-3.0-or-later, the same terms as the rest of the project.
+
+2. **Commercial relicensing grant.** You also grant Kevin Bauer (and any
+   successor maintainer or acquirer of this project) a perpetual,
+   irrevocable, worldwide, royalty-free, non-exclusive license to relicense
+   your contribution under any other license, including proprietary or
+   commercial licenses, for the purpose of offering commercial license
+   options to users who do not wish to be bound by the AGPL.
+
+3. **Originality.** You represent that you have the right to make these
+   grants — i.e., the contribution is your original work, or you have
+   authorization from the copyright holder to contribute it under these
+   terms.
+
+This grant is the equivalent of a Contributor License Agreement (CLA) for
+inbound contributions and exists solely to keep the dual-license model
+viable. If you cannot make these grants for any reason, do not submit the
+contribution.
 
 ## Getting Started
 
