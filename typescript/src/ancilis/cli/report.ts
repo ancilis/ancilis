@@ -4,6 +4,8 @@ import { writeFileSync } from "node:fs";
 import { loadConfig } from "../config/index.js";
 import { EvidenceStore } from "../evidence/store.js";
 import { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderNdjson, renderCsv, renderOscalJson, renderPdf } from "../report/index.js";
+import type { ResolvedConfig } from "../config/index.js";
+import { bucketDuration, recordTelemetryEvent } from "../telemetry/index.js";
 
 export interface ReportCommandOptions {
   period?: string;
@@ -19,7 +21,22 @@ export interface ReportCommandResult {
   outputPath?: string;
 }
 
+async function recordReportGenerated(
+  config: ResolvedConfig,
+  format: string,
+  period: string,
+  startedAt: number,
+): Promise<void> {
+  await recordTelemetryEvent("report_generated", {
+    format,
+    overlay_ids: [...config.activeOverlays.keys()].sort(),
+    duration_bucket: bucketDuration(Date.now() - startedAt),
+    period,
+  }).catch(() => {});
+}
+
 export async function runReport(options: ReportCommandOptions = {}): Promise<ReportCommandResult> {
+  const startedAt = Date.now();
   const period = options.period ?? "30d";
   const format = options.format ?? "terminal";
 
@@ -33,6 +50,7 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
 
       if (format === "ndjson") {
         const ndjson = renderNdjson(await store.getRecords({ since, limit: null }));
+        await recordReportGenerated(config, format, period, startedAt);
         if (options.outputPath) {
           writeFileSync(options.outputPath, ndjson);
           return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
@@ -42,6 +60,7 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
 
       if (format === "csv") {
         const csv = renderCsv(await store.getRecords({ since, limit: null }));
+        await recordReportGenerated(config, format, period, startedAt);
         if (options.outputPath) {
           writeFileSync(options.outputPath, csv);
           return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
@@ -54,12 +73,14 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
       const reportData = generator.generate(period, format, { now });
 
       if (format === "terminal") {
+        await recordReportGenerated(config, format, period, startedAt);
         return { ok: true, output: renderTerminal(reportData) };
       }
 
       if (format === "oscal-json") {
         reportData.evidenceRecords = await store.getRecords({ since, limit: null });
         const oscal = renderOscalJson(reportData);
+        await recordReportGenerated(config, format, period, startedAt);
         if (options.outputPath) {
           writeFileSync(options.outputPath, oscal);
           return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
@@ -69,6 +90,7 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
 
       const markdown = renderMarkdown(reportData);
       if (format === "markdown" || format === "aiuc1-readiness") {
+        await recordReportGenerated(config, format, period, startedAt);
         if (options.outputPath) {
           writeFileSync(options.outputPath, markdown);
           return { ok: true, output: `Report written to ${options.outputPath}`, outputPath: options.outputPath };
@@ -78,6 +100,7 @@ export async function runReport(options: ReportCommandOptions = {}): Promise<Rep
 
       const pdfPath = options.outputPath ?? "ancilis-report.pdf";
       const pdfResult = renderPdf(markdown, pdfPath);
+      await recordReportGenerated(config, format, period, startedAt);
       if (pdfResult.format === "pdf") {
         return { ok: true, output: `PDF report written to ${pdfResult.outputPath}`, outputPath: pdfResult.outputPath };
       }

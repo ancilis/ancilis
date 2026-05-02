@@ -40,6 +40,17 @@ if TYPE_CHECKING:
         resolve_evidence_adapter,
     )
     from ancilis.platform import PlatformClient
+    from ancilis.telemetry import (
+        TelemetryConfig,
+        TelemetryStatus,
+        flush_telemetry_events,
+        format_telemetry_status,
+        read_telemetry_config,
+        read_telemetry_status,
+        record_adapter_used,
+        record_telemetry_event,
+        set_telemetry_enabled,
+    )
     from ancilis.middleware.middleware import AncilisMiddleware
     from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
     from ancilis.producers.http import (
@@ -109,15 +120,24 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "MCPActionProducer": ("ancilis.producers.mcp", "MCPActionProducer"),
     "ProducerType": ("ancilis.producers.protocol", "ProducerType"),
     "PlatformClient": ("ancilis.platform", "PlatformClient"),
+    "TelemetryConfig": ("ancilis.telemetry", "TelemetryConfig"),
+    "TelemetryStatus": ("ancilis.telemetry", "TelemetryStatus"),
     "RuntimeProducerSelection": ("ancilis.producers.runtime", "RuntimeProducerSelection"),
     "ToolActionProducer": ("ancilis.producers.tool", "ToolActionProducer"),
     "ToolExecutionResult": ("ancilis.producers.tool", "ToolExecutionResult"),
     "ToolInvocation": ("ancilis.producers.tool", "ToolInvocation"),
     "evaluate_and_execute": ("ancilis.producers.tool", "evaluate_and_execute"),
+    "flush_telemetry_events": ("ancilis.telemetry", "flush_telemetry_events"),
+    "format_telemetry_status": ("ancilis.telemetry", "format_telemetry_status"),
     "load_config": ("ancilis.config", "load_config"),
+    "read_telemetry_config": ("ancilis.telemetry", "read_telemetry_config"),
+    "read_telemetry_status": ("ancilis.telemetry", "read_telemetry_status"),
+    "record_adapter_used": ("ancilis.telemetry", "record_adapter_used"),
+    "record_telemetry_event": ("ancilis.telemetry", "record_telemetry_event"),
     "register_control": ("ancilis.controls.custom", "register_control"),
     "resolve_evidence_adapter": ("ancilis.evidence", "resolve_evidence_adapter"),
     "resolve_runtime_producers": ("ancilis.producers.runtime", "resolve_runtime_producers"),
+    "set_telemetry_enabled": ("ancilis.telemetry", "set_telemetry_enabled"),
     "tool": ("ancilis.producers.tool", "tool"),
     "translate_runtime_action": ("ancilis.producers.runtime", "translate_runtime_action"),
     "wrap_tool": ("ancilis.producers.tool", "wrap_tool"),

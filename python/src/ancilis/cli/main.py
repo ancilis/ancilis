@@ -19,6 +19,7 @@ from ancilis.cli.plugins import plugins
 from ancilis.cli.shell import shell
 from ancilis.cli.serve import serve
 from ancilis.cli.sync import sync
+from ancilis.cli.telemetry import telemetry
 
 
 @click.group()
@@ -32,7 +33,23 @@ def cli(ctx: click.Context, no_update_check: bool) -> None:
     ctx.obj["no_update_check"] = no_update_check
     ctx.params["no_update_check"] = no_update_check
     from ancilis.cli.version_check import check_and_notify
+    from ancilis.telemetry import maybe_prompt_for_telemetry_consent
+
     check_and_notify(ctx)
+    if ctx.invoked_subcommand != "telemetry":
+        maybe_prompt_for_telemetry_consent()
+
+
+@cli.result_callback()
+@click.pass_context
+def record_cli_result(ctx: click.Context, _result: object, **_params: object) -> None:
+    """Record coarse command telemetry for successful Click commands."""
+    command = ctx.invoked_subcommand or "unknown"
+    if command == "telemetry":
+        return
+    from ancilis.telemetry import record_telemetry_event
+
+    record_telemetry_event("cli_command", {"command": command, "exit_code": 0})
 
 
 cli.add_command(status)
@@ -49,6 +66,7 @@ cli.add_command(plugins)
 cli.add_command(shell)
 cli.add_command(serve)
 cli.add_command(sync)
+cli.add_command(telemetry)
 
 
 @cli.group(name="config")
