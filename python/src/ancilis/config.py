@@ -810,11 +810,14 @@ def load_config(
             raise FileNotFoundError("No ancilis.yaml found and no config provided")
 
     overlay_warnings: list[str] = []
-    overlay_defs = load_overlay_definitions(
-        plugin_registry=plugin_registry,
-        plugin_configs=plugin_configs,
-        warnings=overlay_warnings,
-    )
+    if plugin_registry is None and plugin_configs is None:
+        overlay_defs = load_overlay_definitions()
+    else:
+        overlay_defs = load_overlay_definitions(
+            plugin_registry=plugin_registry,
+            plugin_configs=plugin_configs,
+            warnings=overlay_warnings,
+        )
     migration = inspect_config_migration(config_dict)
     migrated_config = migration["config"]
     if overlay_warnings:
