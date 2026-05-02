@@ -3,7 +3,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { approveTool, formatStatus, handleScan, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
+import { approveTool, formatStatus, handleScan, runDoctor, runRemediate, runReport, validateAndFormat } from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
@@ -30,6 +30,7 @@ function usage(): string {
     "  ancilis doctor [--config <path>] [--db <path>]",
     "  ancilis report [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
     "  ancilis report generate [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
+    "  ancilis remediate [--period <window>] [--control <id>] [--config <path>] [--db <path>]",
     "  ancilis status [--verbose] [--config <path>] [--db <path>]",
     "  ancilis config validate [--config <path>]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
@@ -143,6 +144,57 @@ async function handleReport(args: string[], io: CliIo): Promise<number> {
   }
 
   const result = await runReport({ period, format, configPath, dbPath, outputPath });
+  print(result.ok ? io.stdout : io.stderr, result.output);
+  return result.ok ? 0 : 1;
+}
+
+async function handleRemediate(args: string[], io: CliIo): Promise<number> {
+  let period: string | undefined;
+  let configPath: string | undefined;
+  let dbPath: string | undefined;
+  let sessionId: string | undefined;
+  let latest = true;
+  let controlId: string | undefined;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--period") {
+      period = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--config") {
+      configPath = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--db") {
+      dbPath = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--session") {
+      sessionId = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--latest") {
+      latest = true;
+      continue;
+    }
+    if (arg === "--all") {
+      latest = false;
+      continue;
+    }
+    if (arg === "--control") {
+      controlId = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    throw new Error(`Unknown option for remediate: ${arg}`);
+  }
+
+  const result = await runRemediate({ period, configPath, dbPath, sessionId, latest, controlId });
   print(result.ok ? io.stdout : io.stderr, result.output);
   return result.ok ? 0 : 1;
 }
@@ -628,6 +680,8 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
         return await handleDoctor(rest, io);
       case "report":
         return await handleReport(rest, io);
+      case "remediate":
+        return await handleRemediate(rest, io);
       case "status":
         return await handleStatus(rest, io);
       case "approve-tool":

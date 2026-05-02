@@ -7,6 +7,8 @@ export { runDoctor } from "./doctor.js";
 export type { DoctorResult } from "./doctor.js";
 export { runReport } from "./report.js";
 export type { ReportCommandOptions, ReportCommandResult } from "./report.js";
+export { runRemediate } from "./remediate.js";
+export type { RemediateCommandOptions, RemediateCommandResult } from "./remediate.js";
 export { handleScan } from "./scan.js";
 export type { ScanOptions, ControlResult2, EvaluationSummary } from "./scan.js";
 export { handleEvidence, runEvidenceVerify, runEvidenceSessions, runEvidenceReset, runEvidenceImport } from "./evidence.js";
