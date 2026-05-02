@@ -241,6 +241,38 @@ def test_ci_typescript_example_fixtures_exist():
         assert not (example_dir / "package-lock.json").exists()
 
 
+def test_scorecard_workflow_pins_release_commit_and_keeps_publication_steps():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "scorecard.yml").read_text())
+    steps = workflow["jobs"]["analysis"]["steps"]
+
+    scorecard_step = next(
+        step for step in steps if step.get("uses", "").startswith("ossf/scorecard-action@")
+    )
+    assert (
+        scorecard_step["uses"]
+        == "ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a"
+    )
+    assert scorecard_step["with"] == {
+        "results_file": "results.sarif",
+        "results_format": "sarif",
+        "publish_results": True,
+    }
+
+    artifact_step = next(
+        step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert artifact_step["with"] == {
+        "name": "SARIF file",
+        "path": "results.sarif",
+        "retention-days": 5,
+    }
+
+    upload_sarif_step = next(
+        step for step in steps if step.get("uses", "").startswith("github/codeql-action/upload-sarif@")
+    )
+    assert upload_sarif_step["with"] == {"sarif_file": "results.sarif"}
+
+
 def test_publish_script_cleans_dist_and_uploads_selected_artifacts():
     script = ROOT / "scripts" / "publish.sh"
 
