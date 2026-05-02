@@ -164,6 +164,40 @@ ancilis scan --ci --period 24h > ancilis-scan.json
 
 ---
 
+## `ancilis remediate`
+
+Show remediation guidance for controls that are currently `GAP` or `PARTIAL` in
+the selected evidence window.
+
+```bash
+ancilis remediate [OPTIONS]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--latest / --all` | Show latest session (default) or all sessions |
+| `--session TEXT` | Scope to a specific session ID |
+| `--period TEXT` | Evidence window: `24h`, `7d`, `30d` |
+| `--control TEXT` | Show guidance for one control ID, even with no current gap |
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+
+Example output:
+
+```text
+PR-01 (Identity verification) — GAP
+  Time: 5 minutes | Difficulty: Easy | Evidence: 1 evals, 1 failures, 0 flags
+  How to fix:
+    - Add or correct agent.name in ancilis.yaml.
+    - Ensure your middleware or producer uses the same agent name when recording actions.
+    - Re-run your agent and then run ancilis scan again.
+```
+
+The command uses local shared remediation content and current evidence summary
+data. It does not change evidence records or create platform remediation tasks.
+
+---
+
 ## `ancilis report`
 
 Generate a posture report.

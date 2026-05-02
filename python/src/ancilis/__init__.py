@@ -40,6 +40,13 @@ if TYPE_CHECKING:
         resolve_evidence_adapter,
     )
     from ancilis.platform import PlatformClient
+    from ancilis.remediation import (
+        RemediationGuide,
+        RemediationRecommendation,
+        build_remediation_recommendations,
+        load_remediation_guides,
+        render_remediation_recommendations,
+    )
     from ancilis.middleware.middleware import AncilisMiddleware
     from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
     from ancilis.producers.http import (
@@ -109,15 +116,20 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "MCPActionProducer": ("ancilis.producers.mcp", "MCPActionProducer"),
     "ProducerType": ("ancilis.producers.protocol", "ProducerType"),
     "PlatformClient": ("ancilis.platform", "PlatformClient"),
+    "RemediationGuide": ("ancilis.remediation", "RemediationGuide"),
+    "RemediationRecommendation": ("ancilis.remediation", "RemediationRecommendation"),
     "RuntimeProducerSelection": ("ancilis.producers.runtime", "RuntimeProducerSelection"),
     "ToolActionProducer": ("ancilis.producers.tool", "ToolActionProducer"),
     "ToolExecutionResult": ("ancilis.producers.tool", "ToolExecutionResult"),
     "ToolInvocation": ("ancilis.producers.tool", "ToolInvocation"),
+    "build_remediation_recommendations": ("ancilis.remediation", "build_remediation_recommendations"),
     "evaluate_and_execute": ("ancilis.producers.tool", "evaluate_and_execute"),
     "load_config": ("ancilis.config", "load_config"),
+    "load_remediation_guides": ("ancilis.remediation", "load_remediation_guides"),
     "register_control": ("ancilis.controls.custom", "register_control"),
     "resolve_evidence_adapter": ("ancilis.evidence", "resolve_evidence_adapter"),
     "resolve_runtime_producers": ("ancilis.producers.runtime", "resolve_runtime_producers"),
+    "render_remediation_recommendations": ("ancilis.remediation", "render_remediation_recommendations"),
     "tool": ("ancilis.producers.tool", "tool"),
     "translate_runtime_action": ("ancilis.producers.runtime", "translate_runtime_action"),
     "wrap_tool": ("ancilis.producers.tool", "wrap_tool"),
