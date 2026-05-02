@@ -201,6 +201,14 @@ describe("Ancilis MCP server", () => {
         expect(tool.inputSchema).toMatchObject({ type: "object" });
         expect(tool.outputSchema).toMatchObject({ type: "object" });
       }
+      const reportTool = result.tools.find(tool => tool.name === "ancilis_report");
+      expect(reportTool?.outputSchema).toMatchObject({
+        properties: expect.objectContaining({
+          posture: expect.any(Object),
+          report: expect.any(Object),
+          agent: expect.any(Object),
+        }),
+      });
     } finally {
       await client.close();
       await server.close();
@@ -426,6 +434,9 @@ describe("Ancilis MCP server", () => {
         },
       });
 
+      expect(reportOutputSchema.parse(jsonReport.structuredContent)).toEqual(
+        checkPostureOutputSchema.parse(sessionPosture.structuredContent),
+      );
       expect(checkPostureOutputSchema.parse(jsonReport.structuredContent)).toEqual(
         checkPostureOutputSchema.parse(sessionPosture.structuredContent),
       );
@@ -595,6 +606,21 @@ describe("Ancilis MCP server", () => {
       session_id: "session-a",
       posture: "compliant",
     }).posture).toBe("compliant");
+
+    expect(reportOutputSchema.parse({
+      agent: { name: "agent", id: null, owner: null },
+      mode: "audit",
+      posture: "not_evaluated",
+      summary: {
+        total_evaluations: 0,
+        decisions: {},
+        tools_evaluated: [],
+        control_pass_rates: {},
+      },
+      controls: [],
+      evidence: { db_path: ":memory:", chain_valid: true, chain_errors: [] },
+      warnings: [],
+    }).posture).toBe("not_evaluated");
 
     expect(listOverlaysOutputSchema.parse({
       overlays: [{

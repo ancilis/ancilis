@@ -129,7 +129,80 @@ export const reportMarkdownOutputSchema = z.object({
   posture: z.enum(["not_evaluated", "compliant", "non_compliant"]),
 });
 
-export const reportOutputSchema = reportMarkdownOutputSchema;
+export const reportOutputSchema = z.object({
+  report: z.string().optional(),
+  generated_at: z.string().optional(),
+  session_id: z.string().nullable().optional(),
+  agent: checkPostureOutputSchema.shape.agent.optional(),
+  mode: mcpModeSchema.optional(),
+  posture: z.enum(["not_evaluated", "compliant", "non_compliant"]),
+  summary: checkPostureOutputSchema.shape.summary.optional(),
+  controls: checkPostureOutputSchema.shape.controls.optional(),
+  evidence: checkPostureOutputSchema.shape.evidence.optional(),
+  warnings: checkPostureOutputSchema.shape.warnings.optional(),
+}).superRefine((value, ctx) => {
+  const hasMarkdownFields =
+    value.report !== undefined
+    || value.generated_at !== undefined
+    || value.session_id !== undefined;
+  const hasJsonFields =
+    value.agent !== undefined
+    || value.mode !== undefined
+    || value.summary !== undefined
+    || value.controls !== undefined
+    || value.evidence !== undefined
+    || value.warnings !== undefined;
+
+  if (hasMarkdownFields && !hasJsonFields) {
+    if (value.report === undefined) {
+      ctx.addIssue({ code: "custom", path: ["report"], message: "report is required for markdown output" });
+    }
+    if (value.generated_at === undefined) {
+      ctx.addIssue({ code: "custom", path: ["generated_at"], message: "generated_at is required for markdown output" });
+    }
+    if (value.session_id === undefined) {
+      ctx.addIssue({ code: "custom", path: ["session_id"], message: "session_id is required for markdown output" });
+    }
+    return;
+  }
+
+  if (hasJsonFields && !hasMarkdownFields) {
+    if (value.agent === undefined) {
+      ctx.addIssue({ code: "custom", path: ["agent"], message: "agent is required for json output" });
+    }
+    if (value.mode === undefined) {
+      ctx.addIssue({ code: "custom", path: ["mode"], message: "mode is required for json output" });
+    }
+    if (value.summary === undefined) {
+      ctx.addIssue({ code: "custom", path: ["summary"], message: "summary is required for json output" });
+    }
+    if (value.controls === undefined) {
+      ctx.addIssue({ code: "custom", path: ["controls"], message: "controls are required for json output" });
+    }
+    if (value.evidence === undefined) {
+      ctx.addIssue({ code: "custom", path: ["evidence"], message: "evidence is required for json output" });
+    }
+    if (value.warnings === undefined) {
+      ctx.addIssue({ code: "custom", path: ["warnings"], message: "warnings are required for json output" });
+    }
+    return;
+  }
+
+  if (!hasMarkdownFields && !hasJsonFields) {
+    ctx.addIssue({
+      code: "custom",
+      path: [],
+      message: "report output must match the markdown or json report shape",
+    });
+    return;
+  }
+
+  ctx.addIssue({
+    code: "custom",
+    path: [],
+    message: "report output must match either the markdown or json shape, not both",
+  });
+});
 
 export const listOverlaysOutputSchema = z.object({
   overlays: z.array(z.object({

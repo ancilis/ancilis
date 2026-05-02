@@ -5,7 +5,6 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import process from "node:process";
 import type { Readable, Writable } from "node:stream";
-import * as z from "zod/v4";
 import { loadOverlayProfiles } from "../activation/index.js";
 import { loadConfig, type ResolvedConfig } from "../config/index.js";
 import type { Action } from "../engine/action.js";
@@ -26,6 +25,7 @@ import {
   listOverlaysInputSchema,
   listOverlaysOutputSchema,
   reportInputSchema,
+  reportOutputSchema,
   type CheckPostureInput,
   type CheckPostureOutput,
   type EvaluateActionInput,
@@ -58,7 +58,6 @@ type SummaryShape = {
 
 const DETERMINISTIC_TIMESTAMP_BASE_MS = Date.UTC(2026, 0, 1);
 const DETERMINISTIC_TIMESTAMP_WINDOW_MS = 366 * 24 * 60 * 60 * 1000;
-const reportToolOutputSchema = z.object({}).catchall(z.unknown());
 
 function textResult<T extends Record<string, unknown>>(structuredContent: T): CallToolResult {
   return {
@@ -574,7 +573,7 @@ export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): M
       title: "Generate Ancilis report",
       description: "Generate a read-only posture report for the configured evidence store.",
       inputSchema: reportInputSchema,
-      outputSchema: reportToolOutputSchema,
+      outputSchema: reportOutputSchema,
       annotations: { readOnlyHint: true },
     },
     async (input) => textResult(await generateReport(input, options)),
