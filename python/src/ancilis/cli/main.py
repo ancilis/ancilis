@@ -42,7 +42,7 @@ def cli(ctx: click.Context, no_update_check: bool) -> None:
 
 @cli.result_callback()
 @click.pass_context
-def record_cli_result(ctx: click.Context, _result: object, **_params: object) -> None:
+def record_cli_result(ctx: click.Context, /, _result: object, **_params: object) -> None:
     """Record coarse command telemetry for successful Click commands."""
     command = ctx.invoked_subcommand or "unknown"
     if command == "telemetry":

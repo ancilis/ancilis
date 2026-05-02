@@ -11,15 +11,15 @@ import time
 import urllib.error
 import urllib.request
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-try:  # pragma: no cover - exercised implicitly on Python <3.11
+if sys.version_info >= (3, 11):  # pragma: no cover - exercised by runtime version
     import tomllib
-except ModuleNotFoundError:  # pragma: no cover
-    import tomli as tomllib  # type: ignore[no-redef]
+else:  # pragma: no cover
+    import tomli as tomllib
 
 from ancilis import __version__
 
@@ -93,15 +93,16 @@ def _telemetry_state_path(home_dir: Path | None = None) -> Path:
     return telemetry_root(home_dir) / "telemetry" / "state.json"
 
 
-def is_do_not_track_enabled(env: dict[str, str] | None = None) -> bool:
-    value = (env or os.environ).get("DO_NOT_TRACK") or (env or os.environ).get("DNT")
+def is_do_not_track_enabled(env: Mapping[str, str] | None = None) -> bool:
+    resolved_env = env or os.environ
+    value = resolved_env.get("DO_NOT_TRACK") or resolved_env.get("DNT")
     return value is not None and value.lower() not in {"", "0", "false", "no", "off"}
 
 
 def read_telemetry_config(
     *,
     home_dir: Path | None = None,
-    env: dict[str, str] | None = None,
+    env: Mapping[str, str] | None = None,
     endpoint: str | None = None,
 ) -> TelemetryConfig:
     resolved_env = env or os.environ
@@ -157,7 +158,7 @@ def set_telemetry_enabled(
     enabled: bool,
     *,
     home_dir: Path | None = None,
-    env: dict[str, str] | None = None,
+    env: Mapping[str, str] | None = None,
     endpoint: str | None = None,
 ) -> TelemetryConfig:
     current = read_telemetry_config(home_dir=home_dir, env=env, endpoint=endpoint)
@@ -181,7 +182,7 @@ def _queue_lines(*, home_dir: Path | None = None) -> list[str]:
 def read_telemetry_status(
     *,
     home_dir: Path | None = None,
-    env: dict[str, str] | None = None,
+    env: Mapping[str, str] | None = None,
 ) -> TelemetryStatus:
     config = read_telemetry_config(home_dir=home_dir, env=env)
     dnt = is_do_not_track_enabled(env)
@@ -221,7 +222,7 @@ def format_telemetry_status(status: TelemetryStatus) -> str:
 def maybe_prompt_for_telemetry_consent(
     *,
     home_dir: Path | None = None,
-    env: dict[str, str] | None = None,
+    env: Mapping[str, str] | None = None,
 ) -> bool:
     resolved_env = env or os.environ
     if (
@@ -304,7 +305,7 @@ def _read_state(*, home_dir: Path | None = None) -> dict[str, Any]:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
     except Exception:
         return {}
 
@@ -333,7 +334,7 @@ def record_telemetry_event(
     properties: dict[str, Any] | None = None,
     *,
     home_dir: Path | None = None,
-    env: dict[str, str] | None = None,
+    env: Mapping[str, str] | None = None,
     urlopen: Callable[..., Any] | None = None,
 ) -> None:
     status = read_telemetry_status(home_dir=home_dir, env=env)
@@ -358,7 +359,7 @@ def record_adapter_used(adapter_type: str) -> None:
 def flush_telemetry_events(
     *,
     home_dir: Path | None = None,
-    env: dict[str, str] | None = None,
+    env: Mapping[str, str] | None = None,
     force: bool = False,
     urlopen: Callable[..., Any] | None = None,
 ) -> dict[str, Any]:
