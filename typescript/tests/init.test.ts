@@ -159,6 +159,7 @@ describe("runInit non-interactive", () => {
     expect(yaml).toMatch(/name: my-agent/);
     expect(yaml).toMatch(/- soc2/);
     expect(yaml).toMatch(/mode: audit/);
+    expect(yaml).toMatch(/config_version: 2/);
   });
 
   it("writes the canonical NIST CSF overlay when given the nist-csf-2 alias", async () => {

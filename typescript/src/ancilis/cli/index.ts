@@ -1,7 +1,8 @@
 /** CLI module exports. */
 
 export { formatStatus } from "./status.js";
-export { validateAndFormat } from "./validate.js";
+export { migrateAndFormat, validateAndFormat } from "./validate.js";
+export type { ConfigMigrateOptions, ConfigValidateOptions } from "./validate.js";
 export { approveTool } from "./approve.js";
 export { runDoctor } from "./doctor.js";
 export type { DoctorResult } from "./doctor.js";

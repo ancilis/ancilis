@@ -6,7 +6,7 @@ import click
 
 from ancilis.cli.status import status
 from ancilis.cli.report import report
-from ancilis.cli.validate import validate
+from ancilis.cli.validate import migrate, validate
 from ancilis.cli.approve import approve_tool
 from ancilis.cli.doctor import doctor
 from ancilis.cli.evidence import evidence
@@ -57,6 +57,7 @@ def config_group() -> None:
 
 
 config_group.add_command(validate)
+config_group.add_command(migrate)
 
 
 def main() -> None:

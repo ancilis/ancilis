@@ -3,13 +3,13 @@
  */
 
 import { z } from "zod";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { parse as parseYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { sharedPathFrom } from "../shared-path.js";
 import { ConfigError } from "../errors.js";
 import { ActivationResolver } from "../activation/resolver.js";
-import { normalizeOverlayIds } from "../overlays/index.js";
+import { normalizeOverlayId, normalizeOverlayIds } from "../overlays/index.js";
 
 // Resolve shared/ directory relative to the installed package root
 const SHARED_DIR = sharedPathFrom(import.meta.url);
@@ -21,6 +21,7 @@ const CLASSIFICATIONS_FILE = join(SHARED_DIR, "classifications", "taxonomy.json"
 const DEFAULT_CONTROL_ACTIVATION_SOURCE = "default";
 const EXPLICIT_CONTROL_ACTIVATION_SOURCE = "explicit:security.controls";
 const CERTIFICATION_CONTROL_ACTIVATION_SOURCE_PREFIX = "certification_targets:";
+export const CURRENT_CONFIG_VERSION = 2;
 
 // --- Zod Schemas ---
 
@@ -68,7 +69,16 @@ const ScanConfigSchema = z.object({
   dependencies: ScanDependenciesConfigSchema,
 }).default({});
 
+const ConfigVersionSchema = z.preprocess((value) => {
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value.replace(/^v/i, ""), 10);
+    return Number.isNaN(parsed) ? value : parsed;
+  }
+  return value;
+}, z.number().int().min(1).default(CURRENT_CONFIG_VERSION));
+
 const AncilisConfigSchema = z.object({
+  config_version: ConfigVersionSchema,
   agent: z.object({
     name: z.string().min(1, "agent.name must be a non-empty string"),
     description: z.string().default(""),
@@ -84,6 +94,228 @@ const AncilisConfigSchema = z.object({
 });
 
 type AncilisConfig = z.infer<typeof AncilisConfigSchema>;
+
+export interface ConfigMigrationResult {
+  originalVersion: number;
+  currentVersion: number;
+  changed: boolean;
+  changes: string[];
+  config: Record<string, unknown>;
+  backupPath?: string;
+}
+
+interface ValidationContext {
+  source?: string;
+}
+
+const KNOWN_KEY_CHILDREN: Record<string, string[]> = {
+  "": ["config_version", "agent", "security", "my_agent_handles", "certification_targets", "compliance", "scan"],
+  agent: ["name", "description", "owner", "agent_id", "llm_provider"],
+  security: ["mode", "controls", "tools", "scope"],
+  "security.tools": ["allowed", "blocked"],
+  "security.scope": ["max_actions_per_minute", "allowed_destinations", "blocked_destinations"],
+  compliance: ["overlays", "evidence"],
+  "compliance.evidence": ["storage", "retention_days"],
+  scan: ["dependencies"],
+  "scan.dependencies": ["enabled", "severity_threshold", "ignore"],
+};
+
+const DEPRECATED_KEY_PATHS: Record<string, string> = {
+  agent_name: "agent.name",
+  data_classifications: "my_agent_handles",
+};
+
+function cloneRaw(raw: Record<string, unknown>): Record<string, unknown> {
+  return JSON.parse(JSON.stringify(raw)) as Record<string, unknown>;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function configVersionFrom(raw: Record<string, unknown>): number {
+  const version = raw.config_version;
+  if (version === undefined || version === null) return 1;
+  if (typeof version === "number" && Number.isInteger(version) && version >= 1) return version;
+  if (typeof version === "string") {
+    const parsed = Number.parseInt(version.replace(/^v/i, ""), 10);
+    if (Number.isInteger(parsed) && parsed >= 1) return parsed;
+  }
+  throw new ConfigError(`config_version must be a positive integer; received ${JSON.stringify(version)}`);
+}
+
+function lineForPath(source: string | undefined, path: string[]): number | undefined {
+  if (!source || path.length === 0) return undefined;
+
+  let currentIndent = -1;
+  let depth = 0;
+  const lines = source.split(/\r?\n/);
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]!;
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#")) continue;
+    const match = line.match(/^(\s*)([A-Za-z0-9_-]+)\s*:/);
+    if (!match) continue;
+
+    const indent = match[1]!.length;
+    const key = match[2]!;
+    if (indent <= currentIndent) {
+      depth = Math.max(0, Math.floor(indent / 2));
+      currentIndent = indent - 2;
+    }
+
+    if (key === path[depth]) {
+      if (depth === path.length - 1) return index + 1;
+      depth += 1;
+      currentIndent = indent;
+    }
+  }
+
+  const leaf = path[path.length - 1];
+  if (leaf === undefined) return undefined;
+  const fallback = new RegExp(`^\\s*${escapeRegExp(leaf)}\\s*:`);
+  const fallbackIndex = lines.findIndex(line => fallback.test(line));
+  return fallbackIndex >= 0 ? fallbackIndex + 1 : undefined;
+}
+
+function lineForArrayValue(source: string | undefined, parentPath: string[], value: string): number | undefined {
+  if (!source) return undefined;
+  const parentLine = lineForPath(source, parentPath);
+  if (parentLine === undefined) return undefined;
+  const lines = source.split(/\r?\n/);
+  const parentIndent = (lines[parentLine - 1]!.match(/^(\s*)/)?.[1] ?? "").length;
+  for (let index = parentLine; index < lines.length; index += 1) {
+    const line = lines[index]!;
+    const indent = (line.match(/^(\s*)/)?.[1] ?? "").length;
+    if (line.trim() !== "" && indent <= parentIndent && !line.trim().startsWith("-")) break;
+    if (line.includes(value)) return index + 1;
+  }
+  return parentLine;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function levenshtein(left: string, right: string): number {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let i = 0; i < left.length; i += 1) {
+    const current = [i + 1];
+    for (let j = 0; j < right.length; j += 1) {
+      current[j + 1] = Math.min(
+        previous[j + 1]! + 1,
+        current[j]! + 1,
+        previous[j]! + (left[i] === right[j] ? 0 : 1),
+      );
+    }
+    previous.splice(0, previous.length, ...current);
+  }
+  return previous[right.length]!;
+}
+
+function closest(value: string, candidates: Iterable<string>): string | undefined {
+  let best: { candidate: string; distance: number } | undefined;
+  for (const candidate of candidates) {
+    const distance = levenshtein(value.toLowerCase(), candidate.toLowerCase());
+    if (!best || distance < best.distance) {
+      best = { candidate, distance };
+    }
+  }
+  const maxDistance = value.length <= 6 ? 2 : 4;
+  return best && best.distance <= maxDistance ? best.candidate : undefined;
+}
+
+function allKnownPaths(): string[] {
+  const paths: string[] = [];
+  for (const [parent, children] of Object.entries(KNOWN_KEY_CHILDREN)) {
+    for (const child of children) {
+      paths.push(parent ? `${parent}.${child}` : child);
+    }
+  }
+  return [...paths, ...Object.keys(DEPRECATED_KEY_PATHS)];
+}
+
+function keyWarning(path: string[], source: string | undefined): string {
+  const joined = path.join(".");
+  const line = lineForPath(source, path);
+  const lineText = line !== undefined ? ` at line ${line}` : "";
+  const suggestion = closest(joined, allKnownPaths());
+  const suggestionText = suggestion ? `. Did you mean '${suggestion}'?` : "";
+  return `Unknown key '${joined}'${lineText}${suggestionText}`;
+}
+
+function collectUnknownKeyWarnings(raw: Record<string, unknown>, context: ValidationContext): string[] {
+  const warnings: string[] = [];
+
+  function visit(value: unknown, path: string[]): void {
+    if (!isRecord(value)) return;
+    const pathKey = path.join(".");
+    const children = KNOWN_KEY_CHILDREN[pathKey];
+    if (children === undefined) return;
+    const allowed = new Set(children);
+
+    for (const key of Object.keys(value)) {
+      if (!allowed.has(key)) {
+        warnings.push(keyWarning([...path, key], context.source));
+        continue;
+      }
+      visit(value[key], [...path, key]);
+    }
+  }
+
+  visit(raw, []);
+  return warnings;
+}
+
+function migrateRawConfig(raw: Record<string, unknown>): ConfigMigrationResult {
+  const originalVersion = configVersionFrom(raw);
+  if (originalVersion > CURRENT_CONFIG_VERSION) {
+    throw new ConfigError(
+      `config_version ${originalVersion} is newer than this SDK supports (current ${CURRENT_CONFIG_VERSION})`,
+    );
+  }
+
+  const migrated = cloneRaw(raw);
+  const changes: string[] = [];
+
+  if (typeof migrated.agent_name === "string") {
+    const agent = isRecord(migrated.agent) ? { ...migrated.agent } : {};
+    if (agent.name === undefined) {
+      agent.name = migrated.agent_name;
+      changes.push("moved deprecated agent_name to agent.name");
+    }
+    migrated.agent = agent;
+    delete migrated.agent_name;
+  }
+
+  if (Array.isArray(migrated.data_classifications) && migrated.my_agent_handles === undefined) {
+    migrated.my_agent_handles = migrated.data_classifications;
+    delete migrated.data_classifications;
+    changes.push("renamed deprecated data_classifications to my_agent_handles");
+  }
+
+  if (originalVersion < CURRENT_CONFIG_VERSION || migrated.config_version === undefined) {
+    migrated.config_version = CURRENT_CONFIG_VERSION;
+    changes.push(`added config_version: ${CURRENT_CONFIG_VERSION}`);
+  }
+
+  return {
+    originalVersion,
+    currentVersion: CURRENT_CONFIG_VERSION,
+    changed: changes.length > 0,
+    changes,
+    config: migrated,
+  };
+}
+
+function zodMessage(issue: z.ZodIssue, source: string | undefined): string {
+  const path = issue.path.map(part => String(part));
+  const label = path.length > 0 ? path.join(".") : "config";
+  const line = lineForPath(source, path);
+  const lineText = line !== undefined ? ` at line ${line}` : "";
+  return `${label}${lineText}: ${issue.message}`;
+}
 
 // --- Shared JSON Loaders ---
 
@@ -183,6 +415,7 @@ export interface UnavailableOverlay {
 }
 
 export interface ResolvedConfig {
+  configVersion?: number;
   agentName: string;
   agentId: string | null;
   agentOwner: string;
@@ -211,16 +444,8 @@ export interface ResolvedConfig {
 
 // --- Validation ---
 
-function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; warnings: string[] } {
-  const warnings: string[] = [];
-
-  // Check for unknown top-level keys
-  const knownKeys = new Set(["agent", "security", "my_agent_handles", "certification_targets", "compliance", "scan"]);
-  for (const key of Object.keys(raw)) {
-    if (!knownKeys.has(key)) {
-      warnings.push(`Unknown top-level key: '${key}'`);
-    }
-  }
+function validateConfig(raw: Record<string, unknown>, context: ValidationContext = {}): { config: AncilisConfig; warnings: string[] } {
+  const warnings: string[] = collectUnknownKeyWarnings(raw, context);
 
   // Validate control IDs in overrides
   const security = raw.security as Record<string, unknown> | undefined;
@@ -230,7 +455,11 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
       const validIds = new Set<string>(loadControlDefinitions().keys());
       for (const key of Object.keys(controls)) {
         if (!validIds.has(key)) {
-          throw new ConfigError(`Unknown control ID in security.controls: '${key}'`);
+          const suggestion = closest(key, validIds);
+          const suggestionText = suggestion ? `. Did you mean '${suggestion}'?` : "";
+          const line = lineForPath(context.source, ["security", "controls", key]);
+          const lineText = line !== undefined ? ` at line ${line}` : "";
+          throw new ConfigError(`Unknown control ID in security.controls${lineText}: '${key}'${suggestionText}`);
         }
       }
     }
@@ -243,9 +472,34 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
   if (Array.isArray(dataHandling)) {
     for (const dt of dataHandling) {
       if (!validTypes.has(dt)) {
+        const suggestion = closest(dt, validTypes);
+        const suggestionText = suggestion ? ` Did you mean '${suggestion}'?` : "";
+        const line = lineForArrayValue(context.source, ["my_agent_handles"], dt);
+        const lineText = line !== undefined ? ` at line ${line}` : "";
         throw new ConfigError(
-          `Unknown data type in my_agent_handles: '${dt}'. ` +
+          `Unknown data type in my_agent_handles${lineText}: '${dt}'.${suggestionText} ` +
           `Valid types: ${[...validTypes].sort().join(", ")}`
+        );
+      }
+    }
+  }
+
+  // Validate explicit overlay IDs
+  const compliance = raw.compliance as Record<string, unknown> | undefined;
+  const explicitOverlays = compliance?.overlays;
+  if (Array.isArray(explicitOverlays)) {
+    const validOverlays = new Set<string>(loadOverlayDefinitions().keys());
+    for (const rawOverlay of explicitOverlays) {
+      if (typeof rawOverlay !== "string") continue;
+      const normalized = normalizeOverlayId(rawOverlay);
+      if (!validOverlays.has(normalized)) {
+        const suggestion = closest(rawOverlay, validOverlays);
+        const suggestionText = suggestion ? ` Did you mean '${suggestion}'?` : "";
+        const line = lineForArrayValue(context.source, ["compliance", "overlays"], rawOverlay);
+        const lineText = line !== undefined ? ` at line ${line}` : "";
+        throw new ConfigError(
+          `Unknown overlay profile '${rawOverlay}'${lineText}.${suggestionText} ` +
+          `Available overlays: ${[...validOverlays].sort().join(", ")}`
         );
       }
     }
@@ -266,7 +520,11 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
     }
   }
 
-  const config = AncilisConfigSchema.parse(raw);
+  const parsed = AncilisConfigSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new ConfigError(zodMessage(parsed.error.issues[0]!, context.source));
+  }
+  const config = parsed.data;
   return { config, warnings };
 }
 
@@ -274,6 +532,7 @@ function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; 
 
 function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfig {
   const result: ResolvedConfig = {
+    configVersion: config.config_version,
     agentName: config.agent.name,
     agentId: config.agent.agent_id ?? null,
     agentOwner: config.agent.owner,
@@ -492,18 +751,45 @@ export interface LoadConfigOptions {
 
 export function loadConfig(options: LoadConfigOptions = {}): ResolvedConfig {
   let configDict: Record<string, unknown>;
+  let source: string | undefined;
 
   if (options.raw !== undefined) {
     configDict = { ...options.raw };
   } else if (options.path !== undefined) {
-    const content = readFileSync(options.path, "utf-8");
-    configDict = (parseYaml(content) ?? {}) as Record<string, unknown>;
+    source = readFileSync(options.path, "utf-8");
+    configDict = (parseYaml(source) ?? {}) as Record<string, unknown>;
   } else {
     throw new ConfigError("No config path or raw config provided");
   }
 
-  const { config, warnings } = validateConfig(configDict);
+  const migration = migrateRawConfig(configDict);
+  const { config, warnings } = validateConfig(migration.config, { source });
   return resolveConfig(config, warnings);
+}
+
+export function inspectConfigMigration(raw: Record<string, unknown>): ConfigMigrationResult {
+  return migrateRawConfig(raw);
+}
+
+export function inspectConfigFileMigration(path: string): ConfigMigrationResult {
+  const content = readFileSync(path, "utf-8");
+  const raw = (parseYaml(content) ?? {}) as Record<string, unknown>;
+  return migrateRawConfig(raw);
+}
+
+export function migrateConfigFile(path: string, options: { apply?: boolean; backupPath?: string } = {}): ConfigMigrationResult {
+  const content = readFileSync(path, "utf-8");
+  const raw = (parseYaml(content) ?? {}) as Record<string, unknown>;
+  const migration = migrateRawConfig(raw);
+
+  if (options.apply && migration.changed) {
+    const backupPath = options.backupPath ?? `${path}.bak`;
+    writeFileSync(backupPath, content, "utf-8");
+    writeFileSync(path, stringifyYaml(migration.config), "utf-8");
+    return { ...migration, backupPath };
+  }
+
+  return migration;
 }
 
 export function formatResolvedConfig(resolved: ResolvedConfig): string {

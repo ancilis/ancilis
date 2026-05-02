@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from difflib import get_close_matches
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -12,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from ancilis._shared import shared_path
 from ancilis.activation.loader import load_overlay_profiles
 from ancilis.errors import config_invalid
-from ancilis.overlays import normalize_overlay_ids
+from ancilis.overlays import normalize_overlay_id, normalize_overlay_ids
 from ancilis.plugins import PluginRegistry
 
 if TYPE_CHECKING:
@@ -23,6 +24,7 @@ SHARED_DIR = shared_path()
 CONTROLS_DIR = SHARED_DIR / "controls"
 OVERLAYS_DIR = SHARED_DIR / "overlays"
 CLASSIFICATIONS_FILE = SHARED_DIR / "classifications" / "taxonomy.json"
+CURRENT_CONFIG_VERSION = 2
 
 
 # --- Pydantic Models ---
@@ -159,6 +161,7 @@ class ScanConfig(BaseModel):
 
 
 class AncilisConfig(BaseModel):
+    config_version: int = CURRENT_CONFIG_VERSION
     agent: AgentConfig
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     my_agent_handles: list[str] = Field(default_factory=list)
@@ -175,6 +178,7 @@ class AncilisConfig(BaseModel):
         if isinstance(values, dict):
             known = {
                 "agent",
+                "config_version",
                 "security",
                 "my_agent_handles",
                 "certification_targets",
@@ -257,6 +261,77 @@ def load_taxonomy() -> dict[str, Any]:
     return cast(dict[str, Any], data)
 
 
+def _config_version_from(raw: dict[str, Any]) -> int:
+    value = raw.get("config_version", 1)
+    if isinstance(value, str):
+        value = value.removeprefix("v")
+    try:
+        version = int(value)
+    except (TypeError, ValueError) as exc:
+        raise config_invalid(
+            f"config_version must be a positive integer; received {raw.get('config_version')!r}"
+        ) from exc
+    if version < 1:
+        raise config_invalid(f"config_version must be a positive integer; received {raw.get('config_version')!r}")
+    if version > CURRENT_CONFIG_VERSION:
+        raise config_invalid(
+            f"config_version {version} is newer than this SDK supports (current {CURRENT_CONFIG_VERSION})"
+        )
+    return version
+
+
+def inspect_config_migration(raw: dict[str, Any]) -> dict[str, Any]:
+    """Return a migrated config preview plus migration metadata."""
+    original_version = _config_version_from(raw)
+    migrated = dict(raw)
+    changes: list[str] = []
+
+    if isinstance(migrated.get("agent_name"), str):
+        agent = dict(migrated.get("agent") or {})
+        if "name" not in agent:
+            agent["name"] = migrated["agent_name"]
+            changes.append("moved deprecated agent_name to agent.name")
+        migrated["agent"] = agent
+        migrated.pop("agent_name", None)
+
+    if isinstance(migrated.get("data_classifications"), list) and "my_agent_handles" not in migrated:
+        migrated["my_agent_handles"] = migrated.pop("data_classifications")
+        changes.append("renamed deprecated data_classifications to my_agent_handles")
+
+    if original_version < CURRENT_CONFIG_VERSION or "config_version" not in migrated:
+        migrated["config_version"] = CURRENT_CONFIG_VERSION
+        changes.append(f"added config_version: {CURRENT_CONFIG_VERSION}")
+
+    return {
+        "original_version": original_version,
+        "current_version": CURRENT_CONFIG_VERSION,
+        "changed": bool(changes),
+        "changes": changes,
+        "config": migrated,
+    }
+
+
+def inspect_config_file_migration(path: str | Path) -> dict[str, Any]:
+    """Preview migration metadata for a config file."""
+    config_path = Path(path)
+    raw = yaml.safe_load(config_path.read_text()) or {}
+    return inspect_config_migration(cast(dict[str, Any], raw))
+
+
+def migrate_config_file(path: str | Path, *, apply: bool = False) -> dict[str, Any]:
+    """Preview or apply config migration. Applying writes a .bak backup first."""
+    config_path = Path(path)
+    original = config_path.read_text()
+    raw = yaml.safe_load(original) or {}
+    result = inspect_config_migration(cast(dict[str, Any], raw))
+    if apply and result["changed"]:
+        backup_path = config_path.with_name(f"{config_path.name}.bak")
+        backup_path.write_text(original)
+        config_path.write_text(yaml.safe_dump(result["config"], sort_keys=False))
+        result["backup_path"] = str(backup_path)
+    return result
+
+
 def _add_plugin_data_classification_overlays(
     classification_lookup: dict[str, list[str]],
     overlay_defs: dict[str, dict[str, Any]],
@@ -301,6 +376,7 @@ class UnavailableOverlay:
 
 class ResolvedConfig:
     def __init__(self) -> None:
+        self.config_version: int = CURRENT_CONFIG_VERSION
         self.agent_name: str = ""
         self.agent_owner: str = ""
         self.agent_id: str | None = None
@@ -423,9 +499,28 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     if isinstance(my_agent_handles, list):
         for dt in my_agent_handles:
             if dt not in valid_types:
+                suggestion = get_close_matches(dt, sorted(valid_types), n=1, cutoff=0.75)
+                suggestion_text = f" Did you mean '{suggestion[0]}'?" if suggestion else ""
                 raise config_invalid(
-                    f"Unknown data type in my_agent_handles: '{dt}'. "
+                    f"Unknown data type in my_agent_handles: '{dt}'.{suggestion_text} "
                     f"Valid types: {', '.join(sorted(valid_types))}"
+                )
+
+    # Validate explicit overlay IDs
+    compliance = raw.get("compliance", {})
+    if isinstance(compliance, dict) and isinstance(compliance.get("overlays"), list):
+        overlay_defs = load_overlay_definitions()
+        valid_overlays = set(overlay_defs)
+        for overlay in compliance["overlays"]:
+            if not isinstance(overlay, str):
+                continue
+            normalized = normalize_overlay_id(overlay)
+            if normalized not in valid_overlays:
+                suggestion = get_close_matches(overlay, sorted(valid_overlays), n=1, cutoff=0.75)
+                suggestion_text = f" Did you mean '{suggestion[0]}'?" if suggestion else ""
+                raise config_invalid(
+                    f"Unknown overlay profile '{overlay}'.{suggestion_text} "
+                    f"Available overlays: {', '.join(sorted(valid_overlays))}"
                 )
 
     # Validate certification_targets
@@ -453,6 +548,7 @@ def resolve_config(
 ) -> ResolvedConfig:
     """Resolve a validated config into full runtime configuration."""
     result = ResolvedConfig()
+    result.config_version = config.config_version
     result.agent_name = config.agent.name
     result.agent_owner = config.agent.owner
     result.agent_id = config.agent.agent_id
@@ -690,7 +786,8 @@ def load_config(
         else:
             raise FileNotFoundError("No ancilis.yaml found and no config provided")
 
-    config, warnings = validate_config(config_dict)
+    migration = inspect_config_migration(config_dict)
+    config, warnings = validate_config(migration["config"])
     warnings.extend(custom_warnings)
     return resolve_config(
         config,

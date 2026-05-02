@@ -268,6 +268,7 @@ def test_init_generated_yaml_valid(tmp_path: Path) -> None:
             catch_exceptions=False,
         )
         assert result.exit_code == 0, result.output
+        assert "config_version: 2" in (td_path / "ancilis.yaml").read_text()
         config = load_config(path=str(td_path / "ancilis.yaml"))
         assert config.agent_name == "my-agent"
 

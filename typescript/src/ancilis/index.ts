@@ -33,8 +33,22 @@ export const __version__ = readPackageVersion();
 export { Ancilis } from "./facade.js";
 export type { AncilisLoadOptions, AncilisToolOptions, AncilisToolRun } from "./facade.js";
 
-export { loadConfig, formatResolvedConfig } from "./config/index.js";
-export type { ResolvedConfig, ControlStatus, OverlayActivation, UnavailableOverlay, LoadConfigOptions } from "./config/index.js";
+export {
+  CURRENT_CONFIG_VERSION,
+  formatResolvedConfig,
+  inspectConfigFileMigration,
+  inspectConfigMigration,
+  loadConfig,
+  migrateConfigFile,
+} from "./config/index.js";
+export type {
+  ConfigMigrationResult,
+  ControlStatus,
+  LoadConfigOptions,
+  OverlayActivation,
+  ResolvedConfig,
+  UnavailableOverlay,
+} from "./config/index.js";
 
 export { Engine, ToolRegistry, DE04IntegrityEvaluator } from "./engine/index.js";
 export { ToolStatus } from "./engine/index.js";

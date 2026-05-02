@@ -384,6 +384,16 @@ describe("validateAndFormat", () => {
     expect(valid).toBe(true);
     expect(message).toContain("test-agent");
   });
+
+  it("verbose validation shows schema details and migration preview", () => {
+    const path = writeConfig(dir, { agent_name: "legacy-agent" });
+    const { valid, message } = validateAndFormat(path, { verbose: true });
+    expect(valid).toBe(true);
+    expect(message).toContain("Config version: 2");
+    expect(message).toContain("Migration available: v1 -> v2");
+    expect(message).toContain("Schema:");
+    expect(message).toContain("shared/schemas/config.schema.json");
+  });
 });
 
 // ===== Approve Tool Tests =====
@@ -1288,6 +1298,21 @@ describe("Report Renderer UX", () => {
 });
 
 describe("runCli", () => {
+  it("applies config migrations with a backup", async () => {
+    const dir = tmpDir();
+    const configPath = writeConfig(dir, { agent_name: "legacy-agent" });
+    const { io, stdout, stderr } = captureIo();
+
+    const exitCode = await runCli(["config", "migrate", "--config", configPath, "--apply"], io);
+
+    expect(exitCode).toBe(0);
+    expect(stderr()).toBe("");
+    expect(stdout()).toContain("Migrated");
+    expect(stdout()).toContain("agent_name to agent.name");
+    expect(existsSync(`${configPath}.bak`)).toBe(true);
+    expect(loadConfig({ path: configPath }).agentName).toBe("legacy-agent");
+  });
+
   it("accepts report generate as an alias for the report command", async () => {
     const dir = tmpDir();
     const configPath = writeConfig(dir, fullConfig());

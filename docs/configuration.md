@@ -5,6 +5,8 @@ Ancilis is configured through `ancilis.yaml` in your project root. The config is
 ## Minimal config
 
 ```yaml
+config_version: 2
+
 agent:
   name: my-agent
 ```
@@ -14,6 +16,8 @@ This activates 26 baseline security controls in audit mode. Every tool call is e
 ## Full config structure
 
 ```yaml
+config_version: 2              # Schema version. Unversioned files are treated as v1.
+
 agent:
   name: my-agent              # Required. Identifies your agent in evidence records.
   description: ""              # Optional. Human-readable description.
@@ -43,6 +47,17 @@ compliance:
 ```
 
 ## Config fields
+
+### `config_version`
+
+`config_version: 2` is the current schema version. Older unversioned configs are treated as v1 and are migrated in memory by the SDK. To preview or write the migration with a backup:
+
+```bash
+ancilis config migrate --config ancilis.yaml
+ancilis config migrate --config ancilis.yaml --apply
+```
+
+`--apply` writes `ancilis.yaml.bak` before replacing the file.
 
 ### `agent` (required)
 
@@ -164,6 +179,7 @@ Both paths compose. Certification controls activate alongside data-driven overla
 
 ```bash
 ancilis config validate
+ancilis config validate --verbose
 ```
 
 Produces actionable error messages for common mistakes:
@@ -172,3 +188,5 @@ Produces actionable error messages for common mistakes:
 - Unknown data type: `"Unknown data type in my_agent_handles: 'medical'. Valid types: ai_training_data, biometric_data, ..."`
 - Invalid mode: `"security.mode must be 'audit' or 'enforce'"`
 - Unrecognized certification target: `"certification_targets contains unrecognized value 'aiuc-2'. Available targets: aiuc-1"`
+- Unknown key typo: `"Unknown key 'agent.nme'. Did you mean 'agent.name'?"`
+- Unknown overlay: `"Unknown overlay profile 'fedram'. Did you mean 'fedramp'?"`

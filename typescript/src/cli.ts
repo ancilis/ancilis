@@ -3,7 +3,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { approveTool, formatStatus, handleScan, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
+import { approveTool, formatStatus, handleScan, migrateAndFormat, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
@@ -31,7 +31,8 @@ function usage(): string {
     "  ancilis report [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
     "  ancilis report generate [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
     "  ancilis status [--verbose] [--config <path>] [--db <path>]",
-    "  ancilis config validate [--config <path>]",
+    "  ancilis config validate [--config <path>] [--verbose]",
+    "  ancilis config migrate [--config <path>] [--apply]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
     "  ancilis scan [--period <window>] [--ci] [--config <path>] [--db <path>]",
     "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
@@ -189,6 +190,7 @@ async function handleStatus(args: string[], io: CliIo): Promise<number> {
 
 function handleConfigValidate(args: string[], io: CliIo): number {
   let configPath: string | undefined;
+  let verbose = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -197,12 +199,39 @@ function handleConfigValidate(args: string[], io: CliIo): number {
       index += 1;
       continue;
     }
+    if (arg === "--verbose" || arg === "-v") {
+      verbose = true;
+      continue;
+    }
     throw new Error(`Unknown option for config validate: ${arg}`);
   }
 
-  const result = validateAndFormat(configPath);
+  const result = validateAndFormat(configPath, { verbose });
   print(result.valid ? io.stdout : io.stderr, result.message);
   return result.valid ? 0 : 1;
+}
+
+function handleConfigMigrate(args: string[], io: CliIo): number {
+  let configPath = "ancilis.yaml";
+  let apply = false;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--config") {
+      configPath = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--apply") {
+      apply = true;
+      continue;
+    }
+    throw new Error(`Unknown option for config migrate: ${arg}`);
+  }
+
+  const result = migrateAndFormat(configPath, { apply });
+  print(result.ok ? io.stdout : io.stderr, result.message);
+  return result.ok ? 0 : 1;
 }
 
 function handleApproveTool(args: string[], io: CliIo): number {
@@ -633,10 +662,13 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
       case "approve-tool":
         return handleApproveTool(rest, io);
       case "config":
-        if (rest[0] !== "validate") {
-          throw new Error(`Unknown config subcommand: ${rest[0] ?? "<missing>"}`);
+        if (rest[0] === "validate") {
+          return handleConfigValidate(rest.slice(1), io);
         }
-        return handleConfigValidate(rest.slice(1), io);
+        if (rest[0] === "migrate") {
+          return handleConfigMigrate(rest.slice(1), io);
+        }
+        throw new Error(`Unknown config subcommand: ${rest[0] ?? "<missing>"}`);
       case "baseline":
         return await handleBaseline(rest, io);
       case "evidence":

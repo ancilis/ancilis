@@ -3,9 +3,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { sharedPathFrom } from "../src/ancilis/shared-path.js";
-import { loadConfig } from "../src/ancilis/config/index.js";
+import { CURRENT_CONFIG_VERSION, inspectConfigMigration, loadConfig, migrateConfigFile } from "../src/ancilis/config/index.js";
 import { ConfigError } from "../src/ancilis/errors.js";
 
 function loadSharedControlIds(): string[] {
@@ -104,6 +106,39 @@ describe("Full Config", () => {
 });
 
 describe("Validation", () => {
+  it("recognizes config_version and migrates unversioned legacy config in memory", () => {
+    const versioned = loadConfig({ raw: { config_version: 2, agent: { name: "x" } } });
+    expect(versioned.configVersion).toBe(CURRENT_CONFIG_VERSION);
+
+    const migration = inspectConfigMigration({ agent_name: "legacy-agent" });
+    expect(migration).toMatchObject({
+      originalVersion: 1,
+      currentVersion: CURRENT_CONFIG_VERSION,
+      changed: true,
+    });
+    expect((migration.config.agent as Record<string, unknown>).name).toBe("legacy-agent");
+
+    const resolved = loadConfig({ raw: { agent_name: "legacy-agent" } });
+    expect(resolved.agentName).toBe("legacy-agent");
+    expect(resolved.configVersion).toBe(CURRENT_CONFIG_VERSION);
+  });
+
+  it("writes migrated configs with a backup when explicitly applied", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ancilis-config-"));
+    const path = join(dir, "ancilis.yaml");
+    writeFileSync(path, "agent_name: legacy-agent\n", "utf-8");
+
+    const preview = migrateConfigFile(path);
+    expect(preview.changed).toBe(true);
+    expect(existsSync(`${path}.bak`)).toBe(false);
+
+    const applied = migrateConfigFile(path, { apply: true });
+    expect(applied.backupPath).toBe(`${path}.bak`);
+    expect(existsSync(`${path}.bak`)).toBe(true);
+    expect(readFileSync(path, "utf-8")).toContain("config_version: 2");
+    expect(loadConfig({ path }).agentName).toBe("legacy-agent");
+  });
+
   it("rejects missing agent", () => {
     expect(() => loadConfig({ raw: {} })).toThrow();
   });
@@ -133,6 +168,15 @@ describe("Validation", () => {
         },
       })
     ).toThrow(/Unknown control ID/);
+  });
+
+  it("suggests close matches for typoed keys and overlay IDs", () => {
+    const resolved = loadConfig({ raw: { agent: { name: "x", nme: "typo" } } });
+    expect(resolved.warnings.join("\n")).toContain("Did you mean 'agent.name'");
+
+    expect(() =>
+      loadConfig({ raw: { agent: { name: "x" }, compliance: { overlays: ["fedram"] } } }),
+    ).toThrow(/Did you mean 'fedramp'/);
   });
 
   it("accepts DE-02 control overrides", () => {

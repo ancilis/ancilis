@@ -319,6 +319,24 @@ class TestConfigValidate:
         assert result.exit_code == 0
         assert "test-agent" in result.output
 
+    def test_verbose_validate_shows_schema_and_migration_preview(self, tmp_path: Path) -> None:
+        cfg = _make_config_file({"agent_name": "legacy-agent"}, tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(cli, ["config", "validate", "--config", str(cfg), "--verbose"])
+        assert result.exit_code == 0
+        assert "Config version: 2" in result.output
+        assert "Migration available: v1 -> v2" in result.output
+        assert "shared/schemas/config.schema.json" in result.output
+
+    def test_config_migrate_apply_writes_backup(self, tmp_path: Path) -> None:
+        cfg = _make_config_file({"agent_name": "legacy-agent"}, tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(cli, ["config", "migrate", "--config", str(cfg), "--apply"])
+        assert result.exit_code == 0
+        assert "Migrated" in result.output
+        assert "agent_name to agent.name" in result.output
+        assert cfg.with_name("ancilis.yaml.bak").exists()
+
     def test_config_not_found(self) -> None:
         runner = CliRunner()
         result = runner.invoke(cli, ["config", "validate", "--config", "/nonexistent/ancilis.yaml"])

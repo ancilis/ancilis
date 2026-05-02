@@ -92,6 +92,28 @@ Posture: COMPLIANT (4 ALLOW, 2 BLOCK in last session)
 
 ---
 
+## `ancilis config`
+
+Validate and migrate `ancilis.yaml`.
+
+```bash
+ancilis config validate [--config ancilis.yaml] [--verbose]
+ancilis config migrate [--config ancilis.yaml] [--apply]
+```
+
+| Subcommand | Description |
+|------------|-------------|
+| `validate` | Validates the config, shows active controls/overlays, and reports typo/deprecation warnings. |
+| `migrate` | Previews migration from older config versions to the current schema. |
+
+| Option | Description |
+|--------|-------------|
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--verbose` | Include schema, overlays, and enabled control details for validation |
+| `--apply` | For `migrate`, write the migrated file and create `ancilis.yaml.bak` |
+
+---
+
 ## `ancilis scan`
 
 Evaluate evidence posture and return pass/fail for CI/CD pipelines.

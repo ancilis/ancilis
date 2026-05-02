@@ -3,7 +3,15 @@
 import pytest
 from pydantic import ValidationError
 
-from ancilis.config import SHARED_DIR, load_config, load_overlay_definitions, validate_config
+from ancilis.config import (
+    CURRENT_CONFIG_VERSION,
+    SHARED_DIR,
+    inspect_config_migration,
+    load_config,
+    load_overlay_definitions,
+    migrate_config_file,
+    validate_config,
+)
 from ancilis.errors import ConfigError
 
 
@@ -125,6 +133,24 @@ class TestSyncConfig:
 
 
 class TestValidation:
+    def test_config_version_and_legacy_migration(self, tmp_path):
+        versioned = load_config(raw={"config_version": 2, "agent": {"name": "x"}})
+        assert versioned.config_version == CURRENT_CONFIG_VERSION
+
+        migration = inspect_config_migration({"agent_name": "legacy-agent"})
+        assert migration["original_version"] == 1
+        assert migration["current_version"] == CURRENT_CONFIG_VERSION
+        assert migration["changed"] is True
+        assert migration["config"]["agent"]["name"] == "legacy-agent"
+
+        config_path = tmp_path / "ancilis.yaml"
+        config_path.write_text("agent_name: legacy-agent\n")
+        result = migrate_config_file(config_path, apply=True)
+        assert result["backup_path"].endswith("ancilis.yaml.bak")
+        assert (tmp_path / "ancilis.yaml.bak").exists()
+        assert "config_version: 2" in config_path.read_text()
+        assert load_config(path=config_path).agent_name == "legacy-agent"
+
     def test_missing_agent_name_raises(self):
         with pytest.raises(ValidationError):
             load_config(raw={})
@@ -149,6 +175,10 @@ class TestValidation:
                     "security": {"controls": {"XX-99": {"enabled": True}}},
                 }
             )
+
+    def test_unknown_overlay_suggests_close_match(self):
+        with pytest.raises(ConfigError, match="Did you mean 'fedramp'"):
+            load_config(raw={"agent": {"name": "x"}, "compliance": {"overlays": ["fedram"]}})
 
 
 class TestDataTypeTranslation:
