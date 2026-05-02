@@ -76,6 +76,7 @@ export type { ReportData, EvidenceSummary, RenderPdfOptions, RenderPdfResult } f
 export {
   createAncilisMcpServer,
   runAncilisMcpServer,
+  runAncilisMcpServerSSE,
   checkPostureInputSchema,
   checkPostureOutputSchema,
   evaluateActionInputSchema,
@@ -89,6 +90,8 @@ export {
 } from "./mcp/index.js";
 export type {
   AncilisMcpServerOptions,
+  AncilisMcpSseServerOptions,
+  AncilisMcpSseServerHandle,
   CheckPostureInput,
   CheckPostureOutput,
   EvaluateActionInput,

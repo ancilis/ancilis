@@ -1,4 +1,5 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -18,6 +19,7 @@ import {
   listOverlaysOutputSchema,
   reportOutputSchema,
   runAncilisMcpServer,
+  runAncilisMcpServerSSE,
 } from "../src/ancilis/mcp/index.js";
 
 function tmpDir(): string {
@@ -164,6 +166,7 @@ describe("Ancilis MCP server", () => {
     expect(ancilis.runAncilisMcpServer).toBeDefined();
     expect(ancilis.reportOutputSchema).toBe(reportOutputSchema);
     expect(ancilis.listOverlaysOutputSchema).toBe(listOverlaysOutputSchema);
+    expect(ancilis.runAncilisMcpServerSSE).toBe(runAncilisMcpServerSSE);
   });
 
   it("keeps the stdio server alive until stdin closes", async () => {
@@ -181,6 +184,36 @@ describe("Ancilis MCP server", () => {
     stdin.end();
     await serverPromise;
     expect(settled).toBe(true);
+  });
+
+  it("serves health and tool discovery over SSE", async () => {
+    const handle = await runAncilisMcpServerSSE({ port: 0 });
+    const client = new Client({ name: "ancilis-sse-client", version: "0.1.0" });
+    const transport = new SSEClientTransport(new URL(`${handle.baseUrl}/sse`));
+
+    try {
+      const healthResponse = await fetch(`${handle.baseUrl}/health`);
+      expect(healthResponse.status).toBe(200);
+      expect(await healthResponse.json()).toEqual({
+        status: "ok",
+        transport: "sse",
+        tools: 5,
+      });
+
+      await client.connect(transport);
+      const result = await client.listTools();
+
+      expect(result.tools.map(tool => tool.name)).toEqual([
+        "ancilis_check_posture",
+        "ancilis_evaluate_action",
+        "ancilis_get_evidence",
+        "ancilis_report",
+        "ancilis_list_overlays",
+      ]);
+    } finally {
+      await client.close().catch(() => undefined);
+      await handle.close();
+    }
   });
 
   it("lists exactly the Ancilis assessment tools with explicit schemas", async () => {

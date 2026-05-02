@@ -7,7 +7,7 @@ import { approveTool, formatStatus, handleScan, runDoctor, runReport, validateAn
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
-import { runAncilisMcpServer } from "./ancilis/mcp/index.js";
+import { runAncilisMcpServer, runAncilisMcpServerSSE } from "./ancilis/mcp/index.js";
 import type { EvidenceSummary } from "./ancilis/report/index.js";
 import { packageRootFrom } from "./ancilis/shared-path.js";
 
@@ -35,7 +35,7 @@ function usage(): string {
     "  ancilis config validate [--config <path>]",
     "  ancilis approve-tool <tool-name> [--config <path>]",
     "  ancilis scan [--period <window>] [--ci] [--config <path>] [--db <path>]",
-    "  ancilis serve [--transport stdio] [--config <path>] [--db <path>]",
+    "  ancilis serve [--transport stdio|sse] [--port <port>] [--cors-origin <origin>] [--config <path>] [--db <path>]",
     "  ancilis baseline create --label <label> [--overlay <id>] [--window <hours>] [--config <path>] [--db <path>]",
     "  ancilis baseline list [--overlay <id>] [--config <path>] [--db <path>]",
     "  ancilis baseline drift [--id <baseline-id>] [--overlay <id>] [--format terminal|json] [--config <path>] [--db <path>]",
@@ -45,6 +45,9 @@ function usage(): string {
     "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--agent-id <id>] [--config <path>] [--db <path>]",
     "  ancilis init [--framework <name>] [--overlay <id>] [--agent-name <name>] [--dir <path>] [--detect] [--no-sample]",
     "  ancilis --version",
+    "",
+    "Serve notes:",
+    "  SSE mode has no built-in auth or TLS. Use it only on trusted networks or behind a reverse proxy.",
   ].join("\n");
 }
 
@@ -153,6 +156,8 @@ async function handleServe(args: string[]): Promise<number> {
   let transport = "stdio";
   let configPath: string | undefined;
   let dbPath: string | undefined;
+  let port: number | undefined;
+  let corsOrigin: string | undefined;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -171,15 +176,62 @@ async function handleServe(args: string[]): Promise<number> {
       index += 1;
       continue;
     }
+    if (arg === "--port") {
+      const value = Number.parseInt(readOption(args, index, arg), 10);
+      if (Number.isNaN(value) || value <= 0) {
+        throw new Error(`Invalid value for --port: ${args[index + 1] ?? "<missing>"}`);
+      }
+      port = value;
+      index += 1;
+      continue;
+    }
+    if (arg === "--cors-origin") {
+      corsOrigin = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
     throw new Error(`Unknown option for serve: ${arg}`);
   }
 
-  if (transport !== "stdio") {
+  if (!["stdio", "sse"].includes(transport)) {
     throw new Error(`Unsupported serve transport: ${transport}`);
+  }
+
+  if (transport === "stdio" && port !== undefined) {
+    throw new Error("--port is only supported with --transport sse");
+  }
+
+  if (transport === "stdio" && corsOrigin !== undefined) {
+    throw new Error("--cors-origin is only supported with --transport sse");
+  }
+
+  if (transport === "sse") {
+    const handle = await runAncilisMcpServerSSE({ configPath, dbPath, port, corsOrigin });
+    try {
+      await waitForSignal(["SIGINT", "SIGTERM"]);
+    } finally {
+      await handle.close();
+    }
+    return 0;
   }
 
   await runAncilisMcpServer({ configPath, dbPath });
   return 0;
+}
+
+function waitForSignal(signals: NodeJS.Signals[]): Promise<NodeJS.Signals> {
+  return new Promise((resolve) => {
+    const listeners = signals.map((signal) => {
+      const handler = (): void => {
+        for (const [registeredSignal, registeredHandler] of listeners) {
+          process.off(registeredSignal, registeredHandler);
+        }
+        resolve(signal);
+      };
+      process.once(signal, handler);
+      return [signal, handler] as const;
+    });
+  });
 }
 
 async function handleStatus(args: string[], io: CliIo): Promise<number> {

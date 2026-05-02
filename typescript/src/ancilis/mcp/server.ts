@@ -1,8 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import type { AddressInfo } from "node:net";
 import process from "node:process";
 import type { Readable, Writable } from "node:stream";
 import { loadOverlayProfiles } from "../activation/index.js";
@@ -47,6 +50,20 @@ export interface AncilisMcpServerOptions {
   stdout?: Writable;
 }
 
+export interface AncilisMcpSseServerOptions extends Omit<AncilisMcpServerOptions, "stdin" | "stdout"> {
+  host?: string;
+  port?: number;
+  corsOrigin?: string;
+}
+
+export interface AncilisMcpSseServerHandle {
+  server: Server;
+  host: string;
+  port: number;
+  baseUrl: string;
+  close(): Promise<void>;
+}
+
 type SummaryShape = {
   total_evaluations: number;
   decisions: Record<string, number>;
@@ -58,6 +75,18 @@ type SummaryShape = {
 
 const DETERMINISTIC_TIMESTAMP_BASE_MS = Date.UTC(2026, 0, 1);
 const DETERMINISTIC_TIMESTAMP_WINDOW_MS = 366 * 24 * 60 * 60 * 1000;
+const DEFAULT_SSE_HOST = "127.0.0.1";
+const DEFAULT_SSE_PORT = 3100;
+const SSE_ENDPOINT_PATH = "/sse";
+const MESSAGES_ENDPOINT_PATH = "/messages";
+const HEALTH_ENDPOINT_PATH = "/health";
+const ANCILIS_MCP_TOOL_NAMES = [
+  "ancilis_check_posture",
+  "ancilis_evaluate_action",
+  "ancilis_get_evidence",
+  "ancilis_report",
+  "ancilis_list_overlays",
+] as const;
 
 function textResult<T extends Record<string, unknown>>(structuredContent: T): CallToolResult {
   return {
@@ -532,7 +561,7 @@ export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): M
   });
 
   server.registerTool(
-    "ancilis_check_posture",
+    ANCILIS_MCP_TOOL_NAMES[0],
     {
       title: "Check Ancilis posture",
       description: "Summarize Ancilis runtime posture for the configured evidence store.",
@@ -544,7 +573,7 @@ export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): M
   );
 
   server.registerTool(
-    "ancilis_evaluate_action",
+    ANCILIS_MCP_TOOL_NAMES[1],
     {
       title: "Evaluate proposed action",
       description: "Evaluate a proposed tool action against Ancilis controls without executing it.",
@@ -556,7 +585,7 @@ export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): M
   );
 
   server.registerTool(
-    "ancilis_get_evidence",
+    ANCILIS_MCP_TOOL_NAMES[2],
     {
       title: "Get Ancilis evidence",
       description: "Read recent Ancilis evidence records and hash-chain status.",
@@ -568,7 +597,7 @@ export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): M
   );
 
   server.registerTool(
-    "ancilis_report",
+    ANCILIS_MCP_TOOL_NAMES[3],
     {
       title: "Generate Ancilis report",
       description: "Generate a read-only posture report for the configured evidence store.",
@@ -580,7 +609,7 @@ export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): M
   );
 
   server.registerTool(
-    "ancilis_list_overlays",
+    ANCILIS_MCP_TOOL_NAMES[4],
     {
       title: "List Ancilis overlays",
       description: "List active overlay profiles, coverage, and certification targets from configuration.",
@@ -625,6 +654,44 @@ function waitForStdioShutdown(stdin: Readable): Promise<void> {
   });
 }
 
+function applyCorsHeaders(response: ServerResponse, corsOrigin?: string): void {
+  if (!corsOrigin) return;
+  response.setHeader("Access-Control-Allow-Origin", corsOrigin);
+  response.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  response.setHeader("Access-Control-Allow-Headers", "content-type");
+  response.setHeader("Vary", "Origin");
+}
+
+function writeJson(
+  response: ServerResponse,
+  statusCode: number,
+  payload: Record<string, unknown>,
+  corsOrigin?: string,
+): void {
+  applyCorsHeaders(response, corsOrigin);
+  response.writeHead(statusCode, { "Content-Type": "application/json" });
+  response.end(JSON.stringify(payload));
+}
+
+function baseUrlFromAddress(address: AddressInfo): string {
+  const host = address.address === "0.0.0.0" ? "127.0.0.1" : address.address === "::" ? "::1" : address.address;
+  const formattedHost = host.includes(":") ? `[${host}]` : host;
+  return `http://${formattedHost}:${address.port}`;
+}
+
+function closeHttpServer(server: Server): Promise<void> {
+  if (!server.listening) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
 export async function runAncilisMcpServer(options: AncilisMcpServerOptions = {}): Promise<McpServer> {
   const stdin = options.stdin ?? process.stdin;
   const stdout = options.stdout ?? process.stdout;
@@ -638,4 +705,119 @@ export async function runAncilisMcpServer(options: AncilisMcpServerOptions = {})
   }
 
   return server;
+}
+
+export async function runAncilisMcpServerSSE(
+  options: AncilisMcpSseServerOptions = {},
+): Promise<AncilisMcpSseServerHandle> {
+  const sessions = new Map<string, { transport: SSEServerTransport; mcpServer: McpServer }>();
+  const httpServer = createServer(async (request: IncomingMessage, response: ServerResponse) => {
+    const requestUrl = new URL(request.url ?? "/", "http://localhost");
+    const sessionId = requestUrl.searchParams.get("sessionId");
+
+    if (request.method === "OPTIONS") {
+      applyCorsHeaders(response, options.corsOrigin);
+      response.writeHead(204);
+      response.end();
+      return;
+    }
+
+    if (request.method === "GET" && requestUrl.pathname === HEALTH_ENDPOINT_PATH) {
+      writeJson(response, 200, {
+        status: "ok",
+        transport: "sse",
+        tools: ANCILIS_MCP_TOOL_NAMES.length,
+      }, options.corsOrigin);
+      return;
+    }
+
+    if (request.method === "GET" && requestUrl.pathname === SSE_ENDPOINT_PATH) {
+      applyCorsHeaders(response, options.corsOrigin);
+      const transport = new SSEServerTransport(MESSAGES_ENDPOINT_PATH, response);
+      const mcpServer = createAncilisMcpServer(options);
+      let cleaned = false;
+      const cleanup = async (): Promise<void> => {
+        if (cleaned) return;
+        cleaned = true;
+        sessions.delete(transport.sessionId);
+        await mcpServer.close().catch(() => undefined);
+      };
+
+      transport.onclose = () => {
+        void cleanup();
+      };
+
+      try {
+        await mcpServer.connect(transport);
+        sessions.set(transport.sessionId, { transport, mcpServer });
+      } catch (error: unknown) {
+        sessions.delete(transport.sessionId);
+        await mcpServer.close().catch(() => undefined);
+        if (!response.headersSent) response.writeHead(500);
+        response.end((error as Error).message ?? String(error));
+      }
+      return;
+    }
+
+    if (request.method === "POST" && requestUrl.pathname === MESSAGES_ENDPOINT_PATH) {
+      if (!sessionId) {
+        response.writeHead(400);
+        response.end("Missing sessionId");
+        return;
+      }
+
+      const session = sessions.get(sessionId);
+      if (!session) {
+        response.writeHead(404);
+        response.end("Unknown sessionId");
+        return;
+      }
+
+      applyCorsHeaders(response, options.corsOrigin);
+      try {
+        await session.transport.handlePostMessage(request, response);
+      } catch (error: unknown) {
+        if (!response.headersSent) {
+          response.writeHead(500);
+          response.end((error as Error).message ?? String(error));
+        }
+      }
+      return;
+    }
+
+    response.writeHead(404);
+    response.end("Not found");
+  });
+
+  const host = options.host ?? DEFAULT_SSE_HOST;
+  const port = options.port ?? DEFAULT_SSE_PORT;
+  await new Promise<void>((resolve, reject) => {
+    httpServer.once("error", reject);
+    httpServer.listen(port, host, () => {
+      httpServer.off("error", reject);
+      resolve();
+    });
+  });
+
+  const address = httpServer.address();
+  if (!address || typeof address === "string") {
+    await closeHttpServer(httpServer).catch(() => undefined);
+    throw new Error("Unable to determine SSE server address");
+  }
+
+  return {
+    server: httpServer,
+    host,
+    port: address.port,
+    baseUrl: baseUrlFromAddress(address),
+    async close(): Promise<void> {
+      const activeSessions = [...sessions.values()];
+      sessions.clear();
+      for (const session of activeSessions) {
+        await session.transport.close().catch(() => undefined);
+        await session.mcpServer.close().catch(() => undefined);
+      }
+      await closeHttpServer(httpServer);
+    },
+  };
 }

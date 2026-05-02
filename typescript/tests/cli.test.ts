@@ -1288,6 +1288,16 @@ describe("Report Renderer UX", () => {
 });
 
 describe("runCli", () => {
+  it("documents SSE serve mode and its security limitations in help output", async () => {
+    const { io, stdout, stderr } = captureIo();
+    const exitCode = await runCli(["--help"], io);
+
+    expect(exitCode).toBe(0);
+    expect(stderr()).toBe("");
+    expect(stdout()).toContain("ancilis serve [--transport stdio|sse] [--port <port>] [--cors-origin <origin>] [--config <path>] [--db <path>]");
+    expect(stdout()).toContain("SSE mode has no built-in auth or TLS");
+  });
+
   it("rejects unsupported serve transports with a clear parser error", async () => {
     const { io, stdout, stderr } = captureIo();
     const exitCode = await runCli(["serve", "--transport", "http"], io);
@@ -1295,6 +1305,24 @@ describe("runCli", () => {
     expect(exitCode).toBe(1);
     expect(stdout()).toBe("");
     expect(stderr()).toContain("Unsupported serve transport: http");
+  });
+
+  it("rejects --port when serve transport is stdio", async () => {
+    const { io, stdout, stderr } = captureIo();
+    const exitCode = await runCli(["serve", "--port", "8080"], io);
+
+    expect(exitCode).toBe(1);
+    expect(stdout()).toBe("");
+    expect(stderr()).toContain("--port is only supported with --transport sse");
+  });
+
+  it("rejects --cors-origin when serve transport is stdio", async () => {
+    const { io, stdout, stderr } = captureIo();
+    const exitCode = await runCli(["serve", "--cors-origin", "http://localhost:3000"], io);
+
+    expect(exitCode).toBe(1);
+    expect(stdout()).toBe("");
+    expect(stderr()).toContain("--cors-origin is only supported with --transport sse");
   });
 
   it("accepts report generate as an alias for the report command", async () => {
