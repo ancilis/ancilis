@@ -255,6 +255,21 @@ def load_overlay_definitions(
     )
 
 
+def _plugin_overlay_candidate_ids(plugin_registry: PluginRegistry | None) -> set[str]:
+    """Return explicit overlay IDs that plugin records may satisfy at resolution time."""
+    if plugin_registry is None:
+        return set()
+
+    candidates: set[str] = set()
+    for record in plugin_registry.compatible("overlay"):
+        plugin_name = record.name.strip()
+        if not plugin_name:
+            continue
+        candidates.add(plugin_name)
+        candidates.add(f"plugin:{plugin_name.removeprefix('plugin:')}")
+    return candidates
+
+
 def load_taxonomy() -> dict[str, Any]:
     """Load the classification taxonomy from shared/classifications/."""
     data = json.loads(CLASSIFICATIONS_FILE.read_text())
@@ -469,7 +484,11 @@ def _apply_overlay_effects(
 # --- Config Parser ---
 
 
-def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
+def validate_config(
+    raw: dict[str, Any],
+    *,
+    valid_overlay_ids: set[str] | None = None,
+) -> tuple[AncilisConfig, list[str]]:
     """Validate raw config dict and return (config, warnings)."""
     warnings: list[str] = raw.pop("_warnings", [])
 
@@ -509,8 +528,11 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     # Validate explicit overlay IDs
     compliance = raw.get("compliance", {})
     if isinstance(compliance, dict) and isinstance(compliance.get("overlays"), list):
-        overlay_defs = load_overlay_definitions()
-        valid_overlays = set(overlay_defs)
+        valid_overlays = (
+            valid_overlay_ids
+            if valid_overlay_ids is not None
+            else set(load_overlay_definitions())
+        )
         for overlay in compliance["overlays"]:
             if not isinstance(overlay, str):
                 continue
@@ -545,6 +567,7 @@ def resolve_config(
     *,
     plugin_registry: PluginRegistry | None = None,
     plugin_configs: dict[str, dict[str, Any]] | None = None,
+    overlay_defs: dict[str, dict[str, Any]] | None = None,
 ) -> ResolvedConfig:
     """Resolve a validated config into full runtime configuration."""
     result = ResolvedConfig()
@@ -574,9 +597,9 @@ def resolve_config(
 
     # Load shared data
     control_defs = load_control_definitions()
-    if plugin_registry is None and plugin_configs is None:
+    if overlay_defs is None and plugin_registry is None and plugin_configs is None:
         overlay_defs = load_overlay_definitions()
-    else:
+    elif overlay_defs is None:
         overlay_defs = load_overlay_definitions(
             plugin_registry=plugin_registry,
             plugin_configs=plugin_configs,
@@ -786,14 +809,25 @@ def load_config(
         else:
             raise FileNotFoundError("No ancilis.yaml found and no config provided")
 
+    overlay_warnings: list[str] = []
+    overlay_defs = load_overlay_definitions(
+        plugin_registry=plugin_registry,
+        plugin_configs=plugin_configs,
+        warnings=overlay_warnings,
+    )
     migration = inspect_config_migration(config_dict)
-    config, warnings = validate_config(migration["config"])
+    migrated_config = migration["config"]
+    if overlay_warnings:
+        migrated_config.setdefault("_warnings", []).extend(overlay_warnings)
+    valid_overlay_ids = set(overlay_defs) | _plugin_overlay_candidate_ids(plugin_registry)
+    config, warnings = validate_config(migrated_config, valid_overlay_ids=valid_overlay_ids)
     warnings.extend(custom_warnings)
     return resolve_config(
         config,
         warnings,
         plugin_registry=plugin_registry,
         plugin_configs=plugin_configs,
+        overlay_defs=overlay_defs,
     )
 
 

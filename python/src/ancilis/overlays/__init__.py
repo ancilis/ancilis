@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 OVERLAY_ID_ALIASES = {
+    "financial": "glba",
     "nist-csf-2": "nist-csf",
 }
 
