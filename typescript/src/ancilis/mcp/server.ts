@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import process from "node:process";
 import type { Readable, Writable } from "node:stream";
+import * as z from "zod/v4";
 import { loadOverlayProfiles } from "../activation/index.js";
 import { loadConfig, type ResolvedConfig } from "../config/index.js";
 import type { Action } from "../engine/action.js";
@@ -25,7 +26,6 @@ import {
   listOverlaysInputSchema,
   listOverlaysOutputSchema,
   reportInputSchema,
-  reportOutputSchema,
   type CheckPostureInput,
   type CheckPostureOutput,
   type EvaluateActionInput,
@@ -58,6 +58,7 @@ type SummaryShape = {
 
 const DETERMINISTIC_TIMESTAMP_BASE_MS = Date.UTC(2026, 0, 1);
 const DETERMINISTIC_TIMESTAMP_WINDOW_MS = 366 * 24 * 60 * 60 * 1000;
+const reportToolOutputSchema = z.object({}).catchall(z.unknown());
 
 function textResult<T extends Record<string, unknown>>(structuredContent: T): CallToolResult {
   return {
@@ -236,85 +237,6 @@ async function checkPosture(input: CheckPostureInput, options: AncilisMcpServerO
   } finally {
     await store.close();
   }
-}
-
-async function generateReport(input: ReportInput, options: AncilisMcpServerOptions): Promise<ReportOutput> {
-  const config = loadMcpConfig(input, options);
-  const posture = await checkPosture(input, options);
-  const summary = {
-    ...posture.summary,
-    chain_valid: posture.evidence.chain_valid,
-    chain_errors: posture.evidence.chain_errors,
-  };
-  const generatedAt = new Date();
-
-  if (input.format === "json") {
-    return {
-      report: JSON.stringify(posture, null, 2),
-      generated_at: generatedAt.toISOString(),
-      session_id: input.session_id ?? null,
-      posture: posture.posture,
-      posture_details: posture,
-    };
-  }
-
-  const reportData = new ReportGenerator(config, summary).generate("30d", "markdown", { now: generatedAt });
-  return {
-    report: renderMarkdown(reportData),
-    generated_at: reportData.generatedAt,
-    session_id: input.session_id ?? null,
-    posture: posture.posture,
-  };
-}
-
-function overlayControlIds(profile: Record<string, unknown>): string[] {
-  const controlIds = new Set<string>();
-  for (const key of Object.keys((profile.framework_mapping ?? {}) as Record<string, unknown>)) {
-    controlIds.add(key);
-  }
-  for (const key of Object.keys((profile.control_adjustments ?? {}) as Record<string, unknown>)) {
-    controlIds.add(key);
-  }
-  for (const key of Object.keys((profile.evidence_requirements ?? {}) as Record<string, unknown>)) {
-    controlIds.add(key);
-  }
-  return [...controlIds].sort();
-}
-
-function overlaySource(triggeredBy: string[]): string {
-  if (triggeredBy.some(trigger => trigger.includes(" via "))) return "data_classification";
-  return "manual";
-}
-
-function listOverlays(input: ListOverlaysInput, options: AncilisMcpServerOptions): ListOverlaysOutput {
-  const config = loadMcpConfig(input, options);
-  const profiles = loadOverlayProfiles();
-  const enabledControlIds = new Set(
-    [...config.controls.values()]
-      .filter(control => control.enabled)
-      .map(control => control.controlId),
-  );
-
-  const overlays = [...config.activeOverlays.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([overlayId, activation]) => {
-      const profile = profiles.get(overlayId) ?? {};
-      const controlIds = overlayControlIds(profile);
-      const controlsActivated = controlIds.filter(controlId => enabledControlIds.has(controlId));
-      return {
-        name: (profile.name as string | undefined) ?? activation.name,
-        source: overlaySource(activation.triggeredBy),
-        controls_activated: controlsActivated,
-        controls_total: controlIds.length,
-        coverage_pct: controlIds.length > 0 ? Math.round((controlsActivated.length / controlIds.length) * 1000) / 10 : 0,
-      };
-    });
-
-  return {
-    overlays,
-    active_certification_targets: [...config.activeCertifications].sort(),
-    total_active_controls: enabledControlIds.size,
-  };
 }
 
 function preseedApprovedTools(config: ResolvedConfig, registry: ToolRegistry): void {
@@ -514,6 +436,96 @@ async function getEvidence(input: GetEvidenceInput, options: AncilisMcpServerOpt
   }
 }
 
+function reportSummaryFrom(posture: CheckPostureOutput): Record<string, unknown> {
+  return {
+    total_evaluations: posture.summary.total_evaluations,
+    decisions: posture.summary.decisions,
+    tools_evaluated: posture.summary.tools_evaluated,
+    control_pass_rates: posture.summary.control_pass_rates,
+    chain_valid: posture.evidence.chain_valid,
+    chain_errors: posture.evidence.chain_errors,
+  };
+}
+
+async function generateReport(input: ReportInput, options: AncilisMcpServerOptions): Promise<ReportOutput> {
+  if (input.format === "json") {
+    return checkPosture(input, options);
+  }
+
+  const posture = await checkPosture(input, options);
+  const config = loadMcpConfig(input, options);
+  const reportData = new ReportGenerator(config, reportSummaryFrom(posture)).generate("30d", "markdown");
+
+  return {
+    report: renderMarkdown(reportData),
+    generated_at: reportData.generatedAt,
+    session_id: input.session_id ?? null,
+    posture: posture.posture,
+  };
+}
+
+function overlayControlIds(profile: Record<string, unknown>): string[] {
+  const frameworkMapping = profile.framework_mapping;
+  if (frameworkMapping && typeof frameworkMapping === "object" && !Array.isArray(frameworkMapping)) {
+    return Object.keys(frameworkMapping).sort();
+  }
+
+  const controls = profile.controls;
+  if (controls && typeof controls === "object" && !Array.isArray(controls)) {
+    return Object.keys(controls).sort();
+  }
+
+  return [];
+}
+
+function overlaySource(
+  profile: Record<string, unknown>,
+  triggeredBy: string[],
+): ListOverlaysOutput["overlays"][number]["source"] {
+  if ((profile.trigger_type as string | undefined) === "baseline") {
+    return "baseline";
+  }
+  if (triggeredBy.length === 0) {
+    return "manual";
+  }
+  if (triggeredBy.some(trigger => trigger.startsWith("certification_targets:"))) {
+    return "certification_target";
+  }
+  return "data_classification";
+}
+
+function listOverlays(input: ListOverlaysInput, options: AncilisMcpServerOptions): ListOverlaysOutput {
+  const config = loadMcpConfig({ config_path: input.config_path }, options);
+  const overlayProfiles = loadOverlayProfiles();
+  const activeControls = new Set(
+    [...config.controls.values()]
+      .filter(control => control.enabled)
+      .map(control => control.controlId),
+  );
+
+  return {
+    overlays: [...config.activeOverlays.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([overlayId, activation]) => {
+        const profile = overlayProfiles.get(overlayId) ?? {};
+        const controlIds = overlayControlIds(profile);
+        const controlsActivated = controlIds.filter(controlId => activeControls.has(controlId));
+
+        return {
+          name: activation.name,
+          source: overlaySource(profile, activation.triggeredBy),
+          controls_activated: controlsActivated,
+          controls_total: controlIds.length,
+          coverage_pct: controlIds.length === 0
+            ? 0
+            : Math.round((controlsActivated.length / controlIds.length) * 1000) / 10,
+        };
+      }),
+    active_certification_targets: [...config.activeCertifications],
+    total_active_controls: activeControls.size,
+  };
+}
+
 export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): McpServer {
   const server = new McpServer({
     name: options.name ?? "ancilis",
@@ -562,7 +574,7 @@ export function createAncilisMcpServer(options: AncilisMcpServerOptions = {}): M
       title: "Generate Ancilis report",
       description: "Generate a read-only posture report for the configured evidence store.",
       inputSchema: reportInputSchema,
-      outputSchema: reportOutputSchema,
+      outputSchema: reportToolOutputSchema,
       annotations: { readOnlyHint: true },
     },
     async (input) => textResult(await generateReport(input, options)),

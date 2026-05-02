@@ -24,13 +24,23 @@ function tmpDir(): string {
   return mkdtempSync(join(tmpdir(), "ancilis-mcp-"));
 }
 
-function writeConfig(dir: string): string {
+function writeConfig(
+  dir: string,
+  options: {
+    agentName?: string;
+    agentOwner?: string;
+    agentId?: string;
+    dataHandling?: string[];
+    overlays?: string[];
+    certificationTargets?: string[];
+  } = {},
+): string {
   const path = join(dir, "ancilis.yaml");
-  writeFileSync(path, [
+  const lines = [
     "agent:",
-    "  name: mcp-agent",
-    "  owner: security",
-    "  agent_id: 11111111-1111-4111-8111-111111111111",
+    `  name: ${options.agentName ?? "mcp-agent"}`,
+    `  owner: ${options.agentOwner ?? "security"}`,
+    `  agent_id: ${options.agentId ?? "11111111-1111-4111-8111-111111111111"}`,
     "security:",
     "  mode: audit",
     "  tools:",
@@ -38,10 +48,35 @@ function writeConfig(dir: string): string {
     "      - demo.tool",
     "      - mcp:allowed.tool",
     "      - mcp:blocked.tool",
-    "my_agent_handles:",
-    "  - credit_cards",
-    "",
-  ].join("\n"));
+  ];
+
+  if (options.certificationTargets && options.certificationTargets.length > 0) {
+    lines.push("certification_targets:");
+    for (const certificationTarget of options.certificationTargets) {
+      lines.push(`  - ${certificationTarget}`);
+    }
+  }
+
+  const dataHandling = options.dataHandling ?? ["credit_cards"];
+  if (dataHandling.length > 0) {
+    lines.push("my_agent_handles:");
+    for (const dataType of dataHandling) {
+      lines.push(`  - ${dataType}`);
+    }
+  } else {
+    lines.push("my_agent_handles: []");
+  }
+
+  if (options.overlays && options.overlays.length > 0) {
+    lines.push("compliance:");
+    lines.push("  overlays:");
+    for (const overlay of options.overlays) {
+      lines.push(`    - ${overlay}`);
+    }
+  }
+
+  lines.push("");
+  writeFileSync(path, lines.join("\n"));
   return path;
 }
 
@@ -127,6 +162,8 @@ describe("Ancilis MCP server", () => {
   it("exports MCP server helpers from the package root", () => {
     expect(ancilis.createAncilisMcpServer).toBe(createAncilisMcpServer);
     expect(ancilis.runAncilisMcpServer).toBeDefined();
+    expect(ancilis.reportOutputSchema).toBe(reportOutputSchema);
+    expect(ancilis.listOverlaysOutputSchema).toBe(listOverlaysOutputSchema);
   });
 
   it("keeps the stdio server alive until stdin closes", async () => {
@@ -197,9 +234,11 @@ describe("Ancilis MCP server", () => {
         posture: "not_evaluated",
         session_id: null,
       });
-      expect(listOverlaysOutputSchema.parse(overlays.structuredContent)).toMatchObject({
+      expect(String(report.structuredContent?.report)).toContain("Ancilis Posture Report");
+      expect(listOverlaysOutputSchema.parse(overlays.structuredContent)).toEqual({
         overlays: [],
         active_certification_targets: [],
+        total_active_controls: 26,
       });
     } finally {
       await client.close();
@@ -350,7 +389,7 @@ describe("Ancilis MCP server", () => {
     }
   });
 
-  it("generates markdown and JSON posture reports without writing evidence", async () => {
+  it("renders markdown posture reports and delegates json report output to posture checks", async () => {
     const dir = tmpDir();
     const configPath = writeConfig(dir);
     const dbPath = join(dir, "evidence.duckdb");
@@ -359,30 +398,37 @@ describe("Ancilis MCP server", () => {
     const { client, server } = await connectTestClient({ configPath, dbPath });
 
     try {
-      const markdown = await client.callTool({
+      const markdownReport = await client.callTool({
         name: "ancilis_report",
-        arguments: { session_id: "session-b" },
+        arguments: {
+          session_id: "session-a",
+        },
       });
-      const parsedMarkdown = reportOutputSchema.parse(markdown.structuredContent);
+      const parsedMarkdown = reportOutputSchema.parse(markdownReport.structuredContent);
 
-      expect(parsedMarkdown.posture).toBe("non_compliant");
-      expect(parsedMarkdown.session_id).toBe("session-b");
+      expect(parsedMarkdown.posture).toBe("compliant");
+      expect(parsedMarkdown.session_id).toBe("session-a");
+      expect(parsedMarkdown.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(parsedMarkdown.report).toContain("# Ancilis Posture Report");
       expect(parsedMarkdown.report).toContain("mcp-agent");
-      expect(parsedMarkdown.report).toContain("Evidence Integrity");
+      expect(parsedMarkdown.report).toContain("## Executive Summary");
+      expect(parsedMarkdown.report).toContain("## Baseline Security");
 
-      const json = await client.callTool({
+      const sessionPosture = await client.callTool({
+        name: "ancilis_check_posture",
+        arguments: { session_id: "session-a" },
+      });
+      const jsonReport = await client.callTool({
         name: "ancilis_report",
-        arguments: { format: "json", session_id: "session-a" },
+        arguments: {
+          session_id: "session-a",
+          format: "json",
+        },
       });
-      const parsedJson = reportOutputSchema.parse(json.structuredContent);
 
-      expect(parsedJson.posture).toBe("compliant");
-      expect(parsedJson.posture_details?.summary.total_evaluations).toBe(1);
-      expect(JSON.parse(parsedJson.report)).toMatchObject({
-        posture: "compliant",
-        summary: { total_evaluations: 1 },
-      });
+      expect(checkPostureOutputSchema.parse(jsonReport.structuredContent)).toEqual(
+        checkPostureOutputSchema.parse(sessionPosture.structuredContent),
+      );
       expect(await evidenceCount(configPath, dbPath)).toBe(before);
     } finally {
       await client.close();
@@ -390,28 +436,32 @@ describe("Ancilis MCP server", () => {
     }
   });
 
-  it("lists active overlays with coverage and certification targets", async () => {
+  it("lists manual overlays with enabled control coverage", async () => {
     const dir = tmpDir();
-    const configPath = writeConfig(dir);
+    const configPath = writeConfig(dir, {
+      dataHandling: [],
+      overlays: ["soc2"],
+    });
     const { client, server } = await connectTestClient({ configPath });
 
     try {
-      const response = await client.callTool({
+      const overlays = await client.callTool({
         name: "ancilis_list_overlays",
         arguments: {},
       });
-      const parsed = listOverlaysOutputSchema.parse(response.structuredContent);
+      const parsed = listOverlaysOutputSchema.parse(overlays.structuredContent);
 
-      expect(parsed.total_active_controls).toBeGreaterThan(0);
-      expect(parsed.overlays).toContainEqual(expect.objectContaining({
-        name: "PCI-DSS v4.0",
-        source: "data_classification",
-        controls_total: expect.any(Number),
-        coverage_pct: 100,
-      }));
-      const pci = parsed.overlays.find(overlay => overlay.name === "PCI-DSS v4.0");
-      expect(pci?.controls_total).toBeGreaterThan(0);
-      expect(pci?.controls_activated).toContain("PR-04");
+      expect(parsed.active_certification_targets).toEqual([]);
+      expect(parsed.total_active_controls).toBe(26);
+      expect(parsed.overlays).toEqual([
+        expect.objectContaining({
+          name: "SOC 2 Type II",
+          source: "manual",
+          controls_total: expect.any(Number),
+          coverage_pct: 100,
+        }),
+      ]);
+      expect(parsed.overlays[0]?.controls_activated).toContain("GOV-01");
     } finally {
       await client.close();
       await server.close();
@@ -542,20 +592,20 @@ describe("Ancilis MCP server", () => {
     expect(reportOutputSchema.parse({
       report: "# Ancilis Posture Report",
       generated_at: "2026-04-20T00:00:00.000Z",
-      session_id: null,
+      session_id: "session-a",
       posture: "compliant",
     }).posture).toBe("compliant");
 
     expect(listOverlaysOutputSchema.parse({
       overlays: [{
-        name: "PCI-DSS v4.0",
-        source: "data_classification",
-        controls_activated: ["PR-04"],
-        controls_total: 1,
+        name: "SOC 2 Type II",
+        source: "manual",
+        controls_activated: ["GOV-01"],
+        controls_total: 26,
         coverage_pct: 100,
       }],
       active_certification_targets: [],
       total_active_controls: 26,
-    }).overlays[0]?.coverage_pct).toBe(100);
+    }).overlays[0]?.source).toBe("manual");
   });
 });
