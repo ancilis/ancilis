@@ -15,6 +15,8 @@ import {
   createAncilisMcpServer,
   evaluateActionOutputSchema,
   getEvidenceOutputSchema,
+  listOverlaysOutputSchema,
+  reportOutputSchema,
   runAncilisMcpServer,
 } from "../src/ancilis/mcp/index.js";
 
@@ -155,6 +157,8 @@ describe("Ancilis MCP server", () => {
         "ancilis_check_posture",
         "ancilis_evaluate_action",
         "ancilis_get_evidence",
+        "ancilis_report",
+        "ancilis_list_overlays",
       ]);
       for (const tool of result.tools) {
         expect(tool.inputSchema).toMatchObject({ type: "object" });
@@ -176,6 +180,8 @@ describe("Ancilis MCP server", () => {
         arguments: { tool_name: "demo.tool", arguments: { value: 1 } },
       });
       const evidence = await client.callTool({ name: "ancilis_get_evidence", arguments: {} });
+      const report = await client.callTool({ name: "ancilis_report", arguments: {} });
+      const overlays = await client.callTool({ name: "ancilis_list_overlays", arguments: {} });
 
       expect(checkPostureOutputSchema.parse(posture.structuredContent)).toMatchObject({
         posture: "not_evaluated",
@@ -186,6 +192,14 @@ describe("Ancilis MCP server", () => {
       expect(getEvidenceOutputSchema.parse(evidence.structuredContent)).toMatchObject({
         records: [],
         chain_valid: true,
+      });
+      expect(reportOutputSchema.parse(report.structuredContent)).toMatchObject({
+        posture: "not_evaluated",
+        session_id: null,
+      });
+      expect(listOverlaysOutputSchema.parse(overlays.structuredContent)).toMatchObject({
+        overlays: [],
+        active_certification_targets: [],
       });
     } finally {
       await client.close();
@@ -336,6 +350,94 @@ describe("Ancilis MCP server", () => {
     }
   });
 
+  it("generates markdown and JSON posture reports without writing evidence", async () => {
+    const dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const dbPath = join(dir, "evidence.duckdb");
+    await seedEvidence(configPath, dbPath);
+    const before = await evidenceCount(configPath, dbPath);
+    const { client, server } = await connectTestClient({ configPath, dbPath });
+
+    try {
+      const markdown = await client.callTool({
+        name: "ancilis_report",
+        arguments: { session_id: "session-b" },
+      });
+      const parsedMarkdown = reportOutputSchema.parse(markdown.structuredContent);
+
+      expect(parsedMarkdown.posture).toBe("non_compliant");
+      expect(parsedMarkdown.session_id).toBe("session-b");
+      expect(parsedMarkdown.report).toContain("# Ancilis Posture Report");
+      expect(parsedMarkdown.report).toContain("mcp-agent");
+      expect(parsedMarkdown.report).toContain("Evidence Integrity");
+
+      const json = await client.callTool({
+        name: "ancilis_report",
+        arguments: { format: "json", session_id: "session-a" },
+      });
+      const parsedJson = reportOutputSchema.parse(json.structuredContent);
+
+      expect(parsedJson.posture).toBe("compliant");
+      expect(parsedJson.posture_details?.summary.total_evaluations).toBe(1);
+      expect(JSON.parse(parsedJson.report)).toMatchObject({
+        posture: "compliant",
+        summary: { total_evaluations: 1 },
+      });
+      expect(await evidenceCount(configPath, dbPath)).toBe(before);
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+
+  it("lists active overlays with coverage and certification targets", async () => {
+    const dir = tmpDir();
+    const configPath = writeConfig(dir);
+    const { client, server } = await connectTestClient({ configPath });
+
+    try {
+      const response = await client.callTool({
+        name: "ancilis_list_overlays",
+        arguments: {},
+      });
+      const parsed = listOverlaysOutputSchema.parse(response.structuredContent);
+
+      expect(parsed.total_active_controls).toBeGreaterThan(0);
+      expect(parsed.overlays).toContainEqual(expect.objectContaining({
+        name: "PCI-DSS v4.0",
+        source: "data_classification",
+        controls_total: expect.any(Number),
+        coverage_pct: 100,
+      }));
+      const pci = parsed.overlays.find(overlay => overlay.name === "PCI-DSS v4.0");
+      expect(pci?.controls_total).toBeGreaterThan(0);
+      expect(pci?.controls_activated).toContain("PR-04");
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+
+  it("returns an empty overlay list when no overlays are configured", async () => {
+    const { client, server } = await connectTestClient();
+
+    try {
+      const response = await client.callTool({
+        name: "ancilis_list_overlays",
+        arguments: {},
+      });
+      const parsed = listOverlaysOutputSchema.parse(response.structuredContent);
+      expect(parsed).toMatchObject({
+        overlays: [],
+        active_certification_targets: [],
+      });
+      expect(parsed.total_active_controls).toBeGreaterThan(0);
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+
   it("does not create a persistent DuckDB file when read-only evidence path is missing", async () => {
     const dir = tmpDir();
     const configPath = writeConfig(dir);
@@ -436,5 +538,24 @@ describe("Ancilis MCP server", () => {
       chain_valid: true,
       chain_errors: [],
     }).records).toHaveLength(1);
+
+    expect(reportOutputSchema.parse({
+      report: "# Ancilis Posture Report",
+      generated_at: "2026-04-20T00:00:00.000Z",
+      session_id: null,
+      posture: "compliant",
+    }).posture).toBe("compliant");
+
+    expect(listOverlaysOutputSchema.parse({
+      overlays: [{
+        name: "PCI-DSS v4.0",
+        source: "data_classification",
+        controls_activated: ["PR-04"],
+        controls_total: 1,
+        coverage_pct: 100,
+      }],
+      active_certification_targets: [],
+      total_active_controls: 26,
+    }).overlays[0]?.coverage_pct).toBe(100);
   });
 });

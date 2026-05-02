@@ -28,6 +28,17 @@ export const getEvidenceInputSchema = z.object({
   db_path: z.string().optional(),
 });
 
+export const reportInputSchema = z.object({
+  config_path: z.string().optional(),
+  db_path: z.string().optional(),
+  session_id: z.string().optional(),
+  format: z.enum(["markdown", "json"]).optional(),
+});
+
+export const listOverlaysInputSchema = z.object({
+  config_path: z.string().optional(),
+});
+
 export const checkPostureOutputSchema = z.object({
   agent: z.object({
     name: z.string(),
@@ -110,6 +121,26 @@ export const getEvidenceOutputSchema = z.object({
   chain_errors: z.array(z.string()),
 });
 
+export const reportOutputSchema = z.object({
+  report: z.string(),
+  generated_at: z.string(),
+  session_id: z.string().nullable(),
+  posture: z.enum(["not_evaluated", "compliant", "non_compliant"]),
+  posture_details: checkPostureOutputSchema.optional(),
+});
+
+export const listOverlaysOutputSchema = z.object({
+  overlays: z.array(z.object({
+    name: z.string(),
+    source: z.string(),
+    controls_activated: z.array(z.string()),
+    controls_total: z.number().int().nonnegative(),
+    coverage_pct: z.number().min(0).max(100),
+  })),
+  active_certification_targets: z.array(z.string()),
+  total_active_controls: z.number().int().nonnegative(),
+});
+
 export type CheckPostureInput = z.infer<typeof checkPostureInputSchema>;
 export type CheckPostureOutput = z.infer<typeof checkPostureOutputSchema>;
 export type EvaluateActionInput = z.infer<typeof evaluateActionInputSchema>;
@@ -117,3 +148,7 @@ export type EvaluateActionOutput = z.infer<typeof evaluateActionOutputSchema>;
 export type GetEvidenceInput = z.infer<typeof getEvidenceInputSchema>;
 export type GetEvidenceOutput = z.infer<typeof getEvidenceOutputSchema>;
 export type EvidenceRecordOutput = z.infer<typeof evidenceRecordOutputSchema>;
+export type ReportInput = z.infer<typeof reportInputSchema>;
+export type ReportOutput = z.infer<typeof reportOutputSchema>;
+export type ListOverlaysInput = z.infer<typeof listOverlaysInputSchema>;
+export type ListOverlaysOutput = z.infer<typeof listOverlaysOutputSchema>;

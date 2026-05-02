@@ -82,6 +82,10 @@ export {
   evaluateActionOutputSchema,
   getEvidenceInputSchema,
   getEvidenceOutputSchema,
+  reportInputSchema,
+  reportOutputSchema,
+  listOverlaysInputSchema,
+  listOverlaysOutputSchema,
 } from "./mcp/index.js";
 export type {
   AncilisMcpServerOptions,
@@ -92,6 +96,10 @@ export type {
   GetEvidenceInput,
   GetEvidenceOutput,
   EvidenceRecordOutput,
+  ReportInput,
+  ReportOutput,
+  ListOverlaysInput,
+  ListOverlaysOutput,
 } from "./mcp/index.js";
 
 export { BaselineManager } from "./baselines/index.js";
