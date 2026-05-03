@@ -1,0 +1,24 @@
+# CODEOWNERS — auto-routes review requests. Not a hard merge gate
+# (require_code_owner_reviews=false in branch protection); the Claude
+# Reviewer agent and human approval still gate merges.
+#
+# Format: <pattern>  <owner>...
+# Specific patterns override the wildcard below.
+
+# Default owner — requested as reviewer on every PR
+*       @ancilis
+
+# Critical paths — explicit owner so review request is not lost
+/.github/                       @ancilis
+/scripts/hooks/                 @ancilis
+/.pre-commit-config.yaml        @ancilis
+/.gitignore                     @ancilis
+/CONTRIBUTING.md                @ancilis
+/LICENSE                        @ancilis
+
+# AKSI / overlays / engine — patent-implicating surface
+/shared/overlays/                       @ancilis
+/python/src/ancilis/engine/             @ancilis
+/python/src/ancilis/middleware/         @ancilis
+/typescript/src/ancilis/engine/         @ancilis
+/typescript/src/ancilis/middleware/     @ancilis
