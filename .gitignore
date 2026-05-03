@@ -65,3 +65,87 @@ workspace/
 # Agent / tooling state — not source code
 .claude/worktrees/
 .serena/
+
+# === SDLC hardening (D2) — comprehensive language + tool coverage ===
+# Sourced from github/gitignore + agent-tool patterns. See CONTRIBUTING.md.
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+htmlcov/
+.coverage
+.coverage.*
+*.cover
+
+# Node / TypeScript
+node_modules/
+*.tsbuildinfo
+.npm/
+.yarn/
+.pnpm-store/
+.pnpm-debug.log*
+dist/
+build/
+.next/
+.nuxt/
+.parcel-cache/
+.turbo/
+.cache/
+.pnp.*
+.yarn-integrity
+
+# Test outputs
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+playwright-report/
+
+# Logs / pids
+*.log
+pids/
+*.pid
+*.pid.lock
+
+# OS junk
+Thumbs.db
+desktop.ini
+
+# Editor catch-alls (supplements specific entries above)
+.netrwhist
+
+# Local SQLite from agent tooling
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+
+# Compiled / binary
+*.dylib
+*.so
+*.dll
+*.class
+
+# Agent / IDE local state — never commit (D1 enforces locally; this is the gate)
+.claude/settings.local.json
+.claude/projects/
+.claude/sessions/
+.codex/
+.cursor/
+.aider*
+.windsurf/
+.continue/
+.devin/
+.zed/
+.fleet/
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+*.code-workspace
