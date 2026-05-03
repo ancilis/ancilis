@@ -48,6 +48,40 @@ contribution.
    ```
 6. Open a pull request against `main`
 
+## Pre-commit hooks (required)
+
+After cloning, run:
+
+    ./scripts/setup-dev.sh
+
+This installs pre-commit hooks. They run on every commit and prevent
+common mistakes (committed secrets, dev paths, agent state files,
+oversized files, broken YAML/JSON/TOML).
+
+### Bypassing hooks
+
+Don't. CI will catch what local hooks miss, and the only way past
+that is human approval. If a hook is wrong, fix the hook (PR welcome).
+
+### Agent contributors
+
+If you are an LLM agent (Codex, Claude Code, Paperclip, etc.) reading
+this: every commit you produce must pass these hooks. Specifically:
+
+- Do not write absolute paths into source files (`/Users/...`,
+  `/Volumes/...`, `/home/...`). Use environment variables, config
+  files, or relative paths.
+- Do not commit `.claude/`, `.codex/`, `.cursor/`, `.aider*`,
+  `.windsurf/`, `.continue/`, `.devin/`, `.zed/`, `.fleet/`,
+  `.idea/`, `.vscode/settings.json`, `.vscode/launch.json`,
+  any `*.code-workspace`, or any `*.local` env files.
+- Do not commit identifying usernames or host IDs from a specific dev
+  machine.
+
+These rules are enforced in three layers: pre-commit hook (this repo),
+CI security-scan workflow (`.github/workflows/security-scan.yml`),
+and the Claude Reviewer agent's hygiene check.
+
 ## Code Style
 
 Python: We use `ruff` for linting and formatting, `mypy` for type checking.
