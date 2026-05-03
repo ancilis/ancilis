@@ -1,0 +1,80 @@
+name: Security Scan
+
+on:
+  pull_request:
+  # Note: `push: branches: [main]` is intentionally omitted in this initial
+  # PR. Once PR #57 (the untrack of the existing leaking
+  # .claude/settings.local.json file) merges, a follow-up PR re-enables
+  # main-push so any direct push (or post-merge state) is also scanned.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  gitleaks:
+    name: Detect secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7  # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  forbidden-content:
+    name: Forbidden content scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Scan for agent/IDE state files
+        run: |
+          set -euo pipefail
+          violations=$(find . -path ./node_modules -prune -o \
+              \( -name 'settings.local.json' -path '*/.claude/*' \
+                 -o -path '*/.claude/projects/*' \
+                 -o -path '*/.claude/sessions/*' \
+                 -o -path '*/.claude/worktrees/*' \
+                 -o -path '*/.codex/*' \
+                 -o -path '*/.cursor/*' \
+                 -o -name '.aider*' \
+                 -o -path '*/.windsurf/*' \
+                 -o -path '*/.continue/*' \
+                 -o -path '*/.devin/*' \
+                 -o -path '*/.zed/*' \
+                 -o -path '*/.fleet/*' \
+                 -o -path '*/.idea/*' \
+                 -o \( -name 'settings.json' -path '*/.vscode/*' \) \
+                 -o \( -name 'launch.json'   -path '*/.vscode/*' \) \
+                 -o -name '*.code-workspace' \
+                 -o -name '.env.local' -o -name '.env.*.local' \) \
+              -print)
+          if [ -n "$violations" ]; then
+            echo "ERROR: agent/IDE state files tracked in repo:"
+            echo "$violations"
+            exit 1
+          fi
+
+      - name: Scan for absolute dev paths and identifying usernames
+        run: |
+          set -euo pipefail
+          # Scan tracked text files only. Excludes binary, lock, fixture,
+          # changelog, docs/examples paths per the same rules as the
+          # local pre-commit hook.
+          if grep -rInE '/Users/[a-zA-Z]|/Volumes/[A-Z]|/home/[a-z]|hellohelloalbus|albuss-mac-mini|MiniAlbus|tail8222f8' \
+              --exclude-dir=node_modules \
+              --exclude-dir=.git \
+              --exclude-dir=dist \
+              --exclude-dir=build \
+              --exclude='*.lock' \
+              --exclude='package-lock.json' \
+              --exclude='CHANGELOG.md' \
+              --exclude-dir='*test*fixtures*' \
+              --exclude-dir='*examples*' \
+              .; then
+            echo "ERROR: dev path or identifying username leak detected"
+            exit 1
+          fi
