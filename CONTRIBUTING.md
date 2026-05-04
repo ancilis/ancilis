@@ -48,6 +48,13 @@ contribution.
    ```
 6. Open a pull request against `main`
 
+## Pull Request Scope
+
+Open one issue per pull request. Each PR targeting `main` should map to a
+single tracked issue, and the issue id must appear in either the PR title or
+the head branch name using the `ANC-####` format (for example, `ANC-1234`).
+PRs fail CI when both fields omit the issue id.
+
 ## Code Style
 
 Python: We use `ruff` for linting and formatting, `mypy` for type checking.
