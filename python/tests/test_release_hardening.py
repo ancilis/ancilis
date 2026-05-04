@@ -256,6 +256,16 @@ def test_publish_script_cleans_dist_and_uploads_selected_artifacts():
     assert "dist/*" not in contents
 
 
+def test_branch_protection_script_only_uses_open_pr_checks():
+    script = ROOT / "scripts" / "apply-branch-protection.sh"
+
+    assert script.exists()
+
+    contents = script.read_text()
+    assert "--state open" in contents
+    assert "--state all" not in contents
+
+
 def test_release_python_workflow_uses_release_check_and_trusted_publishing():
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "release-python.yml").read_text())
     workflow_on = workflow.get("on", workflow.get(True))

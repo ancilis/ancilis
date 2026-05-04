@@ -7,10 +7,11 @@
 #   ./scripts/apply-branch-protection.sh ancilis/ancilis-one-shot
 #
 # Required-status-checks contexts are auto-detected from the union of
-# check names seen on the last 5 PRs (any state). This means: after
-# adding a new CI workflow (e.g. D3 security-scan), open at least one
-# PR for it to run, then re-run this script so the new check is added
-# to the required set.
+# check names seen on the last 5 open PRs. This avoids pulling in
+# merged-only housekeeping jobs that can never satisfy branch protection
+# on a new pull request. After adding a new CI workflow (e.g. D3
+# security-scan), open at least one PR for it to run, then re-run this
+# script so the new check is added to the required set.
 
 set -euo pipefail
 
@@ -18,9 +19,8 @@ REPO="${1:?usage: $0 <owner/repo>}"
 
 echo "[apply-branch-protection] target: $REPO"
 
-# Auto-detect required check contexts from the union across last 5 PRs.
-# `select(.)` filters out null/empty rollups (e.g. drafts with no runs).
-checks=$(gh pr list --repo "$REPO" --state all --limit 5 \
+# Auto-detect required check contexts from the union across last 5 open PRs.
+checks=$(gh pr list --repo "$REPO" --state open --limit 5 \
   --json statusCheckRollup \
   --jq '[.[].statusCheckRollup[]?.name] | unique | .[]' \
   | sort -u)
