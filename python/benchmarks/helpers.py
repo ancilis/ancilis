@@ -37,6 +37,12 @@ def make_report_json(report_data: ReportData) -> str:
     return json.dumps(asdict(report_data), sort_keys=True)
 
 
+def _benchmark_timestamp(file_index: int) -> str:
+    return (
+        datetime.now(timezone.utc) - timedelta(minutes=5) + timedelta(seconds=file_index)
+    ).isoformat()
+
+
 def make_store_evaluation(
     file_path: Path,
     file_index: int,
@@ -44,14 +50,11 @@ def make_store_evaluation(
     agent_name: str = BENCHMARK_AGENT_NAME,
     session_id: str = BENCHMARK_SESSION_ID,
 ) -> EvaluationResult:
-    timestamp = (
-        datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(seconds=file_index)
-    ).isoformat()
     file_label = file_path.relative_to(file_path.parents[1]) if len(file_path.parents) > 1 else file_path
     return EvaluationResult(
         evaluation_id=f"bench-eval-{file_index:04d}",
         action_id=f"bench-action-{file_index:04d}",
-        timestamp=timestamp,
+        timestamp=_benchmark_timestamp(file_index),
         agent_id=agent_name,
         session_id=session_id,
         mode="audit",

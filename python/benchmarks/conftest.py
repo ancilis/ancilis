@@ -5,12 +5,14 @@ from pathlib import Path
 import pytest
 
 from ancilis.config import ResolvedConfig
+from ancilis.evidence.store import EvidenceStore
 
 from .helpers import (
     BENCHMARK_AGENT_NAME,
     BENCHMARK_SESSION_ID,
     SyntheticRepo,
     make_benchmark_config,
+    make_store_evaluation,
 )
 
 
@@ -65,13 +67,26 @@ def _build_synthetic_repo(base: Path, file_count: int) -> SyntheticRepo:
     (root / ".ancilisignore").write_text(".cache/\n", encoding="utf-8")
     (root / ".cache" / "ignored.py").write_text("IGNORED = True\n", encoding="utf-8")
 
-    return SyntheticRepo(
+    repo = SyntheticRepo(
         root=root,
         config_path=config_path,
         db_path=root / ".ancilis" / "benchmark-evidence.duckdb",
         files=tuple(files),
         session_id=BENCHMARK_SESSION_ID,
     )
+    config = make_benchmark_config()
+    with EvidenceStore(config, db_path=repo.db_path) as store:
+        for index, module_path in enumerate(repo.files, start=1):
+            store.store(
+                make_store_evaluation(
+                    module_path,
+                    index,
+                    agent_name=BENCHMARK_AGENT_NAME,
+                    session_id=repo.session_id,
+                ),
+                tool_name="synthetic-scan",
+            )
+    return repo
 
 
 @pytest.fixture

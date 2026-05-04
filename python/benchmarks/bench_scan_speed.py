@@ -1,33 +1,39 @@
 from __future__ import annotations
 
-from ancilis.config import load_config
-from ancilis.evidence.store import EvidenceStore
+import json
 
-from .helpers import SyntheticRepo, make_store_evaluation, scan_path_candidates
+from click.testing import CliRunner
 
+from ancilis.cli.main import cli
 
-def _scan_repo(repo: SyntheticRepo) -> tuple[int, int]:
-    repo.db_path.unlink(missing_ok=True)
-    config = load_config(path=repo.config_path)
-    candidates = scan_path_candidates(repo.root)
-    with EvidenceStore(config, db_path=repo.db_path) as store:
-        for index, path in enumerate(candidates, start=1):
-            store.store(
-                make_store_evaluation(
-                    path,
-                    index,
-                    agent_name=config.agent_name,
-                    session_id=repo.session_id,
-                ),
-                tool_name="bench-scan",
-            )
-        return len(candidates), store.count(session_id=repo.session_id)
+from .helpers import SyntheticRepo
 
 
 def _benchmark_scan(benchmark, repo: SyntheticRepo) -> None:
-    scanned_count, stored_count = benchmark.pedantic(_scan_repo, args=(repo,), rounds=3, iterations=1)
-    assert stored_count == scanned_count
-    assert stored_count >= len(repo.files)
+    runner = CliRunner()
+
+    def run_scan() -> tuple[int, int]:
+        result = runner.invoke(
+            cli,
+            [
+                "--no-update-check",
+                "scan",
+                "--ci",
+                "--config",
+                str(repo.config_path),
+                "--db",
+                str(repo.db_path),
+                "--session",
+                repo.session_id,
+            ],
+            catch_exceptions=False,
+        )
+        payload = json.loads(result.output)
+        return result.exit_code, int(payload["summary"]["total_evaluations"])
+
+    exit_code, total_evaluations = benchmark.pedantic(run_scan, rounds=3, iterations=1)
+    assert exit_code == 0
+    assert total_evaluations >= len(repo.files)
 
 
 def test_scan_speed_small_repo(benchmark, synthetic_repo_10_files: SyntheticRepo) -> None:
