@@ -8,6 +8,7 @@ import click
 
 from ancilis.cli.status import status
 from ancilis.cli.report import report
+from ancilis.cli.remediate import remediate
 from ancilis.cli.validate import validate
 from ancilis.cli.approve import approve_tool
 from ancilis.cli.doctor import doctor
@@ -75,6 +76,7 @@ def cli(ctx: click.Context, no_update_check: bool) -> None:
 
 cli.add_command(status)
 cli.add_command(report)
+cli.add_command(remediate)
 cli.add_command(approve_tool)
 cli.add_command(doctor)
 cli.add_command(evidence)

@@ -51,6 +51,13 @@ if TYPE_CHECKING:
         record_telemetry_event,
         set_telemetry_enabled,
     )
+    from ancilis.remediation import (
+        RemediationGuide,
+        RemediationRecommendation,
+        build_remediation_recommendations,
+        load_remediation_guides,
+        render_remediation_recommendations,
+    )
     from ancilis.middleware.middleware import AncilisMiddleware
     from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
     from ancilis.producers.http import (
@@ -122,10 +129,13 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "PlatformClient": ("ancilis.platform", "PlatformClient"),
     "TelemetryConfig": ("ancilis.telemetry", "TelemetryConfig"),
     "TelemetryStatus": ("ancilis.telemetry", "TelemetryStatus"),
+    "RemediationGuide": ("ancilis.remediation", "RemediationGuide"),
+    "RemediationRecommendation": ("ancilis.remediation", "RemediationRecommendation"),
     "RuntimeProducerSelection": ("ancilis.producers.runtime", "RuntimeProducerSelection"),
     "ToolActionProducer": ("ancilis.producers.tool", "ToolActionProducer"),
     "ToolExecutionResult": ("ancilis.producers.tool", "ToolExecutionResult"),
     "ToolInvocation": ("ancilis.producers.tool", "ToolInvocation"),
+    "build_remediation_recommendations": ("ancilis.remediation", "build_remediation_recommendations"),
     "evaluate_and_execute": ("ancilis.producers.tool", "evaluate_and_execute"),
     "flush_telemetry_events": ("ancilis.telemetry", "flush_telemetry_events"),
     "format_telemetry_status": ("ancilis.telemetry", "format_telemetry_status"),
@@ -138,6 +148,8 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "resolve_evidence_adapter": ("ancilis.evidence", "resolve_evidence_adapter"),
     "resolve_runtime_producers": ("ancilis.producers.runtime", "resolve_runtime_producers"),
     "set_telemetry_enabled": ("ancilis.telemetry", "set_telemetry_enabled"),
+    "load_remediation_guides": ("ancilis.remediation", "load_remediation_guides"),
+    "render_remediation_recommendations": ("ancilis.remediation", "render_remediation_recommendations"),
     "tool": ("ancilis.producers.tool", "tool"),
     "translate_runtime_action": ("ancilis.producers.runtime", "translate_runtime_action"),
     "wrap_tool": ("ancilis.producers.tool", "wrap_tool"),

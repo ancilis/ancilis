@@ -72,6 +72,12 @@ export type { BaselineWindow, DeviationFlag } from "./controls/index.js";
 
 export { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderNdjson, renderCsv, renderOscalJson, renderPdf } from "./report/index.js";
 export type { ReportData, EvidenceSummary, RenderPdfOptions, RenderPdfResult } from "./report/index.js";
+export {
+  buildRemediationRecommendations,
+  loadRemediationGuides,
+  renderRemediationRecommendations,
+} from "./remediation/index.js";
+export type { RemediationGuide, RemediationRecommendation } from "./remediation/index.js";
 
 export { BaselineManager } from "./baselines/index.js";
 export type { Baseline, ControlSnapshot, ControlDrift, DriftReport, DriftSummary, EvidenceDelta } from "./baselines/index.js";
@@ -100,8 +106,8 @@ export type { Dependency, Manifest, Vuln } from "./deps/index.js";
 export { scanDependencies, detectDependencies, buildSbom, queryOsvBatch } from "./dependencies/index.js";
 export type { VulnerabilityFinding, CycloneDxBom, CycloneDxComponent, DetectionResult, DependencyScanResult } from "./dependencies/index.js";
 
-export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan, runEvidenceVerify } from "./cli/index.js";
-export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
+export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, runRemediate, handleScan, runEvidenceVerify } from "./cli/index.js";
+export type { DoctorResult, ReportCommandOptions, ReportCommandResult, RemediateCommandOptions, RemediateCommandResult } from "./cli/index.js";
 export {
   bucketCount,
   bucketDuration,
