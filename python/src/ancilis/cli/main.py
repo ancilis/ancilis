@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from typing import Any, Sequence
 
 import click
 
@@ -34,16 +35,26 @@ def _top_level_command(argv: list[str]) -> str:
 
 
 class AncilisCLIGroup(click.Group):
-    def main(self, *args: object, **kwargs: object) -> object:
-        argv = kwargs.get("args")
-        if argv is None and len(args) >= 1:
-            argv = args[0]
-        tokens = list(argv) if isinstance(argv, (list, tuple)) else sys.argv[1:]
+    def main(
+        self,
+        args: Sequence[str] | None = None,
+        prog_name: str | None = None,
+        complete_var: str | None = None,
+        standalone_mode: bool = True,
+        **extra: Any,
+    ) -> Any:
+        tokens = list(args) if args is not None else sys.argv[1:]
         command = _top_level_command([str(token) for token in tokens])
         exit_code = 0
 
         try:
-            return super().main(*args, **kwargs)
+            return super().main(
+                args=args,
+                prog_name=prog_name,
+                complete_var=complete_var,
+                standalone_mode=standalone_mode,
+                **extra,
+            )
         except SystemExit as exc:
             exit_code = exc.code if isinstance(exc.code, int) else 1 if exc.code else 0
             raise
