@@ -14,6 +14,7 @@ import {
 import { homedir, platform, release } from "node:os";
 import { dirname, join } from "node:path";
 import { createInterface } from "node:readline/promises";
+import { packageRootFrom } from "../shared-path.js";
 
 const DEFAULT_ENDPOINT = "https://api.ancilis.ai/api/telemetry/events";
 const FLUSH_INTERVAL_MS = 60 * 60 * 1000;
@@ -88,6 +89,35 @@ export interface TelemetryOptions {
 
 interface TelemetryState {
   lastAttemptAt: string | null;
+}
+
+function readPackageVersion(): string {
+  const candidates = [
+    new URL("../../../../package.json", import.meta.url),
+    new URL("../../../package.json", import.meta.url),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const packageJson = JSON.parse(readFileSync(candidate, "utf-8")) as { version?: unknown };
+      if (typeof packageJson.version === "string" && packageJson.version.length > 0) {
+        return packageJson.version;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  try {
+    const packageJson = JSON.parse(
+      readFileSync(join(packageRootFrom(import.meta.url), "package.json"), "utf-8"),
+    ) as { version?: unknown };
+    return typeof packageJson.version === "string" && packageJson.version.length > 0
+      ? packageJson.version
+      : "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
 }
 
 function telemetryRoot(options: TelemetryOptions = {}): string {
@@ -293,7 +323,7 @@ function telemetryEvent(
     event_type: eventType,
     timestamp: (options.now ?? new Date()).toISOString(),
     sdk_language: "typescript",
-    sdk_version: options.sdkVersion ?? "0.1.0-preview.1",
+    sdk_version: options.sdkVersion ?? readPackageVersion(),
     runtime_version: process.version,
     os_platform: `${platform()} ${release()}`,
     properties,

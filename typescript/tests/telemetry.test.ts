@@ -83,6 +83,23 @@ describe("anonymous telemetry", () => {
     expect(JSON.stringify(payloads[0])).not.toContain(process.cwd());
   });
 
+  it("records the current package version in queued events", async () => {
+    const homeDir = tmpHome();
+    setTelemetryEnabled(true, { homeDir });
+
+    await recordTelemetryEvent("cli_command", { command: "status", exit_code: 0 }, {
+      homeDir,
+      fetchImpl: async () => {
+        throw new Error("offline");
+      },
+    });
+
+    const [line] = readFileSync(telemetryQueuePath({ homeDir }), "utf-8").trim().split("\n");
+    const event = JSON.parse(line) as { sdk_version: string };
+
+    expect(event.sdk_version).toBe("0.1.0");
+  });
+
   it("uses coarse buckets for scan metadata", () => {
     expect(bucketCount(0)).toBe("0");
     expect(bucketCount(10)).toBe("1-10");

@@ -100,6 +100,23 @@ def test_telemetry_cli_status_and_off(monkeypatch: Any, tmp_path: Path) -> None:
     assert "installation_id" not in telemetry_config_path(tmp_path).read_text()
 
 
+def test_telemetry_cli_records_failing_command_exit_code(monkeypatch: Any, tmp_path: Path) -> None:
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    set_telemetry_enabled(True, home_dir=tmp_path)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli,
+        ["--no-update-check", "config", "validate", "--config", str(tmp_path / "missing.yaml")],
+    )
+
+    assert result.exit_code == 1
+    lines = telemetry_queue_path(tmp_path).read_text().strip().splitlines()
+    event = json.loads(lines[-1])
+    assert event["event_type"] == "cli_command"
+    assert event["properties"] == {"command": "config", "exit_code": 1}
+
+
 def test_telemetry_buckets() -> None:
     assert bucket_count(0) == "0"
     assert bucket_count(10) == "1-10"
