@@ -109,6 +109,19 @@ export type { VulnerabilityFinding, CycloneDxBom, CycloneDxComponent, DetectionR
 export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, runRemediate, handleScan, runEvidenceVerify } from "./cli/index.js";
 export type { DoctorResult, ReportCommandOptions, ReportCommandResult, RemediateCommandOptions, RemediateCommandResult } from "./cli/index.js";
 export {
+  bucketCount,
+  bucketDuration,
+  flushTelemetryEvents,
+  formatTelemetryStatus,
+  maybePromptForTelemetryConsent,
+  recordAdapterUsed,
+  readTelemetryConfig,
+  readTelemetryStatus,
+  recordTelemetryEvent,
+  setTelemetryEnabled,
+} from "./telemetry/index.js";
+export type { TelemetryConfig, TelemetryEvent, TelemetryEventType, TelemetryStatus } from "./telemetry/index.js";
+export {
   BedrockActionProducer,
   BedrockAdapter,
   CLIActionProducer,
