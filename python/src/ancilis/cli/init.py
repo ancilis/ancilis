@@ -72,7 +72,7 @@ def _read_pyproject_deps(path: Path) -> str:
     content = path.read_text(encoding="utf-8", errors="replace")
     # Try stdlib tomllib (Python 3.11+)
     if sys.version_info >= (3, 11):
-        import tomllib
+        import tomllib  # type: ignore[attr-defined]
 
         try:
             data = tomllib.loads(content)

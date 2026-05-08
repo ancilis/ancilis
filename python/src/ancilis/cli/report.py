@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import TypeVar
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -23,7 +22,6 @@ from ancilis.report.renderer import (
     render_terminal,
 )
 from ancilis.report.renderers.oscal import render_oscal
-from ancilis.telemetry import bucket_duration, record_telemetry_event
 
 F = TypeVar("F", bound=Callable[..., object])
 
@@ -57,7 +55,6 @@ def _emit_report(
     session_id: str | None = None,
     use_latest: bool = True,
 ) -> None:
-    started_at = time.monotonic()
     try:
         config = load_config(path=config_path) if config_path else load_config()
     except (FileNotFoundError, ValueError) as e:
@@ -71,15 +68,6 @@ def _emit_report(
             session_id = store.latest_session_id()
         generator = ReportGenerator(config, store)
         report_data = generator.generate(period=period, report_format=fmt, session_id=session_id)
-        record_telemetry_event(
-            "report_generated",
-            {
-                "format": fmt,
-                "overlay_ids": sorted(config.active_overlays),
-                "duration_bucket": bucket_duration(time.monotonic() - started_at),
-                "period": period,
-            },
-        )
 
         if fmt == "terminal":
             output = render_terminal(report_data)

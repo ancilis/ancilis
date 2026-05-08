@@ -13,12 +13,6 @@ import { sharedPathFrom } from "../shared-path.js";
 import { scanDependencies } from "../dependencies/index.js";
 import type { VulnerabilityFinding } from "../dependencies/index.js";
 import type { EvaluationResult, ControlResult } from "../engine/result.js";
-import {
-  bucketCount,
-  bucketDuration,
-  countProjectFiles,
-  recordTelemetryEvent,
-} from "../telemetry/index.js";
 
 const CONTROLS_DIR = sharedPathFrom(import.meta.url, "controls");
 
@@ -307,7 +301,6 @@ function buildDepEvaluationResult(
 // ---------------------------------------------------------------------------
 
 export async function handleScan(options: ScanOptions, io?: { stdout(m: string): void; stderr(m: string): void }): Promise<number> {
-  const startedAt = Date.now();
   const out = (msg: string): void => {
     if (io) {
       io.stdout(msg.endsWith("\n") ? msg : `${msg}\n`);
@@ -471,24 +464,6 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
 
     const posture = anyFailing ? "non_compliant" : "compliant";
     const exitCode = anyFailing ? 1 : 0;
-    const overlayIds = [...config.activeOverlays.keys()].sort();
-
-    await recordTelemetryEvent("scan_executed", {
-      language: "typescript",
-      file_count_bucket: bucketCount(countProjectFiles(options.projectDir ?? process.cwd())),
-      overlay_ids: overlayIds,
-      duration_bucket: bucketDuration(Date.now() - startedAt),
-      ci: Boolean(options.ci),
-      exit_code: exitCode,
-      posture,
-    }).catch(() => {});
-
-    for (const overlayId of overlayIds) {
-      await recordTelemetryEvent("overlay_activated", {
-        overlay_id: overlayId,
-        control_count: enabled.length,
-      }).catch(() => {});
-    }
 
     if (options.ci) {
       // Sort findings by severity for CI output

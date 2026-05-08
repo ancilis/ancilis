@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -15,12 +14,6 @@ from ancilis.config import ResolvedConfig, load_config, load_control_definitions
 from ancilis.deps.scanner import DependencyScanner
 from ancilis.evidence.store import EvidenceStore
 from ancilis.report.generator import _parse_period
-from ancilis.telemetry import (
-    bucket_count,
-    bucket_duration,
-    count_project_files,
-    record_telemetry_event,
-)
 
 _SENTINEL = Path.home() / ".ancilis" / ".first-run-complete"
 
@@ -137,7 +130,6 @@ def scan(
     producers_filter: str | None,
 ) -> None:
     """Evaluate evidence posture and return pass/fail for CI/CD pipelines."""
-    started_at = time.monotonic()
     config = _load_config_safe(config_path)
     if config is None:
         config = _default_config()
@@ -263,28 +255,6 @@ def scan(
 
         posture = "non_compliant" if any_failing else "compliant"
         exit_code = 1 if any_failing else 0
-        overlay_ids = sorted(config.active_overlays)
-
-        record_telemetry_event(
-            "scan_executed",
-            {
-                "language": "python",
-                "file_count_bucket": bucket_count(count_project_files(Path.cwd())),
-                "overlay_ids": overlay_ids,
-                "duration_bucket": bucket_duration(time.monotonic() - started_at),
-                "ci": ci,
-                "exit_code": exit_code,
-                "posture": posture,
-            },
-        )
-        for overlay_id in overlay_ids:
-            record_telemetry_event(
-                "overlay_activated",
-                {
-                    "overlay_id": overlay_id,
-                    "control_count": len(enabled),
-                },
-            )
 
         if ci:
             output = {

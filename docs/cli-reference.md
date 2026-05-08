@@ -198,27 +198,6 @@ data. It does not change evidence records or create platform remediation tasks.
 
 ---
 
-## `ancilis telemetry`
-
-Inspect or change anonymous SDK telemetry settings. Telemetry is opt-in and
-defaults to off. Consent is stored in `~/.ancilis/config.toml`; queued events are
-kept locally under `~/.ancilis/telemetry/` and are sent silently at most once per
-hour. `DO_NOT_TRACK` or `DNT` disables collection regardless of local consent.
-
-```bash
-ancilis telemetry status
-ancilis telemetry on
-ancilis telemetry off
-ancilis telemetry flush
-```
-
-Telemetry events are coarse product-usage events such as `scan_executed`,
-`report_generated`, `overlay_activated`, `adapter_used`, and `cli_command`.
-They do not include file paths, file contents, evidence records, email
-addresses, API keys, or platform account identifiers.
-
----
-
 ## `ancilis report`
 
 Generate a posture report.

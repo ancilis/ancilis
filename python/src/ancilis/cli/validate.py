@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-# mypy: disable-error-code=import-untyped
-
 import click
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from ancilis.config import VALID_CONTROL_IDS, load_config, load_taxonomy
 from ancilis.errors import ConfigError

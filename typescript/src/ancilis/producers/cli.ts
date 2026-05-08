@@ -14,7 +14,6 @@ import { EvidenceStore } from "../evidence/store.js";
 import { scanResponse } from "../middleware/response-scanner.js";
 import type { ScanResult } from "../middleware/response-scanner.js";
 import { matchesToolList } from "../engine/tool-matching.js";
-import { recordAdapterUsed } from "../telemetry/index.js";
 import { ProducerType } from "./protocol.js";
 
 export interface CLIInvocation {
@@ -51,7 +50,6 @@ export class CLIActionProducer {
     this._engine = engine;
     this._registry = registry ?? engine.registry;
     this._evidenceStore = evidenceStore ?? new EvidenceStore(config);
-    recordAdapterUsed("cli");
   }
 
   get producerType(): ProducerType { return ProducerType.CLI; }

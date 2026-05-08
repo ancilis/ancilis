@@ -18,7 +18,6 @@ from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.record import EvidenceRecord
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.protocol import ProducerType
-from ancilis.telemetry import record_adapter_used
 
 PROVIDER = "google-vertex-ai"
 PRODUCER_VERSION = "0.1.0"
@@ -108,7 +107,6 @@ class VertexAIActionProducer:
         self._registry = registry or engine.registry
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
         self._session_id = str(uuid.uuid4())
-        record_adapter_used(PROVIDER)
 
     @property
     def session_id(self) -> str:

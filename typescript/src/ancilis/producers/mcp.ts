@@ -10,7 +10,6 @@ import {
   type DiscoverableTool,
   type DriftEvent,
 } from "../middleware/discovery.js";
-import { recordAdapterUsed } from "../telemetry/index.js";
 import { ProducerType } from "./protocol.js";
 
 export interface MCPInvocation {
@@ -25,7 +24,6 @@ export class MCPActionProducer {
   constructor(config: ResolvedConfig, registry: ToolRegistry) {
     this._config = config;
     this._registry = registry;
-    recordAdapterUsed("mcp");
   }
 
   get producerType(): ProducerType { return ProducerType.MCP; }
