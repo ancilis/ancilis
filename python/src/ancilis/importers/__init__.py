@@ -1,4 +1,4 @@
-"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Composio, LangSmith, Langfuse, Helicone, LiteLLM, OpenRouter, MCP registry, OTel GenAI, Pinecone, and Weaviate ingestion."""
+"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Composio, LangSmith, Langfuse, Helicone, LiteLLM, OpenRouter, MCP registry, OTel GenAI, Pinecone, Weaviate, and W&B Weave ingestion."""
 
 from ancilis.importers.braintrust import BraintrustImporter
 from ancilis.importers.composio import ComposioImporter
@@ -13,6 +13,7 @@ from ancilis.importers.otel_genai import OtelGenAIImporter
 from ancilis.importers.pinecone import PineconeImporter
 from ancilis.importers.qdrant import QdrantImporter
 from ancilis.importers.sarif import SarifImporter
+from ancilis.importers.wandb_weave import WandbWeaveImporter
 from ancilis.importers.weaviate import WeaviateImporter
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "QdrantImporter",
     "SarifImporter",
     "WeaviateImporter",
+    "WandbWeaveImporter",
 ]
