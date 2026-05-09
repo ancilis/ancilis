@@ -1,0 +1,53 @@
+{
+  "_version": "1.0.0",
+  "_description": "Deepgram speech-to-text request log → AKSI control ID mapping. Voice agents (phone calls, transcribed meetings, customer service over voice) increasingly route audio through Deepgram's /v1/listen endpoint. Audio = highest-PII surface — entire conversations get transcribed verbatim. This mapping turns each request log entry into one EvaluationResult covering: (1) request status, (2) PII redaction posture, (3) speaker-separation/audit completeness, (4) async exfiltration via callback URLs, (5) cloud-storage source provenance, (6) analytics-feature consent surfacing, (7) low-tier model on production-volume traffic.",
+  "_metadata": {
+    "source_format": "deepgram",
+    "schema": "deepgram-listen-request-export-v1",
+    "owner": "ancilis-importers",
+    "default_long_audio_threshold_seconds": 60,
+    "default_multispeaker_audit_threshold_seconds": 30,
+    "default_base_tier_high_volume_chars": 10000,
+    "default_callback_host_allowlist": [],
+    "public_cdn_hosts": [
+      "s3.amazonaws.com",
+      "storage.googleapis.com",
+      "blob.core.windows.net",
+      "r2.cloudflarestorage.com",
+      "cdn.jsdelivr.net"
+    ],
+    "signal_priority": [
+      "status_failed",
+      "status_rejected",
+      "long_audio_no_redact",
+      "callback_url_unknown_host",
+      "url_source_public_cdn",
+      "diarize_off_multispeaker",
+      "base_tier_high_volume",
+      "stream_source",
+      "status_completed"
+    ],
+    "result_levels": {
+      "status_completed": "PASS",
+      "status_failed": "FAIL",
+      "status_rejected": "FLAG",
+      "long_audio_no_redact": "FAIL",
+      "diarize_off_multispeaker": "FLAG",
+      "callback_url_unknown_host": "FLAG",
+      "url_source_public_cdn": "FLAG",
+      "stream_source": "PASS",
+      "base_tier_high_volume": "FLAG"
+    }
+  },
+  "mappings": {
+    "status_completed": "PR-04",
+    "status_failed": "DE-01",
+    "status_rejected": "PR-02",
+    "long_audio_no_redact": "PR-04",
+    "diarize_off_multispeaker": "PR-05",
+    "callback_url_unknown_host": "PR-04",
+    "url_source_public_cdn": "PR-04",
+    "stream_source": "PR-05",
+    "base_tier_high_volume": "PR-03"
+  }
+}
