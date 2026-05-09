@@ -1,4 +1,4 @@
-"""Ancilis evidence importers — AWS CloudTrail, Azure Entra ID, GCP Cloud Audit, GitHub audit log, GitLab audit events, Intercom conversations, Jira audit records, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, Helicone, Honeycomb, LangSmith, Langfuse, LiteLLM, Logfire, MCP registry, Milvus, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Semgrep, SendGrid, Sentry, Snyk, Splunk, Stripe, Twilio, Weaviate, W&B Weave, and Zendesk ingestion."""
+"""Ancilis evidence importers — AWS CloudTrail, Azure Entra ID, GCP Cloud Audit, GitHub audit log, GitLab audit events, Intercom conversations, Jira audit records, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, Helicone, Honeycomb, LangSmith, Langfuse, LiteLLM, Logfire, MCP registry, Milvus, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Semgrep, SendGrid, Sentry, Snyk, Splunk, Stripe, Twilio, Weaviate, W&B Models, W&B Weave, and Zendesk ingestion."""
 
 from ancilis.importers.auth0 import Auth0Importer
 from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
@@ -47,6 +47,7 @@ from ancilis.importers.splunk import SplunkImporter
 from ancilis.importers.stripe import StripeImporter
 from ancilis.importers.twilio import TwilioImporter
 from ancilis.importers.vercel import VercelImporter
+from ancilis.importers.wandb_models import WandbModelsImporter
 from ancilis.importers.wandb_weave import WandbWeaveImporter
 from ancilis.importers.weaviate import WeaviateImporter
 from ancilis.importers.zendesk import ZendeskImporter
