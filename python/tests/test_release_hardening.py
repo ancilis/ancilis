@@ -274,6 +274,42 @@ def test_release_python_workflow_uses_release_check_and_trusted_publishing():
     assert "pypa/gh-action-pypi-publish@release/v1" in publish_uses
 
 
+def test_scorecard_workflow_pins_release_commits_and_keeps_publication_steps():
+    workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "scorecard.yml").read_text())
+    steps = workflow["jobs"]["analysis"]["steps"]
+
+    scorecard_step = next(
+        step for step in steps if step.get("uses", "").startswith("ossf/scorecard-action@")
+    )
+    assert (
+        scorecard_step["uses"]
+        == "ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a"
+    )
+    assert scorecard_step["with"] == {
+        "results_file": "results.sarif",
+        "results_format": "sarif",
+        "publish_results": True,
+    }
+
+    artifact_step = next(
+        step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert artifact_step["with"] == {
+        "name": "SARIF file",
+        "path": "results.sarif",
+        "retention-days": 5,
+    }
+
+    upload_sarif_step = next(
+        step for step in steps if step.get("uses", "").startswith("github/codeql-action/upload-sarif@")
+    )
+    assert (
+        upload_sarif_step["uses"]
+        == "github/codeql-action/upload-sarif@e46ed2cbd01164d986452f91f178727624ae40d7"
+    )
+    assert upload_sarif_step["with"] == {"sarif_file": "results.sarif"}
+
+
 def test_release_check_expands_twine_artifact_paths(monkeypatch, tmp_path: Path):
     dist = tmp_path / "dist"
     commands: list[list[str]] = []
