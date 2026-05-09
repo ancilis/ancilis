@@ -16,6 +16,9 @@ from ancilis.producers.tool import (
 __all__ = [
     "ActionProducer",
     "AnthropicActionProducer",
+    "AutoGenActionProducer",
+    "AutoGenEvent",
+    "AutoGenObservation",
     "BedrockActionProducer",
     "BedrockAdapter",
     "BedrockExecutionResult",
@@ -25,6 +28,9 @@ __all__ = [
     "CLIActionProducer",
     "CLIExecutionResult",
     "CLIInvocation",
+    "CrewAIActionProducer",
+    "CrewAIEvent",
+    "CrewAIObservation",
     "GeminiActionProducer",
     "HTTPActionProducer",
     "HTTPExecutionResult",
@@ -78,6 +84,18 @@ _LANGCHAIN_EXPORTS = {
     "LangChainObservation",
 }
 
+_CREWAI_EXPORTS = {
+    "CrewAIActionProducer",
+    "CrewAIEvent",
+    "CrewAIObservation",
+}
+
+_AUTOGEN_EXPORTS = {
+    "AutoGenActionProducer",
+    "AutoGenEvent",
+    "AutoGenObservation",
+}
+
 
 def __getattr__(name: str) -> object:
     if name == "MCPActionProducer":
@@ -99,6 +117,16 @@ def __getattr__(name: str) -> object:
 
         langchain = import_module("ancilis.producers.langchain")
         return getattr(langchain, name)
+    if name in _CREWAI_EXPORTS:
+        from importlib import import_module
+
+        crewai = import_module("ancilis.producers.crewai")
+        return getattr(crewai, name)
+    if name in _AUTOGEN_EXPORTS:
+        from importlib import import_module
+
+        autogen = import_module("ancilis.producers.autogen")
+        return getattr(autogen, name)
     if name in {
         "RuntimeProducerSelection",
         "resolve_runtime_producers",
