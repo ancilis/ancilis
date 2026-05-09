@@ -1,0 +1,72 @@
+{
+  "_version": "1.0.0",
+  "_description": "Intercom conversation export (/conversations + Webhooks) → AKSI control ID mapping. Intercom is the dominant chat-first customer-engagement platform; Fin AI handles real-time customer conversations, qualifies leads, and deflects support tickets. Each Fin message is a real-time customer-facing response, fundamentally different from a Zendesk ticket reply: a Fin loop, a poor rating after Fin 'resolved', or a sensitive-tag conversation handled without escalation are governance-relevant signals. Conversation parts (comment / note / fin_answer / fin_handoff / close) drive aggregation. fin_resolved=true with rating<=2 is a false-resolution FAIL; fin_handoff_to_human=true is correct-escalation evidence (PASS); too many fin messages without intervening human is a Fin loop FAIL; sensitive tags (complaint/legal/regulator/gdpr/ccpa) handled exclusively by AI are a PR-04 FAIL; missed SLAs on AI conversations are PR-02 FAILs. High-volume Fin resolution and bad-rating concentration produce synthetic findings.",
+  "_metadata": {
+    "source_format": "intercom_conversation_export",
+    "schema": "intercom-conversations-v1",
+    "owner": "ancilis-importers",
+    "fin_message_loop_threshold": 10,
+    "fast_resolve_seconds": 60,
+    "high_volume_per_hour": 50,
+    "bad_rating_concentration": 0.10,
+    "high_volume_human_verification_pct": 0.05,
+    "bad_rating_min_sample": 5,
+    "sensitive_tag_patterns": [
+      "complaint",
+      "legal",
+      "regulator",
+      "gdpr",
+      "ccpa"
+    ],
+    "tag_name_truncate_chars": 30,
+    "low_rating_threshold": 2,
+    "signal_priority": [
+      "fin_resolved_low_rating",
+      "fin_message_loop",
+      "sla_missed_ai",
+      "sensitive_tag_handled_by_ai",
+      "low_rating_with_ai_involvement",
+      "fin_resolved_audit_logged",
+      "fin_handoff_to_human",
+      "fin_close_autonomous",
+      "suspiciously_fast_ai_resolve",
+      "ai_proactive_engagement",
+      "redacted_part_audit",
+      "fin_handled_conversation",
+      "high_volume_fin_pattern",
+      "bad_rating_concentration"
+    ],
+    "result_levels": {
+      "fin_resolved_audit_logged": "FLAG",
+      "fin_resolved_low_rating": "FAIL",
+      "fin_handoff_to_human": "PASS",
+      "fin_handled_conversation": "PASS",
+      "fin_message_loop": "FAIL",
+      "sla_missed_ai": "FAIL",
+      "low_rating_with_ai_involvement": "FAIL",
+      "redacted_part_audit": "PASS",
+      "ai_proactive_engagement": "PASS",
+      "sensitive_tag_handled_by_ai": "FAIL",
+      "fin_close_autonomous": "FLAG",
+      "suspiciously_fast_ai_resolve": "FLAG",
+      "high_volume_fin_pattern": "FLAG",
+      "bad_rating_concentration": "FAIL"
+    }
+  },
+  "mappings": {
+    "fin_resolved_audit_logged": "PR-04",
+    "fin_resolved_low_rating": "PR-04",
+    "fin_handoff_to_human": "PR-05",
+    "fin_handled_conversation": "PR-05",
+    "fin_message_loop": "PR-04",
+    "sla_missed_ai": "PR-02",
+    "low_rating_with_ai_involvement": "PR-04",
+    "redacted_part_audit": "PR-04",
+    "ai_proactive_engagement": "PR-01",
+    "sensitive_tag_handled_by_ai": "PR-04",
+    "fin_close_autonomous": "PR-02",
+    "suspiciously_fast_ai_resolve": "PR-04",
+    "high_volume_fin_pattern": "PR-04",
+    "bad_rating_concentration": "PR-04"
+  }
+}
