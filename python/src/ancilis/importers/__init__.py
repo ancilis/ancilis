@@ -100,7 +100,8 @@ __all__ = [
     "StripeImporter",
     "TwilioImporter",
     "VercelImporter",
-    "WeaviateImporter",
+    "WandbModelsImporter",
     "WandbWeaveImporter",
+    "WeaviateImporter",
     "ZendeskImporter",
 ]
