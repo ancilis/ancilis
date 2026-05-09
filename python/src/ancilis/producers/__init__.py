@@ -15,15 +15,22 @@ from ancilis.producers.tool import (
 
 __all__ = [
     "ActionProducer",
+    "AnthropicActionProducer",
     "BlockedActionError",
     "CLIActionProducer",
     "CLIExecutionResult",
     "CLIInvocation",
+    "GeminiActionProducer",
     "HTTPActionProducer",
     "HTTPExecutionResult",
     "HTTPObservation",
     "HTTPRequest",
+    "LLMActionProducer",
+    "LLMExecutionResult",
+    "LLMInvocation",
+    "LLMObservation",
     "MCPActionProducer",
+    "OpenAIActionProducer",
     "ProducerType",
     "RuntimeProducerSelection",
     "ToolActionProducer",
@@ -37,11 +44,27 @@ __all__ = [
 ]
 
 
+_LLM_EXPORTS = {
+    "AnthropicActionProducer",
+    "GeminiActionProducer",
+    "LLMActionProducer",
+    "LLMExecutionResult",
+    "LLMInvocation",
+    "LLMObservation",
+    "OpenAIActionProducer",
+}
+
+
 def __getattr__(name: str) -> object:
     if name == "MCPActionProducer":
         from ancilis.producers.mcp import MCPActionProducer
 
         return MCPActionProducer
+    if name in _LLM_EXPORTS:
+        from importlib import import_module
+
+        llm = import_module("ancilis.producers.llm")
+        return getattr(llm, name)
     if name in {
         "RuntimeProducerSelection",
         "resolve_runtime_producers",
