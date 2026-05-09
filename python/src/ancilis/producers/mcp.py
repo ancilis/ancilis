@@ -11,6 +11,7 @@ from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.middleware.action_builder import build_action
 from ancilis.middleware.discovery import DriftEvent, register_tools_from_list
 from ancilis.producers.protocol import ProducerType
+from ancilis.telemetry import record_adapter_used
 
 
 class MCPActionProducer:
@@ -23,6 +24,7 @@ class MCPActionProducer:
     def __init__(self, config: ResolvedConfig, registry: ToolRegistry) -> None:
         self._config = config
         self._registry = registry
+        record_adapter_used("mcp")
 
     @property
     def producer_type(self) -> ProducerType:

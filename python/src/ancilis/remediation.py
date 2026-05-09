@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+# mypy: disable-error-code=import-untyped
+
 from dataclasses import dataclass
 from typing import Any
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 from ancilis._shared import iter_shared_paths
 from ancilis.config import ResolvedConfig

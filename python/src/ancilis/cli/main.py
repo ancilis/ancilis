@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import sys
+from collections.abc import Sequence
+from typing import Any
+
 import click
 
 from ancilis.cli.status import status
@@ -20,9 +24,52 @@ from ancilis.cli.plugins import plugins
 from ancilis.cli.shell import shell
 from ancilis.cli.serve import serve
 from ancilis.cli.sync import sync
+from ancilis.cli.telemetry import telemetry
 
 
-@click.group()
+def _top_level_command(argv: list[str]) -> str:
+    for token in argv:
+        if token.startswith("-"):
+            continue
+        return token
+    return "unknown"
+
+
+class AncilisCLIGroup(click.Group):
+    def main(
+        self,
+        args: Sequence[str] | None = None,
+        prog_name: str | None = None,
+        complete_var: str | None = None,
+        standalone_mode: bool = True,
+        **extra: Any,
+    ) -> Any:
+        tokens = list(args) if args is not None else sys.argv[1:]
+        command = _top_level_command([str(token) for token in tokens])
+        exit_code = 0
+
+        try:
+            return super().main(
+                args=args,
+                prog_name=prog_name,
+                complete_var=complete_var,
+                standalone_mode=standalone_mode,
+                **extra,
+            )
+        except SystemExit as exc:
+            exit_code = exc.code if isinstance(exc.code, int) else 1 if exc.code else 0
+            raise
+        except click.ClickException as exc:
+            exit_code = exc.exit_code
+            raise
+        finally:
+            if command != "telemetry":
+                from ancilis.telemetry import record_telemetry_event
+
+                record_telemetry_event("cli_command", {"command": command, "exit_code": exit_code})
+
+
+@click.group(cls=AncilisCLIGroup)
 @click.version_option(version="0.1.0", prog_name="ancilis")
 @click.option("--no-update-check", is_flag=True, default=False, hidden=True,
               help="Suppress update check.")
@@ -33,8 +80,11 @@ def cli(ctx: click.Context, no_update_check: bool) -> None:
     ctx.obj["no_update_check"] = no_update_check
     ctx.params["no_update_check"] = no_update_check
     from ancilis.cli.version_check import check_and_notify
-    check_and_notify(ctx)
+    from ancilis.telemetry import maybe_prompt_for_telemetry_consent
 
+    check_and_notify(ctx)
+    if ctx.invoked_subcommand != "telemetry":
+        maybe_prompt_for_telemetry_consent()
 
 cli.add_command(status)
 cli.add_command(report)
@@ -51,6 +101,7 @@ cli.add_command(plugins)
 cli.add_command(shell)
 cli.add_command(serve)
 cli.add_command(sync)
+cli.add_command(telemetry)
 
 
 @cli.group(name="config")
@@ -62,7 +113,6 @@ config_group.add_command(validate)
 
 
 def main() -> None:
-    import sys
     from ancilis.errors import AncilisError, print_error
 
     try:

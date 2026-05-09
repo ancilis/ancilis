@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+# mypy: disable-error-code=import-untyped
+
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from ancilis._shared import shared_path
