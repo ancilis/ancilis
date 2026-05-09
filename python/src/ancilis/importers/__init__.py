@@ -6,6 +6,7 @@ from ancilis.importers.braintrust import BraintrustImporter
 from ancilis.importers.browserbase import BrowserbaseImporter
 from ancilis.importers.chroma import ChromaImporter
 from ancilis.importers.composio import ComposioImporter
+from ancilis.importers.confluence import ConfluenceImporter
 from ancilis.importers.cyclonedx import CycloneDxImporter
 from ancilis.importers.datadog_llm import DatadogLLMImporter
 from ancilis.importers.deepgram import DeepgramImporter
@@ -32,6 +33,7 @@ from ancilis.importers.otel_genai import OtelGenAIImporter
 from ancilis.importers.pinecone import PineconeImporter
 from ancilis.importers.portkey import PortkeyImporter
 from ancilis.importers.qdrant import QdrantImporter
+from ancilis.importers.salesforce import SalesforceImporter
 from ancilis.importers.sarif import SarifImporter
 from ancilis.importers.semgrep import SemgrepImporter
 from ancilis.importers.sendgrid import SendGridImporter
@@ -50,6 +52,7 @@ __all__ = [
     "BrowserbaseImporter",
     "ChromaImporter",
     "ComposioImporter",
+    "ConfluenceImporter",
     "CycloneDxImporter",
     "DatadogLLMImporter",
     "DeepgramImporter",
@@ -76,6 +79,7 @@ __all__ = [
     "PineconeImporter",
     "PortkeyImporter",
     "QdrantImporter",
+    "SalesforceImporter",
     "SarifImporter",
     "SemgrepImporter",
     "SendGridImporter",
