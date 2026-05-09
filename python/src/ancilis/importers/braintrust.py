@@ -56,7 +56,8 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 from ancilis.engine.result import ControlResult, EvaluationResult
 
@@ -215,7 +216,7 @@ def _summarize_payload(value: Any) -> dict[str, Any]:
         "sha256": hashlib.sha256(encoded).hexdigest(),
     }
     if isinstance(value, dict):
-        summary["top_level_keys"] = sorted(str(k) for k in value.keys())
+        summary["top_level_keys"] = sorted(str(k) for k in value)
     elif isinstance(value, list):
         summary["length"] = len(value)
     return summary
@@ -451,7 +452,7 @@ class BraintrustImporter:
             "expected_summary": _summarize_payload(event.get("expected")),
             "scores": scores_summary,
             "metadata_keys": sorted(
-                str(k) for k in (event.get("metadata") or {}).keys()
+                str(k) for k in (event.get("metadata") or {})
             ) if isinstance(event.get("metadata"), dict) else [],
             "tags": list(event.get("tags") or []),
         }

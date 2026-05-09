@@ -30,7 +30,8 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 from ancilis.engine.result import ControlResult, EvaluationResult
 
@@ -452,6 +453,4 @@ def _looks_like_record(obj: dict[str, Any]) -> bool:
     envelope is dominated by a ``data`` key. We treat any object whose only
     structural key is ``data`` (with optional metadata siblings) as an envelope.
     """
-    if "id" in obj and ("model" in obj or "finish_reason" in obj or "provider_name" in obj):
-        return True
-    return False
+    return bool("id" in obj and ("model" in obj or "finish_reason" in obj or "provider_name" in obj))

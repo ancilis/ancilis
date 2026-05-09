@@ -11,6 +11,7 @@ from ancilis.importers.mcp_registry import McpRegistryImporter
 from ancilis.importers.openrouter import OpenRouterImporter
 from ancilis.importers.otel_genai import OtelGenAIImporter
 from ancilis.importers.pinecone import PineconeImporter
+from ancilis.importers.qdrant import QdrantImporter
 from ancilis.importers.sarif import SarifImporter
 from ancilis.importers.weaviate import WeaviateImporter
 
@@ -26,6 +27,7 @@ __all__ = [
     "OpenRouterImporter",
     "OtelGenAIImporter",
     "PineconeImporter",
+    "QdrantImporter",
     "SarifImporter",
     "WeaviateImporter",
 ]

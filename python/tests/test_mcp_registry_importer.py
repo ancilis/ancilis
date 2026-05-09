@@ -63,14 +63,14 @@ def _smithery(*entries: dict) -> str:
 
 def _smithery_entry(
     *,
-    qualifiedName: str = "@anthropic/filesystem",
-    displayName: str = "Filesystem",
+    qualifiedName: str = "@anthropic/filesystem",  # noqa: N803 — upstream JSON key
+    displayName: str = "Filesystem",  # noqa: N803 — upstream JSON key
     vendor: str = "anthropic",
     verified: bool = True,
-    remoteSupported: bool = True,
-    homepageUrl: str = "https://example.invalid/fs",
-    iconUrl: str = "",
-    useCount: int = 1234,
+    remoteSupported: bool = True,  # noqa: N803 — upstream JSON key
+    homepageUrl: str = "https://example.invalid/fs",  # noqa: N803 — upstream JSON key
+    iconUrl: str = "",  # noqa: N803 — upstream JSON key
+    useCount: int = 1234,  # noqa: N803 — upstream JSON key
     tools: list[dict] | None = None,
     permissions: list[str] | None = None,
 ) -> dict:
@@ -98,10 +98,7 @@ def _control_results_for(ev, control_id: str):
 
 
 def _has_signal(ev, signal: str) -> bool:
-    for cr in ev.control_results:
-        if cr.evidence_data.get("signal") == signal:
-            return True
-    return False
+    return any(cr.evidence_data.get("signal") == signal for cr in ev.control_results)
 
 
 def _server_evaluations(results):

@@ -60,7 +60,8 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 from ancilis.engine.result import ControlResult, EvaluationResult
 
@@ -164,7 +165,7 @@ def _sanitize_filter_keys(filter_keys: Any) -> list[str]:
     if filter_keys is None:
         return []
     if isinstance(filter_keys, dict):
-        return sorted(str(k) for k in filter_keys.keys())
+        return sorted(str(k) for k in filter_keys)
     if isinstance(filter_keys, list):
         return sorted(str(k) for k in filter_keys if isinstance(k, (str, int)))
     return []

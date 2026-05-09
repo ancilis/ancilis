@@ -137,10 +137,7 @@ class HeliconeImporter:
         file_sha256: str | None,
     ) -> list[EvaluationResult]:
         # Helicone exports are typically {"data": [...]} but accept a bare list too.
-        if isinstance(doc, list):
-            entries = doc
-        else:
-            entries = doc.get("data", []) or []
+        entries = doc if isinstance(doc, list) else doc.get("data", []) or []
 
         results: list[EvaluationResult] = []
         for entry in entries:
@@ -314,10 +311,7 @@ class HeliconeImporter:
             )
 
         # Decision: ALLOW only if every control result is PASS.
-        if all(cr.result == "PASS" for cr in control_results):
-            decision = "ALLOW"
-        else:
-            decision = "FLAG"
+        decision = "ALLOW" if all(cr.result == "PASS" for cr in control_results) else "FLAG"
 
         decision_reason = (
             f"Imported from Helicone: {provider}/{model} status={status} "

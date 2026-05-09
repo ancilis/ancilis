@@ -35,7 +35,8 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 from ancilis.engine.result import ControlResult, EvaluationResult
 
@@ -232,11 +233,10 @@ def _detect_guardrail_violation(metadata: Any) -> list[str]:
             for k, v in value.items():
                 k_str = str(k).lower()
                 for token in _GUARDRAIL_TOKENS:
-                    if token in k_str:
-                        # Treat truthy values for guardrail-style keys as a hit.
-                        if v not in (None, False, 0, "", [], {}):
-                            hits.append(f"key={k}")
-                            break
+                    # Treat truthy values for guardrail-style keys as a hit.
+                    if token in k_str and v not in (None, False, 0, "", [], {}):
+                        hits.append(f"key={k}")
+                        break
                 _scan(v, depth + 1)
         elif isinstance(value, list):
             seen.add(id(value))

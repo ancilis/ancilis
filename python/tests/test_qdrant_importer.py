@@ -141,7 +141,7 @@ def test_collection_lifecycle_flags() -> None:
 
     assert len(results) == 2  # no cross-collection synthetic (one collection)
     for res, expected_signal in zip(
-        results, ["operation_create_collection", "operation_delete_collection"]
+        results, ["operation_create_collection", "operation_delete_collection"], strict=True
     ):
         cr = res.control_results[0]
         assert cr.control_id == "PR-05"
@@ -163,7 +163,7 @@ def test_snapshot_flags_privileged() -> None:
 
     assert len(results) == 2
     for res, expected in zip(
-        results, ["operation_snapshot_create", "operation_snapshot_recover"]
+        results, ["operation_snapshot_create", "operation_snapshot_recover"], strict=True
     ):
         cr = res.control_results[0]
         assert cr.control_id == "PR-05"

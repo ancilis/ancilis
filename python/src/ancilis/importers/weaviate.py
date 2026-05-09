@@ -43,7 +43,8 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 from ancilis.engine.result import ControlResult, EvaluationResult
 
