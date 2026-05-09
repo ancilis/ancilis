@@ -9,10 +9,13 @@ from ancilis.engine import Engine
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.llm import (
     AnthropicActionProducer,
+    CohereActionProducer,
     GeminiActionProducer,
     LLMActionProducer,
     LLMInvocation,
+    MistralActionProducer,
     OpenAIActionProducer,
+    XAIActionProducer,
 )
 from ancilis.producers.protocol import ActionProducer, ProducerType
 from ancilis.producers.tool import BlockedActionError
@@ -35,10 +38,18 @@ def _make(
     return producer, store
 
 
+_ALL_PRODUCER_CLASSES = [
+    AnthropicActionProducer,
+    OpenAIActionProducer,
+    GeminiActionProducer,
+    MistralActionProducer,
+    CohereActionProducer,
+    XAIActionProducer,
+]
+
+
 class TestProtocolCompliance:
-    @pytest.mark.parametrize(
-        "cls", [AnthropicActionProducer, OpenAIActionProducer, GeminiActionProducer]
-    )
+    @pytest.mark.parametrize("cls", _ALL_PRODUCER_CLASSES)
     def test_satisfies_action_producer_protocol(self, cls: type[LLMActionProducer]) -> None:
         producer, _ = _make(cls)
         assert isinstance(producer, ActionProducer)
@@ -51,6 +62,9 @@ class TestProtocolCompliance:
             (AnthropicActionProducer, "anthropic"),
             (OpenAIActionProducer, "openai"),
             (GeminiActionProducer, "gemini"),
+            (MistralActionProducer, "mistral"),
+            (CohereActionProducer, "cohere"),
+            (XAIActionProducer, "xai"),
         ],
     )
     def test_provider_string(
@@ -176,6 +190,93 @@ class TestExtractInvocation:
         assert invocation.system == "be terse"
         assert invocation.tools == [{"name": "search"}]
 
+    def test_mistral_uses_default_extractor(self) -> None:
+        producer, _ = _make(MistralActionProducer)
+        invocation = producer._extract_invocation(
+            {
+                "model": "mistral-large-latest",
+                "messages": [{"role": "user", "content": "bonjour"}],
+                "system": "be helpful",
+            },
+            agent_name="llm-agent",
+        )
+        assert invocation.model == "mistral-large-latest"
+        assert invocation.system == "be helpful"
+
+    def test_cohere_folds_message_and_chat_history(self) -> None:
+        producer, _ = _make(CohereActionProducer)
+        invocation = producer._extract_invocation(
+            {
+                "model": "command-r-plus",
+                "message": "ping",
+                "chat_history": [{"role": "user", "message": "earlier"}],
+                "preamble": "be terse",
+            },
+            agent_name="llm-agent",
+        )
+        assert len(invocation.messages) == 2
+        assert invocation.messages[-1] == {"role": "user", "content": "ping"}
+        assert invocation.system == "be terse"
+
+    def test_cohere_messages_kwarg_takes_priority(self) -> None:
+        producer, _ = _make(CohereActionProducer)
+        invocation = producer._extract_invocation(
+            {
+                "model": "command-r",
+                "messages": [{"role": "user", "content": "via messages"}],
+                "message": "ignored",
+            },
+            agent_name="llm-agent",
+        )
+        assert invocation.messages == [{"role": "user", "content": "via messages"}]
+
+    def test_xai_uses_openai_compatible_extraction(self) -> None:
+        producer, _ = _make(XAIActionProducer)
+        invocation = producer._extract_invocation(
+            {"model": "grok-4", "input": "what is 2+2?"},
+            agent_name="llm-agent",
+        )
+        # OpenAI's input-string normalization promotes to messages[0]
+        assert invocation.messages == [{"role": "user", "content": "what is 2+2?"}]
+
+
+class TestNewProvidersTokens:
+    def test_mistral_observe(self) -> None:
+        producer, store = _make(MistralActionProducer)
+        observation = producer.observe(
+            LLMInvocation(
+                model="mistral-large-latest",
+                agent_name="llm-agent",
+                messages=[{"role": "user", "content": "bonjour"}],
+            )
+        )
+        assert observation.action.tool.name == "llm:mistral:mistral-large-latest"
+        assert store.get_summary()["total_evaluations"] == 1
+
+    def test_cohere_observe(self) -> None:
+        producer, store = _make(CohereActionProducer)
+        observation = producer.observe(
+            LLMInvocation(
+                model="command-r-plus",
+                agent_name="llm-agent",
+                messages=[{"role": "user", "content": "ping"}],
+            )
+        )
+        assert observation.action.tool.name == "llm:cohere:command-r-plus"
+        assert store.get_summary()["total_evaluations"] == 1
+
+    def test_xai_observe(self) -> None:
+        producer, store = _make(XAIActionProducer)
+        observation = producer.observe(
+            LLMInvocation(
+                model="grok-4",
+                agent_name="llm-agent",
+                messages=[{"role": "user", "content": "ping"}],
+            )
+        )
+        assert observation.action.tool.name == "llm:xai:grok-4"
+        assert store.get_summary()["total_evaluations"] == 1
+
 
 class TestExecuteAndWrap:
     def test_execute_returns_transport_response_in_audit(self) -> None:
@@ -247,4 +348,7 @@ class TestExportsAndLazyImport:
         assert producers_pkg.AnthropicActionProducer is AnthropicActionProducer
         assert producers_pkg.OpenAIActionProducer is OpenAIActionProducer
         assert producers_pkg.GeminiActionProducer is GeminiActionProducer
+        assert producers_pkg.MistralActionProducer is MistralActionProducer
+        assert producers_pkg.CohereActionProducer is CohereActionProducer
+        assert producers_pkg.XAIActionProducer is XAIActionProducer
         assert producers_pkg.LLMInvocation is LLMInvocation
