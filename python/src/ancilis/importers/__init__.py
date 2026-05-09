@@ -49,6 +49,7 @@ from ancilis.importers.otel_genai import OtelGenAIImporter
 from ancilis.importers.pinecone import PineconeImporter
 from ancilis.importers.portkey import PortkeyImporter
 from ancilis.importers.postgres_pgaudit import PostgresPgAuditImporter
+from ancilis.importers.posthog import PostHogImporter
 from ancilis.importers.qdrant import QdrantImporter
 from ancilis.importers.salesforce import SalesforceImporter
 from ancilis.importers.sarif import SarifImporter
@@ -122,6 +123,7 @@ __all__ = [
     "OtelGenAIImporter",
     "PineconeImporter",
     "PortkeyImporter",
+    "PostHogImporter",
     "PostgresPgAuditImporter",
     "QdrantImporter",
     "SalesforceImporter",
