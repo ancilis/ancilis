@@ -1,4 +1,4 @@
-"""Ancilis evidence importers — AWS CloudTrail, GCP Cloud Audit, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, MCP registry, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Weaviate, and W&B Weave ingestion."""
+"""Ancilis evidence importers — AWS CloudTrail, GCP Cloud Audit, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, MCP registry, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Slack, Weaviate, and W&B Weave ingestion."""
 
 from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
 from ancilis.importers.braintrust import BraintrustImporter
@@ -23,6 +23,7 @@ from ancilis.importers.pinecone import PineconeImporter
 from ancilis.importers.portkey import PortkeyImporter
 from ancilis.importers.qdrant import QdrantImporter
 from ancilis.importers.sarif import SarifImporter
+from ancilis.importers.slack import SlackImporter
 from ancilis.importers.wandb_weave import WandbWeaveImporter
 from ancilis.importers.weaviate import WeaviateImporter
 
@@ -50,6 +51,7 @@ __all__ = [
     "PortkeyImporter",
     "QdrantImporter",
     "SarifImporter",
+    "SlackImporter",
     "WeaviateImporter",
     "WandbWeaveImporter",
 ]
