@@ -1,4 +1,4 @@
-"""Ancilis evidence importers — AWS CloudTrail, GCP Cloud Audit, GitHub audit log, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, Helicone, Honeycomb, LangSmith, Langfuse, LiteLLM, Logfire, MCP registry, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Sentry, Stripe, Twilio, Weaviate, and W&B Weave ingestion."""
+"""Ancilis evidence importers — AWS CloudTrail, GCP Cloud Audit, GitHub audit log, GitLab audit events, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, Helicone, Honeycomb, LangSmith, Langfuse, LiteLLM, Logfire, MCP registry, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Sentry, Stripe, Twilio, Weaviate, and W&B Weave ingestion."""
 
 from ancilis.importers.auth0 import Auth0Importer
 from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
@@ -12,6 +12,7 @@ from ancilis.importers.deepgram import DeepgramImporter
 from ancilis.importers.elevenlabs import ElevenLabsImporter
 from ancilis.importers.gcp_cloud_audit import GcpCloudAuditImporter
 from ancilis.importers.github import GitHubImporter
+from ancilis.importers.gitlab import GitLabImporter
 from ancilis.importers.helicone import HeliconeImporter
 from ancilis.importers.honeycomb import HoneycombImporter
 from ancilis.importers.langfuse import LangfuseImporter
@@ -45,6 +46,7 @@ __all__ = [
     "ElevenLabsImporter",
     "GcpCloudAuditImporter",
     "GitHubImporter",
+    "GitLabImporter",
     "HeliconeImporter",
     "HoneycombImporter",
     "LangfuseImporter",
