@@ -56,6 +56,7 @@ from ancilis.importers.semgrep import SemgrepImporter
 from ancilis.importers.sendgrid import SendGridImporter
 from ancilis.importers.sentinelone import SentinelOneImporter
 from ancilis.importers.sentry import SentryImporter
+from ancilis.importers.servicenow import ServiceNowImporter
 from ancilis.importers.sharepoint_onedrive import SharePointOneDriveImporter
 from ancilis.importers.snowflake import SnowflakeImporter
 from ancilis.importers.snyk import SnykImporter
@@ -129,6 +130,7 @@ __all__ = [
     "SendGridImporter",
     "SentinelOneImporter",
     "SentryImporter",
+    "ServiceNowImporter",
     "SharePointOneDriveImporter",
     "SnowflakeImporter",
     "SnykImporter",
