@@ -24,6 +24,7 @@ from ancilis.importers.linear import LinearImporter
 from ancilis.importers.litellm import LiteLLMImporter
 from ancilis.importers.logfire import LogfireImporter
 from ancilis.importers.mcp_registry import McpRegistryImporter
+from ancilis.importers.milvus import MilvusImporter
 from ancilis.importers.n8n import N8nImporter
 from ancilis.importers.notion import NotionImporter
 from ancilis.importers.openrouter import OpenRouterImporter
@@ -67,6 +68,7 @@ __all__ = [
     "LiteLLMImporter",
     "LogfireImporter",
     "McpRegistryImporter",
+    "MilvusImporter",
     "N8nImporter",
     "NotionImporter",
     "OpenRouterImporter",
