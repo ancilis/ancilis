@@ -218,7 +218,10 @@ def _entry_points_for_group(group: str) -> Sequence[Any]:
     discovered = importlib.metadata.entry_points()
     if hasattr(discovered, "select"):
         return list(discovered.select(group=group))
-    return list(discovered.get(group, ()))
+    legacy_group_lookup = getattr(discovered, "get", None)
+    if callable(legacy_group_lookup):
+        return list(legacy_group_lookup(group, ()))
+    return []
 
 
 def _construct_plugin(loaded: Any) -> object:

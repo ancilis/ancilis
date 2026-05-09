@@ -65,3 +65,27 @@ workspace/
 # Agent / tooling state — not source code
 .claude/worktrees/
 .serena/
+
+# Agent / IDE local state — never commit
+# These files contain absolute dev paths, session UUIDs, and tool config
+# that should not ship in a public OSS repo.
+.claude/settings.json
+.claude/settings.local.json
+.claude/projects/
+.claude/sessions/
+.codex/
+.cursor/
+.aider*
+.windsurf/
+.continue/
+.devin/
+.zed/
+.fleet/
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+*.code-workspace
+
+# Environment overrides
+.env.local
+.env.*.local

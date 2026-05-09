@@ -45,6 +45,7 @@ from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 from ancilis.middleware.response_scanner import ScanResult, scan_response
 from ancilis.producers.protocol import ProducerType
+from ancilis.telemetry import record_adapter_used
 
 
 @dataclass
@@ -90,6 +91,7 @@ class CLIActionProducer:
         # Lazy init means this doesn't touch the filesystem at construction.
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
         self._session_id: str = str(uuid.uuid4())
+        record_adapter_used("cli")
 
     @property
     def session_id(self) -> str:
