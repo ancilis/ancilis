@@ -12,6 +12,12 @@ from ancilis.adapters.openai_assistants import (
     OpenAIAssistantsInvocation,
     OpenAIAssistantsObservation,
 )
+from ancilis.adapters.openai_realtime import (
+    OpenAIRealtimeActionProducer,
+    OpenAIRealtimeAdapter,
+    OpenAIRealtimeInvocation,
+    OpenAIRealtimeObservation,
+)
 from ancilis.adapters.bedrock import (
     BedrockActionProducer,
     BedrockAdapter,
@@ -46,6 +52,10 @@ __all__ = [
     "OpenAIAssistantsAdapter",
     "OpenAIAssistantsInvocation",
     "OpenAIAssistantsObservation",
+    "OpenAIRealtimeActionProducer",
+    "OpenAIRealtimeAdapter",
+    "OpenAIRealtimeInvocation",
+    "OpenAIRealtimeObservation",
     "BedrockActionProducer",
     "BedrockAdapter",
     "BedrockInvocation",

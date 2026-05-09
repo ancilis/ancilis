@@ -23,6 +23,12 @@ if TYPE_CHECKING:
         OpenAIAssistantsInvocation,
         OpenAIAssistantsObservation,
     )
+    from ancilis.adapters.openai_realtime import (
+        OpenAIRealtimeActionProducer,
+        OpenAIRealtimeAdapter,
+        OpenAIRealtimeInvocation,
+        OpenAIRealtimeObservation,
+    )
     from ancilis.adapters.bedrock import (
         BedrockActionProducer,
         BedrockAdapter,
@@ -137,6 +143,22 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "OpenAIAssistantsObservation": (
         "ancilis.adapters.openai_assistants",
         "OpenAIAssistantsObservation",
+    ),
+    "OpenAIRealtimeActionProducer": (
+        "ancilis.adapters.openai_realtime",
+        "OpenAIRealtimeActionProducer",
+    ),
+    "OpenAIRealtimeAdapter": (
+        "ancilis.adapters.openai_realtime",
+        "OpenAIRealtimeAdapter",
+    ),
+    "OpenAIRealtimeInvocation": (
+        "ancilis.adapters.openai_realtime",
+        "OpenAIRealtimeInvocation",
+    ),
+    "OpenAIRealtimeObservation": (
+        "ancilis.adapters.openai_realtime",
+        "OpenAIRealtimeObservation",
     ),
     "VertexAIActionProducer": ("ancilis.adapters.vertex_ai", "VertexAIActionProducer"),
     "VertexAIAdapter": ("ancilis.adapters.vertex_ai", "VertexAIAdapter"),
