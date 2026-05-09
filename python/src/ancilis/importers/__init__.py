@@ -2,6 +2,7 @@
 
 from ancilis.importers.auth0 import Auth0Importer
 from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
+from ancilis.importers.aws_ecr import AwsEcrImporter
 from ancilis.importers.aws_s3_access import AwsS3AccessImporter
 from ancilis.importers.bigquery import BigQueryImporter
 from ancilis.importers.box import BoxImporter
@@ -24,6 +25,7 @@ from ancilis.importers.gitlab import GitLabImporter
 from ancilis.importers.google_drive import GoogleDriveImporter
 from ancilis.importers.helicone import HeliconeImporter
 from ancilis.importers.honeycomb import HoneycombImporter
+from ancilis.importers.hubspot import HubSpotImporter
 from ancilis.importers.intercom import IntercomImporter
 from ancilis.importers.jira import JiraImporter
 from ancilis.importers.kubernetes import KubernetesAuditImporter
@@ -36,6 +38,7 @@ from ancilis.importers.mcp_registry import McpRegistryImporter
 from ancilis.importers.microsoft_sentinel import MicrosoftSentinelImporter
 from ancilis.importers.microsoft_teams import MicrosoftTeamsImporter
 from ancilis.importers.milvus import MilvusImporter
+from ancilis.importers.mixpanel import MixpanelImporter
 from ancilis.importers.mlflow import MLflowImporter
 from ancilis.importers.mongodb_atlas import MongoDBAtlasImporter
 from ancilis.importers.n8n import N8nImporter
@@ -51,6 +54,7 @@ from ancilis.importers.sarif import SarifImporter
 from ancilis.importers.semgrep import SemgrepImporter
 from ancilis.importers.sendgrid import SendGridImporter
 from ancilis.importers.sentry import SentryImporter
+from ancilis.importers.sharepoint_onedrive import SharePointOneDriveImporter
 from ancilis.importers.snowflake import SnowflakeImporter
 from ancilis.importers.snyk import SnykImporter
 from ancilis.importers.splunk import SplunkImporter
@@ -62,11 +66,14 @@ from ancilis.importers.wandb_models import WandbModelsImporter
 from ancilis.importers.wandb_weave import WandbWeaveImporter
 from ancilis.importers.weaviate import WeaviateImporter
 from ancilis.importers.wiz import WizImporter
+from ancilis.importers.workday import WorkdayImporter
+from ancilis.importers.zapier import ZapierImporter
 from ancilis.importers.zendesk import ZendeskImporter
 
 __all__ = [
     "Auth0Importer",
     "AwsCloudTrailImporter",
+    "AwsEcrImporter",
     "AwsS3AccessImporter",
     "BigQueryImporter",
     "BoxImporter",
@@ -89,6 +96,7 @@ __all__ = [
     "GoogleDriveImporter",
     "HeliconeImporter",
     "HoneycombImporter",
+    "HubSpotImporter",
     "IntercomImporter",
     "JiraImporter",
     "KubernetesAuditImporter",
@@ -101,6 +109,7 @@ __all__ = [
     "MicrosoftSentinelImporter",
     "MicrosoftTeamsImporter",
     "MilvusImporter",
+    "MixpanelImporter",
     "MLflowImporter",
     "MongoDBAtlasImporter",
     "N8nImporter",
@@ -116,6 +125,7 @@ __all__ = [
     "SemgrepImporter",
     "SendGridImporter",
     "SentryImporter",
+    "SharePointOneDriveImporter",
     "SnowflakeImporter",
     "SnykImporter",
     "SplunkImporter",
@@ -127,5 +137,7 @@ __all__ = [
     "WandbWeaveImporter",
     "WeaviateImporter",
     "WizImporter",
+    "WorkdayImporter",
+    "ZapierImporter",
     "ZendeskImporter",
 ]
