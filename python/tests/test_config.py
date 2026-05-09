@@ -180,6 +180,10 @@ class TestValidation:
         with pytest.raises(ConfigError, match="Did you mean 'fedramp'"):
             load_config(raw={"agent": {"name": "x"}, "compliance": {"overlays": ["fedram"]}})
 
+    def test_nested_unknown_key_warns_with_path_suggestion(self):
+        resolved = load_config(raw={"agent": {"name": "x", "nme": "typo"}})
+        assert "Unknown key 'agent.nme'. Did you mean 'agent.name'?" in resolved.warnings
+
 
 class TestDataTypeTranslation:
     def test_health_records_maps_to_phi_pii(self):
@@ -242,6 +246,18 @@ class TestOverlayActivation:
         assert all(item.overlay_id != "nist-csf-2" for item in resolved.unavailable_overlays)
         assert "nist-csf" in resolved.overlay_requirements["GOV-01"]
         assert "nist-csf-2" not in resolved.overlay_requirements["GOV-01"]
+
+    def test_financial_alias_resolves_to_glba_overlay(self):
+        resolved = load_config(
+            raw={
+                "agent": {"name": "x"},
+                "compliance": {"overlays": ["financial"]},
+            }
+        )
+
+        assert list(resolved.active_overlays) == ["glba"]
+        assert resolved.active_overlays["glba"].overlay_id == "glba"
+        assert all(item.overlay_id != "financial" for item in resolved.unavailable_overlays)
 
     def test_nist_csf_2_alias_deduplicates_with_canonical_overlay(self):
         resolved = load_config(

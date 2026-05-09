@@ -1,6 +1,7 @@
 /** Overlay ID helpers. */
 
 export const OVERLAY_ID_ALIASES: Record<string, string> = {
+  financial: "glba",
   "nist-csf-2": "nist-csf",
 };
 

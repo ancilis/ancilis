@@ -103,6 +103,19 @@ describe("Full Config", () => {
     expect(resolved.activeOverlays.get("nist-csf")?.name).toBe("NIST Cybersecurity Framework 2.0");
     expect(resolved.unavailableOverlays.some(item => item.overlayId === "nist-csf-2")).toBe(false);
   });
+
+  it("normalizes the financial overlay alias to the canonical GLBA overlay", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "claims-processor" },
+        compliance: { overlays: ["financial"] },
+      },
+    });
+
+    expect([...resolved.activeOverlays.keys()]).toEqual(["glba"]);
+    expect(resolved.activeOverlays.get("glba")?.overlayId).toBe("glba");
+    expect(resolved.unavailableOverlays.some(item => item.overlayId === "financial")).toBe(false);
+  });
 });
 
 describe("Validation", () => {

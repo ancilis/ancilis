@@ -26,6 +26,48 @@ OVERLAYS_DIR = SHARED_DIR / "overlays"
 CLASSIFICATIONS_FILE = SHARED_DIR / "classifications" / "taxonomy.json"
 CURRENT_CONFIG_VERSION = 2
 
+KNOWN_KEY_CHILDREN: dict[str, list[str]] = {
+    "": [
+        "config_version",
+        "agent",
+        "security",
+        "my_agent_handles",
+        "certification_targets",
+        "compliance",
+        "platform",
+        "sync",
+        "cli",
+        "scan",
+    ],
+    "agent": ["name", "description", "owner", "agent_id", "llm_provider"],
+    "security": ["mode", "controls", "tools", "scope"],
+    "security.tools": ["allowed", "blocked"],
+    "security.scope": [
+        "max_actions_per_minute",
+        "allowed_destinations",
+        "blocked_destinations",
+    ],
+    "compliance": ["overlays", "evidence"],
+    "compliance.evidence": ["storage", "retention_days"],
+    "platform": ["url", "api_key_env"],
+    "sync": [
+        "offline_mode",
+        "interval_seconds",
+        "max_retries",
+        "backoff_base_seconds",
+        "max_queue_size",
+        "batch_size",
+    ],
+    "cli": ["update_check", "update_check_interval"],
+    "scan": ["dependencies"],
+    "scan.dependencies": ["enabled", "severity_threshold", "ignore"],
+}
+
+DEPRECATED_KEY_PATHS: dict[str, str] = {
+    "agent_name": "agent.name",
+    "data_classifications": "my_agent_handles",
+}
+
 
 # --- Pydantic Models ---
 
@@ -197,6 +239,43 @@ class AncilisConfig(BaseModel):
         return values
 
     model_config = {"extra": "ignore"}
+
+
+def _all_known_paths() -> list[str]:
+    paths: list[str] = []
+    for parent, children in KNOWN_KEY_CHILDREN.items():
+        for child in children:
+            paths.append(f"{parent}.{child}" if parent else child)
+    return [*paths, *DEPRECATED_KEY_PATHS.keys(), *DEPRECATED_KEY_PATHS.values()]
+
+
+def _unknown_key_warning(path: list[str]) -> str:
+    joined = ".".join(path)
+    suggestion = get_close_matches(joined, _all_known_paths(), n=1, cutoff=0.75)
+    suggestion_text = f". Did you mean '{suggestion[0]}'?" if suggestion else ""
+    return f"Unknown key '{joined}'{suggestion_text}"
+
+
+def _collect_unknown_key_warnings(raw: Any) -> list[str]:
+    warnings: list[str] = []
+
+    def visit(value: Any, path: list[str]) -> None:
+        if not isinstance(value, dict):
+            return
+        children = KNOWN_KEY_CHILDREN.get(".".join(path))
+        if children is None:
+            return
+        allowed = set(children)
+        for key, child in value.items():
+            if key == "_warnings":
+                continue
+            if key not in allowed:
+                warnings.append(_unknown_key_warning([*path, key]))
+                continue
+            visit(child, [*path, key])
+
+    visit(raw, [])
+    return warnings
 
 
 # --- Shared JSON Loaders ---
@@ -490,7 +569,8 @@ def validate_config(
     valid_overlay_ids: set[str] | None = None,
 ) -> tuple[AncilisConfig, list[str]]:
     """Validate raw config dict and return (config, warnings)."""
-    warnings: list[str] = raw.pop("_warnings", [])
+    warnings: list[str] = list(raw.pop("_warnings", []))
+    warnings.extend(_collect_unknown_key_warnings(raw))
 
     # Validate control IDs in overrides
     security = raw.get("security", {})
