@@ -1,0 +1,64 @@
+{
+  "_version": "1.0.0",
+  "_description": "Pydantic Logfire span → AKSI control mapping. Logfire (https://logfire.pydantic.dev) is OpenTelemetry-based, so spans carrying gen_ai.* semantic conventions are layered on top of the otel-genai mapping. Pure Logfire spans (no gen_ai.*) still produce evidence via logfire.level_name, pydantic.validation.errors, logfire.exception_type, and HTTP status. Span status_code=ERROR overrides any level mapping to FAIL.",
+  "_metadata": {
+    "source_format": "logfire",
+    "schema": "otlp-json",
+    "owner": "ancilis-importers",
+    "spec_url": "https://logfire.pydantic.dev/docs/",
+    "vendor": "pydantic",
+    "level_to_result": {
+      "trace": "PASS",
+      "debug": "PASS",
+      "info": "PASS",
+      "notice": "PASS",
+      "warn": "FLAG",
+      "warning": "FLAG",
+      "error": "FAIL",
+      "fatal": "FAIL",
+      "critical": "FAIL"
+    },
+    "level_to_control": {
+      "trace": "PR-05",
+      "debug": "PR-05",
+      "info": "PR-05",
+      "notice": "PR-05",
+      "warn": "PR-05",
+      "warning": "PR-05",
+      "error": "DE-01",
+      "fatal": "DE-01",
+      "critical": "DE-01"
+    },
+    "http_status_to_result": {
+      "5xx": {"control": "DE-01", "result": "FAIL"},
+      "4xx": {"control": "PR-02", "result": "FLAG"},
+      "2xx": {"control": "PR-05", "result": "PASS"},
+      "3xx": {"control": "PR-05", "result": "PASS"}
+    },
+    "pydantic_validation": {
+      "control": "PR-03",
+      "result_when_errors": "FAIL",
+      "result_when_zero": "PASS"
+    },
+    "exception_handling": {
+      "control": "DE-01",
+      "result": "FAIL"
+    },
+    "default_control": "PR-05",
+    "max_logfire_msg_chars": 80,
+    "redacted_attributes": [
+      "db.statement",
+      "http.url.query",
+      "logfire.msg.full"
+    ]
+  },
+  "mappings": {
+    "chat": "PR-01",
+    "text_completion": "PR-01",
+    "completion": "PR-01",
+    "embeddings": "PR-04",
+    "embedding": "PR-04",
+    "execute_tool": "PR-02",
+    "tool_use": "PR-02"
+  }
+}

@@ -1,4 +1,4 @@
-"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Composio, Datadog LLM, LangSmith, Langfuse, Helicone, LiteLLM, OpenRouter, MCP registry, OTel GenAI, Pinecone, Weaviate, and W&B Weave ingestion."""
+"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Composio, Datadog LLM, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, OpenRouter, MCP registry, OTel GenAI, Pinecone, Weaviate, and W&B Weave ingestion."""
 
 from ancilis.importers.braintrust import BraintrustImporter
 from ancilis.importers.composio import ComposioImporter
@@ -8,6 +8,7 @@ from ancilis.importers.helicone import HeliconeImporter
 from ancilis.importers.langfuse import LangfuseImporter
 from ancilis.importers.langsmith import LangSmithImporter
 from ancilis.importers.litellm import LiteLLMImporter
+from ancilis.importers.logfire import LogfireImporter
 from ancilis.importers.mcp_registry import McpRegistryImporter
 from ancilis.importers.openrouter import OpenRouterImporter
 from ancilis.importers.otel_genai import OtelGenAIImporter
@@ -26,6 +27,7 @@ __all__ = [
     "LangfuseImporter",
     "LangSmithImporter",
     "LiteLLMImporter",
+    "LogfireImporter",
     "McpRegistryImporter",
     "OpenRouterImporter",
     "OtelGenAIImporter",
