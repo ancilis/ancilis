@@ -22,9 +22,17 @@ The project follows a conservative pre-1.0 release posture:
 - All new producers are duck-typed against their upstream SDKs — installation is not required for the producer module to load. Producer type is `FRAMEWORK` for all new producers, matching the existing TypeScript `BedrockActionProducer` precedent.
 - Tool-name convention extends consistently: `llm:{provider}:{model}` for direct LLM SDKs, `aws-bedrock:{operation}` for Bedrock, `{framework}:{kind}:{name}` for framework producers. Allowlists in `ancilis.yaml` reference these names directly.
 - 137 new tests across 7 test modules. Full Python suite at 1584 tests passing.
+- **TypeScript parity** for every new Python producer (closes the cross-language drift):
+  - `LLMActionProducer` base class plus all 10 LLM provider subclasses (`AnthropicActionProducer`, `OpenAIActionProducer`, `GeminiActionProducer`, `MistralActionProducer`, `CohereActionProducer`, `XAIActionProducer`, `GroqActionProducer`, `TogetherActionProducer`, `FireworksActionProducer`, `DeepSeekActionProducer`).
+  - `LangChainActionProducer` + `LangChainCallbackHandler` matching the LangChain.js `BaseCallbackHandler` shape (drop-in via `callbacks=[handler]`).
+  - `CrewAIActionProducer` (step/task/crew callback factories), `AutoGenActionProducer` (send/receive hooks + `attach()` helper), `SemanticKernelActionProducer` (three filter factories).
+  - `ancilis.producers.auto` for TypeScript: `autoRegister`, `detectInstalledSdks`, `installedProviderSlugs`. Uses `createRequire(import.meta.url).resolve()` instead of `importlib.find_spec`. Detector table covers `@anthropic-ai/sdk`, `openai`, `@google/genai` / `@google/generative-ai`, `@mistralai/mistralai`, `cohere-ai`, `groq-sdk`, `together-ai`, `fireworks-ai`, `@aws-sdk/client-bedrock-runtime` / `aws-sdk`, `@langchain/core` / `langchain`, `crewai`, `autogen`, `@semantic-kernel/typescript` / `@microsoft/semantic-kernel`.
+- 68 new TypeScript tests (34 LLM/LangChain + 34 frameworks/auto). Full TS suite at 1012/1013 passing (1 pre-existing eslint env-only failure unrelated to these changes).
 
 ### Documentation
-- README: new "LLM SDKs and agent frameworks" section with auto-register example, explicit-wiring example, LangChain handler example, and supported-producers reference table.
+- README: new "LLM SDKs and agent frameworks" section with auto-register example, explicit-wiring example, LangChain handler example, and supported-producers reference table. TypeScript section updated to mention LLM/framework producer parity.
+- `docs/producers.md`: reference table extended to 16 producers; new sections for LLM SDK producers, agent framework producers (LangChain / CrewAI / AutoGen / Semantic Kernel), and auto-detection.
+- `docs/sdk/typescript.mdx`: new sections for TS LLM producers, agent framework producers, and auto-detection (`autoRegister`, `detectInstalledSdks`, `installedProviderSlugs`).
 
 ## [0.1.0] - 2026-04-02
 

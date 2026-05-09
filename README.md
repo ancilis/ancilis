@@ -264,7 +264,7 @@ Each level adds one concept. You don't need level 2 to get value from level 1.
 
 ## TypeScript
 
-> Preview — Python is the primary path. TypeScript includes the core engine, evidence store, producers, CLI, and reporting.
+> Preview — Python is the primary path. TypeScript includes the core engine, evidence store, producers, CLI, and reporting, with full parity for the LLM SDK and agent framework producers.
 
 ```bash
 npm install ancilis
@@ -285,6 +285,8 @@ const store = new EvidenceStore(config, { inMemory: true });
 const producer = new ToolActionProducer(config, new Engine(config), undefined, store);
 const result = await producer.execute(readData, "my-agent", ["id-123"], undefined, "read_data");
 ```
+
+LLM SDK + framework producers also ship in the TypeScript package — `AnthropicActionProducer`, `OpenAIActionProducer`, `GeminiActionProducer`, plus `LangChainCallbackHandler`, `CrewAIActionProducer`, `AutoGenActionProducer`, `SemanticKernelActionProducer`, and `autoRegister(config, engine)` for whichever upstream SDKs are installed. Same shape as the Python producers.
 
 ## What's honest
 
