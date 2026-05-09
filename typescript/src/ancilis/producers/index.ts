@@ -23,3 +23,21 @@ export type { HTTPRequest, HTTPObservation, HTTPExecutionResult } from "./http.j
 
 export { BedrockActionProducer, BedrockAdapter } from "./bedrock.js";
 export type { BedrockInvocation, BedrockObservation } from "./bedrock.js";
+
+export {
+  LLMActionProducer,
+  AnthropicActionProducer,
+  OpenAIActionProducer,
+  GeminiActionProducer,
+  MistralActionProducer,
+  CohereActionProducer,
+  XAIActionProducer,
+  GroqActionProducer,
+  TogetherActionProducer,
+  FireworksActionProducer,
+  DeepSeekActionProducer,
+} from "./llm.js";
+export type { LLMInvocation, LLMObservation, LLMExecutionResult } from "./llm.js";
+
+export { LangChainActionProducer, LangChainCallbackHandler } from "./langchain.js";
+export type { LangChainEvent, LangChainEventKind, LangChainObservation } from "./langchain.js";
