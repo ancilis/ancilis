@@ -16,6 +16,11 @@ from ancilis.producers.tool import (
 __all__ = [
     "ActionProducer",
     "AnthropicActionProducer",
+    "BedrockActionProducer",
+    "BedrockAdapter",
+    "BedrockExecutionResult",
+    "BedrockInvocation",
+    "BedrockObservation",
     "BlockedActionError",
     "CLIActionProducer",
     "CLIExecutionResult",
@@ -25,6 +30,10 @@ __all__ = [
     "HTTPExecutionResult",
     "HTTPObservation",
     "HTTPRequest",
+    "LangChainActionProducer",
+    "LangChainCallbackHandler",
+    "LangChainEvent",
+    "LangChainObservation",
     "LLMActionProducer",
     "LLMExecutionResult",
     "LLMInvocation",
@@ -54,6 +63,21 @@ _LLM_EXPORTS = {
     "OpenAIActionProducer",
 }
 
+_BEDROCK_EXPORTS = {
+    "BedrockActionProducer",
+    "BedrockAdapter",
+    "BedrockExecutionResult",
+    "BedrockInvocation",
+    "BedrockObservation",
+}
+
+_LANGCHAIN_EXPORTS = {
+    "LangChainActionProducer",
+    "LangChainCallbackHandler",
+    "LangChainEvent",
+    "LangChainObservation",
+}
+
 
 def __getattr__(name: str) -> object:
     if name == "MCPActionProducer":
@@ -65,6 +89,16 @@ def __getattr__(name: str) -> object:
 
         llm = import_module("ancilis.producers.llm")
         return getattr(llm, name)
+    if name in _BEDROCK_EXPORTS:
+        from importlib import import_module
+
+        bedrock = import_module("ancilis.producers.bedrock")
+        return getattr(bedrock, name)
+    if name in _LANGCHAIN_EXPORTS:
+        from importlib import import_module
+
+        langchain = import_module("ancilis.producers.langchain")
+        return getattr(langchain, name)
     if name in {
         "RuntimeProducerSelection",
         "resolve_runtime_producers",
