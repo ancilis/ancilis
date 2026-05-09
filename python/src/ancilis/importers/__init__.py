@@ -16,6 +16,7 @@ from ancilis.importers.cyclonedx import CycloneDxImporter
 from ancilis.importers.databricks import DatabricksImporter
 from ancilis.importers.datadog_llm import DatadogLLMImporter
 from ancilis.importers.deepgram import DeepgramImporter
+from ancilis.importers.discord import DiscordImporter
 from ancilis.importers.dropbox import DropboxImporter
 from ancilis.importers.elasticsearch import ElasticsearchImporter
 from ancilis.importers.elevenlabs import ElevenLabsImporter
@@ -61,6 +62,7 @@ from ancilis.importers.servicenow import ServiceNowImporter
 from ancilis.importers.sharepoint_onedrive import SharePointOneDriveImporter
 from ancilis.importers.snowflake import SnowflakeImporter
 from ancilis.importers.snyk import SnykImporter
+from ancilis.importers.sonarqube import SonarQubeImporter
 from ancilis.importers.splunk import SplunkImporter
 from ancilis.importers.stripe import StripeImporter
 from ancilis.importers.tavily import TavilyImporter
@@ -91,6 +93,7 @@ __all__ = [
     "DatabricksImporter",
     "DatadogLLMImporter",
     "DeepgramImporter",
+    "DiscordImporter",
     "DropboxImporter",
     "ElasticsearchImporter",
     "ElevenLabsImporter",
@@ -136,6 +139,7 @@ __all__ = [
     "SharePointOneDriveImporter",
     "SnowflakeImporter",
     "SnykImporter",
+    "SonarQubeImporter",
     "SplunkImporter",
     "StripeImporter",
     "TavilyImporter",
