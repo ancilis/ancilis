@@ -32,7 +32,10 @@ __all__ = [
     "CrewAIActionProducer",
     "CrewAIEvent",
     "CrewAIObservation",
+    "DeepSeekActionProducer",
+    "FireworksActionProducer",
     "GeminiActionProducer",
+    "GroqActionProducer",
     "HTTPActionProducer",
     "HTTPExecutionResult",
     "HTTPObservation",
@@ -56,8 +59,12 @@ __all__ = [
     "ToolActionProducer",
     "ToolExecutionResult",
     "ToolInvocation",
+    "TogetherActionProducer",
     "XAIActionProducer",
+    "auto_register",
+    "detect_installed_sdks",
     "evaluate_and_execute",
+    "installed_provider_slugs",
     "resolve_runtime_producers",
     "tool",
     "translate_runtime_action",
@@ -68,14 +75,24 @@ __all__ = [
 _LLM_EXPORTS = {
     "AnthropicActionProducer",
     "CohereActionProducer",
+    "DeepSeekActionProducer",
+    "FireworksActionProducer",
     "GeminiActionProducer",
+    "GroqActionProducer",
     "LLMActionProducer",
     "LLMExecutionResult",
     "LLMInvocation",
     "LLMObservation",
     "MistralActionProducer",
     "OpenAIActionProducer",
+    "TogetherActionProducer",
     "XAIActionProducer",
+}
+
+_AUTO_EXPORTS = {
+    "auto_register",
+    "detect_installed_sdks",
+    "installed_provider_slugs",
 }
 
 _BEDROCK_EXPORTS = {
@@ -147,6 +164,11 @@ def __getattr__(name: str) -> object:
 
         sk = import_module("ancilis.producers.semantic_kernel")
         return getattr(sk, name)
+    if name in _AUTO_EXPORTS:
+        from importlib import import_module
+
+        auto = import_module("ancilis.producers.auto")
+        return getattr(auto, name)
     if name in {
         "RuntimeProducerSelection",
         "resolve_runtime_producers",

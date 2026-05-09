@@ -392,3 +392,36 @@ class XAIActionProducer(LLMActionProducer):
         # Reuse OpenAI's input/messages normalization since xAI's HTTP shape
         # is OpenAI-compatible.
         return OpenAIActionProducer._extract_invocation(self, kwargs, agent_name=agent_name)
+
+
+# --- OpenAI-compatible serverless inference platforms ---
+#
+# Per Q2 2026 research, the consolidated serverless inference market
+# (Together, Fireworks, Anyscale, Groq, Cerebras, Replicate, OctoAI) all
+# expose OpenAI-compatible endpoints. The producers below are thin
+# subclasses that change only the provider slug so evidence is correctly
+# attributed; they reuse the OpenAI extractor for messages/input handling.
+
+
+class GroqActionProducer(OpenAIActionProducer):
+    """Producer for Groq's LPU-backed OpenAI-compatible API."""
+
+    provider = "groq"
+
+
+class TogetherActionProducer(OpenAIActionProducer):
+    """Producer for Together AI's OpenAI-compatible inference API."""
+
+    provider = "together"
+
+
+class FireworksActionProducer(OpenAIActionProducer):
+    """Producer for Fireworks AI's OpenAI-compatible inference API."""
+
+    provider = "fireworks"
+
+
+class DeepSeekActionProducer(OpenAIActionProducer):
+    """Producer for the DeepSeek OpenAI-compatible API."""
+
+    provider = "deepseek"

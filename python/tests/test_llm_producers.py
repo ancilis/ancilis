@@ -10,11 +10,15 @@ from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.llm import (
     AnthropicActionProducer,
     CohereActionProducer,
+    DeepSeekActionProducer,
+    FireworksActionProducer,
     GeminiActionProducer,
+    GroqActionProducer,
     LLMActionProducer,
     LLMInvocation,
     MistralActionProducer,
     OpenAIActionProducer,
+    TogetherActionProducer,
     XAIActionProducer,
 )
 from ancilis.producers.protocol import ActionProducer, ProducerType
@@ -45,6 +49,10 @@ _ALL_PRODUCER_CLASSES = [
     MistralActionProducer,
     CohereActionProducer,
     XAIActionProducer,
+    GroqActionProducer,
+    TogetherActionProducer,
+    FireworksActionProducer,
+    DeepSeekActionProducer,
 ]
 
 
@@ -65,6 +73,10 @@ class TestProtocolCompliance:
             (MistralActionProducer, "mistral"),
             (CohereActionProducer, "cohere"),
             (XAIActionProducer, "xai"),
+            (GroqActionProducer, "groq"),
+            (TogetherActionProducer, "together"),
+            (FireworksActionProducer, "fireworks"),
+            (DeepSeekActionProducer, "deepseek"),
         ],
     )
     def test_provider_string(
@@ -72,6 +84,38 @@ class TestProtocolCompliance:
     ) -> None:
         producer, _ = _make(cls)
         assert producer.provider == expected_provider
+
+
+class TestOpenAICompatibleInferenceSubclasses:
+    """Groq/Together/Fireworks/DeepSeek share OpenAI's HTTP shape but each
+    carries its own provider slug for evidence attribution."""
+
+    @pytest.mark.parametrize(
+        "cls,model",
+        [
+            (GroqActionProducer, "llama-3.3-70b-versatile"),
+            (TogetherActionProducer, "meta-llama/Llama-3.3-70B-Instruct-Turbo"),
+            (FireworksActionProducer, "accounts/fireworks/models/llama-v3p3-70b"),
+            (DeepSeekActionProducer, "deepseek-chat"),
+        ],
+    )
+    def test_each_subclass_emits_distinct_provider_tool_name(
+        self, cls: type[LLMActionProducer], model: str
+    ) -> None:
+        producer, store = _make(cls)
+        observation = producer.observe(
+            LLMInvocation(model=model, agent_name="llm-agent", messages=[{"role": "user", "content": "hi"}])
+        )
+        assert observation.action.tool.name == f"llm:{producer.provider}:{model}"
+        assert store.get_summary()["total_evaluations"] == 1
+
+    def test_groq_uses_openai_input_normalization(self) -> None:
+        producer, _ = _make(GroqActionProducer)
+        invocation = producer._extract_invocation(
+            {"model": "llama-3.3-70b-versatile", "input": "ping"},
+            agent_name="llm-agent",
+        )
+        assert invocation.messages == [{"role": "user", "content": "ping"}]
 
 
 class TestObserve:
