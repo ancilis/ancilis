@@ -1,4 +1,4 @@
-"""Ancilis evidence importers — SARIF, CycloneDX, LangSmith, Langfuse, Helicone, LiteLLM, OpenRouter, MCP registry, and OTel GenAI ingestion."""
+"""Ancilis evidence importers — SARIF, CycloneDX, LangSmith, Langfuse, Helicone, LiteLLM, OpenRouter, MCP registry, OTel GenAI, and Pinecone ingestion."""
 
 from ancilis.importers.cyclonedx import CycloneDxImporter
 from ancilis.importers.helicone import HeliconeImporter
@@ -8,6 +8,7 @@ from ancilis.importers.litellm import LiteLLMImporter
 from ancilis.importers.mcp_registry import McpRegistryImporter
 from ancilis.importers.openrouter import OpenRouterImporter
 from ancilis.importers.otel_genai import OtelGenAIImporter
+from ancilis.importers.pinecone import PineconeImporter
 from ancilis.importers.sarif import SarifImporter
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "McpRegistryImporter",
     "OpenRouterImporter",
     "OtelGenAIImporter",
+    "PineconeImporter",
     "SarifImporter",
 ]
