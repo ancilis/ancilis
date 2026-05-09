@@ -1,5 +1,6 @@
-"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, OpenRouter, MCP registry, OTel GenAI, Pinecone, Portkey, Qdrant, Weaviate, and W&B Weave ingestion."""
+"""Ancilis evidence importers — AWS CloudTrail, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, OpenRouter, MCP registry, OTel GenAI, Pinecone, Portkey, Qdrant, Weaviate, and W&B Weave ingestion."""
 
+from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
 from ancilis.importers.braintrust import BraintrustImporter
 from ancilis.importers.browserbase import BrowserbaseImporter
 from ancilis.importers.chroma import ChromaImporter
@@ -22,6 +23,7 @@ from ancilis.importers.wandb_weave import WandbWeaveImporter
 from ancilis.importers.weaviate import WeaviateImporter
 
 __all__ = [
+    "AwsCloudTrailImporter",
     "BraintrustImporter",
     "BrowserbaseImporter",
     "ChromaImporter",
