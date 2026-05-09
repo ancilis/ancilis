@@ -1,6 +1,7 @@
-"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Composio, Datadog LLM, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, OpenRouter, MCP registry, OTel GenAI, Pinecone, Weaviate, and W&B Weave ingestion."""
+"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Chroma, Composio, Datadog LLM, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, OpenRouter, MCP registry, OTel GenAI, Pinecone, Qdrant, Weaviate, and W&B Weave ingestion."""
 
 from ancilis.importers.braintrust import BraintrustImporter
+from ancilis.importers.chroma import ChromaImporter
 from ancilis.importers.composio import ComposioImporter
 from ancilis.importers.cyclonedx import CycloneDxImporter
 from ancilis.importers.datadog_llm import DatadogLLMImporter
@@ -20,6 +21,7 @@ from ancilis.importers.weaviate import WeaviateImporter
 
 __all__ = [
     "BraintrustImporter",
+    "ChromaImporter",
     "ComposioImporter",
     "CycloneDxImporter",
     "DatadogLLMImporter",
