@@ -6,7 +6,7 @@ from typing import Any
 from pathlib import Path
 
 import click
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 
 def _read_config(config_path: str) -> dict[str, Any]:
