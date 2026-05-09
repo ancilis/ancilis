@@ -36,6 +36,7 @@ __all__ = [
     "DatadogLLMImporter",
     "DeepgramImporter",
     "ElevenLabsImporter",
+    "GcpCloudAuditImporter",
     "HeliconeImporter",
     "LangfuseImporter",
     "LangSmithImporter",
