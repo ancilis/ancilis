@@ -1,5 +1,6 @@
 """Ancilis evidence importers — AWS CloudTrail, GCP Cloud Audit, GitHub audit log, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, Helicone, Honeycomb, LangSmith, Langfuse, LiteLLM, Logfire, MCP registry, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Sentry, Stripe, Twilio, Weaviate, and W&B Weave ingestion."""
 
+from ancilis.importers.auth0 import Auth0Importer
 from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
 from ancilis.importers.braintrust import BraintrustImporter
 from ancilis.importers.browserbase import BrowserbaseImporter
@@ -32,6 +33,7 @@ from ancilis.importers.wandb_weave import WandbWeaveImporter
 from ancilis.importers.weaviate import WeaviateImporter
 
 __all__ = [
+    "Auth0Importer",
     "AwsCloudTrailImporter",
     "BraintrustImporter",
     "BrowserbaseImporter",
