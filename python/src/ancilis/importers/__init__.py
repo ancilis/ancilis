@@ -1,4 +1,4 @@
-"""Ancilis evidence importers — AWS CloudTrail, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, OpenRouter, MCP registry, OTel GenAI, Pinecone, Portkey, Qdrant, Weaviate, and W&B Weave ingestion."""
+"""Ancilis evidence importers — AWS CloudTrail, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, MCP registry, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Weaviate, and W&B Weave ingestion."""
 
 from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
 from ancilis.importers.braintrust import BraintrustImporter
@@ -15,6 +15,7 @@ from ancilis.importers.langsmith import LangSmithImporter
 from ancilis.importers.litellm import LiteLLMImporter
 from ancilis.importers.logfire import LogfireImporter
 from ancilis.importers.mcp_registry import McpRegistryImporter
+from ancilis.importers.n8n import N8nImporter
 from ancilis.importers.openrouter import OpenRouterImporter
 from ancilis.importers.otel_genai import OtelGenAIImporter
 from ancilis.importers.pinecone import PineconeImporter
@@ -40,6 +41,7 @@ __all__ = [
     "LiteLLMImporter",
     "LogfireImporter",
     "McpRegistryImporter",
+    "N8nImporter",
     "OpenRouterImporter",
     "OtelGenAIImporter",
     "PineconeImporter",
