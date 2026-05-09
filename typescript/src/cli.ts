@@ -3,12 +3,30 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { approveTool, formatStatus, handleScan, migrateAndFormat, runDoctor, runReport, validateAndFormat } from "./ancilis/cli/index.js";
+import {
+  approveTool,
+  formatStatus,
+  handleScan,
+  migrateAndFormat,
+  runDoctor,
+  runRemediate,
+  runReport,
+  validateAndFormat,
+} from "./ancilis/cli/index.js";
 import { loadConfig } from "./ancilis/config/index.js";
 import { EvidenceStore } from "./ancilis/evidence/store.js";
 import { BaselineManager } from "./ancilis/baselines/index.js";
 import type { EvidenceSummary } from "./ancilis/report/index.js";
 import { packageRootFrom } from "./ancilis/shared-path.js";
+import {
+  bucketDuration,
+  flushTelemetryEvents,
+  formatTelemetryStatus,
+  maybePromptForTelemetryConsent,
+  readTelemetryStatus,
+  recordTelemetryEvent,
+  setTelemetryEnabled,
+} from "./ancilis/telemetry/index.js";
 
 interface CliIo {
   stdout(message: string): void;
@@ -30,6 +48,7 @@ function usage(): string {
     "  ancilis doctor [--config <path>] [--db <path>]",
     "  ancilis report [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
     "  ancilis report generate [--period <window>] [--format <terminal|markdown|ndjson|csv|oscal-json|pdf|aiuc1-readiness>] [--config <path>] [--db <path>] [--output <path>]",
+    "  ancilis remediate [--period <window>] [--control <id>] [--config <path>] [--db <path>]",
     "  ancilis status [--verbose] [--config <path>] [--db <path>]",
     "  ancilis config validate [--config <path>] [--verbose]",
     "  ancilis config migrate [--config <path>] [--apply]",
@@ -42,6 +61,8 @@ function usage(): string {
     "  ancilis evidence sessions [--config <path>] [--db <path>]",
     "  ancilis evidence reset [--yes] [--config <path>] [--db <path>]",
     "  ancilis evidence import <file> [--format sarif|cyclonedx|auto] [--agent-id <id>] [--config <path>] [--db <path>]",
+    "  ancilis telemetry status",
+    "  ancilis telemetry on|off|flush",
     "  ancilis init [--framework <name>] [--overlay <id>] [--agent-name <name>] [--dir <path>] [--detect] [--no-sample]",
     "  ancilis --version",
   ].join("\n");
@@ -148,6 +169,57 @@ async function handleReport(args: string[], io: CliIo): Promise<number> {
   return result.ok ? 0 : 1;
 }
 
+async function handleRemediate(args: string[], io: CliIo): Promise<number> {
+  let period: string | undefined;
+  let configPath: string | undefined;
+  let dbPath: string | undefined;
+  let sessionId: string | undefined;
+  let latest = true;
+  let controlId: string | undefined;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--period") {
+      period = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--config") {
+      configPath = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--db") {
+      dbPath = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--session") {
+      sessionId = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--latest") {
+      latest = true;
+      continue;
+    }
+    if (arg === "--all") {
+      latest = false;
+      continue;
+    }
+    if (arg === "--control") {
+      controlId = readOption(args, index, arg);
+      index += 1;
+      continue;
+    }
+    throw new Error(`Unknown option for remediate: ${arg}`);
+  }
+
+  const result = await runRemediate({ period, configPath, dbPath, sessionId, latest, controlId });
+  print(result.ok ? io.stdout : io.stderr, result.output);
+  return result.ok ? 0 : 1;
+}
+
 async function handleStatus(args: string[], io: CliIo): Promise<number> {
   let verbose = false;
   let configPath: string | undefined;
@@ -232,6 +304,34 @@ function handleConfigMigrate(args: string[], io: CliIo): number {
   const result = migrateAndFormat(configPath, { apply });
   print(result.ok ? io.stdout : io.stderr, result.message);
   return result.ok ? 0 : 1;
+}
+
+async function handleTelemetry(args: string[], io: CliIo): Promise<number> {
+  const subcommand = args[0] ?? "status";
+  if (args.length > 1) {
+    throw new Error(`Unknown option for telemetry ${subcommand}: ${args[1]}`);
+  }
+
+  if (subcommand === "status") {
+    print(io.stdout, formatTelemetryStatus(readTelemetryStatus()));
+    return 0;
+  }
+  if (subcommand === "on") {
+    setTelemetryEnabled(true);
+    print(io.stdout, "Telemetry enabled. Anonymous usage events may be queued and sent at most once per hour.");
+    return 0;
+  }
+  if (subcommand === "off") {
+    setTelemetryEnabled(false);
+    print(io.stdout, "Telemetry disabled. No new telemetry events will be queued or sent.");
+    return 0;
+  }
+  if (subcommand === "flush") {
+    const result = await flushTelemetryEvents({ force: true });
+    print(io.stdout, result.sent ? `Flushed ${result.count} telemetry event(s).` : "No telemetry events flushed.");
+    return 0;
+  }
+  throw new Error(`Unknown telemetry subcommand: ${subcommand}`);
 }
 
 function handleApproveTool(args: string[], io: CliIo): number {
@@ -638,6 +738,58 @@ async function handleInit(args: string[], io: CliIo): Promise<number> {
   return 0;
 }
 
+async function dispatchCliCommand(command: string | undefined, rest: string[], io: CliIo): Promise<number> {
+  switch (command) {
+    case "doctor":
+      return await handleDoctor(rest, io);
+    case "report":
+      return await handleReport(rest, io);
+    case "remediate":
+      return await handleRemediate(rest, io);
+    case "status":
+      return await handleStatus(rest, io);
+    case "approve-tool":
+      return handleApproveTool(rest, io);
+    case "config":
+      if (rest[0] === "validate") {
+        return handleConfigValidate(rest.slice(1), io);
+      }
+      if (rest[0] === "migrate") {
+        return handleConfigMigrate(rest.slice(1), io);
+      }
+      throw new Error(`Unknown config subcommand: ${rest[0] ?? "<missing>"}`);
+    case "telemetry":
+      return await handleTelemetry(rest, io);
+    case "baseline":
+      return await handleBaseline(rest, io);
+    case "evidence":
+      return await handleEvidence(rest, io);
+    case "init":
+      return await handleInit(rest, io);
+    case "scan": {
+      const knownFlags = ["--ci", "--config", "--db", "--period", "--session", "--latest", "--all"];
+      const unknown = rest.filter(a => a.startsWith("--") && !knownFlags.includes(a));
+      if (unknown.length > 0) throw new Error(`Unknown scan flag: ${unknown[0]}`);
+      const ci = rest.includes("--ci");
+      const all = rest.includes("--all");
+      const configIdx = rest.indexOf("--config");
+      const dbIdx = rest.indexOf("--db");
+      const periodIdx = rest.indexOf("--period");
+      const sessionIdx = rest.indexOf("--session");
+      return await handleScan({
+        ci,
+        all,
+        config: configIdx !== -1 ? rest[configIdx + 1] : undefined,
+        db: dbIdx !== -1 ? rest[dbIdx + 1] : undefined,
+        period: periodIdx !== -1 ? rest[periodIdx + 1] : undefined,
+        session: sessionIdx !== -1 ? rest[sessionIdx + 1] : undefined,
+      }, io);
+    }
+    default:
+      throw new Error(`Unknown command: ${command}`);
+  }
+}
+
 export async function runCli(args: string[], io: CliIo = defaultIo): Promise<number> {
   if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
     print(io.stdout, usage());
@@ -650,56 +802,29 @@ export async function runCli(args: string[], io: CliIo = defaultIo): Promise<num
   }
 
   const [command, ...rest] = args;
+  const startedAt = Date.now();
+  let exitCode = 0;
+
+  if (command !== "telemetry") {
+    await maybePromptForTelemetryConsent().catch(() => {});
+  }
 
   try {
-    switch (command) {
-      case "doctor":
-        return await handleDoctor(rest, io);
-      case "report":
-        return await handleReport(rest, io);
-      case "status":
-        return await handleStatus(rest, io);
-      case "approve-tool":
-        return handleApproveTool(rest, io);
-      case "config":
-        if (rest[0] === "validate") {
-          return handleConfigValidate(rest.slice(1), io);
-        }
-        if (rest[0] === "migrate") {
-          return handleConfigMigrate(rest.slice(1), io);
-        }
-        throw new Error(`Unknown config subcommand: ${rest[0] ?? "<missing>"}`);
-      case "baseline":
-        return await handleBaseline(rest, io);
-      case "evidence":
-        return await handleEvidence(rest, io);
-      case "init":
-        return await handleInit(rest, io);
-      case "scan": {
-        const knownFlags = ["--ci", "--config", "--db", "--period", "--session", "--latest", "--all"];
-        const unknown = rest.filter(a => a.startsWith("--") && !knownFlags.includes(a));
-        if (unknown.length > 0) throw new Error(`Unknown scan flag: ${unknown[0]}`);
-        const ci = rest.includes("--ci");
-        const all = rest.includes("--all");
-        const configIdx = rest.indexOf("--config");
-        const dbIdx = rest.indexOf("--db");
-        const periodIdx = rest.indexOf("--period");
-        const sessionIdx = rest.indexOf("--session");
-        return await handleScan({
-          ci,
-          all,
-          config: configIdx !== -1 ? rest[configIdx + 1] : undefined,
-          db: dbIdx !== -1 ? rest[dbIdx + 1] : undefined,
-          period: periodIdx !== -1 ? rest[periodIdx + 1] : undefined,
-          session: sessionIdx !== -1 ? rest[sessionIdx + 1] : undefined,
-        }, io);
-      }
-      default:
-        throw new Error(`Unknown command: ${command}`);
-    }
+    exitCode = await dispatchCliCommand(command, rest, io);
+    return exitCode;
   } catch (error: unknown) {
     print(io.stderr, `${(error as Error).message ?? String(error)}\n\n${usage()}`);
+    exitCode = 1;
     return 1;
+  } finally {
+    if (command !== "telemetry") {
+      await recordTelemetryEvent("cli_command", {
+        command: command ?? "unknown",
+        exit_code: exitCode,
+        duration_bucket: bucketDuration(Date.now() - startedAt),
+        ci: Boolean(process.env.CI),
+      }).catch(() => {});
+    }
   }
 }
 

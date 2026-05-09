@@ -12,6 +12,7 @@ import type { EvidenceRecord } from "../evidence/record.js";
 import { EvidenceStore } from "../evidence/store.js";
 import { canonicalJsonStringify } from "../evidence/chain.js";
 import { ProducerType } from "./protocol.js";
+import { recordAdapterUsed } from "../telemetry/index.js";
 
 const PROVIDER = "aws-bedrock";
 const PRODUCER_VERSION = "0.1.0";
@@ -116,6 +117,7 @@ export class BedrockActionProducer {
     this._engine = engine;
     this._registry = registry ?? engine.registry;
     this._evidenceStore = evidenceStore ?? new EvidenceStore(config);
+    recordAdapterUsed(PROVIDER);
   }
 
   get producerType(): ProducerType { return ProducerType.FRAMEWORK; }

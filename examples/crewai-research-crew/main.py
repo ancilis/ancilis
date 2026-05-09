@@ -1,145 +1,126 @@
-"""CrewAI Research Crew + Ancilis Multi-Agent Compliance Monitoring.
+"""CrewAI Research Crew + Ancilis multi-agent compliance monitoring.
 
-Demonstrates per-agent evidence attribution across a multi-agent research crew.
-Each crew member (Researcher, Analyst, Reporter) wraps tools with its own
-agent_name, so compliance evidence identifies which agent made each tool call.
+Demonstrates the CrewAI-native producer. ``CrewAIActionProducer`` exposes
+``step_callback`` / ``task_callback`` / ``crew_callback`` factories that
+match the signatures CrewAI calls — drop them into any ``Agent`` /
+``Task`` / ``Crew`` constructor and every step, task, and crew completion
+becomes an evaluated, evidence-recorded Action with the agent's role
+captured as the ``agent_name``.
 
-If ancilis-crewai is available, migrate the TODO blocks to use it.
+Works without ``crewai`` installed: the producer is duck-typed against
+CrewAI's output objects (it pulls ``tool``, ``agent_role``, etc. from
+attributes or dict keys) and we drive the callbacks directly here.
 
 Run from this directory:
+
     python main.py
+    ancilis status            # see SOC 2 + AIUC-1 posture
 
 Prerequisites:
+
     pip install -r requirements.txt
 """
 
 from pathlib import Path
 
-from ancilis import ToolActionProducer, load_config
+from ancilis import load_config
 from ancilis.engine import Engine
 from ancilis.evidence.store import EvidenceStore, _agent_db_path
+from ancilis.producers import CrewAIActionProducer
 
 # --- Shared Ancilis setup ---
 config = load_config(path=Path(__file__).parent / "ancilis.yaml")
 
-# Reset evidence for a clean demo run each time main.py is executed
+# Reset evidence for a clean demo run each time main.py is executed.
 _db_path = _agent_db_path(config.agent_name)
 if _db_path.exists():
     _db_path.unlink()
 
 engine = Engine(config)
 evidence = EvidenceStore(config)
-producer = ToolActionProducer(config=config, engine=engine, evidence_store=evidence)
+producer = CrewAIActionProducer(config=config, engine=engine, evidence_store=evidence)
 
-print(f"Crew: {config.agent_name}")
-print(f"Mode: {config.mode}")
-print(f"SOC 2 overlay: {'soc2' in (config.active_overlays or {})}")
-print(f"AIUC-1 active: {'aiuc-1' in (config.active_certifications or [])}")
+print(f"Crew:   {config.agent_name}")
+print(f"Mode:   {config.mode}")
+print(f"SOC 2:  {'soc2' in (config.active_overlays or {})}")
+print(f"AIUC-1: {'aiuc-1' in (config.active_certifications or [])}")
 print()
 
 
-# --- Tool implementations ---
-
-def _search_web_impl(query: str) -> dict:
-    """Simulate web search tool."""
-    results_map = {
-        "AI governance frameworks 2024": [
-            "NIST AI RMF 1.0 — voluntary risk management framework",
-            "EU AI Act — mandatory for high-risk AI systems",
-            "AIUC-1 — first certifiable standard for AI agents",
-        ],
-        "AI agent security controls best practices": [
-            "Runtime policy enforcement at tool-call level",
-            "Data classification-driven control activation",
-            "Cryptographic audit trails for evidence integrity",
-        ],
-        "SOC 2 AI agent audit requirements": [
-            "CC6.1: Logical access security — tool-call authorization",
-            "CC7.2: System monitoring — behavioral baseline tracking",
-            "A1.2: Availability monitoring — agent uptime and error rates",
-        ],
-    }
-    return {
-        "query": query,
-        "results": results_map.get(query, ["No results found"]),
-    }
+# --- How you'd wire this with real CrewAI ---
+#
+#     from crewai import Agent, Task, Crew
+#
+#     researcher = Agent(
+#         role="researcher",
+#         step_callback=producer.step_callback("researcher"),
+#     )
+#     research_task = Task(
+#         description="Gather intelligence on AI governance",
+#         agent=researcher,
+#         callback=producer.task_callback("research"),
+#     )
+#     crew = Crew(
+#         agents=[researcher, analyst, reporter],
+#         tasks=[research_task, analyze_task, report_task],
+#         step_callback=producer.crew_callback("compliance-crew"),
+#     )
+#     crew.kickoff()
+#
+# Below we simulate the same callbacks driving the producer directly.
 
 
-def _analyze_findings_impl(findings: str, focus: str) -> dict:
-    """Analyze research findings and extract key insights."""
-    return {
-        "focus": focus,
-        "key_insights": [
-            f"Runtime enforcement is central to {focus}",
-            "Data classification drives control selection",
-            "Evidence integrity requires cryptographic chaining",
-        ],
-        "risk_level": "medium",
-        "recommendation": f"Implement {focus} controls at the tool-call layer",
-    }
+# Per-agent step callbacks — captured agent_name attributes evidence
+researcher_step = producer.step_callback("researcher")
+analyst_step = producer.step_callback("analyst")
+reporter_step = producer.step_callback("reporter")
+
+# Per-task task callbacks — fired when CrewAI completes a Task
+research_task_cb = producer.task_callback("research")
+analyze_task_cb = producer.task_callback("analyze")
+report_task_cb = producer.task_callback("report")
+
+# Crew-level callback — fired by Crew.step_callback / Crew completion
+crew_cb = producer.crew_callback("compliance-crew")
 
 
-def _generate_report_impl(insights: str, format_type: str = "markdown") -> dict:
-    """Generate final research report."""
-    return {
-        "format": format_type,
-        "title": "AI Agent Compliance Research Report",
-        "sections": ["Executive Summary", "Key Findings", "Recommendations"],
-        "word_count": 847,
-        "status": "complete",
-    }
+print("=== CrewAI research crew execution ===\n")
 
-
-# Per-agent tool wrapping — pass agent_name to attribute evidence correctly
-# TODO: replace with ancilis-crewai @agent_tool decorator when ANC-568 ships
-search_web = producer.wrap_tool(_search_web_impl, tool_name="search_web", agent_name="researcher")
-analyze_findings = producer.wrap_tool(_analyze_findings_impl, tool_name="analyze_findings", agent_name="analyst")
-generate_report = producer.wrap_tool(_generate_report_impl, tool_name="generate_report", agent_name="reporter")
-
-
-# --- Simulate CrewAI research crew execution ---
-
-print("=== CrewAI Research Crew Execution ===")
-print()
-
-# --- Researcher agent ---
+# --- Researcher agent — three search steps ---
 print("[Researcher] Gathering intelligence...")
-r1 = search_web("AI governance frameworks 2024")
-print(f"  search_web → {len(r1['results'])} results")
+researcher_step({"tool": "search_web", "agent_role": "researcher", "input": {"query": "AI governance frameworks 2024"}})
+researcher_step({"tool": "search_web", "agent_role": "researcher", "input": {"query": "AI agent security controls best practices"}})
+researcher_step({"tool": "search_web", "agent_role": "researcher", "input": {"query": "SOC 2 AI agent audit requirements"}})
+research_task_cb({"description": "research", "agent_role": "researcher", "output": "3 findings"})
+print("  3 search steps + task callback → 4 records\n")
 
-r2 = search_web("AI agent security controls best practices")
-print(f"  search_web → {len(r2['results'])} results")
-
-r3 = search_web("SOC 2 AI agent audit requirements")
-print(f"  search_web → {len(r3['results'])} results")
-print()
-
-# --- Analyst agent ---
+# --- Analyst agent — two analysis steps ---
 print("[Analyst] Processing findings...")
-combined = "; ".join(r1["results"] + r2["results"])
-a1 = analyze_findings(combined, focus="SOC 2 compliance")
-print(f"  analyze_findings → risk={a1['risk_level']}, {len(a1['key_insights'])} insights")
+analyst_step({"tool": "analyze_findings", "agent_role": "analyst", "focus": "SOC 2 compliance"})
+analyst_step({"tool": "analyze_findings", "agent_role": "analyst", "focus": "audit trail requirements"})
+analyze_task_cb({"description": "analyze", "agent_role": "analyst", "output": "risk=medium"})
+print("  2 analysis steps + task callback → 3 records\n")
 
-a2 = analyze_findings("; ".join(r3["results"]), focus="audit trail requirements")
-print(f"  analyze_findings → risk={a2['risk_level']}, {len(a2['key_insights'])} insights")
-print()
-
-# --- Reporter agent ---
+# --- Reporter agent — generate the final report ---
 print("[Reporter] Generating report...")
-final_insights = "; ".join(a1["key_insights"] + a2["key_insights"])
-rep = generate_report(final_insights, format_type="markdown")
-print(f"  generate_report → {rep['word_count']} words, {len(rep['sections'])} sections")
-print()
+reporter_step({"tool": "generate_report", "agent_role": "reporter", "format": "markdown"})
+report_task_cb({"description": "report", "agent_role": "reporter", "output": "847 words, 3 sections"})
+print("  1 generate step + task callback → 2 records\n")
+
+# --- Crew-level: full kickoff completion ---
+crew_cb({"name": "compliance-crew", "id": "crew-001"})
+print("[Crew] kickoff complete → 1 record\n")
+
 
 # --- Evidence summary ---
-summary = evidence.get_summary(session_id=producer.session_id)
-print("=== Evidence Summary ===")
+summary = evidence.get_summary()
+print("=== Evidence summary ===")
 print(f"  Records:    {summary['total_evaluations']}")
 print(f"  Decisions:  {summary['decisions']}")
 print(f"  Hash chain: {'intact' if summary['chain_valid'] else 'BROKEN'}")
 print(f"  Tools:      {summary['tools_evaluated']}")
 print()
-print("Per-agent attribution: pass agent_name= to wrap_tool() for each crew member.")
-print("Run `ancilis scan` to see compliance posture.")
+print("Per-agent attribution: pass `agent_name=` to step_callback() / task_callback() for each crew member.")
+print("Run `ancilis status` to see crew compliance posture.")
 
 evidence.close()

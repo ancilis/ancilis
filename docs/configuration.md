@@ -190,3 +190,21 @@ Produces actionable error messages for common mistakes:
 - Unrecognized certification target: `"certification_targets contains unrecognized value 'aiuc-2'. Available targets: aiuc-1"`
 - Unknown key typo: `"Unknown key 'agent.nme'. Did you mean 'agent.name'?"`
 - Unknown overlay: `"Unknown overlay profile 'fedram'. Did you mean 'fedramp'?"`
+
+## Global SDK telemetry
+
+Anonymous SDK telemetry is controlled outside project `ancilis.yaml` files so it
+does not change repository state. It defaults to off and stores consent in
+`~/.ancilis/config.toml`.
+
+```bash
+ancilis telemetry status
+ancilis telemetry on
+ancilis telemetry off
+```
+
+When enabled, the SDK queues coarse events such as `scan_executed`,
+`report_generated`, `overlay_activated`, and `cli_command` under
+`~/.ancilis/telemetry/`. Events never include file paths, file contents, evidence
+records, API keys, email addresses, or platform account identifiers. Setting
+`DO_NOT_TRACK` or `DNT` disables collection even when local consent is on.

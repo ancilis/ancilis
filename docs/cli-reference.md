@@ -186,6 +186,61 @@ ancilis scan --ci --period 24h > ancilis-scan.json
 
 ---
 
+## `ancilis remediate`
+
+Show remediation guidance for controls that are currently `GAP` or `PARTIAL` in
+the selected evidence window.
+
+```bash
+ancilis remediate [OPTIONS]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--latest / --all` | Show latest session (default) or all sessions |
+| `--session TEXT` | Scope to a specific session ID |
+| `--period TEXT` | Evidence window: `24h`, `7d`, `30d` |
+| `--control TEXT` | Show guidance for one control ID, even with no current gap |
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+
+Example output:
+
+```text
+PR-01 (Identity verification) — GAP
+  Time: 5 minutes | Difficulty: Easy | Evidence: 1 evals, 1 failures, 0 flags
+  How to fix:
+    - Add or correct agent.name in ancilis.yaml.
+    - Ensure your middleware or producer uses the same agent name when recording actions.
+    - Re-run your agent and then run ancilis scan again.
+```
+
+The command uses local shared remediation content and current evidence summary
+data. It does not change evidence records or create platform remediation tasks.
+
+---
+
+## `ancilis telemetry`
+
+Inspect or change anonymous SDK telemetry settings. Telemetry is opt-in and
+defaults to off. Consent is stored in `~/.ancilis/config.toml`; queued events are
+kept locally under `~/.ancilis/telemetry/` and are sent silently at most once per
+hour. `DO_NOT_TRACK` or `DNT` disables collection regardless of local consent.
+
+```bash
+ancilis telemetry status
+ancilis telemetry on
+ancilis telemetry off
+ancilis telemetry flush
+```
+
+Telemetry events are coarse product-usage events such as `scan_executed`,
+`report_generated`, `overlay_activated`, `adapter_used`, and `cli_command`.
+They do not include file paths, file contents, evidence records, email
+addresses, API keys, or platform account identifiers.
+
+---
+
 ## `ancilis report`
 
 Generate a posture report.

@@ -86,6 +86,12 @@ export type { BaselineWindow, DeviationFlag } from "./controls/index.js";
 
 export { ReportGenerator, parsePeriod, renderTerminal, renderMarkdown, renderNdjson, renderCsv, renderOscalJson, renderPdf } from "./report/index.js";
 export type { ReportData, EvidenceSummary, RenderPdfOptions, RenderPdfResult } from "./report/index.js";
+export {
+  buildRemediationRecommendations,
+  loadRemediationGuides,
+  renderRemediationRecommendations,
+} from "./remediation/index.js";
+export type { RemediationGuide, RemediationRecommendation } from "./remediation/index.js";
 
 export { BaselineManager } from "./baselines/index.js";
 export type { Baseline, ControlSnapshot, ControlDrift, DriftReport, DriftSummary, EvidenceDelta } from "./baselines/index.js";
@@ -114,33 +120,82 @@ export type { Dependency, Manifest, Vuln } from "./deps/index.js";
 export { scanDependencies, detectDependencies, buildSbom, queryOsvBatch } from "./dependencies/index.js";
 export type { VulnerabilityFinding, CycloneDxBom, CycloneDxComponent, DetectionResult, DependencyScanResult } from "./dependencies/index.js";
 
-export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, handleScan, runEvidenceVerify } from "./cli/index.js";
-export type { DoctorResult, ReportCommandOptions, ReportCommandResult } from "./cli/index.js";
+export { formatStatus, validateAndFormat, approveTool, runDoctor, runReport, runRemediate, handleScan, runEvidenceVerify } from "./cli/index.js";
+export type { DoctorResult, ReportCommandOptions, ReportCommandResult, RemediateCommandOptions, RemediateCommandResult } from "./cli/index.js";
 export {
+  bucketCount,
+  bucketDuration,
+  flushTelemetryEvents,
+  formatTelemetryStatus,
+  maybePromptForTelemetryConsent,
+  recordAdapterUsed,
+  readTelemetryConfig,
+  readTelemetryStatus,
+  recordTelemetryEvent,
+  setTelemetryEnabled,
+} from "./telemetry/index.js";
+export type { TelemetryConfig, TelemetryEvent, TelemetryEventType, TelemetryStatus } from "./telemetry/index.js";
+export {
+  AnthropicActionProducer,
+  AutoGenActionProducer,
   BedrockActionProducer,
   BedrockAdapter,
-  CLIActionProducer,
-  HTTPActionProducer,
-  MCPActionProducer,
-  ToolActionProducer,
   BlockedActionError,
+  CLIActionProducer,
+  CohereActionProducer,
+  CrewAIActionProducer,
+  DeepSeekActionProducer,
+  FireworksActionProducer,
+  GeminiActionProducer,
+  GroqActionProducer,
+  HTTPActionProducer,
+  LLMActionProducer,
+  LangChainActionProducer,
+  LangChainCallbackHandler,
+  MCPActionProducer,
+  MistralActionProducer,
+  OpenAIActionProducer,
   ProducerType,
-  wrapTool,
-  tool,
+  SemanticKernelActionProducer,
+  TogetherActionProducer,
+  ToolActionProducer,
+  XAIActionProducer,
+  autoRegister,
+  detectInstalledSdks,
   evaluateAndExecute,
+  installedProviderSlugs,
+  tool,
+  wrapTool,
 } from "./producers/index.js";
 export type {
   ActionProducer,
   AnyFn,
+  AutoGenEvent,
+  AutoGenEventKind,
+  AutoGenObservation,
+  AutoRegisterOptions,
   BedrockInvocation,
   BedrockObservation,
   CLIExecutionResult,
   CLIInvocation,
+  CrewAIEvent,
+  CrewAIEventKind,
+  CrewAIObservation,
   EvaluateAndExecuteOptions,
+  FilterFn,
   HTTPExecutionResult,
   HTTPObservation,
   HTTPRequest,
+  LLMExecutionResult,
+  LLMInvocation,
+  LLMObservation,
+  LangChainEvent,
+  LangChainEventKind,
+  LangChainObservation,
   MCPInvocation,
+  SemanticKernelEvent,
+  SemanticKernelEventKind,
+  SemanticKernelObservation,
   ToolExecutionResult,
   ToolInvocation,
   ToolWrapOptions,

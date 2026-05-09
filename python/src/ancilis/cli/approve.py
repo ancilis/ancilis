@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+# mypy: disable-error-code=import-untyped
+
 from typing import Any
 from pathlib import Path
 
 import click
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 
 def _read_config(config_path: str) -> dict[str, Any]:

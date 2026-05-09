@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+# mypy: disable-error-code=import-untyped
+
 import click
 
 from ancilis.config import (
