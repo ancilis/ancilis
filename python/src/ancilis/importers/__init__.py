@@ -30,6 +30,7 @@ from ancilis.importers.litellm import LiteLLMImporter
 from ancilis.importers.logfire import LogfireImporter
 from ancilis.importers.mcp_registry import McpRegistryImporter
 from ancilis.importers.microsoft_sentinel import MicrosoftSentinelImporter
+from ancilis.importers.microsoft_teams import MicrosoftTeamsImporter
 from ancilis.importers.milvus import MilvusImporter
 from ancilis.importers.mlflow import MLflowImporter
 from ancilis.importers.mongodb_atlas import MongoDBAtlasImporter
@@ -89,6 +90,7 @@ __all__ = [
     "LogfireImporter",
     "McpRegistryImporter",
     "MicrosoftSentinelImporter",
+    "MicrosoftTeamsImporter",
     "MilvusImporter",
     "MLflowImporter",
     "MongoDBAtlasImporter",
