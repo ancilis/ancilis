@@ -377,21 +377,14 @@ class CohereActionProducer(LLMActionProducer):
         )
 
 
-class XAIActionProducer(LLMActionProducer):
+class XAIActionProducer(OpenAIActionProducer):
     """Producer for the xAI Grok API.
 
-    xAI exposes an OpenAI-compatible chat API, so the extractor uses the
-    OpenAI-style ``messages`` / ``input`` normalization.
+    xAI exposes an OpenAI-compatible chat API, so this subclasses
+    ``OpenAIActionProducer`` and changes only the provider slug.
     """
 
     provider = "xai"
-
-    def _extract_invocation(
-        self, kwargs: Mapping[str, Any], *, agent_name: str
-    ) -> LLMInvocation:
-        # Reuse OpenAI's input/messages normalization since xAI's HTTP shape
-        # is OpenAI-compatible.
-        return OpenAIActionProducer._extract_invocation(self, kwargs, agent_name=agent_name)
 
 
 # --- OpenAI-compatible serverless inference platforms ---
