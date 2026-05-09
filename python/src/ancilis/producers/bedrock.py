@@ -134,7 +134,10 @@ def _extract_usage(body: Any) -> dict[str, int]:
             return {}
     if not isinstance(parsed, Mapping):
         return {}
-    usage_obj = parsed.get("usage") if isinstance(parsed.get("usage"), Mapping) else parsed
+    usage_candidate = parsed.get("usage")
+    usage_obj: Mapping[str, Any] = (
+        usage_candidate if isinstance(usage_candidate, Mapping) else parsed
+    )
     out: dict[str, int] = {}
     for key, aliases in (
         ("input_tokens", ("input_tokens", "inputTokens", "inputTokenCount", "inputTextTokenCount")),
