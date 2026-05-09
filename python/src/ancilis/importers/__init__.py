@@ -1,4 +1,4 @@
-"""Ancilis evidence importers — AWS CloudTrail, GCP Cloud Audit, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, MCP registry, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Slack, Stripe, Weaviate, and W&B Weave ingestion."""
+"""Ancilis evidence importers — AWS CloudTrail, GCP Cloud Audit, GitHub audit log, SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, Deepgram, ElevenLabs, Helicone, Honeycomb, LangSmith, Langfuse, LiteLLM, Logfire, MCP registry, n8n, OpenRouter, OTel GenAI, Pinecone, Portkey, Qdrant, Sentry, Stripe, Twilio, Weaviate, and W&B Weave ingestion."""
 
 from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
 from ancilis.importers.braintrust import BraintrustImporter
@@ -10,7 +10,9 @@ from ancilis.importers.datadog_llm import DatadogLLMImporter
 from ancilis.importers.deepgram import DeepgramImporter
 from ancilis.importers.elevenlabs import ElevenLabsImporter
 from ancilis.importers.gcp_cloud_audit import GcpCloudAuditImporter
+from ancilis.importers.github import GitHubImporter
 from ancilis.importers.helicone import HeliconeImporter
+from ancilis.importers.honeycomb import HoneycombImporter
 from ancilis.importers.langfuse import LangfuseImporter
 from ancilis.importers.langsmith import LangSmithImporter
 from ancilis.importers.litellm import LiteLLMImporter
@@ -23,8 +25,9 @@ from ancilis.importers.pinecone import PineconeImporter
 from ancilis.importers.portkey import PortkeyImporter
 from ancilis.importers.qdrant import QdrantImporter
 from ancilis.importers.sarif import SarifImporter
-from ancilis.importers.slack import SlackImporter
+from ancilis.importers.sentry import SentryImporter
 from ancilis.importers.stripe import StripeImporter
+from ancilis.importers.twilio import TwilioImporter
 from ancilis.importers.wandb_weave import WandbWeaveImporter
 from ancilis.importers.weaviate import WeaviateImporter
 
@@ -39,7 +42,9 @@ __all__ = [
     "DeepgramImporter",
     "ElevenLabsImporter",
     "GcpCloudAuditImporter",
+    "GitHubImporter",
     "HeliconeImporter",
+    "HoneycombImporter",
     "LangfuseImporter",
     "LangSmithImporter",
     "LiteLLMImporter",
@@ -52,8 +57,9 @@ __all__ = [
     "PortkeyImporter",
     "QdrantImporter",
     "SarifImporter",
-    "SlackImporter",
+    "SentryImporter",
     "StripeImporter",
+    "TwilioImporter",
     "WeaviateImporter",
     "WandbWeaveImporter",
 ]
