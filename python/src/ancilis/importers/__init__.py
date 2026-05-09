@@ -36,7 +36,6 @@ from ancilis.importers.langsmith import LangSmithImporter
 from ancilis.importers.linear import LinearImporter
 from ancilis.importers.litellm import LiteLLMImporter
 from ancilis.importers.logfire import LogfireImporter
-from ancilis.importers.mailchimp import MailchimpImporter
 from ancilis.importers.mcp_registry import McpRegistryImporter
 from ancilis.importers.microsoft_sentinel import MicrosoftSentinelImporter
 from ancilis.importers.microsoft_teams import MicrosoftTeamsImporter
@@ -114,7 +113,6 @@ __all__ = [
     "LinearImporter",
     "LiteLLMImporter",
     "LogfireImporter",
-    "MailchimpImporter",
     "McpRegistryImporter",
     "MicrosoftSentinelImporter",
     "MicrosoftTeamsImporter",
