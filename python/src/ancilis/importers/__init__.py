@@ -1,6 +1,7 @@
-"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Chroma, Composio, Datadog LLM, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, OpenRouter, MCP registry, OTel GenAI, Pinecone, Qdrant, Weaviate, and W&B Weave ingestion."""
+"""Ancilis evidence importers — SARIF, CycloneDX, Braintrust, Browserbase, Chroma, Composio, Datadog LLM, LangSmith, Langfuse, Helicone, LiteLLM, Logfire, OpenRouter, MCP registry, OTel GenAI, Pinecone, Portkey, Qdrant, Weaviate, and W&B Weave ingestion."""
 
 from ancilis.importers.braintrust import BraintrustImporter
+from ancilis.importers.browserbase import BrowserbaseImporter
 from ancilis.importers.chroma import ChromaImporter
 from ancilis.importers.composio import ComposioImporter
 from ancilis.importers.cyclonedx import CycloneDxImporter
@@ -14,6 +15,7 @@ from ancilis.importers.mcp_registry import McpRegistryImporter
 from ancilis.importers.openrouter import OpenRouterImporter
 from ancilis.importers.otel_genai import OtelGenAIImporter
 from ancilis.importers.pinecone import PineconeImporter
+from ancilis.importers.portkey import PortkeyImporter
 from ancilis.importers.qdrant import QdrantImporter
 from ancilis.importers.sarif import SarifImporter
 from ancilis.importers.wandb_weave import WandbWeaveImporter
@@ -21,6 +23,7 @@ from ancilis.importers.weaviate import WeaviateImporter
 
 __all__ = [
     "BraintrustImporter",
+    "BrowserbaseImporter",
     "ChromaImporter",
     "ComposioImporter",
     "CycloneDxImporter",
@@ -34,6 +37,7 @@ __all__ = [
     "OpenRouterImporter",
     "OtelGenAIImporter",
     "PineconeImporter",
+    "PortkeyImporter",
     "QdrantImporter",
     "SarifImporter",
     "WeaviateImporter",
