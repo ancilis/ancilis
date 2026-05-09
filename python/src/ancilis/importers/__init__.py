@@ -16,6 +16,7 @@ from ancilis.importers.cyclonedx import CycloneDxImporter
 from ancilis.importers.databricks import DatabricksImporter
 from ancilis.importers.datadog_llm import DatadogLLMImporter
 from ancilis.importers.deepgram import DeepgramImporter
+from ancilis.importers.dropbox import DropboxImporter
 from ancilis.importers.elasticsearch import ElasticsearchImporter
 from ancilis.importers.elevenlabs import ElevenLabsImporter
 from ancilis.importers.entra_id import EntraIDImporter
@@ -53,6 +54,7 @@ from ancilis.importers.salesforce import SalesforceImporter
 from ancilis.importers.sarif import SarifImporter
 from ancilis.importers.semgrep import SemgrepImporter
 from ancilis.importers.sendgrid import SendGridImporter
+from ancilis.importers.sentinelone import SentinelOneImporter
 from ancilis.importers.sentry import SentryImporter
 from ancilis.importers.sharepoint_onedrive import SharePointOneDriveImporter
 from ancilis.importers.snowflake import SnowflakeImporter
@@ -87,6 +89,7 @@ __all__ = [
     "DatabricksImporter",
     "DatadogLLMImporter",
     "DeepgramImporter",
+    "DropboxImporter",
     "ElasticsearchImporter",
     "ElevenLabsImporter",
     "EntraIDImporter",
@@ -124,6 +127,7 @@ __all__ = [
     "SarifImporter",
     "SemgrepImporter",
     "SendGridImporter",
+    "SentinelOneImporter",
     "SentryImporter",
     "SharePointOneDriveImporter",
     "SnowflakeImporter",
