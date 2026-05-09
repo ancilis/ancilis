@@ -20,6 +20,7 @@ from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.protocol import ProducerType
 from ancilis.producers.tool import BlockedActionError
+from ancilis.telemetry import record_adapter_used
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -63,6 +64,7 @@ class HTTPActionProducer:
         self._registry = registry or engine.registry
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
         self._session_id: str = str(uuid.uuid4())
+        record_adapter_used("http")
 
     @property
     def session_id(self) -> str:
