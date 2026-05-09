@@ -1,0 +1,58 @@
+{
+  "_version": "1.0.0",
+  "_description": "Composio tool-execution log → AKSI control ID mapping. Composio is an agent tool platform that exposes 250+ third-party integrations (Gmail, Slack, GitHub, Salesforce, ...) as connectable actions. Each execution carries its own auth scope, approval state, and external-destination risk. The result_status drives the primary control; approval state, scope breadth, trigger source, destination kind, and PII redaction state produce additive flags. A cross-app pattern (one agent_id touching > N apps in the export) produces a synthetic PR-02 FLAG.",
+  "_metadata": {
+    "source_format": "composio",
+    "schema": "composio-execution-export-v1",
+    "owner": "ancilis-importers",
+    "cross_app_threshold": 5,
+    "broad_scope_patterns": ["*.write", "admin.*", "*.delete"],
+    "external_destination_kinds": ["email", "chat", "crm"],
+    "pii_destination_kinds": ["email", "chat"],
+    "signal_priority": [
+      "result_status_failure",
+      "missing_approval",
+      "denied_approval",
+      "result_status_auth_expired",
+      "result_status_rate_limited",
+      "broad_scope",
+      "external_destination",
+      "pii_unredacted",
+      "trigger_webhook",
+      "trigger_scheduler",
+      "result_status_success_approved",
+      "result_status_success_no_approval_required",
+      "cross_app_pattern"
+    ],
+    "result_levels": {
+      "result_status_success_approved": "PASS",
+      "result_status_success_no_approval_required": "PASS",
+      "missing_approval": "FAIL",
+      "result_status_failure": "FAIL",
+      "result_status_rate_limited": "FLAG",
+      "result_status_auth_expired": "FLAG",
+      "denied_approval": "PASS",
+      "external_destination": "FLAG",
+      "trigger_webhook": "FLAG",
+      "trigger_scheduler": "PASS",
+      "pii_unredacted": "FLAG",
+      "broad_scope": "FLAG",
+      "cross_app_pattern": "FLAG"
+    }
+  },
+  "mappings": {
+    "result_status_success_approved": "PR-02",
+    "result_status_success_no_approval_required": "PR-02",
+    "missing_approval": "PR-02",
+    "result_status_failure": "DE-01",
+    "result_status_rate_limited": "PR-02",
+    "result_status_auth_expired": "PR-01",
+    "denied_approval": "PR-05",
+    "external_destination": "PR-04",
+    "trigger_webhook": "PR-01",
+    "trigger_scheduler": "PR-05",
+    "pii_unredacted": "PR-04",
+    "broad_scope": "PR-02",
+    "cross_app_pattern": "PR-02"
+  }
+}
