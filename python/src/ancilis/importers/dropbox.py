@@ -1,71 +1,74 @@
-"""Dropbox team-audit-log importer — maps Dropbox activity to AKSI controls.
+"""Dropbox team-activity-log importer — maps Dropbox audit events to AKSI controls.
 
 Dropbox (https://dropbox.com) is one of the original mass-market cloud-storage
 platforms — heavily used by SMBs and an increasing share of mid-market
 enterprise. Agents now read, write, share, and collaborate inside Dropbox at
 scale: RAG corpora, generated reports, intermediate artifacts, customer-facing
-deliverables. Dropbox's ``/2/team_log/get_events`` feed captures the
-data-loss-prevention signals that govern team-level content: file uploads /
-downloads / deletes, shared-link transitions (visibility, expiration), file
-requests, external-collaborator additions, member invitations, app linking,
-login attempts, team-policy changes, data-residency moves, EMM (Enterprise
-Mobility Management) state changes, watermark application, and DLP-rule
-matches.
+deliverables. Dropbox's ``/2/team_log/get_events`` feed surfaces the data-loss-
+prevention signals that today's evidence pipelines rarely capture: file
+previews/downloads/uploads/deletes, shared-link transitions (visibility,
+allow-download), file requests, external-collaborator additions, member
+invitations, app linking, login attempts, team-policy changes, data-residency
+moves, EMM exception lists, two-factor changes, SSO changes, team-folder
+destructions, admin-role promotions, and Paper-doc external sharing.
 
-This importer ingests Dropbox team-event JSON exports in three on-disk shapes:
+This importer ingests Dropbox team-log JSON exports in three on-disk shapes:
 
-  1. ``{"events": [...]}`` — Dropbox team-log envelope
+  1. ``{"events": [...]}`` — Dropbox team_log envelope
   2. ``{"data":   [...]}`` — generic data envelope
-  3. JSONL                 — one event per line
+  3. JSONL                  — one event per line
 
 Each event is materialized as its own ``EvaluationResult``.
 
 Signal mapping (see shared/mappings/dropbox-aksi-controls.json):
-  * ``file_download`` by actor=app/admin/reseller + sensitive extension → PR-04 FAIL
-  * ``file_upload``   by actor=app                                       → PR-04 PASS
-  * ``file_delete``   by actor=app                                       → PR-02 FLAG
-  * ``shared_link_create`` visibility=public                             → DE-01 FAIL → BLOCK
-  * ``shared_link_create`` visibility=password_only / team_and_password  → PR-04 FLAG
-  * ``shared_link_create`` visibility=team_only                          → PR-05 PASS
-  * ``shared_link_create`` expires_at=null + visibility != team_only     → PR-04 FAIL
-  * ``file_share_anyone_member_add``                                     → DE-01 FAIL → BLOCK
-  * ``file_external_member_add``                                         → PR-04 FLAG
-  * ``member_invited`` participant domain != tenant primary              → PR-04 FLAG
-  * ``team_policy_changed``                                              → PR-02 FAIL
-  * ``data_residency_change``                                            → PR-04 FAIL
-  * ``app_link_team``                                                    → PR-01 FLAG
-  * ``app_unlink_team``                                                  → PR-05 PASS
-  * ``login_fail``                                                       → PR-01 FLAG
-  * ``dlp_match`` dlp_severity=high                                      → PR-04 FAIL → BLOCK
-  * ``dlp_match`` dlp_severity=medium                                    → PR-04 FLAG
-  * ``watermark_apply``                                                  → PR-04 PASS
-  * ``emm_enabled``                                                      → PR-05 PASS
-  * ``emm_state_change`` disabled                                        → PR-02 FAIL
-  * actor.tag=dropbox (system)                                           → PR-05 PASS
-  * details.is_two_factor_required=false on team_policy_changed          → PR-01 FAIL
+  * ``file_preview`` / ``file_download`` by user                         -> PR-04 PASS
+  * ``file_download`` by ``actor.tag=app`` on sensitive extension        -> PR-04 FAIL
+  * ``file_download`` ``file_size > 1GB``                                -> PR-04 FLAG
+  * ``shared_link_create`` audience=``public``                           -> DE-01 FAIL
+  * ``shared_link_create`` audience=``password``                         -> PR-04 FLAG
+  * ``shared_link_settings_allow_download_disabled`` -> enabled          -> PR-04 FLAG
+  * ``shared_link_change_visibility`` -> public                          -> DE-01 FAIL
+  * ``shared_link_disable``                                              -> PR-05 PASS
+  * ``file_share`` participant domain != team primary                    -> PR-04 FLAG
+  * ``file_share`` ``sensitivity_label=confidential`` to external        -> PR-04 FAIL
+  * ``team_folder_permanently_delete``                                   -> PR-02 FAIL
+  * ``member_change_admin_role`` to privileged role                      -> PR-02 FAIL
+  * ``app_link``                                                         -> PR-01 FLAG
+  * ``sso_change_settings``                                              -> PR-02 FLAG
+  * ``two_step_verification_disable``                                    -> PR-01 FAIL
+  * ``data_residency_migration``                                         -> PR-04 FLAG
+  * ``emm_create_exceptions_report``                                     -> PR-05 FLAG
+  * ``paper_doc_share`` to external domain                               -> PR-04 FLAG
+  * ``file_request_create``                                              -> PR-04 FLAG
+  * ``access_method=admin_console`` on routine read                      -> PR-02 FLAG
+  * ``access_method=sign_in_as``                                         -> PR-01 FLAG
+  * ``access_method=api`` by app actor                                   -> PR-05 PASS
+  * ``actor.tag=app`` on sensitive extension (non-download events)       -> PR-04 FLAG
   * Bulk-download pattern: same actor with > N file_download in 1h
-    (default 50)                                                         → PR-04 FAIL → BLOCK
-  * Cross-team-share pattern: same actor with > N external-member adds
-    in 1h (default 10)                                                   → PR-04 FLAG
+    (default 50)                                                         -> PR-04 FAIL
+  * Cross-team-folder pattern: same actor touching > N team_folders in
+    1h (default 5)                                                       -> PR-04 FLAG
+  * External-recipient pattern: same actor sharing to > N distinct
+    external email domains in 1h (default 10)                            -> PR-04 FLAG
 
-Sanitization (security-critical — Dropbox team-event records identify the
-items themselves, the actor's email, the IP, and free-form parameters):
-  * ``actor.email`` is reduced to ``@domain`` only — never the local-part.
-  * ``actor.display_name`` is NEVER stored — only ``display_name_length`` if
-    provided.
-  * ``context.email`` (full) is NEVER stored — only ``email_length`` if
-    provided.
-  * ``participants[].user.email`` / ``email_domain`` retain ``@domain`` only.
-  * ``assets[].path`` raw is NEVER stored — only ``path_length`` if provided.
-  * ``assets[].file_id`` keeps only the trailing 8 characters.
-  * ``details.new_value`` / ``previous_value`` retain length + sha256 only.
-  * ``origin.ip_address`` is masked to /16 (IPv4) or /32-hextet (IPv6);
-    private / loopback / link-local addresses are preserved verbatim.
-  * ``origin.user_agent`` retains first 80 chars + sha256 of full value.
+Sanitization (security-critical — Dropbox team-log records identify the items
+themselves, the actor's email, the IP, geo data, and free-form parameters):
+  * ``asset[].path``        is NEVER stored — only ``path_length`` retained.
+  * ``asset[].file_id``     keeps only the trailing 8 characters.
+  * ``asset[].display_name`` length only — never the literal name.
+  * ``actor.user.email``    is reduced to ``@domain`` only.
+  * ``actor.user.display_name`` length only.
+  * ``team_member_id``      keeps only the trailing 8 characters.
+  * ``shared_link_owner.email`` reduced to ``@domain`` only.
+  * ``shared_link_id``      keeps only the trailing 8 characters.
+  * ``origin.ip_address``   masked /16 (IPv4) or /32-hextet (IPv6); private /
+                            loopback / link-local addresses are preserved.
+  * ``origin.geo_location.city`` and ``region`` are dropped entirely; only
+                            ``country`` is retained.
   * The original file is hashed (sha256) for source provenance.
 
-The SDK does NOT depend on ``dropbox``; team-event JSON exports are parsed
-with the standard library only.
+The SDK does NOT depend on ``dropbox``; team-log JSON exports are parsed with
+the standard library only.
 """
 
 from __future__ import annotations
@@ -97,10 +100,13 @@ _CONTROL_NAMES: dict[str, str] = {
     "DE-01": "Data Exfiltration Prevention",
 }
 
+_DEFAULT_LARGE_FILE_THRESHOLD = 1_000_000_000  # 1 GB
 _DEFAULT_BULK_DOWNLOAD_THRESHOLD = 50
 _DEFAULT_BULK_DOWNLOAD_WINDOW_SECONDS = 3600
-_DEFAULT_CROSS_TEAM_SHARE_THRESHOLD = 10
-_DEFAULT_CROSS_TEAM_SHARE_WINDOW_SECONDS = 3600
+_DEFAULT_CROSS_TEAM_FOLDER_THRESHOLD = 5
+_DEFAULT_CROSS_TEAM_FOLDER_WINDOW_SECONDS = 3600
+_DEFAULT_EXTERNAL_RECIPIENT_THRESHOLD = 10
+_DEFAULT_EXTERNAL_RECIPIENT_WINDOW_SECONDS = 3600
 
 _DEFAULT_SENSITIVE_EXTENSIONS: frozenset[str] = frozenset(
     {
@@ -118,17 +124,15 @@ _DEFAULT_SENSITIVE_EXTENSIONS: frozenset[str] = frozenset(
     }
 )
 
-# Dropbox actor types that signal non-human / agent activity.
-_AGENT_ACTOR_TAGS: frozenset[str] = frozenset({"app", "admin", "reseller"})
-_SYSTEM_ACTOR_TAG: str = "dropbox"
-
-# Cross-team-share contributor event types.
-_CROSS_TEAM_SHARE_EVENT_TYPES: frozenset[str] = frozenset(
-    {"file_external_member_add", "file_share_anyone_member_add"}
+_DEFAULT_AGENT_ACTOR_TAGS: frozenset[str] = frozenset(
+    {"app", "admin", "reseller"}
 )
-
-# user_agent capture: first N chars + sha256 of full.
-_USER_AGENT_PREFIX_LEN = 80
+_DEFAULT_PUBLIC_AUDIENCES: frozenset[str] = frozenset({"public"})
+_DEFAULT_PASSWORD_AUDIENCES: frozenset[str] = frozenset({"password"})
+_DEFAULT_TEAM_AUDIENCES: frozenset[str] = frozenset({"team", "members"})
+_DEFAULT_PRIVILEGED_ADMIN_ROLES: frozenset[str] = frozenset(
+    {"team_admin", "user_management_admin", "admin", "support_admin"}
+)
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +228,7 @@ def _normalize_email_domain(domain: str | None) -> str | None:
 
 
 def _truncate_id(value: str | None) -> str | None:
-    """Keep only the trailing 8 characters of a Dropbox id."""
+    """Keep only the trailing 8 characters of an identifier."""
     if not value or not isinstance(value, str):
         return None
     s = value.strip()
@@ -233,29 +237,11 @@ def _truncate_id(value: str | None) -> str | None:
     return s[-8:]
 
 
-def _redact_string_value(value: str | None) -> dict[str, Any] | None:
-    """Capture length + sha256 of an arbitrary string."""
-    if not value or not isinstance(value, str):
-        return None
-    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
-    return {"length": len(value), "sha256": digest}
-
-
-def _redact_user_agent(value: str | None) -> dict[str, Any] | None:
-    """Capture first 80 chars + sha256 of full user-agent."""
-    if not value or not isinstance(value, str):
-        return None
-    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
-    return {
-        "prefix": value[:_USER_AGENT_PREFIX_LEN],
-        "length": len(value),
-        "sha256": digest,
-    }
-
-
 def _parse_iso_timestamp(value: Any) -> datetime | None:
     """Parse a timestamp from int (epoch ms or s) or ISO 8601 string."""
     if value is None:
+        return None
+    if isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
         v = float(value)
@@ -288,13 +274,14 @@ def _format_timestamp(value: Any) -> str:
     return dt.isoformat()
 
 
-def _tag_of(obj: Any) -> str | None:
-    """Extract the ``.tag`` discriminator from a Dropbox-shape dict."""
-    if not isinstance(obj, dict):
+def _coerce_int(value: Any) -> int | None:
+    if isinstance(value, bool):
         return None
-    raw = obj.get(".tag")
-    if isinstance(raw, str) and raw:
-        return raw.strip().lower()
+    if isinstance(value, (int, float)):
+        try:
+            return int(value)
+        except (ValueError, OverflowError):
+            return None
     return None
 
 
@@ -304,17 +291,25 @@ def _tag_of(obj: Any) -> str | None:
 
 
 class DropboxImporter:
-    """Parse a Dropbox team-audit-log export and convert each event to ``EvaluationResult``."""
+    """Parse a Dropbox team-activity-log export and convert each event to ``EvaluationResult``."""
 
     def __init__(
         self,
         agent_id: str = "import",
         mode: str = "audit",
+        large_file_threshold: int | None = None,
         bulk_download_threshold: int | None = None,
         bulk_download_window_seconds: int | None = None,
-        cross_team_share_threshold: int | None = None,
-        cross_team_share_window_seconds: int | None = None,
+        cross_team_folder_threshold: int | None = None,
+        cross_team_folder_window_seconds: int | None = None,
+        external_recipient_threshold: int | None = None,
+        external_recipient_window_seconds: int | None = None,
         sensitive_extensions: Iterable[str] | None = None,
+        agent_actor_tags: Iterable[str] | None = None,
+        public_audiences: Iterable[str] | None = None,
+        password_audiences: Iterable[str] | None = None,
+        team_audiences: Iterable[str] | None = None,
+        privileged_admin_roles: Iterable[str] | None = None,
         primary_workspace_domain: str | None = None,
     ) -> None:
         self.agent_id = agent_id
@@ -325,6 +320,13 @@ class DropboxImporter:
             str(k): str(v)
             for k, v in (table.get("mappings", {}) or {}).items()
         }
+        self.large_file_threshold = int(
+            large_file_threshold
+            if large_file_threshold is not None
+            else meta.get(
+                "large_file_threshold_bytes", _DEFAULT_LARGE_FILE_THRESHOLD
+            )
+        )
         self.bulk_download_threshold = int(
             bulk_download_threshold
             if bulk_download_threshold is not None
@@ -340,20 +342,36 @@ class DropboxImporter:
                 _DEFAULT_BULK_DOWNLOAD_WINDOW_SECONDS,
             )
         )
-        self.cross_team_share_threshold = int(
-            cross_team_share_threshold
-            if cross_team_share_threshold is not None
+        self.cross_team_folder_threshold = int(
+            cross_team_folder_threshold
+            if cross_team_folder_threshold is not None
             else meta.get(
-                "cross_team_share_threshold",
-                _DEFAULT_CROSS_TEAM_SHARE_THRESHOLD,
+                "cross_team_folder_threshold",
+                _DEFAULT_CROSS_TEAM_FOLDER_THRESHOLD,
             )
         )
-        self.cross_team_share_window_seconds = int(
-            cross_team_share_window_seconds
-            if cross_team_share_window_seconds is not None
+        self.cross_team_folder_window_seconds = int(
+            cross_team_folder_window_seconds
+            if cross_team_folder_window_seconds is not None
             else meta.get(
-                "cross_team_share_window_seconds",
-                _DEFAULT_CROSS_TEAM_SHARE_WINDOW_SECONDS,
+                "cross_team_folder_window_seconds",
+                _DEFAULT_CROSS_TEAM_FOLDER_WINDOW_SECONDS,
+            )
+        )
+        self.external_recipient_threshold = int(
+            external_recipient_threshold
+            if external_recipient_threshold is not None
+            else meta.get(
+                "external_recipient_threshold",
+                _DEFAULT_EXTERNAL_RECIPIENT_THRESHOLD,
+            )
+        )
+        self.external_recipient_window_seconds = int(
+            external_recipient_window_seconds
+            if external_recipient_window_seconds is not None
+            else meta.get(
+                "external_recipient_window_seconds",
+                _DEFAULT_EXTERNAL_RECIPIENT_WINDOW_SECONDS,
             )
         )
         if sensitive_extensions is not None:
@@ -370,6 +388,61 @@ class DropboxImporter:
                 )
             else:
                 self.sensitive_extensions = _DEFAULT_SENSITIVE_EXTENSIONS
+        if agent_actor_tags is not None:
+            self.agent_actor_tags: frozenset[str] = frozenset(
+                str(t).strip().lower() for t in agent_actor_tags if t
+            )
+        else:
+            meta_tags = meta.get("agent_actor_tags")
+            self.agent_actor_tags = (
+                frozenset(str(t).strip().lower() for t in meta_tags if t)
+                if isinstance(meta_tags, list) and meta_tags
+                else _DEFAULT_AGENT_ACTOR_TAGS
+            )
+        if public_audiences is not None:
+            self.public_audiences: frozenset[str] = frozenset(
+                str(a).strip().lower() for a in public_audiences if a
+            )
+        else:
+            meta_pub = meta.get("public_audiences")
+            self.public_audiences = (
+                frozenset(str(a).strip().lower() for a in meta_pub if a)
+                if isinstance(meta_pub, list) and meta_pub
+                else _DEFAULT_PUBLIC_AUDIENCES
+            )
+        if password_audiences is not None:
+            self.password_audiences: frozenset[str] = frozenset(
+                str(a).strip().lower() for a in password_audiences if a
+            )
+        else:
+            meta_pwd = meta.get("password_audiences")
+            self.password_audiences = (
+                frozenset(str(a).strip().lower() for a in meta_pwd if a)
+                if isinstance(meta_pwd, list) and meta_pwd
+                else _DEFAULT_PASSWORD_AUDIENCES
+            )
+        if team_audiences is not None:
+            self.team_audiences: frozenset[str] = frozenset(
+                str(a).strip().lower() for a in team_audiences if a
+            )
+        else:
+            meta_team = meta.get("team_audiences")
+            self.team_audiences = (
+                frozenset(str(a).strip().lower() for a in meta_team if a)
+                if isinstance(meta_team, list) and meta_team
+                else _DEFAULT_TEAM_AUDIENCES
+            )
+        if privileged_admin_roles is not None:
+            self.privileged_admin_roles: frozenset[str] = frozenset(
+                str(r).strip().lower() for r in privileged_admin_roles if r
+            )
+        else:
+            meta_roles = meta.get("privileged_admin_roles")
+            self.privileged_admin_roles = (
+                frozenset(str(r).strip().lower() for r in meta_roles if r)
+                if isinstance(meta_roles, list) and meta_roles
+                else _DEFAULT_PRIVILEGED_ADMIN_ROLES
+            )
         if primary_workspace_domain is not None:
             self.primary_workspace_domain: str | None = (
                 _normalize_email_domain(primary_workspace_domain)
@@ -385,7 +458,7 @@ class DropboxImporter:
     # -- Public API ---------------------------------------------------------
 
     def parse(self, path: str | Path) -> list[Any]:
-        """Parse a Dropbox team-event export from disk."""
+        """Parse a Dropbox team-log export from disk."""
         content_bytes = Path(path).read_bytes()
         file_sha256 = hashlib.sha256(content_bytes).hexdigest()
         text = content_bytes.decode("utf-8")
@@ -393,7 +466,7 @@ class DropboxImporter:
         return self._build_results(events, file_sha256=file_sha256)
 
     def parse_string(self, content: str) -> list[Any]:
-        """Parse Dropbox team-event content from a string."""
+        """Parse Dropbox team-log content from a string."""
         events = self._events_from_text(content)
         return self._build_results(events, file_sha256=None)
 
@@ -420,37 +493,233 @@ class DropboxImporter:
             return []
         return list(_iter_jsonl(text))
 
-    @staticmethod
-    def _actor_identity_key(event: dict[str, Any]) -> str | None:
-        """Build a per-actor key for synthetic-pattern aggregation.
+    # -- Sub-extractors -----------------------------------------------------
 
-        Prefers ``actor.team_member_id``; falls back to email domain or
-        actor tag — events lacking any identity hint are excluded from
-        synthetic aggregation.
-        """
-        actor = event.get("actor") or {}
-        if not isinstance(actor, dict):
-            return None
-        tmid = actor.get("team_member_id")
-        if isinstance(tmid, str) and tmid.strip():
-            return f"tmid:{tmid.strip()}"
-        email = actor.get("email")
-        if isinstance(email, str) and "@" in email:
-            return f"email:{email.strip().lower()}"
-        tag = _tag_of(actor)
-        if tag:
-            return f"tag:{tag}"
-        return None
-
-    @staticmethod
-    def _event_type_tag(event: dict[str, Any]) -> str | None:
-        """Extract ``event_type[".tag"]`` for a Dropbox event envelope."""
+    def _extract_event_type_tag(self, event: dict[str, Any]) -> str | None:
         et = event.get("event_type")
         if isinstance(et, dict):
-            return _tag_of(et)
+            tag = et.get(".tag")
+            if isinstance(tag, str) and tag:
+                return tag.strip().lower()
         if isinstance(et, str) and et:
             return et.strip().lower()
         return None
+
+    def _extract_actor(self, event: dict[str, Any]) -> dict[str, Any]:
+        actor = event.get("actor") or {}
+        if not isinstance(actor, dict):
+            return {}
+        tag = actor.get(".tag")
+        actor_tag = (
+            tag.strip().lower() if isinstance(tag, str) and tag else None
+        )
+        user = actor.get("user") or {}
+        if not isinstance(user, dict):
+            user = {}
+        email_raw = (
+            user.get("email") if isinstance(user.get("email"), str) else None
+        )
+        team_member_id_raw = (
+            user.get("team_member_id")
+            if isinstance(user.get("team_member_id"), str)
+            else None
+        )
+        account_id_raw = (
+            user.get("account_id")
+            if isinstance(user.get("account_id"), str)
+            else None
+        )
+        display_name_length = _coerce_int(user.get("display_name_length"))
+        return {
+            "tag": actor_tag,
+            "email_raw": email_raw,
+            "email_domain": _redact_email(email_raw),
+            "team_member_id_last8": _truncate_id(team_member_id_raw),
+            "account_id_last8": _truncate_id(account_id_raw),
+            "display_name_length": display_name_length,
+            "raw_account_id": account_id_raw,
+            "raw_team_member_id": team_member_id_raw,
+        }
+
+    def _extract_assets(self, event: dict[str, Any]) -> list[dict[str, Any]]:
+        raw = event.get("asset") or []
+        if not isinstance(raw, list):
+            return []
+        out: list[dict[str, Any]] = []
+        for a in raw:
+            if not isinstance(a, dict):
+                continue
+            tag = a.get(".tag")
+            ext_raw = a.get("file_extension")
+            extension = (
+                str(ext_raw).strip().lower().lstrip(".")
+                if isinstance(ext_raw, str) and ext_raw
+                else None
+            )
+            file_size = _coerce_int(a.get("file_size"))
+            sensitivity_raw = a.get("sensitivity_label")
+            sensitivity = (
+                str(sensitivity_raw).strip().lower()
+                if isinstance(sensitivity_raw, str) and sensitivity_raw
+                else None
+            )
+            file_id = (
+                a.get("file_id") if isinstance(a.get("file_id"), str) else None
+            )
+            path_length = _coerce_int(a.get("path_length"))
+            display_name_length = _coerce_int(a.get("display_name_length"))
+            out.append(
+                {
+                    "tag": (
+                        tag.strip().lower()
+                        if isinstance(tag, str) and tag
+                        else None
+                    ),
+                    "file_extension": extension,
+                    "file_size": file_size,
+                    "sensitivity_label": sensitivity,
+                    "file_id_last8": _truncate_id(file_id),
+                    "path_length": path_length,
+                    "display_name_length": display_name_length,
+                }
+            )
+        return out
+
+    def _extract_participant_domains(
+        self, event: dict[str, Any]
+    ) -> list[str]:
+        raw = event.get("participants") or []
+        if not isinstance(raw, list):
+            return []
+        domains: list[str] = []
+        for p in raw:
+            if not isinstance(p, dict):
+                continue
+            user = p.get("user") if isinstance(p.get("user"), dict) else {}
+            email_raw = (
+                user.get("email")
+                if isinstance(user.get("email"), str)
+                else None
+            )
+            domain_raw = (
+                user.get("email_domain")
+                if isinstance(user.get("email_domain"), str)
+                else None
+            )
+            domain = _normalize_email_domain(domain_raw)
+            if domain is None:
+                domain = _redact_email(email_raw)
+            if domain:
+                domains.append(domain)
+        return domains
+
+    def _extract_origin(self, event: dict[str, Any]) -> dict[str, Any]:
+        origin = event.get("origin") or {}
+        if not isinstance(origin, dict):
+            return {}
+        geo = origin.get("geo_location") or {}
+        if not isinstance(geo, dict):
+            geo = {}
+        country_raw = (
+            geo.get("country")
+            if isinstance(geo.get("country"), str)
+            else None
+        )
+        country = (
+            country_raw.strip().upper()
+            if country_raw and country_raw.strip()
+            else None
+        )
+        ip_raw = (
+            geo.get("ip_address")
+            if isinstance(geo.get("ip_address"), str)
+            else None
+        )
+        access_method = origin.get("access_method") or {}
+        am_tag: str | None = None
+        if isinstance(access_method, dict):
+            t = access_method.get(".tag")
+            if isinstance(t, str) and t:
+                am_tag = t.strip().lower()
+        elif isinstance(access_method, str):
+            am_tag = access_method.strip().lower() or None
+        return {
+            "country": country,
+            "ip_address_redacted": _classify_ip(ip_raw),
+            "access_method_tag": am_tag,
+        }
+
+    def _extract_details(self, event: dict[str, Any]) -> dict[str, Any]:
+        details = event.get("details") or {}
+        if not isinstance(details, dict):
+            return {}
+        out: dict[str, Any] = {}
+        sl_owner = details.get("shared_link_owner") or {}
+        if isinstance(sl_owner, dict):
+            sl_email = (
+                sl_owner.get("email")
+                if isinstance(sl_owner.get("email"), str)
+                else None
+            )
+            out["shared_link_owner_email_domain"] = _redact_email(sl_email)
+        audience = details.get("shared_link_audience") or {}
+        if isinstance(audience, dict):
+            t = audience.get(".tag")
+            if isinstance(t, str) and t:
+                out["shared_link_audience_tag"] = t.strip().lower()
+        elif isinstance(audience, str) and audience:
+            out["shared_link_audience_tag"] = audience.strip().lower()
+        sl_id = details.get("shared_link_id")
+        if isinstance(sl_id, str) and sl_id:
+            out["shared_link_id_last8"] = _truncate_id(sl_id)
+        new_value = details.get("new_value") or {}
+        if isinstance(new_value, dict):
+            t = new_value.get(".tag")
+            if isinstance(t, str) and t:
+                out["new_value_tag"] = t.strip().lower()
+        previous_value = details.get("previous_value") or {}
+        if isinstance(previous_value, dict):
+            t = previous_value.get(".tag")
+            if isinstance(t, str) and t:
+                out["previous_value_tag"] = t.strip().lower()
+        new_visibility = details.get("new_visibility") or {}
+        if isinstance(new_visibility, dict):
+            t = new_visibility.get(".tag")
+            if isinstance(t, str) and t:
+                out["new_visibility_tag"] = t.strip().lower()
+        new_role = details.get("new_role")
+        if isinstance(new_role, dict):
+            t = new_role.get(".tag")
+            if isinstance(t, str) and t:
+                out["new_role_tag"] = t.strip().lower()
+        elif isinstance(new_role, str) and new_role:
+            out["new_role_tag"] = new_role.strip().lower()
+        nva = details.get("new_admin_role")
+        if isinstance(nva, dict):
+            t = nva.get(".tag")
+            if isinstance(t, str) and t:
+                out["new_admin_role_tag"] = t.strip().lower()
+        elif isinstance(nva, str) and nva:
+            out["new_admin_role_tag"] = nva.strip().lower()
+        app = details.get("app") or {}
+        if isinstance(app, dict):
+            app_id = (
+                app.get("app_id")
+                if isinstance(app.get("app_id"), str)
+                else None
+            )
+            display_name = (
+                app.get("display_name")
+                if isinstance(app.get("display_name"), str)
+                else None
+            )
+            out["app_id_last8"] = _truncate_id(app_id)
+            out["app_display_name_length"] = (
+                len(display_name) if display_name else None
+            )
+        return out
+
+    # -- Result building ---------------------------------------------------
 
     def _build_results(
         self,
@@ -458,82 +727,142 @@ class DropboxImporter:
         *,
         file_sha256: str | None,
     ) -> list[Any]:
-        """Build per-event EvaluationResults plus bulk + cross-team synthetics."""
+        """Build per-event EvaluationResults plus synthetic pattern findings."""
         download_events: dict[str, list[datetime]] = {}
-        cross_team_events: dict[str, list[datetime]] = {}
+        team_folder_events: dict[str, list[tuple[datetime, str]]] = {}
+        external_share_events: dict[str, list[tuple[datetime, str]]] = {}
 
         for event in events:
-            actor_key = self._actor_identity_key(event)
-            if actor_key is None:
+            actor = self._extract_actor(event)
+            actor_key = actor.get("raw_account_id") or actor.get(
+                "raw_team_member_id"
+            )
+            if not actor_key:
                 continue
             event_dt = _parse_iso_timestamp(event.get("timestamp"))
             if event_dt is None:
                 continue
-            ev_type = self._event_type_tag(event)
-            if ev_type == "file_download":
+            ev_tag = self._extract_event_type_tag(event)
+            if ev_tag == "file_download":
                 download_events.setdefault(actor_key, []).append(event_dt)
-            if ev_type in _CROSS_TEAM_SHARE_EVENT_TYPES:
-                cross_team_events.setdefault(actor_key, []).append(event_dt)
+            assets = self._extract_assets(event)
+            for a in assets:
+                if a.get("tag") == "folder" and a.get("file_id_last8"):
+                    team_folder_events.setdefault(actor_key, []).append(
+                        (event_dt, a["file_id_last8"])
+                    )
+            if ev_tag in {
+                "file_share",
+                "shared_link_create",
+                "paper_doc_share",
+            }:
+                domains = self._extract_participant_domains(event)
+                primary = self.primary_workspace_domain
+                actor_domain = actor.get("email_domain")
+                for d in domains:
+                    if not d:
+                        continue
+                    if primary is not None and d == primary:
+                        continue
+                    if (
+                        primary is None
+                        and actor_domain is not None
+                        and d == actor_domain
+                    ):
+                        continue
+                    external_share_events.setdefault(actor_key, []).append(
+                        (event_dt, d)
+                    )
 
         bulk_download_actors: dict[str, int] = {}
-        window_dl = timedelta(seconds=self.bulk_download_window_seconds)
-        for actor, ts_list in download_events.items():
+        win_dl = timedelta(seconds=self.bulk_download_window_seconds)
+        for actor_id, ts_list in download_events.items():
             if len(ts_list) <= self.bulk_download_threshold:
                 continue
             sorted_ts = sorted(ts_list)
             left = 0
             max_in_window = 0
             for right in range(len(sorted_ts)):
-                while sorted_ts[right] - sorted_ts[left] > window_dl:
+                while sorted_ts[right] - sorted_ts[left] > win_dl:
                     left += 1
                 count = right - left + 1
                 if count > max_in_window:
                     max_in_window = count
             if max_in_window > self.bulk_download_threshold:
-                bulk_download_actors[actor] = max_in_window
+                bulk_download_actors[actor_id] = max_in_window
 
-        cross_team_actors: dict[str, int] = {}
-        window_ct = timedelta(seconds=self.cross_team_share_window_seconds)
-        for actor, ts_list in cross_team_events.items():
-            if len(ts_list) <= self.cross_team_share_threshold:
-                continue
-            sorted_ts = sorted(ts_list)
+        cross_team_folder_actors: dict[str, int] = {}
+        win_tf = timedelta(seconds=self.cross_team_folder_window_seconds)
+        for actor_id, pairs in team_folder_events.items():
+            sorted_pairs = sorted(pairs, key=lambda p: p[0])
             left = 0
-            max_in_window = 0
-            for right in range(len(sorted_ts)):
-                while sorted_ts[right] - sorted_ts[left] > window_ct:
+            distinct_count: dict[str, int] = {}
+            max_distinct = 0
+            for right in range(len(sorted_pairs)):
+                _, fid_r = sorted_pairs[right]
+                distinct_count[fid_r] = distinct_count.get(fid_r, 0) + 1
+                while sorted_pairs[right][0] - sorted_pairs[left][0] > win_tf:
+                    _, fid_l = sorted_pairs[left]
+                    distinct_count[fid_l] -= 1
+                    if distinct_count[fid_l] == 0:
+                        del distinct_count[fid_l]
                     left += 1
-                count = right - left + 1
-                if count > max_in_window:
-                    max_in_window = count
-            if max_in_window > self.cross_team_share_threshold:
-                cross_team_actors[actor] = max_in_window
+                cur = len(distinct_count)
+                if cur > max_distinct:
+                    max_distinct = cur
+            if max_distinct > self.cross_team_folder_threshold:
+                cross_team_folder_actors[actor_id] = max_distinct
+
+        external_recipient_actors: dict[str, int] = {}
+        win_er = timedelta(seconds=self.external_recipient_window_seconds)
+        for actor_id, pairs in external_share_events.items():
+            sorted_pairs = sorted(pairs, key=lambda p: p[0])
+            left = 0
+            distinct_count: dict[str, int] = {}
+            max_distinct = 0
+            for right in range(len(sorted_pairs)):
+                _, dom_r = sorted_pairs[right]
+                distinct_count[dom_r] = distinct_count.get(dom_r, 0) + 1
+                while sorted_pairs[right][0] - sorted_pairs[left][0] > win_er:
+                    _, dom_l = sorted_pairs[left]
+                    distinct_count[dom_l] -= 1
+                    if distinct_count[dom_l] == 0:
+                        del distinct_count[dom_l]
+                    left += 1
+                cur = len(distinct_count)
+                if cur > max_distinct:
+                    max_distinct = cur
+            if max_distinct > self.external_recipient_threshold:
+                external_recipient_actors[actor_id] = max_distinct
 
         results: list[Any] = []
         for event in events:
-            result = self._parse_event(
+            r = self._parse_event(
                 event,
                 file_sha256=file_sha256,
                 bulk_download_actors=bulk_download_actors,
-                cross_team_actors=cross_team_actors,
+                cross_team_folder_actors=cross_team_folder_actors,
+                external_recipient_actors=external_recipient_actors,
             )
-            if result is not None:
-                results.append(result)
+            if r is not None:
+                results.append(r)
 
-        for actor, count in sorted(bulk_download_actors.items()):
+        for actor_id, count in sorted(bulk_download_actors.items()):
             results.append(
                 self._synthetic_bulk_download_result(
-                    actor=actor,
-                    count=count,
-                    file_sha256=file_sha256,
+                    actor=actor_id, count=count, file_sha256=file_sha256
                 )
             )
-        for actor, count in sorted(cross_team_actors.items()):
+        for actor_id, count in sorted(cross_team_folder_actors.items()):
             results.append(
-                self._synthetic_cross_team_share_result(
-                    actor=actor,
-                    count=count,
-                    file_sha256=file_sha256,
+                self._synthetic_cross_team_folder_result(
+                    actor=actor_id, count=count, file_sha256=file_sha256
+                )
+            )
+        for actor_id, count in sorted(external_recipient_actors.items()):
+            results.append(
+                self._synthetic_external_recipient_result(
+                    actor=actor_id, count=count, file_sha256=file_sha256
                 )
             )
         return results
@@ -565,272 +894,112 @@ class DropboxImporter:
         *,
         file_sha256: str | None,
         bulk_download_actors: dict[str, int],
-        cross_team_actors: dict[str, int],
+        cross_team_folder_actors: dict[str, int],
+        external_recipient_actors: dict[str, int],
     ) -> Any:
         from ancilis.engine.result import ControlResult, EvaluationResult
 
-        event_id = str(uuid.uuid4())
-        ev_type = self._event_type_tag(event)
-        ev_category = (
-            str(event.get("event_category")).strip().lower()
-            if isinstance(event.get("event_category"), str)
-            and event.get("event_category")
+        event_id_raw = (
+            str(event.get("event_id"))
+            if isinstance(event.get("event_id"), str)
+            and event.get("event_id")
             else None
         )
+        event_id = event_id_raw if event_id_raw else str(uuid.uuid4())
+
+        ev_tag = self._extract_event_type_tag(event)
         timestamp_iso = _format_timestamp(event.get("timestamp"))
 
-        # --- Actor -------------------------------------------------------
-        actor = event.get("actor") or {}
-        if not isinstance(actor, dict):
-            actor = {}
-        actor_tag = _tag_of(actor)
-        actor_email_domain = _redact_email(
-            actor.get("email") if isinstance(actor.get("email"), str) else None
-        )
-        actor_display_name_length_raw = actor.get("display_name_length")
-        actor_display_name_length: int | None = (
-            int(actor_display_name_length_raw)
-            if isinstance(actor_display_name_length_raw, (int, float))
-            and not isinstance(actor_display_name_length_raw, bool)
-            else None
-        )
-        actor_team_member_id_last8 = _truncate_id(
-            actor.get("team_member_id")
-            if isinstance(actor.get("team_member_id"), str)
-            else None
-        )
+        actor = self._extract_actor(event)
+        assets = self._extract_assets(event)
+        participant_domains = self._extract_participant_domains(event)
+        origin = self._extract_origin(event)
+        details = self._extract_details(event)
 
-        # --- Context ------------------------------------------------------
-        context = event.get("context") or {}
-        if not isinstance(context, dict):
-            context = {}
-        context_tag = _tag_of(context)
-        context_team_member_id_last8 = _truncate_id(
-            context.get("team_member_id")
-            if isinstance(context.get("team_member_id"), str)
-            else None
-        )
-        context_email_length_raw = context.get("email_length")
-        context_email_length: int | None = (
-            int(context_email_length_raw)
-            if isinstance(context_email_length_raw, (int, float))
-            and not isinstance(context_email_length_raw, bool)
-            else None
-        )
+        primary_domain = self.primary_workspace_domain
+        actor_domain = actor.get("email_domain")
+        external_domains: list[str] = []
+        for d in participant_domains:
+            if not d:
+                continue
+            if primary_domain is not None and d == primary_domain:
+                continue
+            if (
+                primary_domain is None
+                and actor_domain is not None
+                and d == actor_domain
+            ):
+                continue
+            external_domains.append(d)
 
-        # --- Participants -------------------------------------------------
-        participants_in = event.get("participants") or []
-        participant_domains: list[str] = []
-        if isinstance(participants_in, list):
-            for p in participants_in:
-                if not isinstance(p, dict):
-                    continue
-                user = p.get("user")
-                if isinstance(user, dict):
-                    dom = user.get("email_domain")
-                    if isinstance(dom, str) and dom.strip():
-                        normalized = _normalize_email_domain(dom)
-                        if normalized:
-                            participant_domains.append(normalized)
-                            continue
-                    full = user.get("email")
-                    if isinstance(full, str) and "@" in full:
-                        red = _redact_email(full)
-                        if red:
-                            participant_domains.append(red)
-
-        # --- Assets -------------------------------------------------------
-        assets_in = event.get("assets") or []
-        assets_redacted: list[dict[str, Any]] = []
-        first_asset_extension: str | None = None
-        first_asset_size_bytes: int | None = None
-        first_asset_file_id_last8: str | None = None
-        if isinstance(assets_in, list):
-            for a in assets_in:
-                if not isinstance(a, dict):
-                    continue
-                a_tag = _tag_of(a)
-                a_path_length_raw = None
-                path_obj = a.get("path")
-                if isinstance(path_obj, dict):
-                    pl = path_obj.get("path_length")
-                    if (
-                        isinstance(pl, (int, float))
-                        and not isinstance(pl, bool)
-                    ):
-                        a_path_length_raw = int(pl)
-                a_extension = (
-                    str(a.get("extension")).strip().lower().lstrip(".")
-                    if isinstance(a.get("extension"), str)
-                    and a.get("extension")
-                    else None
-                )
-                a_size_bytes_raw = a.get("size_bytes")
-                a_size_bytes: int | None = (
-                    int(a_size_bytes_raw)
-                    if isinstance(a_size_bytes_raw, (int, float))
-                    and not isinstance(a_size_bytes_raw, bool)
-                    else None
-                )
-                a_file_id_last8 = _truncate_id(
-                    a.get("file_id")
-                    if isinstance(a.get("file_id"), str)
-                    else None
-                )
-                assets_redacted.append(
-                    {
-                        "tag": a_tag,
-                        "path_length": a_path_length_raw,
-                        "extension": a_extension,
-                        "size_bytes": a_size_bytes,
-                        "file_id_last8": a_file_id_last8,
-                    }
-                )
-                if first_asset_extension is None and a_extension:
-                    first_asset_extension = a_extension
-                if first_asset_size_bytes is None and a_size_bytes is not None:
-                    first_asset_size_bytes = a_size_bytes
-                if (
-                    first_asset_file_id_last8 is None
-                    and a_file_id_last8 is not None
-                ):
-                    first_asset_file_id_last8 = a_file_id_last8
-
-        # --- Details ------------------------------------------------------
-        details = event.get("details") or {}
-        if not isinstance(details, dict):
-            details = {}
-        shared_link_visibility = (
-            str(details.get("shared_link_visibility")).strip().lower()
-            if isinstance(details.get("shared_link_visibility"), str)
-            and details.get("shared_link_visibility")
-            else None
+        is_agent = (
+            actor.get("tag") in self.agent_actor_tags
+            if actor.get("tag")
+            else False
         )
-        shared_link_expires_at_raw = details.get("shared_link_expires_at")
-        shared_link_has_expiry: bool = bool(
-            isinstance(shared_link_expires_at_raw, str)
-            and shared_link_expires_at_raw.strip()
-        )
-        external_user_email_domain = _normalize_email_domain(
-            details.get("external_user_email_domain")
-            if isinstance(details.get("external_user_email_domain"), str)
-            else None
-        )
-        new_value_redacted = _redact_string_value(
-            details.get("new_value")
-            if isinstance(details.get("new_value"), str)
-            else None
-        )
-        previous_value_redacted = _redact_string_value(
-            details.get("previous_value")
-            if isinstance(details.get("previous_value"), str)
-            else None
-        )
-        app_id_raw = (
-            str(details.get("app_id")).strip()
-            if isinstance(details.get("app_id"), str)
-            and details.get("app_id")
-            else None
-        )
-        app_id_last8 = _truncate_id(app_id_raw) if app_id_raw else None
-        app_name = (
-            str(details.get("app_name")).strip()
-            if isinstance(details.get("app_name"), str)
-            and details.get("app_name")
-            else None
-        )
-        emm_state_change = (
-            str(details.get("emm_state_change")).strip().lower()
-            if isinstance(details.get("emm_state_change"), str)
-            and details.get("emm_state_change")
-            else None
-        )
-        watermark_label = (
-            str(details.get("watermark_label")).strip()
-            if isinstance(details.get("watermark_label"), str)
-            and details.get("watermark_label")
-            else None
-        )
-        dlp_rule_name = (
-            str(details.get("dlp_rule_name")).strip()
-            if isinstance(details.get("dlp_rule_name"), str)
-            and details.get("dlp_rule_name")
-            else None
-        )
-        dlp_severity = (
-            str(details.get("dlp_severity")).strip().lower()
-            if isinstance(details.get("dlp_severity"), str)
-            and details.get("dlp_severity")
-            else None
-        )
-        data_residency_region = (
-            str(details.get("data_residency_region")).strip()
-            if isinstance(details.get("data_residency_region"), str)
-            and details.get("data_residency_region")
-            else None
-        )
-        is_two_factor_required_raw = details.get("is_two_factor_required")
-        is_two_factor_required: bool | None = (
-            bool(is_two_factor_required_raw)
-            if isinstance(is_two_factor_required_raw, bool)
-            else None
-        )
-
-        # --- Origin -------------------------------------------------------
-        origin = event.get("origin") or {}
-        if not isinstance(origin, dict):
-            origin = {}
-        origin_tag = _tag_of(origin)
-        origin_ip_redacted = _classify_ip(
-            origin.get("ip_address")
-            if isinstance(origin.get("ip_address"), str)
-            else None
-        )
-        origin_user_agent_redacted = _redact_user_agent(
-            origin.get("user_agent")
-            if isinstance(origin.get("user_agent"), str)
-            else None
-        )
-        origin_device_type = (
-            str(origin.get("device_type")).strip().lower()
-            if isinstance(origin.get("device_type"), str)
-            and origin.get("device_type")
-            else None
+        sensitive_extension_present = any(
+            (a.get("file_extension") in self.sensitive_extensions)
+            for a in assets
+            if a.get("file_extension")
         )
 
         common_evidence: dict[str, Any] = {
             "dropbox_event_id": event_id,
-            "event_category": ev_category,
-            "event_type": ev_type,
-            "actor_tag": actor_tag,
-            "actor_email_domain": actor_email_domain,
-            "actor_display_name_length": actor_display_name_length,
-            "actor_team_member_id_last8": actor_team_member_id_last8,
-            "context_tag": context_tag,
-            "context_team_member_id_last8": context_team_member_id_last8,
-            "context_email_length": context_email_length,
-            "participant_domains": participant_domains,
-            "assets": assets_redacted,
-            "asset_extension": first_asset_extension,
-            "asset_size_bytes": first_asset_size_bytes,
-            "asset_file_id_last8": first_asset_file_id_last8,
-            "shared_link_visibility": shared_link_visibility,
-            "shared_link_has_expiry": shared_link_has_expiry,
-            "external_user_email_domain": external_user_email_domain,
-            "new_value_redacted": new_value_redacted,
-            "previous_value_redacted": previous_value_redacted,
-            "app_id_last8": app_id_last8,
-            "app_name": app_name,
-            "emm_state_change": emm_state_change,
-            "watermark_label": watermark_label,
-            "dlp_rule_name": dlp_rule_name,
-            "dlp_severity": dlp_severity,
-            "data_residency_region": data_residency_region,
-            "is_two_factor_required": is_two_factor_required,
-            "origin_tag": origin_tag,
-            "origin_ip_redacted": origin_ip_redacted,
-            "origin_user_agent_redacted": origin_user_agent_redacted,
-            "origin_device_type": origin_device_type,
+            "event_type_tag": ev_tag,
+            "actor_tag": actor.get("tag"),
+            "actor_email_domain": actor.get("email_domain"),
+            "actor_team_member_id_last8": actor.get("team_member_id_last8"),
+            "actor_account_id_last8": actor.get("account_id_last8"),
+            "actor_display_name_length": actor.get("display_name_length"),
+            "asset_count": len(assets),
+            "asset_tags": [a.get("tag") for a in assets],
+            "asset_file_extensions": [
+                a.get("file_extension")
+                for a in assets
+                if a.get("file_extension")
+            ],
+            "asset_file_sizes": [
+                a.get("file_size")
+                for a in assets
+                if a.get("file_size") is not None
+            ],
+            "asset_sensitivity_labels": [
+                a.get("sensitivity_label")
+                for a in assets
+                if a.get("sensitivity_label")
+            ],
+            "asset_file_ids_last8": [
+                a.get("file_id_last8")
+                for a in assets
+                if a.get("file_id_last8")
+            ],
+            "asset_path_lengths": [
+                a.get("path_length")
+                for a in assets
+                if a.get("path_length") is not None
+            ],
+            "asset_display_name_lengths": [
+                a.get("display_name_length")
+                for a in assets
+                if a.get("display_name_length") is not None
+            ],
+            "participant_domains": list(participant_domains),
+            "external_recipient_domains": list(external_domains),
+            "origin_country": origin.get("country"),
+            "origin_ip_redacted": origin.get("ip_address_redacted"),
+            "origin_access_method_tag": origin.get("access_method_tag"),
+            "shared_link_audience_tag": details.get("shared_link_audience_tag"),
+            "shared_link_id_last8": details.get("shared_link_id_last8"),
+            "shared_link_owner_email_domain": details.get(
+                "shared_link_owner_email_domain"
+            ),
+            "new_value_tag": details.get("new_value_tag"),
+            "previous_value_tag": details.get("previous_value_tag"),
+            "new_visibility_tag": details.get("new_visibility_tag"),
+            "new_role_tag": details.get("new_role_tag"),
+            "new_admin_role_tag": details.get("new_admin_role_tag"),
+            "app_id_last8": details.get("app_id_last8"),
+            "app_display_name_length": details.get("app_display_name_length"),
             "event_time": timestamp_iso,
             "source_provenance": self._source_provenance(
                 file_sha256=file_sha256, event_id=event_id
@@ -839,19 +1008,16 @@ class DropboxImporter:
         }
 
         control_results: list[ControlResult] = []
-        is_agent_actor = actor_tag in _AGENT_ACTOR_TAGS
-        is_system_actor = actor_tag == _SYSTEM_ACTOR_TAG
 
         # ----------------------------------------------------------------
         # event_type-driven primary classification
         # ----------------------------------------------------------------
-        if ev_type == "file_download":
-            agent_sensitive = (
-                is_agent_actor
-                and first_asset_extension is not None
-                and first_asset_extension in self.sensitive_extensions
-            )
-            if agent_sensitive:
+        if ev_tag in {"file_preview", "file_download"}:
+            if (
+                ev_tag == "file_download"
+                and is_agent
+                and sensitive_extension_present
+            ):
                 signal = "agent_sensitive_download"
                 control_id = _control_for(signal, self._mappings, "PR-04")
                 control_results.append(
@@ -863,58 +1029,77 @@ class DropboxImporter:
                         result="FAIL",
                         detail=(
                             f"Dropbox event {event_id} file_download by "
-                            f"actor_tag={actor_tag!r} on extension="
-                            f"{first_asset_extension!r} file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"agent downloading bulk-data file, requires "
-                            f"review"
+                            f"actor.tag={actor.get('tag')!r} on sensitive "
+                            f"extension(s) "
+                            f"{common_evidence['asset_file_extensions']!r} "
+                            f"— agent bulk-data exfil risk"
                         ),
                         evidence_data={**common_evidence, "signal": signal},
                     )
                 )
-        elif ev_type == "file_upload":
-            if is_agent_actor:
-                signal = "service_account_upload"
-                control_id = _control_for(signal, self._mappings, "PR-04")
-                control_results.append(
-                    ControlResult(
-                        control_id=control_id,
-                        control_name=_CONTROL_NAMES.get(
-                            control_id, control_id
-                        ),
-                        result="PASS",
-                        detail=(
-                            f"Dropbox event {event_id} file_upload by "
-                            f"actor_tag={actor_tag!r} on file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"service-account write captured"
-                        ),
-                        evidence_data={**common_evidence, "signal": signal},
+            else:
+                large_size: int | None = None
+                for a in assets:
+                    fs = a.get("file_size")
+                    if (
+                        isinstance(fs, int)
+                        and fs > self.large_file_threshold
+                    ):
+                        large_size = fs
+                        break
+                if ev_tag == "file_download" and large_size is not None:
+                    signal = "large_download"
+                    control_id = _control_for(signal, self._mappings, "PR-04")
+                    control_results.append(
+                        ControlResult(
+                            control_id=control_id,
+                            control_name=_CONTROL_NAMES.get(
+                                control_id, control_id
+                            ),
+                            result="FLAG",
+                            detail=(
+                                f"Dropbox event {event_id} file_download "
+                                f"size={large_size}B exceeds threshold "
+                                f"{self.large_file_threshold}B — large "
+                                f"download"
+                            ),
+                            evidence_data={
+                                **common_evidence,
+                                "signal": signal,
+                                "large_file_threshold":
+                                    self.large_file_threshold,
+                            },
+                        )
                     )
-                )
-        elif ev_type == "file_delete":
-            if is_agent_actor:
-                signal = "service_account_delete"
-                control_id = _control_for(signal, self._mappings, "PR-02")
-                control_results.append(
-                    ControlResult(
-                        control_id=control_id,
-                        control_name=_CONTROL_NAMES.get(
-                            control_id, control_id
-                        ),
-                        result="FLAG",
-                        detail=(
-                            f"Dropbox event {event_id} file_delete by "
-                            f"actor_tag={actor_tag!r} on file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"bot deleting content, requires review"
-                        ),
-                        evidence_data={**common_evidence, "signal": signal},
+                else:
+                    signal = (
+                        "user_preview"
+                        if ev_tag == "file_preview"
+                        else "user_download"
                     )
-                )
-        elif ev_type == "shared_link_create":
-            if shared_link_visibility == "public":
-                signal = "public_share"
+                    control_id = _control_for(signal, self._mappings, "PR-04")
+                    control_results.append(
+                        ControlResult(
+                            control_id=control_id,
+                            control_name=_CONTROL_NAMES.get(
+                                control_id, control_id
+                            ),
+                            result="PASS",
+                            detail=(
+                                f"Dropbox event {event_id} {ev_tag} by "
+                                f"actor.tag={actor.get('tag')!r} — "
+                                f"read-access audit-trail captured"
+                            ),
+                            evidence_data={
+                                **common_evidence,
+                                "signal": signal,
+                            },
+                        )
+                    )
+        elif ev_tag == "shared_link_create":
+            audience = details.get("shared_link_audience_tag")
+            if audience in self.public_audiences:
+                signal = "public_share_create"
                 control_id = _control_for(signal, self._mappings, "DE-01")
                 control_results.append(
                     ControlResult(
@@ -925,34 +1110,14 @@ class DropboxImporter:
                         result="FAIL",
                         detail=(
                             f"Dropbox event {event_id} shared_link_create "
-                            f"visibility='public' on file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"public link, top-priority exfil"
+                            f"audience={audience!r} — public link, "
+                            f"top-priority exfil"
                         ),
                         evidence_data={**common_evidence, "signal": signal},
                     )
                 )
-            elif shared_link_visibility == "team_only":
-                signal = "team_only_share"
-                control_id = _control_for(signal, self._mappings, "PR-05")
-                control_results.append(
-                    ControlResult(
-                        control_id=control_id,
-                        control_name=_CONTROL_NAMES.get(
-                            control_id, control_id
-                        ),
-                        result="PASS",
-                        detail=(
-                            f"Dropbox event {event_id} shared_link_create "
-                            f"visibility='team_only' on file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"intra-team share, audit-trail captured"
-                        ),
-                        evidence_data={**common_evidence, "signal": signal},
-                    )
-                )
-            elif shared_link_visibility in ("password_only", "team_and_password"):
-                signal = "password_protected_share"
+            elif audience in self.password_audiences:
+                signal = "password_share_create"
                 control_id = _control_for(signal, self._mappings, "PR-04")
                 control_results.append(
                     ControlResult(
@@ -963,22 +1128,91 @@ class DropboxImporter:
                         result="FLAG",
                         detail=(
                             f"Dropbox event {event_id} shared_link_create "
-                            f"visibility={shared_link_visibility!r} on "
-                            f"file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"password-protected external link"
+                            f"audience={audience!r} — password-protected "
+                            f"external link"
                         ),
                         evidence_data={**common_evidence, "signal": signal},
                     )
                 )
-            # Permanent-share check — applies whenever expiry is missing AND
-            # link is not team-only (team-only is treated as governed).
-            if (
-                not shared_link_has_expiry
-                and shared_link_visibility is not None
-                and shared_link_visibility != "team_only"
-            ):
-                signal = "permanent_share"
+            elif external_domains:
+                signal = "external_share"
+                control_id = _control_for(signal, self._mappings, "PR-04")
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=_CONTROL_NAMES.get(
+                            control_id, control_id
+                        ),
+                        result="FLAG",
+                        detail=(
+                            f"Dropbox event {event_id} shared_link_create to "
+                            f"external domain(s) {external_domains!r} — "
+                            f"external share"
+                        ),
+                        evidence_data={**common_evidence, "signal": signal},
+                    )
+                )
+        elif ev_tag == "shared_link_change_visibility":
+            new_vis = details.get("new_visibility_tag") or details.get(
+                "new_value_tag"
+            )
+            if new_vis in self.public_audiences:
+                signal = "public_share_visibility_change"
+                control_id = _control_for(signal, self._mappings, "DE-01")
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=_CONTROL_NAMES.get(
+                            control_id, control_id
+                        ),
+                        result="FAIL",
+                        detail=(
+                            f"Dropbox event {event_id} "
+                            f"shared_link_change_visibility new_visibility="
+                            f"{new_vis!r} — link expanded to public"
+                        ),
+                        evidence_data={**common_evidence, "signal": signal},
+                    )
+                )
+        elif ev_tag == "shared_link_settings_allow_download_disabled":
+            new_val = details.get("new_value_tag")
+            signal = "share_allow_download_enabled"
+            control_id = _control_for(signal, self._mappings, "PR-04")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} "
+                        f"shared_link_settings_allow_download_disabled "
+                        f"new_value={new_val!r} — allow-download setting "
+                        f"changed on shared link"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        elif ev_tag == "shared_link_disable":
+            signal = "shared_link_disable"
+            control_id = _control_for(signal, self._mappings, "PR-05")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="PASS",
+                    detail=(
+                        f"Dropbox event {event_id} shared_link_disable — "
+                        f"link revoked, audit captured"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        elif ev_tag == "file_share":
+            confidential_external = bool(external_domains) and any(
+                a.get("sensitivity_label") == "confidential" for a in assets
+            )
+            if confidential_external:
+                signal = "confidential_external_share"
                 control_id = _control_for(signal, self._mappings, "PR-04")
                 control_results.append(
                     ControlResult(
@@ -988,60 +1222,15 @@ class DropboxImporter:
                         ),
                         result="FAIL",
                         detail=(
-                            f"Dropbox event {event_id} shared_link_create "
-                            f"visibility={shared_link_visibility!r} with "
-                            f"no expiration on file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"permanent share, indefinite exposure window"
+                            f"Dropbox event {event_id} file_share with "
+                            f"sensitivity_label=confidential to external "
+                            f"domain(s) {external_domains!r} — top-priority"
                         ),
                         evidence_data={**common_evidence, "signal": signal},
                     )
                 )
-        elif ev_type == "file_share_anyone_member_add":
-            signal = "anyone_link_expansion"
-            control_id = _control_for(signal, self._mappings, "DE-01")
-            control_results.append(
-                ControlResult(
-                    control_id=control_id,
-                    control_name=_CONTROL_NAMES.get(control_id, control_id),
-                    result="FAIL",
-                    detail=(
-                        f"Dropbox event {event_id} file_share_anyone_member_add"
-                        f" on file_id="
-                        f"{first_asset_file_id_last8 or 'unknown'} — "
-                        f"anyone-link expansion, top-priority exfil"
-                    ),
-                    evidence_data={**common_evidence, "signal": signal},
-                )
-            )
-        elif ev_type == "file_external_member_add":
-            signal = "external_member_add"
-            control_id = _control_for(signal, self._mappings, "PR-04")
-            control_results.append(
-                ControlResult(
-                    control_id=control_id,
-                    control_name=_CONTROL_NAMES.get(control_id, control_id),
-                    result="FLAG",
-                    detail=(
-                        f"Dropbox event {event_id} file_external_member_add "
-                        f"external_domain="
-                        f"{external_user_email_domain or 'unknown'} on "
-                        f"file_id="
-                        f"{first_asset_file_id_last8 or 'unknown'} — "
-                        f"external collaborator added"
-                    ),
-                    evidence_data={**common_evidence, "signal": signal},
-                )
-            )
-        elif ev_type == "member_invited":
-            primary = self.primary_workspace_domain
-            external_invite_domains = [
-                d
-                for d in participant_domains
-                if primary is None or d != primary
-            ]
-            if primary is not None and external_invite_domains:
-                signal = "external_member_invited"
+            elif external_domains:
+                signal = "external_share"
                 control_id = _control_for(signal, self._mappings, "PR-04")
                 control_results.append(
                     ControlResult(
@@ -1051,18 +1240,15 @@ class DropboxImporter:
                         ),
                         result="FLAG",
                         detail=(
-                            f"Dropbox event {event_id} member_invited with "
-                            f"participant domains="
-                            f"{external_invite_domains!r} (primary="
-                            f"{primary!r}) — external invite"
+                            f"Dropbox event {event_id} file_share to "
+                            f"external domain(s) {external_domains!r} — "
+                            f"external share"
                         ),
                         evidence_data={**common_evidence, "signal": signal},
                     )
                 )
-        elif ev_type == "team_policy_changed":
-            # Tenant-level policy change. If 2FA is being disabled, raise
-            # PR-01 FAIL alongside PR-02 FAIL.
-            signal = "team_policy_change"
+        elif ev_tag == "team_folder_permanently_delete":
+            signal = "team_folder_permanently_delete"
             control_id = _control_for(signal, self._mappings, "PR-02")
             control_results.append(
                 ControlResult(
@@ -1070,171 +1256,22 @@ class DropboxImporter:
                     control_name=_CONTROL_NAMES.get(control_id, control_id),
                     result="FAIL",
                     detail=(
-                        f"Dropbox event {event_id} team_policy_changed — "
-                        f"tenant-level policy changed, top-priority"
+                        f"Dropbox event {event_id} "
+                        f"team_folder_permanently_delete by "
+                        f"actor.tag={actor.get('tag')!r} — irreversible "
+                        f"team-folder destruction"
                     ),
                     evidence_data={**common_evidence, "signal": signal},
                 )
             )
-            if is_two_factor_required is False:
-                signal = "two_factor_disabled"
-                control_id = _control_for(signal, self._mappings, "PR-01")
-                control_results.append(
-                    ControlResult(
-                        control_id=control_id,
-                        control_name=_CONTROL_NAMES.get(
-                            control_id, control_id
-                        ),
-                        result="FAIL",
-                        detail=(
-                            f"Dropbox event {event_id} team_policy_changed "
-                            f"is_two_factor_required=false — tenant-wide "
-                            f"2FA disabled, identity weakening"
-                        ),
-                        evidence_data={**common_evidence, "signal": signal},
-                    )
-                )
-        elif ev_type == "data_residency_change":
-            signal = "data_residency_change"
-            control_id = _control_for(signal, self._mappings, "PR-04")
-            control_results.append(
-                ControlResult(
-                    control_id=control_id,
-                    control_name=_CONTROL_NAMES.get(control_id, control_id),
-                    result="FAIL",
-                    detail=(
-                        f"Dropbox event {event_id} data_residency_change "
-                        f"region={data_residency_region or 'unknown'} — "
-                        f"GDPR-relevant region change, top-priority"
-                    ),
-                    evidence_data={**common_evidence, "signal": signal},
-                )
+        elif ev_tag == "member_change_admin_role":
+            new_role = (
+                details.get("new_admin_role_tag")
+                or details.get("new_role_tag")
+                or details.get("new_value_tag")
             )
-        elif ev_type == "app_link_team":
-            signal = "app_link_team"
-            control_id = _control_for(signal, self._mappings, "PR-01")
-            control_results.append(
-                ControlResult(
-                    control_id=control_id,
-                    control_name=_CONTROL_NAMES.get(control_id, control_id),
-                    result="FLAG",
-                    detail=(
-                        f"Dropbox event {event_id} app_link_team app_name="
-                        f"{app_name or 'unknown'} app_id_last8="
-                        f"{app_id_last8 or 'unknown'} — new automation "
-                        f"surface attached to team"
-                    ),
-                    evidence_data={**common_evidence, "signal": signal},
-                )
-            )
-        elif ev_type == "app_unlink_team":
-            signal = "app_unlink_team"
-            control_id = _control_for(signal, self._mappings, "PR-05")
-            control_results.append(
-                ControlResult(
-                    control_id=control_id,
-                    control_name=_CONTROL_NAMES.get(control_id, control_id),
-                    result="PASS",
-                    detail=(
-                        f"Dropbox event {event_id} app_unlink_team app_name="
-                        f"{app_name or 'unknown'} — automation surface "
-                        f"detached, audit-trail captured"
-                    ),
-                    evidence_data={**common_evidence, "signal": signal},
-                )
-            )
-        elif ev_type == "login_fail":
-            signal = "login_fail"
-            control_id = _control_for(signal, self._mappings, "PR-01")
-            control_results.append(
-                ControlResult(
-                    control_id=control_id,
-                    control_name=_CONTROL_NAMES.get(control_id, control_id),
-                    result="FLAG",
-                    detail=(
-                        f"Dropbox event {event_id} login_fail "
-                        f"actor_domain={actor_email_domain or 'unknown'} — "
-                        f"authentication failure"
-                    ),
-                    evidence_data={**common_evidence, "signal": signal},
-                )
-            )
-        elif ev_type == "dlp_match":
-            if dlp_severity == "high":
-                signal = "dlp_match_high"
-                control_id = _control_for(signal, self._mappings, "PR-04")
-                control_results.append(
-                    ControlResult(
-                        control_id=control_id,
-                        control_name=_CONTROL_NAMES.get(
-                            control_id, control_id
-                        ),
-                        result="FAIL",
-                        detail=(
-                            f"Dropbox event {event_id} dlp_match severity=high "
-                            f"rule={dlp_rule_name or 'unknown'} on file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"DLP rule matched, top-priority"
-                        ),
-                        evidence_data={**common_evidence, "signal": signal},
-                    )
-                )
-            elif dlp_severity == "medium":
-                signal = "dlp_match_medium"
-                control_id = _control_for(signal, self._mappings, "PR-04")
-                control_results.append(
-                    ControlResult(
-                        control_id=control_id,
-                        control_name=_CONTROL_NAMES.get(
-                            control_id, control_id
-                        ),
-                        result="FLAG",
-                        detail=(
-                            f"Dropbox event {event_id} dlp_match "
-                            f"severity=medium rule="
-                            f"{dlp_rule_name or 'unknown'} on file_id="
-                            f"{first_asset_file_id_last8 or 'unknown'} — "
-                            f"DLP rule matched"
-                        ),
-                        evidence_data={**common_evidence, "signal": signal},
-                    )
-                )
-        elif ev_type == "watermark_apply":
-            signal = "watermark_apply"
-            control_id = _control_for(signal, self._mappings, "PR-04")
-            control_results.append(
-                ControlResult(
-                    control_id=control_id,
-                    control_name=_CONTROL_NAMES.get(control_id, control_id),
-                    result="PASS",
-                    detail=(
-                        f"Dropbox event {event_id} watermark_apply label="
-                        f"{watermark_label or 'unknown'} on file_id="
-                        f"{first_asset_file_id_last8 or 'unknown'} — "
-                        f"governance applied"
-                    ),
-                    evidence_data={**common_evidence, "signal": signal},
-                )
-            )
-        elif ev_type == "emm_enabled":
-            signal = "emm_enabled"
-            control_id = _control_for(signal, self._mappings, "PR-05")
-            control_results.append(
-                ControlResult(
-                    control_id=control_id,
-                    control_name=_CONTROL_NAMES.get(control_id, control_id),
-                    result="PASS",
-                    detail=(
-                        f"Dropbox event {event_id} emm_enabled — Enterprise "
-                        f"Mobility Management enabled, device security "
-                        f"strengthened"
-                    ),
-                    evidence_data={**common_evidence, "signal": signal},
-                )
-            )
-        elif ev_type == "emm_state_change":
-            if emm_state_change == "disabled":
-                signal = "emm_disabled"
+            if new_role and new_role in self.privileged_admin_roles:
+                signal = "admin_promotion"
                 control_id = _control_for(signal, self._mappings, "PR-02")
                 control_results.append(
                     ControlResult(
@@ -1244,17 +1281,164 @@ class DropboxImporter:
                         ),
                         result="FAIL",
                         detail=(
-                            f"Dropbox event {event_id} emm_state_change="
-                            f"disabled — Enterprise Mobility Management "
-                            f"disabled, device security weakening"
+                            f"Dropbox event {event_id} "
+                            f"member_change_admin_role new_role={new_role!r} "
+                            f"— admin promotion, top-priority"
                         ),
                         evidence_data={**common_evidence, "signal": signal},
                     )
                 )
+        elif ev_tag == "app_link":
+            signal = "app_link"
+            control_id = _control_for(signal, self._mappings, "PR-01")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} app_link — external app "
+                        f"linked to team account"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        elif ev_tag == "sso_change_settings":
+            signal = "sso_change"
+            control_id = _control_for(signal, self._mappings, "PR-02")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} sso_change_settings — "
+                        f"SSO/auth surface change"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        elif ev_tag == "two_step_verification_disable":
+            signal = "two_factor_disable"
+            control_id = _control_for(signal, self._mappings, "PR-01")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FAIL",
+                    detail=(
+                        f"Dropbox event {event_id} "
+                        f"two_step_verification_disable — MFA degradation, "
+                        f"top-priority"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        elif ev_tag == "data_residency_migration":
+            signal = "data_residency_change"
+            control_id = _control_for(signal, self._mappings, "PR-04")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} data_residency_migration "
+                        f"— GDPR-relevant data location change"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        elif ev_tag == "emm_create_exceptions_report":
+            signal = "emm_exception_report"
+            control_id = _control_for(signal, self._mappings, "PR-05")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} "
+                        f"emm_create_exceptions_report — EMM/MDM exception "
+                        f"list generated"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        elif ev_tag == "paper_doc_share":
+            if external_domains:
+                signal = "paper_doc_external_share"
+                control_id = _control_for(signal, self._mappings, "PR-04")
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=_CONTROL_NAMES.get(
+                            control_id, control_id
+                        ),
+                        result="FLAG",
+                        detail=(
+                            f"Dropbox event {event_id} paper_doc_share to "
+                            f"external domain(s) {external_domains!r} — "
+                            f"Paper-doc sharing"
+                        ),
+                        evidence_data={**common_evidence, "signal": signal},
+                    )
+                )
+        elif ev_tag == "file_request_create":
+            signal = "file_request_create"
+            control_id = _control_for(signal, self._mappings, "PR-04")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} file_request_create — "
+                        f"public file-request URL = inbound exfil channel"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
 
-        # System actor — informational PASS to record audit-trail integrity.
-        if is_system_actor and not control_results:
-            signal = "system_action"
+        # ----------------------------------------------------------------
+        # Cross-cutting: access_method-driven flags
+        # ----------------------------------------------------------------
+        am = origin.get("access_method_tag")
+        if (
+            am == "admin_console"
+            and ev_tag in {"file_preview", "file_download"}
+        ):
+            signal = "admin_console_read"
+            control_id = _control_for(signal, self._mappings, "PR-02")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} access_method=admin_console "
+                        f"on routine {ev_tag} — over-privileged access"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        if am == "sign_in_as":
+            signal = "sign_in_as"
+            control_id = _control_for(signal, self._mappings, "PR-01")
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} access_method=sign_in_as — "
+                        f"admin impersonation"
+                    ),
+                    evidence_data={**common_evidence, "signal": signal},
+                )
+            )
+        if am == "api" and is_agent:
+            signal = "api_app_call"
             control_id = _control_for(signal, self._mappings, "PR-05")
             control_results.append(
                 ControlResult(
@@ -1262,32 +1446,69 @@ class DropboxImporter:
                     control_name=_CONTROL_NAMES.get(control_id, control_id),
                     result="PASS",
                     detail=(
-                        f"Dropbox event {event_id} actor_tag='dropbox' "
-                        f"event_type={ev_type!r} — system action, "
-                        f"audit-trail captured"
+                        f"Dropbox event {event_id} access_method=api by "
+                        f"actor.tag={actor.get('tag')!r} — programmatic flow "
+                        f"captured"
                     ),
                     evidence_data={**common_evidence, "signal": signal},
                 )
             )
 
+        # Agent acting on sensitive extension outside of file_download path.
+        if (
+            is_agent
+            and sensitive_extension_present
+            and ev_tag is not None
+            and ev_tag != "file_download"
+        ):
+            already_sensitive = any(
+                cr.evidence_data.get("signal") == "agent_sensitive_download"
+                for cr in control_results
+            )
+            if not already_sensitive:
+                signal = "agent_sensitive_event"
+                control_id = _control_for(signal, self._mappings, "PR-04")
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=_CONTROL_NAMES.get(
+                            control_id, control_id
+                        ),
+                        result="FLAG",
+                        detail=(
+                            f"Dropbox event {event_id} {ev_tag} by "
+                            f"actor.tag={actor.get('tag')!r} on sensitive "
+                            f"extension(s) "
+                            f"{common_evidence['asset_file_extensions']!r}"
+                        ),
+                        evidence_data={**common_evidence, "signal": signal},
+                    )
+                )
+
         # ----------------------------------------------------------------
         # Synthetic pattern markers — informational on contributing events.
         # ----------------------------------------------------------------
-        actor_key = self._actor_identity_key(event)
+        actor_key = actor.get("raw_account_id") or actor.get(
+            "raw_team_member_id"
+        )
         if actor_key and actor_key in bulk_download_actors:
             signal = "bulk_download_pattern"
             control_id = _control_for(signal, self._mappings, "PR-04")
+            actor_id_last8 = (
+                actor.get("account_id_last8")
+                or actor.get("team_member_id_last8")
+            )
             control_results.append(
                 ControlResult(
                     control_id=control_id,
                     control_name=_CONTROL_NAMES.get(control_id, control_id),
                     result="FAIL",
                     detail=(
-                        f"Dropbox event {event_id} actor_tmid_last8="
-                        f"{actor_team_member_id_last8 or 'unknown'} is part "
-                        f"of a bulk-download pattern ("
-                        f"{bulk_download_actors[actor_key]} downloads > "
-                        f"threshold {self.bulk_download_threshold} in "
+                        f"Dropbox event {event_id} actor_id_last8="
+                        f"{actor_id_last8} is part of a bulk-download "
+                        f"pattern ({bulk_download_actors[actor_key]} "
+                        f"downloads > threshold "
+                        f"{self.bulk_download_threshold} in "
                         f"{self.bulk_download_window_seconds}s window)"
                     ),
                     evidence_data={
@@ -1302,37 +1523,73 @@ class DropboxImporter:
                     },
                 )
             )
-        if actor_key and actor_key in cross_team_actors:
-            signal = "cross_team_share_pattern"
+        if actor_key and actor_key in cross_team_folder_actors:
+            signal = "cross_team_folder_pattern"
             control_id = _control_for(signal, self._mappings, "PR-04")
+            actor_id_last8 = (
+                actor.get("account_id_last8")
+                or actor.get("team_member_id_last8")
+            )
             control_results.append(
                 ControlResult(
                     control_id=control_id,
                     control_name=_CONTROL_NAMES.get(control_id, control_id),
                     result="FLAG",
                     detail=(
-                        f"Dropbox event {event_id} actor_tmid_last8="
-                        f"{actor_team_member_id_last8 or 'unknown'} is part "
-                        f"of a cross-team-share pattern ("
-                        f"{cross_team_actors[actor_key]} external-member "
-                        f"adds > threshold {self.cross_team_share_threshold} "
-                        f"in {self.cross_team_share_window_seconds}s window)"
+                        f"Dropbox event {event_id} actor_id_last8="
+                        f"{actor_id_last8} is part of a cross-team-folder "
+                        f"pattern ({cross_team_folder_actors[actor_key]} "
+                        f"distinct folders > threshold "
+                        f"{self.cross_team_folder_threshold} in "
+                        f"{self.cross_team_folder_window_seconds}s window)"
                     ),
                     evidence_data={
                         **common_evidence,
                         "signal": signal,
-                        "cross_team_share_count":
-                            cross_team_actors[actor_key],
-                        "cross_team_share_threshold":
-                            self.cross_team_share_threshold,
-                        "cross_team_share_window_seconds":
-                            self.cross_team_share_window_seconds,
+                        "cross_team_folder_count":
+                            cross_team_folder_actors[actor_key],
+                        "cross_team_folder_threshold":
+                            self.cross_team_folder_threshold,
+                        "cross_team_folder_window_seconds":
+                            self.cross_team_folder_window_seconds,
+                    },
+                )
+            )
+        if actor_key and actor_key in external_recipient_actors:
+            signal = "external_recipient_pattern"
+            control_id = _control_for(signal, self._mappings, "PR-04")
+            actor_id_last8 = (
+                actor.get("account_id_last8")
+                or actor.get("team_member_id_last8")
+            )
+            control_results.append(
+                ControlResult(
+                    control_id=control_id,
+                    control_name=_CONTROL_NAMES.get(control_id, control_id),
+                    result="FLAG",
+                    detail=(
+                        f"Dropbox event {event_id} actor_id_last8="
+                        f"{actor_id_last8} is part of an external-recipient "
+                        f"pattern ({external_recipient_actors[actor_key]} "
+                        f"distinct external domains > threshold "
+                        f"{self.external_recipient_threshold} in "
+                        f"{self.external_recipient_window_seconds}s window)"
+                    ),
+                    evidence_data={
+                        **common_evidence,
+                        "signal": signal,
+                        "external_recipient_count":
+                            external_recipient_actors[actor_key],
+                        "external_recipient_threshold":
+                            self.external_recipient_threshold,
+                        "external_recipient_window_seconds":
+                            self.external_recipient_window_seconds,
                     },
                 )
             )
 
         # ----------------------------------------------------------------
-        # No-match fallback — surface unknown event so it is not silent.
+        # No-match fallback
         # ----------------------------------------------------------------
         if not control_results:
             signal = "captured_event"
@@ -1343,8 +1600,9 @@ class DropboxImporter:
                     control_name=_CONTROL_NAMES.get(control_id, control_id),
                     result="PASS",
                     detail=(
-                        f"Dropbox event {event_id} event_type={ev_type!r} "
-                        f"actor_tag={actor_tag!r} — audit-trail captured"
+                        f"Dropbox event {event_id} event_type={ev_tag!r} "
+                        f"actor.tag={actor.get('tag')!r} — audit-trail "
+                        f"captured"
                     ),
                     evidence_data={**common_evidence, "signal": signal},
                 )
@@ -1358,11 +1616,10 @@ class DropboxImporter:
             decision = "ALLOW"
 
         decision_reason = (
-            f"Imported from Dropbox team-audit log: event_type="
-            f"{ev_type or 'unknown'} event_category="
-            f"{ev_category or 'unknown'} actor_tag={actor_tag or 'unknown'} "
-            f"actor_domain={actor_email_domain or 'unknown'} file_id="
-            f"{first_asset_file_id_last8 or 'unknown'}"
+            f"Imported from Dropbox team-activity log: event_type="
+            f"{ev_tag or 'unknown'} actor.tag={actor.get('tag') or 'unknown'} "
+            f"actor_domain={actor.get('email_domain') or 'unknown'} "
+            f"audience={details.get('shared_link_audience_tag') or 'n/a'}"
         )
 
         action_id = f"dropbox-{event_id[:48]}"
@@ -1380,7 +1637,7 @@ class DropboxImporter:
             active_overlays=[],
             data_classifications=[],
             total_duration_ms=0.0,
-            session_id=None,
+            session_id=event_id_raw,
         )
 
     # -- Synthetic results --------------------------------------------------
@@ -1397,10 +1654,10 @@ class DropboxImporter:
         signal = "bulk_download_pattern"
         control_id = _control_for(signal, self._mappings, "PR-04")
         synthetic_id = f"dropbox-bulk-download-{uuid.uuid4()}"
-        actor_key_short = actor[-32:]
+        actor_id_last8 = _truncate_id(actor) or actor
         evidence: dict[str, Any] = {
             "dropbox_event_id": synthetic_id,
-            "actor_key": actor_key_short,
+            "actor_id_last8": actor_id_last8,
             "bulk_download_count": count,
             "bulk_download_threshold": self.bulk_download_threshold,
             "bulk_download_window_seconds": self.bulk_download_window_seconds,
@@ -1416,7 +1673,7 @@ class DropboxImporter:
             control_name=_CONTROL_NAMES.get(control_id, control_id),
             result="FAIL",
             detail=(
-                f"Dropbox synthetic finding: actor_key={actor_key_short} "
+                f"Dropbox synthetic finding: actor_id_last8={actor_id_last8} "
                 f"performed {count} downloads in a "
                 f"{self.bulk_download_window_seconds}s window — exceeds "
                 f"bulk-download threshold {self.bulk_download_threshold} "
@@ -1434,8 +1691,8 @@ class DropboxImporter:
             control_results=[cr],
             decision="BLOCK",
             decision_reason=(
-                f"Imported from Dropbox team-audit log: synthetic "
-                f"bulk-download pattern for actor_key={actor_key_short} "
+                f"Imported from Dropbox team-activity log: synthetic bulk-"
+                f"download pattern for actor_id_last8={actor_id_last8} "
                 f"count={count}>threshold={self.bulk_download_threshold}"
             ),
             active_overlays=[],
@@ -1444,7 +1701,7 @@ class DropboxImporter:
             session_id=None,
         )
 
-    def _synthetic_cross_team_share_result(
+    def _synthetic_cross_team_folder_result(
         self,
         *,
         actor: str,
@@ -1453,17 +1710,17 @@ class DropboxImporter:
     ) -> Any:
         from ancilis.engine.result import ControlResult, EvaluationResult
 
-        signal = "cross_team_share_pattern"
+        signal = "cross_team_folder_pattern"
         control_id = _control_for(signal, self._mappings, "PR-04")
-        synthetic_id = f"dropbox-cross-team-share-{uuid.uuid4()}"
-        actor_key_short = actor[-32:]
+        synthetic_id = f"dropbox-cross-team-folder-{uuid.uuid4()}"
+        actor_id_last8 = _truncate_id(actor) or actor
         evidence: dict[str, Any] = {
             "dropbox_event_id": synthetic_id,
-            "actor_key": actor_key_short,
-            "cross_team_share_count": count,
-            "cross_team_share_threshold": self.cross_team_share_threshold,
-            "cross_team_share_window_seconds":
-                self.cross_team_share_window_seconds,
+            "actor_id_last8": actor_id_last8,
+            "cross_team_folder_count": count,
+            "cross_team_folder_threshold": self.cross_team_folder_threshold,
+            "cross_team_folder_window_seconds":
+                self.cross_team_folder_window_seconds,
             "synthetic": True,
             "source_provenance": self._source_provenance(
                 file_sha256=file_sha256, event_id=synthetic_id
@@ -1476,12 +1733,11 @@ class DropboxImporter:
             control_name=_CONTROL_NAMES.get(control_id, control_id),
             result="FLAG",
             detail=(
-                f"Dropbox synthetic finding: actor_key={actor_key_short} "
-                f"performed {count} external-member adds in a "
-                f"{self.cross_team_share_window_seconds}s window — exceeds "
-                f"cross-team-share threshold "
-                f"{self.cross_team_share_threshold} (mass-external-share "
-                f"pattern)"
+                f"Dropbox synthetic finding: actor_id_last8={actor_id_last8} "
+                f"touched {count} distinct team-folders in a "
+                f"{self.cross_team_folder_window_seconds}s window — exceeds "
+                f"cross-team-folder threshold "
+                f"{self.cross_team_folder_threshold} (recon pattern)"
             ),
             evidence_data=evidence,
         )
@@ -1495,10 +1751,69 @@ class DropboxImporter:
             control_results=[cr],
             decision="FLAG",
             decision_reason=(
-                f"Imported from Dropbox team-audit log: synthetic "
-                f"cross-team-share pattern for actor_key={actor_key_short} "
-                f"count={count}>threshold="
-                f"{self.cross_team_share_threshold}"
+                f"Imported from Dropbox team-activity log: synthetic cross-"
+                f"team-folder pattern for actor_id_last8={actor_id_last8} "
+                f"count={count}>threshold={self.cross_team_folder_threshold}"
+            ),
+            active_overlays=[],
+            data_classifications=[],
+            total_duration_ms=0.0,
+            session_id=None,
+        )
+
+    def _synthetic_external_recipient_result(
+        self,
+        *,
+        actor: str,
+        count: int,
+        file_sha256: str | None,
+    ) -> Any:
+        from ancilis.engine.result import ControlResult, EvaluationResult
+
+        signal = "external_recipient_pattern"
+        control_id = _control_for(signal, self._mappings, "PR-04")
+        synthetic_id = f"dropbox-external-recipient-{uuid.uuid4()}"
+        actor_id_last8 = _truncate_id(actor) or actor
+        evidence: dict[str, Any] = {
+            "dropbox_event_id": synthetic_id,
+            "actor_id_last8": actor_id_last8,
+            "external_recipient_count": count,
+            "external_recipient_threshold": self.external_recipient_threshold,
+            "external_recipient_window_seconds":
+                self.external_recipient_window_seconds,
+            "synthetic": True,
+            "source_provenance": self._source_provenance(
+                file_sha256=file_sha256, event_id=synthetic_id
+            ),
+            "source_tool": "dropbox",
+            "signal": signal,
+        }
+        cr = ControlResult(
+            control_id=control_id,
+            control_name=_CONTROL_NAMES.get(control_id, control_id),
+            result="FLAG",
+            detail=(
+                f"Dropbox synthetic finding: actor_id_last8={actor_id_last8} "
+                f"shared with {count} distinct external domains in a "
+                f"{self.external_recipient_window_seconds}s window — exceeds "
+                f"external-recipient threshold "
+                f"{self.external_recipient_threshold} (mass-share pattern)"
+            ),
+            evidence_data=evidence,
+        )
+        return EvaluationResult(
+            evaluation_id=str(uuid.uuid4()),
+            action_id=synthetic_id,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            agent_id=self.agent_id,
+            source_type="dropbox_import",
+            mode=self.mode,
+            control_results=[cr],
+            decision="FLAG",
+            decision_reason=(
+                f"Imported from Dropbox team-activity log: synthetic external-"
+                f"recipient pattern for actor_id_last8={actor_id_last8} "
+                f"count={count}>threshold={self.external_recipient_threshold}"
             ),
             active_overlays=[],
             data_classifications=[],

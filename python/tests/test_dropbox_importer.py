@@ -1,4 +1,4 @@
-"""Tests for the Dropbox team-audit-log importer."""
+"""Tests for the Dropbox team-activity-log importer."""
 
 from __future__ import annotations
 
@@ -16,59 +16,66 @@ from ancilis.importers.dropbox import DropboxImporter
 
 def _event(
     *,
-    event_type: str = "file_upload",
-    event_category: str = "file_operations",
+    event_id: str = "evt-001",
+    event_type: str = "file_download",
     timestamp: str = "2026-05-09T12:00:00Z",
-    actor: dict[str, Any] | None = None,
-    context: dict[str, Any] | None = None,
+    actor_tag: str = "user",
+    actor_email: str = "agent@example.com",
+    account_id: str = "acct-1234567890ab",
+    team_member_id: str = "tm-cafebabe1234",
+    display_name_length: int = 50,
+    asset: list[dict[str, Any]] | None = None,
     participants: list[dict[str, Any]] | None = None,
-    assets: list[dict[str, Any]] | None = None,
-    details: dict[str, Any] | None = None,
     origin: dict[str, Any] | None = None,
+    details: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    if actor is None:
-        actor = {
-            ".tag": "user",
-            "email": "agent@example.com",
-            "display_name_length": 20,
-            "team_member_id": "dbid:AAA-team-member-id-12345678",
-        }
-    if context is None:
-        context = {
-            ".tag": "team_member",
-            "team_member_id": "dbid:CTX-team-member-id-87654321",
-            "email_length": 40,
-        }
-    if assets is None:
-        assets = [
+    if asset is None:
+        asset = [
             {
                 ".tag": "file",
-                "path": {".tag": "namespace_relative", "path_length": 80},
-                "file_id": "id:DEADBEEFCAFEBABE",
-                "extension": "pdf",
-                "size_bytes": 12345,
+                "path_length": 80,
+                "file_id": "id:abcdef1234567890",
+                "display_name_length": 30,
+                "file_size": 12345,
+                "file_extension": "pdf",
             }
         ]
     if origin is None:
         origin = {
-            ".tag": "endpoint",
-            "ip_address": "203.0.113.42",
-            "user_agent": "DropboxAPI/2.0 OfficialDropboxJavaSDKv2/3.1.5",
-            "device_type": "web",
+            "geo_location": {
+                "city": "San Francisco",
+                "region": "CA",
+                "country": "US",
+                "ip_address": "203.0.113.42",
+            },
+            "access_method": {".tag": "end_user"},
         }
+    if details is None:
+        details = {}
     e: dict[str, Any] = {
+        "event_id": event_id,
         "timestamp": timestamp,
-        "event_category": event_category,
-        "event_type": {".tag": event_type},
-        "actor": actor,
-        "context": context,
-        "assets": assets,
+        "event_type": {".tag": event_type, "description": event_type},
+        "actor": {
+            ".tag": actor_tag,
+            "user": {
+                "account_id": account_id,
+                "email": actor_email,
+                "display_name_length": display_name_length,
+                "team_member_id": team_member_id,
+            },
+        },
+        "context": {
+            ".tag": "team_member",
+            "account_id": account_id,
+            "team_member_id": team_member_id,
+        },
+        "asset": asset,
         "origin": origin,
+        "details": details,
     }
     if participants is not None:
         e["participants"] = participants
-    if details is not None:
-        e["details"] = details
     return e
 
 
@@ -76,49 +83,48 @@ def _signals(result) -> set[str]:
     return {cr.evidence_data.get("signal") for cr in result.control_results}
 
 
+def _has(result, *, control_id: str, result_value: str, signal: str) -> bool:
+    return any(
+        cr.control_id == control_id
+        and cr.result == result_value
+        and cr.evidence_data.get("signal") == signal
+        for cr in result.control_results
+    )
+
+
 # ---------------------------------------------------------------------------
 # Per-event classification
 # ---------------------------------------------------------------------------
 
 
-def test_file_upload_app_passes() -> None:
-    """file_upload by actor=app → PR-04 PASS, ALLOW."""
-    e = _event(
-        event_type="file_upload",
-        actor={
-            ".tag": "app",
-            "team_member_id": "dbid:AAA-app-actor-deadbeef",
-        },
-    )
+def test_user_download_passes() -> None:
+    """file_download by user → PR-04 PASS, ALLOW."""
+    e = _event(event_type="file_download", actor_tag="user")
     results = DropboxImporter(agent_id="test").parse_string(
         json.dumps({"events": [e]})
     )
     assert len(results) == 1
     r = results[0]
     assert r.decision == "ALLOW"
-    assert any(
-        cr.control_id == "PR-04"
-        and cr.result == "PASS"
-        and cr.evidence_data.get("signal") == "service_account_upload"
-        for cr in r.control_results
+    assert _has(
+        r, control_id="PR-04", result_value="PASS", signal="user_download"
     )
 
 
-def test_file_download_app_sensitive_fails() -> None:
-    """file_download by actor=app on csv → PR-04 FAIL, BLOCK."""
+def test_agent_download_sensitive_extension_fails() -> None:
+    """file_download by app on csv → PR-04 FAIL, BLOCK."""
     e = _event(
+        event_id="ev-agent-dl",
         event_type="file_download",
-        actor={
-            ".tag": "app",
-            "team_member_id": "dbid:AAA-app-actor-aabbccdd",
-        },
-        assets=[
+        actor_tag="app",
+        asset=[
             {
                 ".tag": "file",
-                "path": {".tag": "namespace_relative", "path_length": 30},
-                "file_id": "id:CSV-FILE-ID-1",
-                "extension": "csv",
-                "size_bytes": 5_000_000,
+                "path_length": 40,
+                "file_id": "id:csv-cafebabe",
+                "display_name_length": 20,
+                "file_size": 5_000_000,
+                "file_extension": "csv",
             }
         ],
     )
@@ -128,23 +134,50 @@ def test_file_download_app_sensitive_fails() -> None:
     assert len(results) == 1
     r = results[0]
     assert r.decision == "BLOCK"
-    assert "agent_sensitive_download" in _signals(r)
-    assert any(
-        cr.control_id == "PR-04"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "agent_sensitive_download"
-        for cr in r.control_results
+    assert _has(
+        r,
+        control_id="PR-04",
+        result_value="FAIL",
+        signal="agent_sensitive_download",
     )
 
 
-def test_public_share_fails_block() -> None:
-    """shared_link_create visibility=public → DE-01 FAIL, BLOCK."""
+def test_large_download_flags() -> None:
+    """file_download with file_size > 1GB → PR-04 FLAG."""
     e = _event(
+        event_id="ev-large",
+        event_type="file_download",
+        actor_tag="user",
+        asset=[
+            {
+                ".tag": "file",
+                "path_length": 30,
+                "file_id": "id:big-12345678",
+                "display_name_length": 18,
+                "file_size": 2_000_000_000,
+                "file_extension": "zip",
+            }
+        ],
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
+    assert len(results) == 1
+    r = results[0]
+    assert r.decision == "FLAG"
+    assert _has(
+        r, control_id="PR-04", result_value="FLAG", signal="large_download"
+    )
+
+
+def test_public_shared_link_create_fails() -> None:
+    """shared_link_create audience=public → DE-01 FAIL, BLOCK."""
+    e = _event(
+        event_id="ev-public-link",
         event_type="shared_link_create",
-        event_category="sharing",
         details={
-            "shared_link_visibility": "public",
-            "shared_link_expires_at": "2027-01-01T00:00:00Z",
+            "shared_link_audience": {".tag": "public"},
+            "shared_link_id": "slid-aabbccdd1122",
         },
     )
     results = DropboxImporter(agent_id="test").parse_string(
@@ -153,427 +186,435 @@ def test_public_share_fails_block() -> None:
     assert len(results) == 1
     r = results[0]
     assert r.decision == "BLOCK"
-    assert any(
-        cr.control_id == "DE-01"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "public_share"
-        for cr in r.control_results
+    assert _has(
+        r,
+        control_id="DE-01",
+        result_value="FAIL",
+        signal="public_share_create",
     )
 
 
-def test_team_share_passes() -> None:
-    """shared_link_create visibility=team_only with expiry → PR-05 PASS."""
+def test_password_protected_share_flags() -> None:
+    """shared_link_create audience=password → PR-04 FLAG."""
     e = _event(
+        event_id="ev-pwd-link",
         event_type="shared_link_create",
-        event_category="sharing",
         details={
-            "shared_link_visibility": "team_only",
-            "shared_link_expires_at": "2027-01-01T00:00:00Z",
+            "shared_link_audience": {".tag": "password"},
+            "shared_link_id": "slid-ddeeff112233",
         },
     )
     results = DropboxImporter(agent_id="test").parse_string(
         json.dumps({"events": [e]})
     )
-    assert len(results) == 1
+    r = results[0]
+    assert r.decision == "FLAG"
+    assert _has(
+        r,
+        control_id="PR-04",
+        result_value="FLAG",
+        signal="password_share_create",
+    )
+
+
+def test_visibility_change_to_public_fails() -> None:
+    """shared_link_change_visibility → public → DE-01 FAIL."""
+    e = _event(
+        event_id="ev-vis-public",
+        event_type="shared_link_change_visibility",
+        details={"new_visibility": {".tag": "public"}},
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
+    r = results[0]
+    assert r.decision == "BLOCK"
+    assert _has(
+        r,
+        control_id="DE-01",
+        result_value="FAIL",
+        signal="public_share_visibility_change",
+    )
+
+
+def test_external_share_flags() -> None:
+    """file_share to external domain → PR-04 FLAG."""
+    e = _event(
+        event_id="ev-ext-share",
+        event_type="file_share",
+        actor_email="alice@team.com",
+        participants=[
+            {
+                "user": {
+                    "email": "outsider@vendor.com",
+                    "email_domain": "@vendor.com",
+                }
+            }
+        ],
+    )
+    results = DropboxImporter(
+        agent_id="test", primary_workspace_domain="team.com"
+    ).parse_string(json.dumps({"events": [e]}))
+    r = results[0]
+    assert r.decision == "FLAG"
+    assert _has(
+        r, control_id="PR-04", result_value="FLAG", signal="external_share"
+    )
+
+
+def test_confidential_external_share_fails() -> None:
+    """file_share with sensitivity_label=confidential to external → PR-04 FAIL."""
+    e = _event(
+        event_id="ev-conf-share",
+        event_type="file_share",
+        actor_email="alice@team.com",
+        asset=[
+            {
+                ".tag": "file",
+                "path_length": 30,
+                "file_id": "id:secret-deadbeef",
+                "display_name_length": 12,
+                "file_size": 1234,
+                "file_extension": "pdf",
+                "sensitivity_label": "confidential",
+            }
+        ],
+        participants=[
+            {
+                "user": {
+                    "email": "outsider@vendor.com",
+                    "email_domain": "@vendor.com",
+                }
+            }
+        ],
+    )
+    results = DropboxImporter(
+        agent_id="test", primary_workspace_domain="team.com"
+    ).parse_string(json.dumps({"events": [e]}))
+    r = results[0]
+    assert r.decision == "BLOCK"
+    assert _has(
+        r,
+        control_id="PR-04",
+        result_value="FAIL",
+        signal="confidential_external_share",
+    )
+
+
+def test_team_folder_permanently_delete_fails() -> None:
+    """team_folder_permanently_delete → PR-02 FAIL."""
+    e = _event(
+        event_id="ev-tf-del",
+        event_type="team_folder_permanently_delete",
+        actor_tag="admin",
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
+    r = results[0]
+    assert r.decision == "BLOCK"
+    assert _has(
+        r,
+        control_id="PR-02",
+        result_value="FAIL",
+        signal="team_folder_permanently_delete",
+    )
+
+
+def test_admin_promotion_fails() -> None:
+    """member_change_admin_role → admin → PR-02 FAIL."""
+    e = _event(
+        event_id="ev-admin-promo",
+        event_type="member_change_admin_role",
+        actor_tag="admin",
+        details={"new_admin_role": {".tag": "team_admin"}},
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
+    r = results[0]
+    assert r.decision == "BLOCK"
+    assert _has(
+        r, control_id="PR-02", result_value="FAIL", signal="admin_promotion"
+    )
+
+
+def test_sso_change_flags() -> None:
+    """sso_change_settings → PR-02 FLAG."""
+    e = _event(
+        event_id="ev-sso",
+        event_type="sso_change_settings",
+        actor_tag="admin",
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
+    r = results[0]
+    assert r.decision == "FLAG"
+    assert _has(
+        r, control_id="PR-02", result_value="FLAG", signal="sso_change"
+    )
+
+
+def test_two_factor_disable_fails() -> None:
+    """two_step_verification_disable → PR-01 FAIL."""
+    e = _event(
+        event_id="ev-2fa-off",
+        event_type="two_step_verification_disable",
+        actor_tag="admin",
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
+    r = results[0]
+    assert r.decision == "BLOCK"
+    assert _has(
+        r,
+        control_id="PR-01",
+        result_value="FAIL",
+        signal="two_factor_disable",
+    )
+
+
+def test_data_residency_migration_flags() -> None:
+    """data_residency_migration → PR-04 FLAG."""
+    e = _event(
+        event_id="ev-residency",
+        event_type="data_residency_migration",
+        actor_tag="admin",
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
+    r = results[0]
+    assert r.decision == "FLAG"
+    assert _has(
+        r,
+        control_id="PR-04",
+        result_value="FLAG",
+        signal="data_residency_change",
+    )
+
+
+def test_file_request_create_flags() -> None:
+    """file_request_create → PR-04 FLAG."""
+    e = _event(
+        event_id="ev-file-req",
+        event_type="file_request_create",
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
+    r = results[0]
+    assert r.decision == "FLAG"
+    assert _has(
+        r,
+        control_id="PR-04",
+        result_value="FLAG",
+        signal="file_request_create",
+    )
+
+
+def test_shared_link_disable_passes() -> None:
+    """shared_link_disable → PR-05 PASS."""
+    e = _event(
+        event_id="ev-link-off",
+        event_type="shared_link_disable",
+    )
+    results = DropboxImporter(agent_id="test").parse_string(
+        json.dumps({"events": [e]})
+    )
     r = results[0]
     assert r.decision == "ALLOW"
-    assert any(
-        cr.control_id == "PR-05"
-        and cr.result == "PASS"
-        and cr.evidence_data.get("signal") == "team_only_share"
-        for cr in r.control_results
+    assert _has(
+        r,
+        control_id="PR-05",
+        result_value="PASS",
+        signal="shared_link_disable",
     )
 
 
-def test_permanent_share_fails() -> None:
-    """shared_link_create visibility=public + expires_at=null → permanent_share FAIL."""
-    e = _event(
-        event_type="shared_link_create",
-        event_category="sharing",
-        details={
-            "shared_link_visibility": "public",
-            "shared_link_expires_at": None,
-        },
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "BLOCK"
-    # Public + no expiry → both public_share and permanent_share fire.
-    sigs = _signals(r)
-    assert "public_share" in sigs
-    assert "permanent_share" in sigs
-    assert any(
-        cr.control_id == "PR-04"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "permanent_share"
-        for cr in r.control_results
-    )
+# ---------------------------------------------------------------------------
+# Synthetic patterns
+# ---------------------------------------------------------------------------
 
 
-def test_anyone_link_fails_block() -> None:
-    """file_share_anyone_member_add → DE-01 FAIL, BLOCK."""
-    e = _event(
-        event_type="file_share_anyone_member_add",
-        event_category="sharing",
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "BLOCK"
-    assert any(
-        cr.control_id == "DE-01"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "anyone_link_expansion"
-        for cr in r.control_results
-    )
-
-
-def test_external_member_flags() -> None:
-    """file_external_member_add → PR-04 FLAG."""
-    e = _event(
-        event_type="file_external_member_add",
-        event_category="sharing",
-        details={"external_user_email_domain": "@external.com"},
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "FLAG"
-    assert any(
-        cr.control_id == "PR-04"
-        and cr.result == "FLAG"
-        and cr.evidence_data.get("signal") == "external_member_add"
-        and cr.evidence_data.get("external_user_email_domain")
-        == "@external.com"
-        for cr in r.control_results
-    )
-
-
-def test_team_policy_fails() -> None:
-    """team_policy_changed → PR-02 FAIL, BLOCK."""
-    e = _event(
-        event_type="team_policy_changed",
-        event_category="team_policies",
-        details={
-            "new_value": "stricter",
-            "previous_value": "default",
-        },
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "BLOCK"
-    assert any(
-        cr.control_id == "PR-02"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "team_policy_change"
-        for cr in r.control_results
-    )
-
-
-def test_data_residency_fails_gdpr() -> None:
-    """data_residency_change → PR-04 FAIL, BLOCK."""
-    e = _event(
-        event_type="data_residency_change",
-        event_category="admin",
-        details={"data_residency_region": "EU"},
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "BLOCK"
-    assert any(
-        cr.control_id == "PR-04"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "data_residency_change"
-        and cr.evidence_data.get("data_residency_region") == "EU"
-        for cr in r.control_results
-    )
-
-
-def test_app_link_flags() -> None:
-    """app_link_team → PR-01 FLAG."""
-    e = _event(
-        event_type="app_link_team",
-        event_category="apps",
-        details={"app_id": "appid-CAFEBABE-1234", "app_name": "Custom Bot"},
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "FLAG"
-    assert any(
-        cr.control_id == "PR-01"
-        and cr.result == "FLAG"
-        and cr.evidence_data.get("signal") == "app_link_team"
-        and cr.evidence_data.get("app_name") == "Custom Bot"
-        for cr in r.control_results
-    )
-
-
-def test_dlp_high_fails_block() -> None:
-    """dlp_match severity=high → PR-04 FAIL, BLOCK."""
-    e = _event(
-        event_type="dlp_match",
-        event_category="reports",
-        details={
-            "dlp_rule_name": "PII Detection",
-            "dlp_severity": "high",
-        },
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "BLOCK"
-    assert any(
-        cr.control_id == "PR-04"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "dlp_match_high"
-        and cr.evidence_data.get("dlp_rule_name") == "PII Detection"
-        for cr in r.control_results
-    )
-
-
-def test_emm_disabled_fails() -> None:
-    """emm_state_change=disabled → PR-02 FAIL, BLOCK."""
-    e = _event(
-        event_type="emm_state_change",
-        event_category="devices",
-        details={"emm_state_change": "disabled"},
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "BLOCK"
-    assert any(
-        cr.control_id == "PR-02"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "emm_disabled"
-        for cr in r.control_results
-    )
-
-
-def test_two_factor_disabled_fails() -> None:
-    """team_policy_changed details.is_two_factor_required=false → PR-01 FAIL."""
-    e = _event(
-        event_type="team_policy_changed",
-        event_category="team_policies",
-        details={"is_two_factor_required": False},
-    )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
-    r = results[0]
-    assert r.decision == "BLOCK"
-    sigs = _signals(r)
-    # Both team_policy_change FAIL and two_factor_disabled FAIL fire.
-    assert "team_policy_change" in sigs
-    assert "two_factor_disabled" in sigs
-    assert any(
-        cr.control_id == "PR-01"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "two_factor_disabled"
-        for cr in r.control_results
-    )
-
-
-def test_bulk_download_synthetic() -> None:
-    """Same actor with > N file_download in 1h → synthetic PR-04 FAIL → BLOCK."""
-    base_time = datetime(2026, 5, 9, 12, 0, 0, tzinfo=timezone.utc)
-    events = []
-    for i in range(55):
-        ts = (base_time + timedelta(seconds=i * 30)).isoformat()
+def test_bulk_download_synthetic_emitted() -> None:
+    """Same actor with > N file_downloads in 1h → synthetic FAIL/BLOCK."""
+    base = datetime(2026, 5, 9, 12, 0, 0, tzinfo=timezone.utc)
+    events: list[dict[str, Any]] = []
+    threshold = 5
+    for i in range(threshold + 2):
+        ts = (base + timedelta(seconds=30 * i)).isoformat()
         events.append(
             _event(
+                event_id=f"ev-{i}",
                 event_type="file_download",
+                actor_tag="user",
                 timestamp=ts,
-                actor={
-                    ".tag": "user",
-                    "email": "bulk@example.com",
-                    "team_member_id": "dbid:bulk-actor-fixed-id-12345678",
-                },
-                assets=[
+            )
+        )
+    importer = DropboxImporter(
+        agent_id="test", bulk_download_threshold=threshold
+    )
+    results = importer.parse_string(json.dumps({"events": events}))
+    syn = [r for r in results if r.action_id.startswith("dropbox-bulk-download-")]
+    assert len(syn) == 1
+    s = syn[0]
+    assert s.decision == "BLOCK"
+    assert _has(
+        s,
+        control_id="PR-04",
+        result_value="FAIL",
+        signal="bulk_download_pattern",
+    )
+
+
+def test_external_recipient_synthetic_emitted() -> None:
+    """Same actor sharing to > N distinct external domains in 1h → synthetic FLAG."""
+    base = datetime(2026, 5, 9, 12, 0, 0, tzinfo=timezone.utc)
+    events: list[dict[str, Any]] = []
+    threshold = 3
+    for i in range(threshold + 2):
+        ts = (base + timedelta(seconds=60 * i)).isoformat()
+        events.append(
+            _event(
+                event_id=f"ev-share-{i}",
+                event_type="shared_link_create",
+                actor_email="alice@team.com",
+                actor_tag="user",
+                timestamp=ts,
+                participants=[
                     {
-                        ".tag": "file",
-                        "path": {
-                            ".tag": "namespace_relative",
-                            "path_length": 30,
-                        },
-                        "file_id": f"id:BULK-{i:08d}",
-                        "extension": "pdf",
-                        "size_bytes": 1024,
+                        "user": {
+                            "email": f"x@vendor{i}.com",
+                            "email_domain": f"@vendor{i}.com",
+                        }
                     }
                 ],
-            )
-        )
-    results = DropboxImporter(
-        agent_id="test", bulk_download_threshold=50
-    ).parse_string(json.dumps({"events": events}))
-    synthetic = [
-        r for r in results if r.action_id.startswith("dropbox-bulk-download-")
-    ]
-    assert len(synthetic) == 1
-    s = synthetic[0]
-    assert s.decision == "BLOCK"
-    assert any(
-        cr.control_id == "PR-04"
-        and cr.result == "FAIL"
-        and cr.evidence_data.get("signal") == "bulk_download_pattern"
-        for cr in s.control_results
-    )
-
-
-def test_cross_team_share_synthetic() -> None:
-    """Same actor with > N external-member adds in 1h → synthetic PR-04 FLAG."""
-    base_time = datetime(2026, 5, 9, 12, 0, 0, tzinfo=timezone.utc)
-    events = []
-    for i in range(15):
-        ts = (base_time + timedelta(seconds=i * 60)).isoformat()
-        events.append(
-            _event(
-                event_type="file_external_member_add",
-                event_category="sharing",
-                timestamp=ts,
-                actor={
-                    ".tag": "user",
-                    "email": "crossteam@example.com",
-                    "team_member_id": "dbid:crossteam-actor-id-aabbccdd",
+                details={
+                    "shared_link_audience": {".tag": "team"},
+                    "shared_link_id": f"slid-{i:08d}",
                 },
-                details={"external_user_email_domain": "@external.com"},
             )
         )
-    results = DropboxImporter(
-        agent_id="test", cross_team_share_threshold=10
-    ).parse_string(json.dumps({"events": events}))
-    synthetic = [
+    importer = DropboxImporter(
+        agent_id="test",
+        primary_workspace_domain="team.com",
+        external_recipient_threshold=threshold,
+    )
+    results = importer.parse_string(json.dumps({"events": events}))
+    syn = [
         r
         for r in results
-        if r.action_id.startswith("dropbox-cross-team-share-")
+        if r.action_id.startswith("dropbox-external-recipient-")
     ]
-    assert len(synthetic) == 1
-    s = synthetic[0]
+    assert len(syn) == 1
+    s = syn[0]
     assert s.decision == "FLAG"
-    assert any(
-        cr.control_id == "PR-04"
-        and cr.result == "FLAG"
-        and cr.evidence_data.get("signal") == "cross_team_share_pattern"
-        for cr in s.control_results
+    assert _has(
+        s,
+        control_id="PR-04",
+        result_value="FLAG",
+        signal="external_recipient_pattern",
     )
 
 
-def test_file_path_not_stored() -> None:
-    """assets[].path raw must NEVER be stored — only path_length."""
-    sensitive_path = "/Acquisitions/Q4-target-list-CONFIDENTIAL.xlsx"
-    # Simulate a record where the raw path is present (defensive — Dropbox
-    # may emit either path object). Confirm raw text is never echoed back.
+# ---------------------------------------------------------------------------
+# Sanitization
+# ---------------------------------------------------------------------------
+
+
+def test_file_name_not_stored() -> None:
+    """asset[].path is NEVER stored — only path_length retained."""
     e = _event(
+        event_id="ev-sanitize",
         event_type="file_download",
-        actor={
-            ".tag": "user",
-            "team_member_id": "dbid:AAA-user-actor-12345678",
-        },
-        assets=[
+        asset=[
             {
                 ".tag": "file",
-                "path": {
-                    ".tag": "namespace_relative",
-                    "path_length": len(sensitive_path),
-                    # NB: explicitly include sensitive raw path; importer
-                    # MUST drop it.
-                    "raw_path": sensitive_path,
-                    "namespace_relative": {"path": sensitive_path},
-                },
-                "file_id": "id:SECRET-FILE-1",
-                "extension": "xlsx",
-                "size_bytes": 1024,
+                "path_length": 95,
+                "file_id": "id:full-id-1234567890abcdef",
+                "display_name_length": 42,
+                "file_size": 1024,
+                "file_extension": "pdf",
             }
         ],
     )
-    results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
-    )
-    assert len(results) == 1
+    importer = DropboxImporter(agent_id="test")
+    results = importer.parse_string(json.dumps({"events": [e]}))
     r = results[0]
-    # Raw path must not appear anywhere in any evidence payload.
-    payload = json.dumps(
-        [cr.evidence_data for cr in r.control_results], default=str
-    )
-    assert sensitive_path not in payload
-    assert "Q4-target-list-CONFIDENTIAL" not in payload
-    # And the redacted asset block must keep path_length.
-    cr = r.control_results[0]
-    assets_red = cr.evidence_data.get("assets")
-    assert isinstance(assets_red, list) and assets_red
-    assert assets_red[0].get("path_length") == len(sensitive_path)
+    ev = r.control_results[0].evidence_data
+    # No path or display_name string fields anywhere.
+    blob = json.dumps(ev, default=str)
+    assert "full-id-1234567890abcdef" not in blob  # only last 8
+    assert ev["asset_path_lengths"] == [95]
+    assert ev["asset_display_name_lengths"] == [42]
+    # file_id_last8 is the trailing 8
+    assert ev["asset_file_ids_last8"] == ["1234567890abcdef"[-8:]]
 
 
 def test_email_domain_only() -> None:
-    """actor.email full + actor.display_name + context.email must NOT be stored verbatim."""
-    full_email = "alice.smith@example.com"
+    """actor.user.email is reduced to @domain only."""
     e = _event(
-        event_type="file_upload",
-        actor={
-            ".tag": "user",
-            "email": full_email,
-            "display_name_length": 12,
-            "team_member_id": "dbid:AAA-user-actor-deadbeef",
-            # NB: defensively include display_name + raw context.email; both
-            # MUST be dropped.
-            "display_name": "Alice Smith",
-        },
-        context={
-            ".tag": "team_member",
-            "team_member_id": "dbid:CTX-actor-id-87654321",
-            "email_length": len(full_email),
-            "email": full_email,
+        event_id="ev-email",
+        event_type="file_preview",
+        actor_email="alice.smith@example.com",
+    )
+    importer = DropboxImporter(agent_id="test")
+    results = importer.parse_string(json.dumps({"events": [e]}))
+    r = results[0]
+    ev = r.control_results[0].evidence_data
+    blob = json.dumps(ev, default=str)
+    assert "alice.smith" not in blob
+    assert ev["actor_email_domain"] == "@example.com"
+
+
+def test_city_not_stored() -> None:
+    """origin.geo_location.city / region are dropped; only country retained."""
+    e = _event(
+        event_id="ev-geo",
+        event_type="file_preview",
+        origin={
+            "geo_location": {
+                "city": "Singapore",
+                "region": "Central Region",
+                "country": "SG",
+                "ip_address": "8.8.8.8",
+            },
+            "access_method": {".tag": "end_user"},
         },
     )
+    importer = DropboxImporter(agent_id="test")
+    results = importer.parse_string(json.dumps({"events": [e]}))
+    r = results[0]
+    ev = r.control_results[0].evidence_data
+    blob = json.dumps(ev, default=str)
+    assert "Singapore" not in blob
+    assert "Central Region" not in blob
+    assert ev["origin_country"] == "SG"
+    # IP must be masked /16
+    assert ev["origin_ip_redacted"] == "8.8.0.0/16"
+
+
+# ---------------------------------------------------------------------------
+# Smoke: alternate envelopes
+# ---------------------------------------------------------------------------
+
+
+def test_data_envelope_supported() -> None:
+    """{"data": [...]} envelope is parsed identically to {"events": [...]}"""
+    e = _event(event_type="file_preview")
     results = DropboxImporter(agent_id="test").parse_string(
-        json.dumps({"events": [e]})
+        json.dumps({"data": [e]})
     )
     assert len(results) == 1
-    r = results[0]
-    cr = r.control_results[0]
-    payload = json.dumps(cr.evidence_data, default=str)
-    # local-part of email and display_name must not appear verbatim
-    assert "alice.smith" not in payload
-    assert "Alice Smith" not in payload
-    assert cr.evidence_data.get("actor_email_domain") == "@example.com"
-    assert cr.evidence_data.get("actor_display_name_length") == 12
-    assert cr.evidence_data.get("context_email_length") == len(full_email)
 
 
-# ---------------------------------------------------------------------------
-# Multi-format ingestion smoke checks (jsonl + data envelope).
-# ---------------------------------------------------------------------------
-
-
-def test_jsonl_ingestion() -> None:
-    """JSONL input — one event per line."""
-    e1 = _event(event_type="file_upload")
-    e2 = _event(
-        event_type="dlp_match",
-        event_category="reports",
-        details={"dlp_rule_name": "PCI", "dlp_severity": "high"},
-    )
-    content = json.dumps(e1) + "\n" + json.dumps(e2) + "\n"
-    results = DropboxImporter(agent_id="test").parse_string(content)
+def test_jsonl_envelope_supported() -> None:
+    """One event per line is parsed identically to envelope shapes."""
+    e1 = _event(event_id="a", event_type="file_preview")
+    e2 = _event(event_id="b", event_type="file_download", actor_tag="user")
+    text = json.dumps(e1) + "\n" + json.dumps(e2)
+    results = DropboxImporter(agent_id="test").parse_string(text)
     assert len(results) == 2
