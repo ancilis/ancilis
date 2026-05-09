@@ -17,6 +17,12 @@ if TYPE_CHECKING:
         AzureOpenAIInvocation,
         AzureOpenAIObservation,
     )
+    from ancilis.adapters.cloudflare_workers_ai import (
+        CloudflareWorkersAIActionProducer,
+        CloudflareWorkersAIAdapter,
+        CloudflareWorkersAIInvocation,
+        CloudflareWorkersAIObservation,
+    )
     from ancilis.adapters.openai_assistants import (
         OpenAIAssistantsActionProducer,
         OpenAIAssistantsAdapter,
@@ -123,6 +129,22 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "AzureOpenAIAdapter": ("ancilis.adapters.azure_openai", "AzureOpenAIAdapter"),
     "AzureOpenAIInvocation": ("ancilis.adapters.azure_openai", "AzureOpenAIInvocation"),
     "AzureOpenAIObservation": ("ancilis.adapters.azure_openai", "AzureOpenAIObservation"),
+    "CloudflareWorkersAIActionProducer": (
+        "ancilis.adapters.cloudflare_workers_ai",
+        "CloudflareWorkersAIActionProducer",
+    ),
+    "CloudflareWorkersAIAdapter": (
+        "ancilis.adapters.cloudflare_workers_ai",
+        "CloudflareWorkersAIAdapter",
+    ),
+    "CloudflareWorkersAIInvocation": (
+        "ancilis.adapters.cloudflare_workers_ai",
+        "CloudflareWorkersAIInvocation",
+    ),
+    "CloudflareWorkersAIObservation": (
+        "ancilis.adapters.cloudflare_workers_ai",
+        "CloudflareWorkersAIObservation",
+    ),
     "BaselineManager": ("ancilis.baselines", "BaselineManager"),
     "BedrockActionProducer": ("ancilis.adapters.bedrock", "BedrockActionProducer"),
     "BedrockAdapter": ("ancilis.adapters.bedrock", "BedrockAdapter"),

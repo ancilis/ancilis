@@ -30,6 +30,12 @@ from ancilis.adapters.azure_openai import (
     AzureOpenAIInvocation,
     AzureOpenAIObservation,
 )
+from ancilis.adapters.cloudflare_workers_ai import (
+    CloudflareWorkersAIActionProducer,
+    CloudflareWorkersAIAdapter,
+    CloudflareWorkersAIInvocation,
+    CloudflareWorkersAIObservation,
+)
 from ancilis.adapters.vertex_ai import (
     VertexAIActionProducer,
     VertexAIAdapter,
@@ -64,6 +70,10 @@ __all__ = [
     "AzureOpenAIAdapter",
     "AzureOpenAIInvocation",
     "AzureOpenAIObservation",
+    "CloudflareWorkersAIActionProducer",
+    "CloudflareWorkersAIAdapter",
+    "CloudflareWorkersAIInvocation",
+    "CloudflareWorkersAIObservation",
     "VertexAIActionProducer",
     "VertexAIAdapter",
     "VertexAIInvocation",
