@@ -36,6 +36,12 @@ from ancilis.adapters.cloudflare_workers_ai import (
     CloudflareWorkersAIInvocation,
     CloudflareWorkersAIObservation,
 )
+from ancilis.adapters.huggingface import (
+    HuggingFaceActionProducer,
+    HuggingFaceAdapter,
+    HuggingFaceInvocation,
+    HuggingFaceObservation,
+)
 from ancilis.adapters.vertex_ai import (
     VertexAIActionProducer,
     VertexAIAdapter,
@@ -74,6 +80,10 @@ __all__ = [
     "CloudflareWorkersAIAdapter",
     "CloudflareWorkersAIInvocation",
     "CloudflareWorkersAIObservation",
+    "HuggingFaceActionProducer",
+    "HuggingFaceAdapter",
+    "HuggingFaceInvocation",
+    "HuggingFaceObservation",
     "VertexAIActionProducer",
     "VertexAIAdapter",
     "VertexAIInvocation",

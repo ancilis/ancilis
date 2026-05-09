@@ -23,6 +23,12 @@ if TYPE_CHECKING:
         CloudflareWorkersAIInvocation,
         CloudflareWorkersAIObservation,
     )
+    from ancilis.adapters.huggingface import (
+        HuggingFaceActionProducer,
+        HuggingFaceAdapter,
+        HuggingFaceInvocation,
+        HuggingFaceObservation,
+    )
     from ancilis.adapters.openai_assistants import (
         OpenAIAssistantsActionProducer,
         OpenAIAssistantsAdapter,
@@ -144,6 +150,22 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "CloudflareWorkersAIObservation": (
         "ancilis.adapters.cloudflare_workers_ai",
         "CloudflareWorkersAIObservation",
+    ),
+    "HuggingFaceActionProducer": (
+        "ancilis.adapters.huggingface",
+        "HuggingFaceActionProducer",
+    ),
+    "HuggingFaceAdapter": (
+        "ancilis.adapters.huggingface",
+        "HuggingFaceAdapter",
+    ),
+    "HuggingFaceInvocation": (
+        "ancilis.adapters.huggingface",
+        "HuggingFaceInvocation",
+    ),
+    "HuggingFaceObservation": (
+        "ancilis.adapters.huggingface",
+        "HuggingFaceObservation",
     ),
     "BaselineManager": ("ancilis.baselines", "BaselineManager"),
     "BedrockActionProducer": ("ancilis.adapters.bedrock", "BedrockActionProducer"),
