@@ -19,6 +19,7 @@ from ancilis.importers.helicone import HeliconeImporter
 from ancilis.importers.honeycomb import HoneycombImporter
 from ancilis.importers.intercom import IntercomImporter
 from ancilis.importers.jira import JiraImporter
+from ancilis.importers.kubernetes import KubernetesAuditImporter
 from ancilis.importers.langfuse import LangfuseImporter
 from ancilis.importers.langsmith import LangSmithImporter
 from ancilis.importers.linear import LinearImporter
@@ -26,6 +27,7 @@ from ancilis.importers.litellm import LiteLLMImporter
 from ancilis.importers.logfire import LogfireImporter
 from ancilis.importers.mcp_registry import McpRegistryImporter
 from ancilis.importers.milvus import MilvusImporter
+from ancilis.importers.mlflow import MLflowImporter
 from ancilis.importers.n8n import N8nImporter
 from ancilis.importers.notion import NotionImporter
 from ancilis.importers.openrouter import OpenRouterImporter
@@ -65,6 +67,7 @@ __all__ = [
     "HoneycombImporter",
     "IntercomImporter",
     "JiraImporter",
+    "KubernetesAuditImporter",
     "LangfuseImporter",
     "LangSmithImporter",
     "LinearImporter",
@@ -72,6 +75,7 @@ __all__ = [
     "LogfireImporter",
     "McpRegistryImporter",
     "MilvusImporter",
+    "MLflowImporter",
     "N8nImporter",
     "NotionImporter",
     "OpenRouterImporter",
