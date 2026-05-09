@@ -5,6 +5,12 @@ from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ancilis.adapters.anthropic import (
+        AnthropicActionProducer,
+        AnthropicAdapter,
+        AnthropicInvocation,
+        AnthropicObservation,
+    )
     from ancilis.adapters.azure_openai import (
         AzureOpenAIActionProducer,
         AzureOpenAIAdapter,
@@ -91,6 +97,10 @@ except PackageNotFoundError:
 _EXPORTS: dict[str, tuple[str, str]] = {
     "ActionProducer": ("ancilis.producers.protocol", "ActionProducer"),
     "AncilisMiddleware": ("ancilis.middleware.middleware", "AncilisMiddleware"),
+    "AnthropicActionProducer": ("ancilis.adapters.anthropic", "AnthropicActionProducer"),
+    "AnthropicAdapter": ("ancilis.adapters.anthropic", "AnthropicAdapter"),
+    "AnthropicInvocation": ("ancilis.adapters.anthropic", "AnthropicInvocation"),
+    "AnthropicObservation": ("ancilis.adapters.anthropic", "AnthropicObservation"),
     "AzureOpenAIActionProducer": ("ancilis.adapters.azure_openai", "AzureOpenAIActionProducer"),
     "AzureOpenAIAdapter": ("ancilis.adapters.azure_openai", "AzureOpenAIAdapter"),
     "AzureOpenAIInvocation": ("ancilis.adapters.azure_openai", "AzureOpenAIInvocation"),

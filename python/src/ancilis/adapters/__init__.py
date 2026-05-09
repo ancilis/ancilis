@@ -1,5 +1,11 @@
 """Framework and provider adapters for Ancilis action production."""
 
+from ancilis.adapters.anthropic import (
+    AnthropicActionProducer,
+    AnthropicAdapter,
+    AnthropicInvocation,
+    AnthropicObservation,
+)
 from ancilis.adapters.bedrock import (
     BedrockActionProducer,
     BedrockAdapter,
@@ -20,6 +26,10 @@ from ancilis.adapters.vertex_ai import (
 )
 
 __all__ = [
+    "AnthropicActionProducer",
+    "AnthropicAdapter",
+    "AnthropicInvocation",
+    "AnthropicObservation",
     "BedrockActionProducer",
     "BedrockAdapter",
     "BedrockInvocation",
