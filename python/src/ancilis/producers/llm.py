@@ -321,3 +321,74 @@ class GeminiActionProducer(LLMActionProducer):
                 if k not in {"model", "contents", "system_instruction", "tools", "config"}
             },
         )
+
+
+class MistralActionProducer(LLMActionProducer):
+    """Producer for the Mistral La Plateforme SDK (``mistralai``).
+
+    Mistral's ``client.chat.complete(model, messages, ...)`` shape mirrors
+    OpenAI/Anthropic, so the base extractor covers it.
+    """
+
+    provider = "mistral"
+
+
+class CohereActionProducer(LLMActionProducer):
+    """Producer for the Cohere SDK.
+
+    Cohere's chat API uses ``message`` (single string) and ``chat_history``
+    (list of role/text dicts). This extractor folds both into ``messages``
+    so downstream evaluators see the same shape as other providers.
+    """
+
+    provider = "cohere"
+
+    def _extract_invocation(
+        self, kwargs: Mapping[str, Any], *, agent_name: str
+    ) -> LLMInvocation:
+        messages = list(kwargs.get("messages") or [])
+        if not messages:
+            history = kwargs.get("chat_history") or []
+            if isinstance(history, Iterable):
+                messages = list(history)
+            current = kwargs.get("message")
+            if current is not None:
+                messages.append({"role": "user", "content": current})
+        return LLMInvocation(
+            model=str(kwargs.get("model") or "unknown-model"),
+            agent_name=agent_name,
+            messages=messages,
+            system=kwargs.get("preamble") or kwargs.get("system"),
+            tools=list(kwargs.get("tools") or []) or None,
+            metadata={
+                k: v
+                for k, v in kwargs.items()
+                if k
+                not in {
+                    "model",
+                    "messages",
+                    "message",
+                    "chat_history",
+                    "preamble",
+                    "system",
+                    "tools",
+                }
+            },
+        )
+
+
+class XAIActionProducer(LLMActionProducer):
+    """Producer for the xAI Grok API.
+
+    xAI exposes an OpenAI-compatible chat API, so the extractor uses the
+    OpenAI-style ``messages`` / ``input`` normalization.
+    """
+
+    provider = "xai"
+
+    def _extract_invocation(
+        self, kwargs: Mapping[str, Any], *, agent_name: str
+    ) -> LLMInvocation:
+        # Reuse OpenAI's input/messages normalization since xAI's HTTP shape
+        # is OpenAI-compatible.
+        return OpenAIActionProducer._extract_invocation(self, kwargs, agent_name=agent_name)

@@ -28,6 +28,7 @@ __all__ = [
     "CLIActionProducer",
     "CLIExecutionResult",
     "CLIInvocation",
+    "CohereActionProducer",
     "CrewAIActionProducer",
     "CrewAIEvent",
     "CrewAIObservation",
@@ -45,12 +46,17 @@ __all__ = [
     "LLMInvocation",
     "LLMObservation",
     "MCPActionProducer",
+    "MistralActionProducer",
     "OpenAIActionProducer",
     "ProducerType",
     "RuntimeProducerSelection",
+    "SemanticKernelActionProducer",
+    "SemanticKernelEvent",
+    "SemanticKernelObservation",
     "ToolActionProducer",
     "ToolExecutionResult",
     "ToolInvocation",
+    "XAIActionProducer",
     "evaluate_and_execute",
     "resolve_runtime_producers",
     "tool",
@@ -61,12 +67,15 @@ __all__ = [
 
 _LLM_EXPORTS = {
     "AnthropicActionProducer",
+    "CohereActionProducer",
     "GeminiActionProducer",
     "LLMActionProducer",
     "LLMExecutionResult",
     "LLMInvocation",
     "LLMObservation",
+    "MistralActionProducer",
     "OpenAIActionProducer",
+    "XAIActionProducer",
 }
 
 _BEDROCK_EXPORTS = {
@@ -94,6 +103,12 @@ _AUTOGEN_EXPORTS = {
     "AutoGenActionProducer",
     "AutoGenEvent",
     "AutoGenObservation",
+}
+
+_SEMANTIC_KERNEL_EXPORTS = {
+    "SemanticKernelActionProducer",
+    "SemanticKernelEvent",
+    "SemanticKernelObservation",
 }
 
 
@@ -127,6 +142,11 @@ def __getattr__(name: str) -> object:
 
         autogen = import_module("ancilis.producers.autogen")
         return getattr(autogen, name)
+    if name in _SEMANTIC_KERNEL_EXPORTS:
+        from importlib import import_module
+
+        sk = import_module("ancilis.producers.semantic_kernel")
+        return getattr(sk, name)
     if name in {
         "RuntimeProducerSelection",
         "resolve_runtime_producers",
