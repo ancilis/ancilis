@@ -3,12 +3,16 @@
 from ancilis.importers.auth0 import Auth0Importer
 from ancilis.importers.aws_cloudtrail import AwsCloudTrailImporter
 from ancilis.importers.aws_s3_access import AwsS3AccessImporter
+from ancilis.importers.bigquery import BigQueryImporter
+from ancilis.importers.box import BoxImporter
 from ancilis.importers.braintrust import BraintrustImporter
 from ancilis.importers.browserbase import BrowserbaseImporter
 from ancilis.importers.chroma import ChromaImporter
 from ancilis.importers.composio import ComposioImporter
 from ancilis.importers.confluence import ConfluenceImporter
+from ancilis.importers.crowdstrike import CrowdStrikeImporter
 from ancilis.importers.cyclonedx import CycloneDxImporter
+from ancilis.importers.databricks import DatabricksImporter
 from ancilis.importers.datadog_llm import DatadogLLMImporter
 from ancilis.importers.deepgram import DeepgramImporter
 from ancilis.importers.elasticsearch import ElasticsearchImporter
@@ -51,6 +55,7 @@ from ancilis.importers.snowflake import SnowflakeImporter
 from ancilis.importers.snyk import SnykImporter
 from ancilis.importers.splunk import SplunkImporter
 from ancilis.importers.stripe import StripeImporter
+from ancilis.importers.tavily import TavilyImporter
 from ancilis.importers.twilio import TwilioImporter
 from ancilis.importers.vercel import VercelImporter
 from ancilis.importers.wandb_models import WandbModelsImporter
@@ -63,12 +68,16 @@ __all__ = [
     "Auth0Importer",
     "AwsCloudTrailImporter",
     "AwsS3AccessImporter",
+    "BigQueryImporter",
+    "BoxImporter",
     "BraintrustImporter",
     "BrowserbaseImporter",
     "ChromaImporter",
     "ComposioImporter",
     "ConfluenceImporter",
+    "CrowdStrikeImporter",
     "CycloneDxImporter",
+    "DatabricksImporter",
     "DatadogLLMImporter",
     "DeepgramImporter",
     "ElasticsearchImporter",
@@ -111,6 +120,7 @@ __all__ = [
     "SnykImporter",
     "SplunkImporter",
     "StripeImporter",
+    "TavilyImporter",
     "TwilioImporter",
     "VercelImporter",
     "WandbModelsImporter",
