@@ -8,6 +8,24 @@ The project follows a conservative pre-1.0 release posture:
 - Minor releases may still include breaking changes when required for correctness.
 - Patch releases should stay backward-conscious and focus on regressions, packaging, or security fixes.
 
+## [Unreleased]
+
+### Added
+- **15 net-new SDK producers** covering the highest-leverage day-one runtime evidence gaps for the 2026 AI agent ecosystem:
+  - **Direct LLM provider SDKs (10):** `AnthropicActionProducer`, `OpenAIActionProducer` (chat completions + responses APIs), `GeminiActionProducer` (google-genai), `MistralActionProducer`, `CohereActionProducer` (folds `message`/`chat_history`/`preamble` into unified messages), `XAIActionProducer`, plus four OpenAI-compatible serverless inference subclasses: `GroqActionProducer`, `TogetherActionProducer`, `FireworksActionProducer`, `DeepSeekActionProducer`.
+  - **Cloud LLM gateway (1):** `BedrockActionProducer` for AWS Bedrock — Python parity with the existing TypeScript `BedrockActionProducer`, closing the cross-language drift. Covers `InvokeModel` and `InvokeModelWithResponseStream` with model-family detection, inference-profile ARN handling, and basic token-usage extraction.
+  - **2026 top-5 agent frameworks (4):** `LangChainCallbackHandler` (drop-in `BaseCallbackHandler` for any Runnable/Chain/LLM; covers LangGraph via the shared callback bus), `CrewAIActionProducer` (step/task/crew callback factories), `AutoGenActionProducer` (`process_message_before_send` + `process_last_received_message` hooks with `attach()` helper that auto-wires against `ConversableAgent`-shaped objects), `SemanticKernelActionProducer` (filters for `function_invocation`, `prompt_rendering`, `auto_function_invocation`).
+- **`ancilis.producers.auto`** convenience layer:
+  - `auto_register(config, engine)` instantiates one producer per upstream SDK detected in the environment via `importlib.util.find_spec` (no actual imports, no side effects). Supports `include=` / `exclude=` filters.
+  - `detect_installed_sdks()` returns `{provider: present?}` for diagnostics.
+  - `installed_provider_slugs()` returns just the present provider slugs.
+- All new producers are duck-typed against their upstream SDKs — installation is not required for the producer module to load. Producer type is `FRAMEWORK` for all new producers, matching the existing TypeScript `BedrockActionProducer` precedent.
+- Tool-name convention extends consistently: `llm:{provider}:{model}` for direct LLM SDKs, `aws-bedrock:{operation}` for Bedrock, `{framework}:{kind}:{name}` for framework producers. Allowlists in `ancilis.yaml` reference these names directly.
+- 137 new tests across 7 test modules. Full Python suite at 1584 tests passing.
+
+### Documentation
+- README: new "LLM SDKs and agent frameworks" section with auto-register example, explicit-wiring example, LangChain handler example, and supported-producers reference table.
+
 ## [0.1.0] - 2026-04-02
 
 ### Added
