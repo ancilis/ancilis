@@ -6,6 +6,12 @@ from ancilis.adapters.anthropic import (
     AnthropicInvocation,
     AnthropicObservation,
 )
+from ancilis.adapters.openai_assistants import (
+    OpenAIAssistantsActionProducer,
+    OpenAIAssistantsAdapter,
+    OpenAIAssistantsInvocation,
+    OpenAIAssistantsObservation,
+)
 from ancilis.adapters.bedrock import (
     BedrockActionProducer,
     BedrockAdapter,
@@ -24,12 +30,22 @@ from ancilis.adapters.vertex_ai import (
     VertexAIInvocation,
     VertexAIObservation,
 )
+from ancilis.adapters.replicate import (
+    ReplicateActionProducer,
+    ReplicateAdapter,
+    ReplicateInvocation,
+    ReplicateObservation,
+)
 
 __all__ = [
     "AnthropicActionProducer",
     "AnthropicAdapter",
     "AnthropicInvocation",
     "AnthropicObservation",
+    "OpenAIAssistantsActionProducer",
+    "OpenAIAssistantsAdapter",
+    "OpenAIAssistantsInvocation",
+    "OpenAIAssistantsObservation",
     "BedrockActionProducer",
     "BedrockAdapter",
     "BedrockInvocation",
@@ -42,4 +58,8 @@ __all__ = [
     "VertexAIAdapter",
     "VertexAIInvocation",
     "VertexAIObservation",
+    "ReplicateActionProducer",
+    "ReplicateAdapter",
+    "ReplicateInvocation",
+    "ReplicateObservation",
 ]

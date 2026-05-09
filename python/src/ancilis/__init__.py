@@ -17,6 +17,12 @@ if TYPE_CHECKING:
         AzureOpenAIInvocation,
         AzureOpenAIObservation,
     )
+    from ancilis.adapters.openai_assistants import (
+        OpenAIAssistantsActionProducer,
+        OpenAIAssistantsAdapter,
+        OpenAIAssistantsInvocation,
+        OpenAIAssistantsObservation,
+    )
     from ancilis.adapters.bedrock import (
         BedrockActionProducer,
         BedrockAdapter,
@@ -28,6 +34,12 @@ if TYPE_CHECKING:
         VertexAIAdapter,
         VertexAIInvocation,
         VertexAIObservation,
+    )
+    from ancilis.adapters.replicate import (
+        ReplicateActionProducer,
+        ReplicateAdapter,
+        ReplicateInvocation,
+        ReplicateObservation,
     )
     from ancilis.baselines import BaselineManager, DriftReport
     from ancilis.config import load_config
@@ -110,10 +122,30 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "BedrockAdapter": ("ancilis.adapters.bedrock", "BedrockAdapter"),
     "BedrockInvocation": ("ancilis.adapters.bedrock", "BedrockInvocation"),
     "BedrockObservation": ("ancilis.adapters.bedrock", "BedrockObservation"),
+    "OpenAIAssistantsActionProducer": (
+        "ancilis.adapters.openai_assistants",
+        "OpenAIAssistantsActionProducer",
+    ),
+    "OpenAIAssistantsAdapter": (
+        "ancilis.adapters.openai_assistants",
+        "OpenAIAssistantsAdapter",
+    ),
+    "OpenAIAssistantsInvocation": (
+        "ancilis.adapters.openai_assistants",
+        "OpenAIAssistantsInvocation",
+    ),
+    "OpenAIAssistantsObservation": (
+        "ancilis.adapters.openai_assistants",
+        "OpenAIAssistantsObservation",
+    ),
     "VertexAIActionProducer": ("ancilis.adapters.vertex_ai", "VertexAIActionProducer"),
     "VertexAIAdapter": ("ancilis.adapters.vertex_ai", "VertexAIAdapter"),
     "VertexAIInvocation": ("ancilis.adapters.vertex_ai", "VertexAIInvocation"),
     "VertexAIObservation": ("ancilis.adapters.vertex_ai", "VertexAIObservation"),
+    "ReplicateActionProducer": ("ancilis.adapters.replicate", "ReplicateActionProducer"),
+    "ReplicateAdapter": ("ancilis.adapters.replicate", "ReplicateAdapter"),
+    "ReplicateInvocation": ("ancilis.adapters.replicate", "ReplicateInvocation"),
+    "ReplicateObservation": ("ancilis.adapters.replicate", "ReplicateObservation"),
     "BlockedActionError": ("ancilis.producers.tool", "BlockedActionError"),
     "DependencyScanner": ("ancilis.deps.scanner", "DependencyScanner"),
     "DriftReport": ("ancilis.baselines", "DriftReport"),
