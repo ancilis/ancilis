@@ -41,3 +41,24 @@ export type { LLMInvocation, LLMObservation, LLMExecutionResult } from "./llm.js
 
 export { LangChainActionProducer, LangChainCallbackHandler } from "./langchain.js";
 export type { LangChainEvent, LangChainEventKind, LangChainObservation } from "./langchain.js";
+
+export { CrewAIActionProducer } from "./crewai.js";
+export type { CrewAIEvent, CrewAIEventKind, CrewAIObservation } from "./crewai.js";
+
+export { AutoGenActionProducer } from "./autogen.js";
+export type { AutoGenEvent, AutoGenEventKind, AutoGenObservation } from "./autogen.js";
+
+export { SemanticKernelActionProducer } from "./semantic_kernel.js";
+export type {
+  SemanticKernelEvent,
+  SemanticKernelEventKind,
+  SemanticKernelObservation,
+  FilterFn,
+} from "./semantic_kernel.js";
+
+export {
+  autoRegister,
+  detectInstalledSdks,
+  installedProviderSlugs,
+} from "./auto.js";
+export type { AutoRegisterOptions } from "./auto.js";
