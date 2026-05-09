@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import uuid
 from typing import Any
 
 from ancilis.config import ResolvedConfig
@@ -24,7 +25,13 @@ class MCPActionProducer:
     def __init__(self, config: ResolvedConfig, registry: ToolRegistry) -> None:
         self._config = config
         self._registry = registry
+        self._session_id: str = str(uuid.uuid4())
         record_adapter_used("mcp")
+
+    @property
+    def session_id(self) -> str:
+        """Unique identifier for this producer instance (one per agent run)."""
+        return self._session_id
 
     @property
     def producer_type(self) -> ProducerType:
@@ -43,7 +50,9 @@ class MCPActionProducer:
         name: str = raw_invocation["name"]
         arguments: dict[str, Any] | None = raw_invocation.get("arguments")
 
-        action = build_action(name, arguments, self._config, self._registry)
+        action = build_action(
+            name, arguments, self._config, self._registry, session_id=self._session_id
+        )
         action.producer_type = self.producer_type.value
         action.producer_version = self.producer_version
         return action

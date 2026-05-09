@@ -187,6 +187,7 @@ class CrewAIActionProducer:
             context=ActionContext(
                 data_classifications=dc_codes,
                 active_overlays=list(self._config.active_overlays.keys()),
+                session_id=self._session_id,
             ),
             producer_type=self.producer_type.value,
             producer_version=self.producer_version,

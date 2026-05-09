@@ -384,6 +384,22 @@ class TestExecuteAndWrap:
         b, _ = _make(AnthropicActionProducer)
         assert a.session_id != b.session_id
 
+    def test_session_id_propagates_to_action_and_evidence(self) -> None:
+        """Regression: producer.session_id must reach Action.context.session_id
+        so evidence.get_summary(session_id=...) can filter to a single run."""
+        producer, store = _make(AnthropicActionProducer)
+        observation = producer.observe(
+            LLMInvocation(model="claude-sonnet-4-6", agent_name="llm-agent")
+        )
+        # Action carries the producer's session_id in its context.
+        assert observation.action.context.session_id == producer.session_id
+        # And the evidence store can look up by that session_id.
+        filtered = store.get_summary(session_id=producer.session_id)
+        assert filtered["total_evaluations"] == 1
+        # A different (random) session_id finds nothing.
+        empty = store.get_summary(session_id="nonexistent-session-id")
+        assert empty["total_evaluations"] == 0
+
 
 class TestExportsAndLazyImport:
     def test_lazy_re_export_from_producers_package(self) -> None:

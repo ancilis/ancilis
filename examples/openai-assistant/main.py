@@ -127,8 +127,8 @@ for question in CONVERSATION:
     print()
 
 
-# --- Evidence summary ---
-summary = evidence.get_summary()
+# --- Evidence summary (filtered to this producer's run) ---
+summary = evidence.get_summary(session_id=producer.session_id)
 print("=== Evidence summary ===")
 print(f"  Records:    {summary['total_evaluations']}")
 print(f"  Decisions:  {summary['decisions']}")
