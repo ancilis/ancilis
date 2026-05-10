@@ -172,6 +172,77 @@ const middleware = new AncilisMiddleware(config, options);
 server.use(middleware.handler());
 ```
 
+### LLM SDK producers
+
+Direct LLM provider producers wrap the SDK call surface. Same shape as `HTTPActionProducer` (observe-first, optional enforce, `wrapCreate()` helper). Duck-typed against the upstream SDK — no hard import.
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+import { AnthropicActionProducer } from "ancilis";
+
+const producer = new AnthropicActionProducer(config, engine, undefined, store);
+const client = new Anthropic();
+
+const wrapped = producer.wrapCreate(
+  (kwargs) => client.messages.create(kwargs as Anthropic.Messages.MessageCreateParams),
+  "support-bot",
+);
+
+const result = await wrapped({
+  model: "claude-sonnet-4-6",
+  messages: [{ role: "user", content: "..." }],
+  max_tokens: 1024,
+});
+// result.response is the SDK response; result.evaluation is the policy decision
+```
+
+Available subclasses:
+- `AnthropicActionProducer`, `OpenAIActionProducer` (covers both `chat.completions.create` and `responses.create`), `GeminiActionProducer`
+- `MistralActionProducer`, `CohereActionProducer`, `XAIActionProducer`
+- `GroqActionProducer`, `TogetherActionProducer`, `FireworksActionProducer`, `DeepSeekActionProducer` (OpenAI-compatible inference platforms)
+
+Tool name format: `llm:{provider}:{model}`.
+
+### Agent framework producers
+
+| Producer | Framework | Wiring |
+|----------|-----------|--------|
+| `LangChainCallbackHandler` | LangChain.js / LangGraph | Pass into any Runnable/Chain via `callbacks=[handler]` |
+| `CrewAIActionProducer` | CrewAI | `stepCallback()` / `taskCallback()` / `crewCallback()` factories |
+| `AutoGenActionProducer` | AutoGen / AG2 | `attach(agent)` auto-wires `process_message_before_send` + `process_last_received_message` hooks |
+| `SemanticKernelActionProducer` | Microsoft Semantic Kernel | `functionInvocationFilter()` / `promptRenderingFilter()` / `autoFunctionInvocationFilter()` factories |
+
+```typescript
+import { LangChainActionProducer, LangChainCallbackHandler } from "ancilis";
+
+const producer = new LangChainActionProducer(config, engine, undefined, store);
+const handler = new LangChainCallbackHandler(producer);
+
+// Drop into any LangChain Runnable
+const llm = new ChatAnthropic({ callbacks: [handler] });
+```
+
+### Auto-detection
+
+`autoRegister(config, engine)` instantiates one producer per upstream npm package detected in the current environment via `createRequire(import.meta.url).resolve()` — no side effects.
+
+```typescript
+import { autoRegister, detectInstalledSdks, installedProviderSlugs } from "ancilis";
+
+const producers = autoRegister(config, engine);
+// producers = { anthropic: AnthropicActionProducer, openai: OpenAIActionProducer, langchain: ... }
+
+// Diagnostics:
+detectInstalledSdks();    // { anthropic: true, openai: false, langchain: true, ... }
+installedProviderSlugs(); // ["anthropic", "langchain"]
+
+// Filters:
+autoRegister(config, engine, { include: ["anthropic", "openai"] });
+autoRegister(config, engine, { exclude: ["deepseek"] });
+```
+
+The detector table covers `@anthropic-ai/sdk`, `openai`, `@google/genai` / `@google/generative-ai`, `@mistralai/mistralai`, `cohere-ai`, `groq-sdk`, `together-ai`, `fireworks-ai`, `@aws-sdk/client-bedrock-runtime` / `aws-sdk`, `@langchain/core` / `langchain`, `crewai`, `autogen`, and `@semantic-kernel/typescript` / `@microsoft/semantic-kernel`.
+
 ---
 
 ## Evidence Store

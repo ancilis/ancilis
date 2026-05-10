@@ -11,6 +11,23 @@ Producers translate protocol-specific invocations into Action objects that the e
 | `CLIActionProducer` | Shell commands | Wrapping subprocess execution |
 | `HTTPActionProducer` | HTTP requests | Wrapping explicit HTTP/API calls |
 | `BedrockActionProducer` | AWS Bedrock Runtime envelopes | Normalizing boto3-style Bedrock calls |
+| `AnthropicActionProducer` | Anthropic SDK | Wrapping `messages.create` calls |
+| `OpenAIActionProducer` | OpenAI SDK | Wrapping `chat.completions.create` and `responses.create` |
+| `GeminiActionProducer` | Google `google-genai` SDK | Wrapping `generate_content` |
+| `MistralActionProducer` | Mistral La Plateforme SDK | Wrapping `chat.complete` |
+| `CohereActionProducer` | Cohere SDK | Wrapping `chat` (folds `message`/`chat_history`/`preamble`) |
+| `XAIActionProducer` | xAI Grok (OpenAI-compatible) | Wrapping Grok chat calls |
+| `GroqActionProducer` | Groq (OpenAI-compatible) | Wrapping Groq chat calls |
+| `TogetherActionProducer` | Together AI (OpenAI-compatible) | Wrapping Together chat calls |
+| `FireworksActionProducer` | Fireworks AI (OpenAI-compatible) | Wrapping Fireworks chat calls |
+| `DeepSeekActionProducer` | DeepSeek (OpenAI-compatible) | Wrapping DeepSeek chat calls |
+| `LangChainCallbackHandler` | LangChain / LangGraph | Drop-in `BaseCallbackHandler` for any Runnable/Chain/LLM |
+| `CrewAIActionProducer` | CrewAI | `step_callback` / `task_callback` / crew-level callbacks |
+| `AutoGenActionProducer` | AutoGen / AG2 | `process_message_before_send` + `process_last_received_message` hooks |
+| `SemanticKernelActionProducer` | Microsoft Semantic Kernel | `function_invocation` / `prompt_rendering` / `auto_function_invocation` filters |
+| `auto_register(config, engine)` | Any installed SDK above | Auto-detect and instantiate one producer per detected SDK |
+
+All producers are duck-typed against their upstream SDKs — no hard import dependency. Tool-name convention is stable: `llm:{provider}:{model}` for direct LLM SDKs, `aws-bedrock:{operation}` for Bedrock, `{framework}:{kind}:{name}` for framework producers. Allowlists in `ancilis.yaml` reference these names directly.
 
 ## ToolActionProducer
 
@@ -213,6 +230,142 @@ print(observation.evaluation.decision)
 ```
 
 The recorded Action includes provider, operation, model id, region, request id, latency, token counts when inferable, and deployment metadata for Bedrock model ids or inference-profile ARNs. Request bodies, response bodies, streamed text chunks, access keys, session tokens, authorization headers, signed headers, and canonical request material are not persisted in the Action payload.
+
+## LLM SDK producers
+
+Direct LLM provider producers wrap the SDK call surface so each invocation becomes an evaluated, evidence-recorded Action. Same shape as `HTTPActionProducer` (observe-first, optional enforce, `wrap_create()` helper).
+
+```python
+from anthropic import Anthropic
+from ancilis.producers import AnthropicActionProducer
+from ancilis import load_config
+from ancilis.engine import Engine
+
+config = load_config()
+producer = AnthropicActionProducer(config=config, engine=Engine(config))
+client = Anthropic()
+
+# Wrap once; every call goes through evaluation
+wrapped = producer.wrap_create(client.messages.create, agent_name="support-bot")
+response = wrapped(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "..."}])
+```
+
+Available subclasses (all importable from `ancilis.producers`):
+
+- `AnthropicActionProducer` — `client.messages.create`
+- `OpenAIActionProducer` — `client.chat.completions.create` and `client.responses.create` (the responses-API `input` field is normalized into the same `messages` shape)
+- `GeminiActionProducer` — `client.models.generate_content` with `config={"system_instruction": ...}` extracted into `system`
+- `MistralActionProducer` — Mistral La Plateforme SDK
+- `CohereActionProducer` — Cohere SDK; `message` + `chat_history` + `preamble` fold into the unified messages list
+- `XAIActionProducer` — xAI Grok (OpenAI-compatible)
+- `GroqActionProducer`, `TogetherActionProducer`, `FireworksActionProducer`, `DeepSeekActionProducer` — OpenAI-compatible serverless inference platforms; thin subclasses that change only the provider slug
+
+Tool name format: `llm:{provider}:{model}` (e.g. `llm:anthropic:claude-sonnet-4-6`, `llm:openai:gpt-4o`). Use these names in `ancilis.yaml` allowlists.
+
+In `enforce` mode, calls to disallowed models raise `BlockedActionError` before the upstream SDK is invoked.
+
+## Agent framework producers
+
+Framework producers attach to the framework's existing callback / hook / filter pipeline so every step the framework executes becomes an Action. None require their upstream package to be installed at import time.
+
+### LangChain / LangGraph
+
+Drop-in `BaseCallbackHandler`-shaped handler. Pass into any Runnable, Chain, or LLM via `callbacks=[handler]`. Same handler covers LangGraph through the shared callback bus.
+
+```python
+from langchain_anthropic import ChatAnthropic
+from ancilis.producers import LangChainActionProducer, LangChainCallbackHandler
+
+producer = LangChainActionProducer(config=config, engine=engine)
+handler = LangChainCallbackHandler(producer)
+llm = ChatAnthropic(callbacks=[handler])
+# Every llm/tool/chain start emits an Action
+```
+
+Tool name format: `langchain:{kind}:{name}` where kind is `llm` / `chat_model` / `tool` / `chain`.
+
+### CrewAI
+
+Three callback factories matching CrewAI's Agent / Task / Crew callback signatures.
+
+```python
+from crewai import Agent, Task, Crew
+from ancilis.producers import CrewAIActionProducer
+
+producer = CrewAIActionProducer(config=config, engine=engine)
+agent = Agent(role="researcher", step_callback=producer.step_callback("researcher"))
+task = Task(description="...", agent=agent, callback=producer.task_callback("research"))
+crew = Crew(agents=[agent], tasks=[task], step_callback=producer.crew_callback("market-research"))
+crew.kickoff()
+```
+
+Tool name format: `crewai:{kind}:{name}` where kind is `step` / `task` / `crew`.
+
+### AutoGen / AG2
+
+Auto-attaches `process_message_before_send` and `process_last_received_message` hooks to a `ConversableAgent`-shaped object. Tries `register_hook` first (newer AG2), then `hook_lists` (older autogen), then bare attribute assignment.
+
+```python
+from autogen import ConversableAgent
+from ancilis.producers import AutoGenActionProducer
+
+producer = AutoGenActionProducer(config=config, engine=engine)
+assistant = ConversableAgent("assistant", ...)
+producer.attach(assistant)
+# All assistant sends and receives now emit Actions
+```
+
+Tool name format: `autogen:{kind}:{sender}->{recipient}`.
+
+### Microsoft Semantic Kernel
+
+Three filter factories — one per Semantic Kernel filter slot. Filters match SK's `async def filter(context, next): await next(context)` signature.
+
+```python
+from semantic_kernel import Kernel
+from ancilis.producers import SemanticKernelActionProducer
+
+producer = SemanticKernelActionProducer(config=config, engine=engine)
+kernel = Kernel()
+kernel.add_filter("function_invocation", producer.function_invocation_filter())
+kernel.add_filter("prompt_rendering", producer.prompt_rendering_filter())
+kernel.add_filter("auto_function_invocation", producer.auto_function_invocation_filter())
+```
+
+Tool name format: `semantic-kernel:{kind}:{plugin_name}.{function_name}`.
+
+## Auto-detection
+
+`ancilis.producers.auto` removes per-SDK boilerplate. `auto_register(config, engine)` instantiates one producer per upstream SDK detected in the current environment via `importlib.util.find_spec` (no actual imports, no side effects).
+
+```python
+from ancilis import load_config
+from ancilis.engine import Engine
+from ancilis.producers import auto_register
+
+config = load_config()
+engine = Engine(config)
+producers = auto_register(config, engine)
+# producers == {"anthropic": AnthropicActionProducer(...), "openai": OpenAIActionProducer(...), ...}
+```
+
+Filters via `include=` / `exclude=`:
+
+```python
+producers = auto_register(config, engine, include={"anthropic", "openai"})
+producers = auto_register(config, engine, exclude={"deepseek"})
+```
+
+Diagnostics-only helpers:
+
+```python
+from ancilis.producers import detect_installed_sdks, installed_provider_slugs
+
+print(detect_installed_sdks())  # {"anthropic": True, "openai": False, "langchain": True, ...}
+print(installed_provider_slugs())  # ["anthropic", "langchain"]
+```
+
+The detector table covers `anthropic`, `openai`, `gemini` (`google.genai` and `google.generativeai`), `mistral`, `cohere`, `groq`, `together`, `fireworks`, `aws-bedrock` (boto3), `langchain` (`langchain` or `langchain_core`), `crewai`, `autogen` (`autogen`, `autogen_agentchat`, `ag2`), and `semantic-kernel`.
 
 ## Common patterns
 

@@ -20,6 +20,7 @@ from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 from ancilis.producers.protocol import ProducerType
 from ancilis.producers.tool import BlockedActionError
+from ancilis.telemetry import record_adapter_used
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -63,6 +64,7 @@ class HTTPActionProducer:
         self._registry = registry or engine.registry
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
         self._session_id: str = str(uuid.uuid4())
+        record_adapter_used("http")
 
     @property
     def session_id(self) -> str:
@@ -108,7 +110,7 @@ class HTTPActionProducer:
             action_type="api_request",
             tool=ToolInfo(name=tool_name, server=raw_invocation.service_name or urlparse(raw_invocation.url).netloc, description_hash=entry.description_hash if entry else None),
             parameters=ActionParameters(raw=payload, parameter_hash=param_hash),
-            context=ActionContext(data_classifications=dc_codes, active_overlays=list(self._config.active_overlays.keys())),
+            context=ActionContext(data_classifications=dc_codes, active_overlays=list(self._config.active_overlays.keys()), session_id=self._session_id),
             producer_type=self.producer_type.value,
             producer_version=self.producer_version,
         )

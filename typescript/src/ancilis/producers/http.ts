@@ -10,6 +10,7 @@ import type { EvaluationResult } from "../engine/result.js";
 import { EvidenceStore } from "../evidence/store.js";
 import { canonicalJsonStringify } from "../evidence/chain.js";
 import { matchesToolList } from "../engine/tool-matching.js";
+import { recordAdapterUsed } from "../telemetry/index.js";
 import { BlockedActionError } from "./tool.js";
 import { ProducerType } from "./protocol.js";
 
@@ -52,6 +53,7 @@ export class HTTPActionProducer {
     this._engine = engine;
     this._registry = registry ?? engine.registry;
     this._evidenceStore = evidenceStore ?? new EvidenceStore(config);
+    recordAdapterUsed("http");
   }
 
   get producerType(): ProducerType { return ProducerType.HTTP; }
@@ -117,6 +119,7 @@ export class HTTPActionProducer {
       },
       parameters: { raw: payload, parameterHash: paramHash },
       context: {
+        sessionId: this._sessionId,
         dataClassifications: this._buildDcCodes(),
         activeOverlays: [...this._config.activeOverlays.keys()],
       },
