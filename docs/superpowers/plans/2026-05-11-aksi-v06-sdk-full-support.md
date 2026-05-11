@@ -366,7 +366,7 @@ This script is a green gate for each evaluator. A new evaluator is not complete 
 - Create: `typescript/tests/aksi-identifiers.test.ts`
 - Create: `scripts/check_aksi_prefix_discipline.mjs`
 
-- [ ] **Step 1: Add identifier utilities**
+- [x] **Step 1: Add identifier utilities**
 
 Python:
 
@@ -386,7 +386,7 @@ def prefix(control_id: str) -> str:
 
 Mirror in TypeScript.
 
-- [ ] **Step 2: Add unit tests**
+- [x] **Step 2: Add unit tests**
 
 Assert:
 
@@ -397,7 +397,7 @@ Assert:
 - `is_prefixed("AKSI-PR-04") is True`
 - `is_prefixed("PR-04") is False`
 
-- [ ] **Step 3: Add prefix discipline grep**
+- [x] **Step 3: Add prefix discipline grep**
 
 Create a script that fails on raw `AKSI-` or `AKSI_` prefix manipulation outside the identifier modules and static JSON/Markdown assets. Code may contain literal prefixed IDs in test fixtures only when the test is explicitly exercising the identifier boundary.
 
