@@ -21,7 +21,7 @@ Minimum release gate:
 
 ## Platform Files Requiring Updates
 
-Exact files in `/Volumes/MiniAlbus/projects/ancilis-one-shot` that need platform-side changes:
+Exact files in `<platform-repo>` that need platform-side changes:
 
 - `platform/backend/app/models/evidence_record.py`
   Add nullable `framework_version: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)`. NULL represents v0.5 and earlier.
@@ -477,7 +477,7 @@ Decision:
 
 - `AKSI_GRAPH.json` remains a platform artifact for platform graph/readiness experiences.
 - The SDK ships `shared/aksi_version.json`, `shared/controls/*`, `shared/classifications/*`, and `shared/overlays/*` as its canonical package-local surface.
-- If the SDK later needs graph traversal, generate a package-local graph artifact from the same frozen framework SHA during the SDK build. Do not load directly from `/Volumes/MiniAlbus/projects/ancilis-one-shot` at runtime.
+- If the SDK later needs graph traversal, generate a package-local graph artifact from the same frozen framework SHA during the SDK build. Do not load directly from a sibling platform checkout at runtime.
 
 Reasoning:
 

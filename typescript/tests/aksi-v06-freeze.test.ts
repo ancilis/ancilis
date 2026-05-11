@@ -10,7 +10,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, "../..");
 const AKSI_VERSION_PATH = join(REPO_ROOT, "shared", "aksi_version.json");
-const PLATFORM_REPO = "/Volumes/MiniAlbus/projects/ancilis-one-shot";
+const PLATFORM_REPO_ENV = "ANCILIS_PLATFORM_REPO";
+const platformIt = process.env[PLATFORM_REPO_ENV] ? it : it.skip;
 
 interface AksiVersion {
   framework_version: string;
@@ -27,12 +28,18 @@ function loadAksiVersion(): AksiVersion {
   return JSON.parse(readFileSync(AKSI_VERSION_PATH, "utf8")) as AksiVersion;
 }
 
+function platformRepo(): string {
+  const repo = process.env[PLATFORM_REPO_ENV];
+  if (!repo) throw new Error(`${PLATFORM_REPO_ENV} is not set`);
+  return repo;
+}
+
 function git(args: string[]): Buffer {
-  return execFileSync("git", ["-C", PLATFORM_REPO, ...args]);
+  return execFileSync("git", ["-C", platformRepo(), ...args]);
 }
 
 describe("AKSI v0.6 freeze metadata", () => {
-  it("points to an existing platform commit", () => {
+  it("has stable contract fields", () => {
     const metadata = loadAksiVersion();
 
     expect(metadata.framework_version).toBe("0.6");
@@ -40,13 +47,19 @@ describe("AKSI v0.6 freeze metadata", () => {
     expect(metadata.framework_branch).toBe("codex/aksi-production-grade-framework");
     expect(metadata.framework_path).toBe("docs/framework/aksi-framework-master.md");
     expect(metadata.frozen_for_sdk_build).toBe("aksi-v06-sdk-full-support");
+    expect(metadata.framework_commit_sha).toMatch(/^[0-9a-f]{40}$/);
+    expect(metadata.framework_master_sha256).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  platformIt("points to an existing platform commit", () => {
+    const metadata = loadAksiVersion();
 
     expect(() => {
       git(["cat-file", "-e", `${metadata.framework_commit_sha}^{commit}`]);
     }).not.toThrow();
   });
 
-  it("matches the frozen framework master checksum", () => {
+  platformIt("matches the frozen framework master checksum", () => {
     const metadata = loadAksiVersion();
     const content = git([
       "show",
