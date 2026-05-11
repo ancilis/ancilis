@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { relative, resolve, sep } from "node:path";
+import { delimiter, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -9,6 +9,7 @@ const REPO_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const SCAN_ROOTS = [
   "python/src",
   "typescript/src",
+  "shared",
   "python/tests",
   "typescript/tests",
   "scripts",
@@ -45,6 +46,12 @@ function extension(path) {
   return match ? match[1] : "";
 }
 
+function scanRoots() {
+  const rawRoots = process.env.ANCILIS_AKSI_PREFIX_SCAN_ROOTS;
+  if (!rawRoots) return SCAN_ROOTS;
+  return rawRoots.split(delimiter).map(root => root.trim()).filter(Boolean);
+}
+
 function* walk(path) {
   if (!existsSync(path)) return;
   const stat = statSync(path);
@@ -60,8 +67,9 @@ function* walk(path) {
 
 const violations = [];
 
-for (const scanRoot of SCAN_ROOTS) {
-  for (const file of walk(resolve(REPO_ROOT, scanRoot))) {
+for (const scanRoot of scanRoots()) {
+  const rootPath = isAbsolute(scanRoot) ? scanRoot : resolve(REPO_ROOT, scanRoot);
+  for (const file of walk(rootPath)) {
     const rel = normalizePath(file);
     if (ALLOWED_FILES.has(rel)) continue;
     if (!CODE_EXTENSIONS.has(extension(rel))) continue;

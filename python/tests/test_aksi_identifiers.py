@@ -17,6 +17,10 @@ def test_unprefix_accepts_legacy_underscore_namespace() -> None:
     assert unprefix("AKSI_PR-04") == "PR-04"
 
 
+def test_unprefix_only_normalizes_legacy_namespace_at_start() -> None:
+    assert unprefix("LEGACY_AKSI_PR-04") == "LEGACY_AKSI_PR-04"
+
+
 def test_is_prefixed_identifies_product_facing_ids() -> None:
     assert is_prefixed("AKSI-PR-04") is True
     assert is_prefixed("PR-04") is False

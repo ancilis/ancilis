@@ -9,8 +9,9 @@ def is_prefixed(control_id: str) -> bool:
 
 
 def unprefix(control_id: str) -> str:
-    normalized = control_id.replace(AKSI_LEGACY_PREFIX, AKSI_PREFIX, 1)
-    return normalized.removeprefix(AKSI_PREFIX)
+    if control_id.startswith(AKSI_LEGACY_PREFIX):
+        return control_id[len(AKSI_LEGACY_PREFIX) :]
+    return control_id.removeprefix(AKSI_PREFIX)
 
 
 def prefix(control_id: str) -> str:
