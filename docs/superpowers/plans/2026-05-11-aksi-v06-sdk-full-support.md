@@ -14,11 +14,11 @@
 
 Reviewed framework worktree:
 
-`/Volumes/MiniAlbus/projects/ancilis-one-shot/.worktrees/codex-aksi-production-grade-framework`
+`<platform-repo-worktree>`
 
 Reviewed current SDK branch:
 
-`/Users/hellohelloalbus/projects/ancilis`
+`<sdk-repo>`
 
 Graph MCP tools were not exposed in this session, so discovery fell back to local source inspection. Relevant source artifacts:
 
@@ -138,8 +138,8 @@ Docs and examples:
 Run:
 
 ```bash
-test -f /Volumes/MiniAlbus/projects/ancilis-one-shot/.worktrees/codex-aksi-production-grade-framework/docs/framework/aksi-framework-master.md
-rg -n "41-control|41 controls|23 closed data classes|23 classes" /Volumes/MiniAlbus/projects/ancilis-one-shot/.worktrees/codex-aksi-production-grade-framework/docs/framework/aksi-framework-master.md
+test -f <platform-repo-worktree>/docs/framework/aksi-framework-master.md
+rg -n "41-control|41 controls|23 closed data classes|23 classes" <platform-repo-worktree>/docs/framework/aksi-framework-master.md
 ```
 
 Expected: file exists and the master lists 41 controls and 23 data classes.
@@ -149,7 +149,7 @@ Expected: file exists and the master lists 41 controls and 23 data classes.
 Run:
 
 ```bash
-find /Volumes/MiniAlbus/projects/ancilis-one-shot/.worktrees/codex-aksi-production-grade-framework/platform/backend/overlays -maxdepth 1 -name '*.json' | wc -l
+find <platform-repo-worktree>/platform/backend/overlays -maxdepth 1 -name '*.json' | wc -l
 ```
 
 Expected: `35`.
@@ -169,9 +169,9 @@ If any check fails, stop and report to Kevin. Do not continue SDK work.
 After Step 1-3 pass, Kevin must commit the platform worktree changes to a branch. Capture:
 
 ```bash
-git -C /Volumes/MiniAlbus/projects/ancilis-one-shot/.worktrees/codex-aksi-production-grade-framework branch --show-current
-git -C /Volumes/MiniAlbus/projects/ancilis-one-shot/.worktrees/codex-aksi-production-grade-framework rev-parse HEAD
-git -C /Volumes/MiniAlbus/projects/ancilis-one-shot/.worktrees/codex-aksi-production-grade-framework status --short
+git -C <platform-repo-worktree> branch --show-current
+git -C <platform-repo-worktree> rev-parse HEAD
+git -C <platform-repo-worktree> status --short
 ```
 
 Expected: branch name and SHA are available. The platform framework files used for v0.6 are committed. If the relevant files are still uncommitted, stop and ask Kevin for the committed SHA.
@@ -198,7 +198,7 @@ Write:
 Add tests that fail if:
 
 - `shared/aksi_version.json` is missing.
-- `framework_commit_sha` does not exist in `/Volumes/MiniAlbus/projects/ancilis-one-shot`.
+- `framework_commit_sha` does not exist in the optional local checkout identified by `ANCILIS_PLATFORM_REPO`.
 - `framework_path` at that commit cannot be read.
 - The committed master file checksum differs from `framework_master_sha256`.
 - `framework_version` is not `"0.6"`.
