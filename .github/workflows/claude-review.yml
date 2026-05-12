@@ -111,20 +111,36 @@ jobs:
             The `summary` is what gets posted as the formal review body. Make it useful: name what changed, what you checked, why your verdict is what it is.
 
       - name: Submit formal review
-        if: steps.claude.outcome == 'success' && steps.claude.outputs.structured_output != ''
+        # Parse the structured_output in bash so a failed Claude step
+        # (which leaves structured_output empty) doesn't trip the
+        # workflow-template fromJSON() expression evaluator.
+        if: always() && steps.claude.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
-          VERDICT: ${{ fromJSON(steps.claude.outputs.structured_output).verdict }}
-          SUMMARY: ${{ fromJSON(steps.claude.outputs.structured_output).summary }}
+          STRUCTURED_OUTPUT: ${{ steps.claude.outputs.structured_output }}
+          SESSION_ID: ${{ steps.claude.outputs.session_id }}
         run: |
-          # Compose body with attribution and the session id (useful for
-          # auditing what model+turn produced this review).
+          if [ -z "$STRUCTURED_OUTPUT" ]; then
+            echo "No structured output from Claude; nothing to submit."
+            exit 0
+          fi
+
+          # Parse JSON safely with jq.
+          VERDICT=$(echo "$STRUCTURED_OUTPUT" | jq -r '.verdict // empty')
+          SUMMARY=$(echo "$STRUCTURED_OUTPUT" | jq -r '.summary // empty')
+
+          if [ -z "$VERDICT" ] || [ -z "$SUMMARY" ]; then
+            echo "Claude returned malformed structured_output (missing verdict or summary):"
+            echo "$STRUCTURED_OUTPUT"
+            exit 0
+          fi
+
           BODY=$(cat <<BODY_EOF
           $SUMMARY
 
           ---
-          🤖 _Submitted by the Claude reviewer Action. session=\`${{ steps.claude.outputs.session_id }}\`._
+          🤖 _Submitted by the Claude reviewer Action. session=\`$SESSION_ID\`._
           BODY_EOF
           )
 
