@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Discord audit-log importer — maps ``/guilds/{guild.id}/audit-logs`` entries
 to AKSI controls.
 

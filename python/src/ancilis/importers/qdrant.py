@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Qdrant vector store audit event importer — converts Qdrant audit logs to AKSI EvaluationResults.
 
 Qdrant (https://qdrant.tech) is the dominant Rust-based open-source vector

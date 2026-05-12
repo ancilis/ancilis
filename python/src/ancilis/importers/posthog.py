@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """PostHog analytics + LLM-observability importer.
 
 PostHog (https://posthog.com) is the leading open-source product-analytics

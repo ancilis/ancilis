@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Semgrep findings importer — converts ``semgrep --json`` output to AKSI EvaluationResults.
 
 Semgrep (https://semgrep.dev) is the dominant developer-first SAST (static

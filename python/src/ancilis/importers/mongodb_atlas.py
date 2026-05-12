@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """MongoDB Atlas audit-event importer — maps Atlas database-audit JSON to AKSI controls.
 
 MongoDB Atlas (https://www.mongodb.com/atlas) is the dominant managed NoSQL

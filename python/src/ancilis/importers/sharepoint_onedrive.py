@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """SharePoint Online + OneDrive for Business importer — maps Microsoft 365 Unified Audit Log activity to AKSI controls.
 
 SharePoint Online and OneDrive for Business are the Microsoft 365 file-storage

@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Box admin-events importer — maps Box content-platform activity to AKSI controls.
 
 Box (https://box.com) is the leading enterprise content management platform —

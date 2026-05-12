@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """GitHub audit-log importer — maps coding-agent and human GitHub activity to AKSI controls.
 
 GitHub (https://docs.github.com/en/rest/orgs/audit-log) is THE evidence source

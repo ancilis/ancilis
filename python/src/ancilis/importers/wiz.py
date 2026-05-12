@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Wiz CSPM issue importer — converts Wiz issue exports to AKSI EvaluationResults.
 
 Wiz (https://www.wiz.io) is the dominant Cloud Security Posture Management

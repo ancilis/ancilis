@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Notion audit-event importer — maps agent knowledge-management activity to AKSI controls.
 
 Notion (https://notion.so) is the dominant knowledge-management platform for

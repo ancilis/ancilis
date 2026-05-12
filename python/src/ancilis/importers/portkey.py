@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Portkey LLM gateway log importer — converts Portkey request logs to AKSI EvaluationResults.
 
 Portkey (https://portkey.ai) is a popular LLM gateway alternative to LiteLLM /

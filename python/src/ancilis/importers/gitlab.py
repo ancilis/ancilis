@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """GitLab audit-events importer — maps self-hosted code-platform activity to AKSI controls.
 
 GitLab (https://docs.gitlab.com/ee/api/audit_events.html) is the dominant

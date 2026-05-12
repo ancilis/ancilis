@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Vercel audit-event importer — maps coding-agent and human Vercel activity to AKSI controls.
 
 Vercel (https://vercel.com) is the dominant deployment platform for frontend

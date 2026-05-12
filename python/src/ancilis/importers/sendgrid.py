@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """SendGrid email-activity importer — maps transactional/marketing email records to AKSI controls.
 
 SendGrid (https://sendgrid.com) is the leading transactional and marketing

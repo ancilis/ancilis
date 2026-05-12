@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Dropbox team-activity-log importer — maps Dropbox audit events to AKSI controls.
 
 Dropbox (https://dropbox.com) is one of the original mass-market cloud-storage

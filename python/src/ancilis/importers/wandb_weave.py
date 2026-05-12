@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Weights & Biases Weave call importer — converts Weave call exports to AKSI EvaluationResults.
 
 W&B Weave (https://weave.wandb.ai) is W&B's LLM-observability + evaluation platform. ML

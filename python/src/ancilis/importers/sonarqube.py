@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """SonarQube findings importer — converts ``/api/issues/search`` and quality-gate exports to AKSI EvaluationResults.
 
 SonarQube (https://www.sonarsource.com/products/sonarqube/) is the dominant

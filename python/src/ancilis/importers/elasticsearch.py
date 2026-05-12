@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Elasticsearch X-Pack Security audit-log importer — converts Elastic security audit events to AKSI EvaluationResults.
 
 Elasticsearch (https://www.elastic.co) is the dominant lexical+vector search

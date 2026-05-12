@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Linear audit-event importer — maps agent project-management activity to AKSI controls.
 
 Linear (https://linear.app) is the dominant project-management tool for

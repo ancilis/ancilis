@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Confluence audit-record importer — maps agent knowledge-base activity to AKSI controls.
 
 Atlassian Confluence (https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-audit/)

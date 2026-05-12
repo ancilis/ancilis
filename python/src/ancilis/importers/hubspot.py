@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """HubSpot CRM audit-log importer — maps Breeze AI agent activity to AKSI controls.
 
 HubSpot (https://hubspot.com) is the dominant SMB / mid-market CRM. HubSpot

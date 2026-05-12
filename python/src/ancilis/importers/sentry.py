@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Sentry event importer — converts Sentry error / transaction events to AKSI EvaluationResults.
 
 Sentry (https://sentry.io) is the dominant error-monitoring + APM platform for

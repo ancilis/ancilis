@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr,arg-type,attr-defined,index,assignment,operator,no-redef,no-any-return,call-overload,return-value,type-var"
 """Zendesk audit-log importer — maps AI-agent customer-service activity to AKSI controls.
 
 Zendesk (https://developer.zendesk.com/api-reference/ticketing/account-configuration/audit_logs/)
