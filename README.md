@@ -97,6 +97,64 @@ result = producer.execute(["kubectl", "get", "pods", "-n", "production"])
 
 Allowed commands execute normally. Blocked commands are intercepted before the subprocess runs. Every evaluation is evidence-recorded. See [examples/cli-agent/](examples/cli-agent/).
 
+## LLM SDKs and agent frameworks
+
+Ancilis ships producers for every major LLM SDK and the top agent frameworks. Each producer wraps the SDK's call surface so every model invocation, agent step, or framework callback becomes an evaluated, evidence-recorded Action. None of them require their upstream SDK to be installed — the producers are duck-typed.
+
+**Auto-wire whatever's installed in your environment:**
+
+```python
+from ancilis import load_config
+from ancilis.engine import Engine
+from ancilis.producers import auto_register
+
+config = load_config()
+engine = Engine(config)
+producers = auto_register(config, engine)
+# producers == {"anthropic": AnthropicActionProducer(...), "openai": OpenAIActionProducer(...), ...}
+```
+
+`auto_register` detects which upstream SDKs are importable in your environment and instantiates one producer per detected SDK. Use `include=` / `exclude=` to scope.
+
+**Or wire individual producers explicitly:**
+
+```python
+from anthropic import Anthropic
+from ancilis.producers import AnthropicActionProducer
+
+producer = AnthropicActionProducer(config=config, engine=engine)
+client = Anthropic()
+wrapped = producer.wrap_create(client.messages.create, agent_name="support-bot")
+
+# Each call is observed before the request goes out
+response = wrapped(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "..."}])
+```
+
+**LangChain / LangGraph (drop-in callback handler):**
+
+```python
+from langchain_anthropic import ChatAnthropic
+from ancilis.producers import LangChainActionProducer, LangChainCallbackHandler
+
+producer = LangChainActionProducer(config=config, engine=engine)
+handler = LangChainCallbackHandler(producer)
+
+llm = ChatAnthropic(callbacks=[handler])
+# Every llm/tool/chain start emits an Action — works with LangGraph too
+```
+
+**Supported producers:**
+
+| Category | Producers |
+|----------|-----------|
+| LLM provider direct APIs | Anthropic, OpenAI, Gemini, Mistral, Cohere, xAI |
+| OpenAI-compatible inference | Groq, Together, Fireworks, DeepSeek |
+| Cloud LLM gateway | AWS Bedrock |
+| Agent frameworks | LangChain / LangGraph, CrewAI, AutoGen / AG2, Microsoft Semantic Kernel |
+| Protocols | MCP, CLI, HTTP |
+
+Tool-name convention is stable across providers: `llm:{provider}:{model}` for direct LLM SDKs, `aws-bedrock:{operation}` for Bedrock, `{framework}:{kind}:{name}` for framework producers. Allowlists in `ancilis.yaml` use these names directly.
+
 ## Add compliance
 
 One line turns security controls into compliance evidence. Add a certification target to your config:
@@ -137,7 +195,7 @@ Generates a compliance posture report with per-control results, evidence chain i
 ```
 Your agent calls a tool
        ↓
-Producer normalizes the call (MCP, CLI, HTTP, or direct wrapper)
+Producer normalizes the call (MCP, CLI, HTTP, LLM SDK, or framework callback)
        ↓
 Engine evaluates against 26 AKSI security controls
        ↓
@@ -206,7 +264,7 @@ Each level adds one concept. You don't need level 2 to get value from level 1.
 
 ## TypeScript
 
-> Preview — Python is the primary path. TypeScript includes the core engine, evidence store, producers, CLI, and reporting.
+> Preview — Python is the primary path. TypeScript includes the core engine, evidence store, producers, CLI, and reporting, with full parity for the LLM SDK and agent framework producers.
 
 ```bash
 npm install ancilis
@@ -227,6 +285,8 @@ const store = new EvidenceStore(config, { inMemory: true });
 const producer = new ToolActionProducer(config, new Engine(config), undefined, store);
 const result = await producer.execute(readData, "my-agent", ["id-123"], undefined, "read_data");
 ```
+
+LLM SDK + framework producers also ship in the TypeScript package — `AnthropicActionProducer`, `OpenAIActionProducer`, `GeminiActionProducer`, plus `LangChainCallbackHandler`, `CrewAIActionProducer`, `AutoGenActionProducer`, `SemanticKernelActionProducer`, and `autoRegister(config, engine)` for whichever upstream SDKs are installed. Same shape as the Python producers.
 
 ## What's honest
 
