@@ -1,0 +1,121 @@
+{
+  "_version": "1.0.0",
+  "_description": "Microsoft 365 SharePoint Online and OneDrive for Business Unified Audit Log → AKSI control ID mapping. SharePoint and OneDrive (collectively the Microsoft 365 file-storage tier) are the dominant Microsoft cloud-content surfaces for enterprises — used pervasively across regulated and unregulated industries for documents, spreadsheets, presentations, and bulk-data exports. Microsoft 365's Unified Audit Log (Purview / Activity API) emits a unified event stream for both products, distinguished by the workload field (OneDrive vs SharePoint). A single importer covers both. Agents accessing, downloading, syncing, and sharing OneDrive/SharePoint content at scale produce the data-loss-prevention signals that govern Microsoft cloud storage: file access, downloads, full-mailbox/full-library sync, anonymous links (the SharePoint exfil parallel to Box public-unprotected), guest sharing, sensitivity-label changes, tenant sharing-policy changes, site-collection admin grants, site permission changes (anonymous access), DLP rule matches, and malware detections. Operation drives the primary control. Application/ServicePrincipal actors downloading sensitive-extension files are top-tier review signals. AnonymousLinkCreated and DLPRuleMatch=high resolve to DE-01 / PR-04 FAIL. Bulk-download and cross-site patterns produce synthetic PR-04 FAIL/FLAG.",
+  "_metadata": {
+    "source_format": "microsoft365_unified_audit",
+    "schema": "m365-unified-audit-v1",
+    "owner": "ancilis-importers",
+    "bulk_download_threshold": 50,
+    "bulk_download_window_seconds": 3600,
+    "cross_site_threshold": 5,
+    "cross_site_window_seconds": 3600,
+    "tenant_primary_domain": "",
+    "sensitive_extensions": [
+      "csv",
+      "xlsx",
+      "xls",
+      "sqlite",
+      "sqlite3",
+      "db",
+      "tsv",
+      "parquet",
+      "json",
+      "sql",
+      "bak",
+      "zip",
+      "tar",
+      "gz"
+    ],
+    "agent_user_types": [
+      "application",
+      "serviceprincipal",
+      "system"
+    ],
+    "privileged_operations": [
+      "SharingPolicyChanged",
+      "SiteCollectionAdminAdded",
+      "SiteDeleted",
+      "SitePermissionsModified"
+    ],
+    "external_sharing_target_types": [
+      "Guest",
+      "AnonymousLink"
+    ],
+    "external_sharing_permissions": [
+      "FullControl",
+      "Owner"
+    ],
+    "dlp_severities": {
+      "high": "FAIL",
+      "medium": "FLAG",
+      "low": "FLAG"
+    },
+    "more_permissive_label_tokens": [
+      "public",
+      "general",
+      "internal",
+      "non-confidential",
+      "personal"
+    ],
+    "signal_priority": [
+      "dlp_rule_high",
+      "file_malware_detected",
+      "anonymous_link_created",
+      "anonymous_site_permissions",
+      "agent_sensitive_download",
+      "sensitivity_downgrade",
+      "sharing_policy_changed",
+      "site_deleted",
+      "external_full_control_grant",
+      "bulk_download_pattern",
+      "dlp_rule_medium",
+      "external_guest_share",
+      "external_sharing_invitation",
+      "site_admin_added",
+      "full_sync_download",
+      "cross_site_pattern",
+      "failed_access_denied",
+      "file_accessed_or_previewed"
+    ],
+    "result_levels": {
+      "file_accessed_or_previewed": "PASS",
+      "agent_sensitive_download": "FAIL",
+      "full_sync_download": "FLAG",
+      "anonymous_link_created": "FAIL",
+      "external_guest_share": "FLAG",
+      "external_sharing_invitation": "FLAG",
+      "sensitivity_downgrade": "FAIL",
+      "sharing_policy_changed": "FAIL",
+      "site_admin_added": "FLAG",
+      "anonymous_site_permissions": "FAIL",
+      "site_deleted": "FAIL",
+      "dlp_rule_high": "FAIL",
+      "dlp_rule_medium": "FLAG",
+      "file_malware_detected": "FAIL",
+      "external_full_control_grant": "FAIL",
+      "failed_access_denied": "PASS",
+      "bulk_download_pattern": "FAIL",
+      "cross_site_pattern": "FLAG"
+    }
+  },
+  "mappings": {
+    "file_accessed_or_previewed": "PR-04",
+    "agent_sensitive_download": "PR-04",
+    "full_sync_download": "PR-04",
+    "anonymous_link_created": "DE-01",
+    "external_guest_share": "PR-04",
+    "external_sharing_invitation": "PR-04",
+    "sensitivity_downgrade": "PR-04",
+    "sharing_policy_changed": "PR-02",
+    "site_admin_added": "PR-02",
+    "anonymous_site_permissions": "DE-01",
+    "site_deleted": "PR-02",
+    "dlp_rule_high": "PR-04",
+    "dlp_rule_medium": "PR-04",
+    "file_malware_detected": "DE-01",
+    "external_full_control_grant": "PR-02",
+    "failed_access_denied": "PR-02",
+    "bulk_download_pattern": "PR-04",
+    "cross_site_pattern": "PR-04"
+  }
+}

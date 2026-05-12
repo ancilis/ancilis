@@ -1,0 +1,63 @@
+{
+  "_version": "1.0.0",
+  "_description": "Tavily AI-search request log → AKSI control ID mapping. Tavily (https://tavily.com) is an AI-native web search API designed for autonomous agents — each request hits the open web, so unlike internal RAG retrieval, every result has third-party provenance and prompt-injection risk. The endpoint (search/extract/qna), error_code, prompt_injection_detected flag, flagged_content moderation list, and unique_domains_returned drive the primary control mapping. Volume and cross-topic patterns produce synthetic per-agent findings.",
+  "_metadata": {
+    "source_format": "tavily",
+    "schema": "tavily-request-log-v1",
+    "owner": "ancilis-importers",
+    "default_volume_threshold": 50,
+    "default_cross_topic_threshold": 4,
+    "default_unique_domains_threshold": 50,
+    "default_answer_length_threshold": 5000,
+    "default_days_threshold": 30,
+    "signal_priority": [
+      "prompt_injection_detected",
+      "error_invalid_key",
+      "error_content_too_large",
+      "error_rate_limited",
+      "error_timeout",
+      "endpoint_extract",
+      "endpoint_qna_raw_content",
+      "flagged_content",
+      "unscoped_open_web",
+      "broad_fanout",
+      "volume_pattern",
+      "cross_topic_pattern",
+      "endpoint_search_success"
+    ],
+    "result_levels": {
+      "endpoint_search_success": "PASS",
+      "endpoint_extract_success": "FLAG",
+      "endpoint_qna_raw_content": "FLAG",
+      "error_invalid_key": "FAIL",
+      "error_rate_limited": "FLAG",
+      "error_timeout": "FLAG",
+      "error_content_too_large": "FLAG",
+      "prompt_injection_detected": "FAIL",
+      "flagged_content": "FLAG",
+      "unscoped_open_web": "FLAG",
+      "broad_fanout": "FLAG",
+      "volume_pattern": "FLAG",
+      "cross_topic_pattern": "PASS"
+    }
+  },
+  "mappings": {
+    "endpoint_search_success": "PR-04",
+    "endpoint_extract_success": "PR-04",
+    "endpoint_qna_raw_content": "PR-04",
+    "error_invalid_key": "PR-01",
+    "error_rate_limited": "PR-02",
+    "error_timeout": "DE-01",
+    "error_content_too_large": "PR-04",
+    "prompt_injection_detected": "PR-01",
+    "flagged_content": "PR-03",
+    "unscoped_open_web": "PR-04",
+    "broad_fanout": "PR-04",
+    "volume_pattern": "PR-04",
+    "cross_topic_pattern": "PR-05",
+    "institutional_sources": "PR-03",
+    "deep_historical_search": "PR-04",
+    "topic_finance_or_news": "PR-04",
+    "large_answer": "PR-04"
+  }
+}

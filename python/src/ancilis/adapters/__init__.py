@@ -1,5 +1,23 @@
 """Framework and provider adapters for Ancilis action production."""
 
+from ancilis.adapters.anthropic import (
+    AnthropicActionProducer,
+    AnthropicAdapter,
+    AnthropicInvocation,
+    AnthropicObservation,
+)
+from ancilis.adapters.openai_assistants import (
+    OpenAIAssistantsActionProducer,
+    OpenAIAssistantsAdapter,
+    OpenAIAssistantsInvocation,
+    OpenAIAssistantsObservation,
+)
+from ancilis.adapters.openai_realtime import (
+    OpenAIRealtimeActionProducer,
+    OpenAIRealtimeAdapter,
+    OpenAIRealtimeInvocation,
+    OpenAIRealtimeObservation,
+)
 from ancilis.adapters.bedrock import (
     BedrockActionProducer,
     BedrockAdapter,
@@ -12,14 +30,44 @@ from ancilis.adapters.azure_openai import (
     AzureOpenAIInvocation,
     AzureOpenAIObservation,
 )
+from ancilis.adapters.cloudflare_workers_ai import (
+    CloudflareWorkersAIActionProducer,
+    CloudflareWorkersAIAdapter,
+    CloudflareWorkersAIInvocation,
+    CloudflareWorkersAIObservation,
+)
+from ancilis.adapters.huggingface import (
+    HuggingFaceActionProducer,
+    HuggingFaceAdapter,
+    HuggingFaceInvocation,
+    HuggingFaceObservation,
+)
 from ancilis.adapters.vertex_ai import (
     VertexAIActionProducer,
     VertexAIAdapter,
     VertexAIInvocation,
     VertexAIObservation,
 )
+from ancilis.adapters.replicate import (
+    ReplicateActionProducer,
+    ReplicateAdapter,
+    ReplicateInvocation,
+    ReplicateObservation,
+)
 
 __all__ = [
+    "AnthropicActionProducer",
+    "AnthropicAdapter",
+    "AnthropicInvocation",
+    "AnthropicObservation",
+    "OpenAIAssistantsActionProducer",
+    "OpenAIAssistantsAdapter",
+    "OpenAIAssistantsInvocation",
+    "OpenAIAssistantsObservation",
+    "OpenAIRealtimeActionProducer",
+    "OpenAIRealtimeAdapter",
+    "OpenAIRealtimeInvocation",
+    "OpenAIRealtimeObservation",
     "BedrockActionProducer",
     "BedrockAdapter",
     "BedrockInvocation",
@@ -28,8 +76,20 @@ __all__ = [
     "AzureOpenAIAdapter",
     "AzureOpenAIInvocation",
     "AzureOpenAIObservation",
+    "CloudflareWorkersAIActionProducer",
+    "CloudflareWorkersAIAdapter",
+    "CloudflareWorkersAIInvocation",
+    "CloudflareWorkersAIObservation",
+    "HuggingFaceActionProducer",
+    "HuggingFaceAdapter",
+    "HuggingFaceInvocation",
+    "HuggingFaceObservation",
     "VertexAIActionProducer",
     "VertexAIAdapter",
     "VertexAIInvocation",
     "VertexAIObservation",
+    "ReplicateActionProducer",
+    "ReplicateAdapter",
+    "ReplicateInvocation",
+    "ReplicateObservation",
 ]

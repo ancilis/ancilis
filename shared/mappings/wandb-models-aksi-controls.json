@@ -1,0 +1,116 @@
+{
+  "_version": "1.0.0",
+  "_description": "Weights & Biases Models (W&B's core MLOps platform — runs, registered models, audit logs) → AKSI control ID mapping. Distinct from W&B Weave (LLM-ops) — W&B Models tracks model training runs, the model registry (registered models, aliases, version pins), and platform audit events. Run records are evaluated by aggregated summary_metrics (hallucination_rate, toxicity, accuracy, f1) AND by reproducibility signals (git commit pinned, git not dirty on production tag, production tag with run state, sweep flag, compute footprint). Registered-model records flag unprotected production aliases and registry sprawl. Audit-log records flag deletions, public report shares, auto-promotions to production without an approver, and identity-issuance events.",
+  "_metadata": {
+    "source_format": "wandb_models",
+    "schema": "wandb-models-runs-registered-models-audit-v1",
+    "owner": "ancilis-importers",
+    "thresholds": {
+      "accuracy_pass_min": 0.9,
+      "accuracy_fail_max": 0.7,
+      "hallucination_pass_max": 0.05,
+      "hallucination_fail_min": 0.3,
+      "toxicity_pass_max": 0.05,
+      "toxicity_fail_min": 0.3,
+      "gpu_count_threshold": 8,
+      "version_count_threshold": 50
+    },
+    "well_known_metric_names": [
+      "accuracy",
+      "loss",
+      "f1",
+      "f1_score",
+      "precision",
+      "recall",
+      "auc",
+      "roc_auc",
+      "perplexity",
+      "hallucination_rate",
+      "hallucination",
+      "toxicity",
+      "toxicity_score",
+      "bias",
+      "safety",
+      "groundedness",
+      "faithfulness",
+      "factuality",
+      "relevance",
+      "bleu",
+      "rouge",
+      "exact_match",
+      "mae",
+      "mse",
+      "rmse"
+    ],
+    "well_known_tag_names": [
+      "production",
+      "staging",
+      "development",
+      "baseline",
+      "experiment",
+      "automated",
+      "manual",
+      "sweep",
+      "evaluation",
+      "training",
+      "fine-tune",
+      "fine-tuning",
+      "rlhf",
+      "sft",
+      "ablation"
+    ],
+    "bot_user_patterns": [
+      "*-svc",
+      "*-bot",
+      "*-agent",
+      "agent-*",
+      "bot-*",
+      "svc-*",
+      "*-automation",
+      "ci-*",
+      "*-ci"
+    ],
+    "default_unmapped_control": "PR-05"
+  },
+  "metric_mappings": {
+    "hallucination_rate": {"control": "PR-03", "inverted": true},
+    "hallucination": {"control": "PR-03", "inverted": true},
+    "toxicity": {"control": "DE-01", "inverted": true},
+    "toxicity_score": {"control": "DE-01", "inverted": true},
+    "accuracy": {"control": "PR-03", "inverted": false},
+    "f1": {"control": "PR-03", "inverted": false},
+    "f1_score": {"control": "PR-03", "inverted": false}
+  },
+  "run_state_mappings": {
+    "finished": {"control": "PR-03", "uses_metric_thresholds": true},
+    "running": {"control": "PR-05", "result": "PASS", "reason": "Run in progress — informational"},
+    "failed": {"control": "DE-01", "result": "FAIL", "reason": "Run failed — training error"},
+    "crashed": {"control": "DE-01", "result": "FAIL", "reason": "Run crashed — host issue, worse than failed"},
+    "killed": {"control": "PR-05", "result": "FLAG", "reason": "Run killed — manual termination, surface for review"}
+  },
+  "reproducibility_flags": {
+    "missing_git_commit": {"control": "PR-05", "result": "FAIL", "reason": "un-versioned source — un-reproducible"},
+    "dirty_git_with_production_tag": {"control": "PR-05", "result": "FLAG", "reason": "dirty working tree on a production-tagged run — un-pinned source"},
+    "production_run_in_bad_state": {"control": "PR-05", "result": "FAIL", "reason": "production-tagged run in running/failed/crashed state"},
+    "high_gpu_count": {"control": "PR-04", "result": "FLAG", "reason": "high compute cost on a single run — surface for cost review"},
+    "bot_run_without_automated_tag": {"control": "PR-05", "result": "FLAG", "reason": "bot-named user without 'automated' tag"},
+    "sweep_run": {"control": "PR-05", "result": "PASS", "reason": "sweep run — expected lifecycle event"}
+  },
+  "registered_model_rules": {
+    "unprotected_production_alias": {"control": "PR-02", "result": "FAIL", "reason": "model with latest_alias=production but is_protected=false — production model without protection rule"},
+    "version_count_sprawl": {"control": "PR-04", "result": "FLAG", "reason": "production model with version_count above threshold — registry sprawl"}
+  },
+  "audit_action_mappings": {
+    "run.delete": {"control": "PR-02", "result": "FLAG", "reason": "Run deletion — audit completeness risk"},
+    "project.delete": {"control": "PR-02", "result": "FAIL", "reason": "Project destruction — audit destruction"},
+    "artifact.delete": {"control": "PR-02", "result": "context_dependent", "reason": "FAIL when target was referenced by a Production model; otherwise FLAG"},
+    "model.alias.set": {"control": "PR-02", "result": "context_dependent", "reason": "FAIL when promoting to production-protected without approval; PASS when approved"},
+    "model.alias.remove": {"control": "PR-02", "result": "FLAG", "reason": "Alias removed from registered model — registry mutation"},
+    "report.created": {"control": "PR-05", "result": "PASS", "reason": "Report created — audit trail event"},
+    "report.shared_publicly": {"control": "PR-04", "result": "FAIL", "reason": "Report shared publicly — potential sensitive data exposure (run charts may contain customer values)"},
+    "api_key.created": {"control": "PR-01", "result": "FLAG", "reason": "API key issued — surface for identity governance"},
+    "service_account.created": {"control": "PR-01", "result": "FLAG", "reason": "Service account created — surface for identity governance"},
+    "team.member.added": {"control": "PR-02", "result": "FLAG", "reason": "Team member added — review for least-privilege"},
+    "team.member.role.changed": {"control": "PR-02", "result": "context_dependent", "reason": "FLAG when promoted to admin"}
+  }
+}

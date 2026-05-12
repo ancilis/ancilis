@@ -1,0 +1,95 @@
+{
+  "_version": "1.0.0",
+  "_description": "AWS CloudTrail event → AKSI control ID mapping. CloudTrail records every API call across an AWS account: Bedrock invocations, Lambda invocations, S3 access, IAM grants, KMS key use, Secrets Manager retrievals, STS role assumption, and console actions. For agents running on AWS, CloudTrail is THE canonical evidence source for who-did-what across the entire infrastructure. Mapping is event-source + event-name driven with errorCode and userIdentity overlays. Cross-account principal usage (single principalId touching multiple accountIds in an export) produces a synthetic PR-02 FLAG. Privileged operations (IAM/KMS/Secrets Manager) without MFA produce a PR-01 FLAG. Root identity usage produces a PR-01 FAIL.",
+  "_metadata": {
+    "source_format": "aws_cloudtrail",
+    "schema": "cloudtrail-event-record-v1.10",
+    "owner": "ancilis-importers",
+    "cross_account_threshold": 1,
+    "privileged_event_sources": [
+      "iam.amazonaws.com",
+      "kms.amazonaws.com",
+      "secretsmanager.amazonaws.com"
+    ],
+    "event_patterns": [
+      {"event_source": "bedrock.amazonaws.com", "event_name": "InvokeModel*", "signal": "bedrock_invoke_model", "result": "PASS", "control": "PR-01"},
+      {"event_source": "bedrock.amazonaws.com", "event_name": "InvokeAgent*", "signal": "bedrock_invoke_agent", "result": "PASS", "control": "PR-01"},
+      {"event_source": "bedrock.amazonaws.com", "event_name": "Converse*", "signal": "bedrock_invoke_model", "result": "PASS", "control": "PR-01"},
+      {"event_source": "lambda.amazonaws.com", "event_name": "Invoke*", "signal": "lambda_invoke", "result": "PASS", "control": "PR-02"},
+      {"event_source": "s3.amazonaws.com", "event_name": "GetObject", "signal": "s3_read", "result": "PASS", "control": "PR-04"},
+      {"event_source": "s3.amazonaws.com", "event_name": "ListObject*", "signal": "s3_read", "result": "PASS", "control": "PR-04"},
+      {"event_source": "s3.amazonaws.com", "event_name": "GetObjectVersion", "signal": "s3_read", "result": "PASS", "control": "PR-04"},
+      {"event_source": "s3.amazonaws.com", "event_name": "PutObject*", "signal": "s3_write", "result": "FLAG", "control": "PR-04"},
+      {"event_source": "s3.amazonaws.com", "event_name": "DeleteObject*", "signal": "s3_delete", "result": "FLAG", "control": "PR-04"},
+      {"event_source": "iam.amazonaws.com", "event_name": "Attach*Policy", "signal": "iam_privilege_change", "result": "FLAG", "control": "PR-02"},
+      {"event_source": "iam.amazonaws.com", "event_name": "Put*Policy", "signal": "iam_privilege_change", "result": "FLAG", "control": "PR-02"},
+      {"event_source": "iam.amazonaws.com", "event_name": "Create*User", "signal": "iam_privilege_change", "result": "FLAG", "control": "PR-02"},
+      {"event_source": "iam.amazonaws.com", "event_name": "Create*Role", "signal": "iam_privilege_change", "result": "FLAG", "control": "PR-02"},
+      {"event_source": "iam.amazonaws.com", "event_name": "CreateAccessKey", "signal": "iam_credential_lifecycle", "result": "FLAG", "control": "PR-01"},
+      {"event_source": "iam.amazonaws.com", "event_name": "UpdateAccessKey", "signal": "iam_credential_lifecycle", "result": "FLAG", "control": "PR-01"},
+      {"event_source": "iam.amazonaws.com", "event_name": "DeleteAccessKey", "signal": "iam_credential_lifecycle", "result": "FLAG", "control": "PR-01"},
+      {"event_source": "sts.amazonaws.com", "event_name": "AssumeRole*", "signal": "sts_assume_role", "result": "PASS", "control": "PR-01"},
+      {"event_source": "kms.amazonaws.com", "event_name": "Decrypt", "signal": "kms_decrypt", "result": "PASS", "control": "PR-04"},
+      {"event_source": "secretsmanager.amazonaws.com", "event_name": "GetSecretValue", "signal": "secrets_get_value", "result": "FLAG", "control": "PR-04"}
+    ],
+    "error_code_signals": {
+      "AccessDenied": {"signal": "access_denied", "result": "FAIL", "control": "PR-02"},
+      "AccessDeniedException": {"signal": "access_denied", "result": "FAIL", "control": "PR-02"},
+      "ThrottlingException": {"signal": "throttling", "result": "FLAG", "control": "PR-02"},
+      "Throttling": {"signal": "throttling", "result": "FLAG", "control": "PR-02"},
+      "TooManyRequestsException": {"signal": "throttling", "result": "FLAG", "control": "PR-02"}
+    },
+    "error_code_prefix_signals": {
+      "Internal": {"signal": "internal_service_error", "result": "FAIL", "control": "DE-01"},
+      "Service": {"signal": "internal_service_error", "result": "FAIL", "control": "DE-01"}
+    },
+    "identity_signals": {
+      "root_identity": {"result": "FAIL", "control": "PR-01"},
+      "no_mfa_on_privileged": {"result": "FLAG", "control": "PR-01"},
+      "console_action": {"result": "FLAG", "control": "PR-05"},
+      "cross_account_pattern": {"result": "FLAG", "control": "PR-02"}
+    },
+    "result_levels": {
+      "bedrock_invoke_model": "PASS",
+      "bedrock_invoke_agent": "PASS",
+      "lambda_invoke": "PASS",
+      "s3_read": "PASS",
+      "s3_write": "FLAG",
+      "s3_delete": "FLAG",
+      "iam_privilege_change": "FLAG",
+      "iam_credential_lifecycle": "FLAG",
+      "sts_assume_role": "PASS",
+      "kms_decrypt": "PASS",
+      "secrets_get_value": "FLAG",
+      "access_denied": "FAIL",
+      "throttling": "FLAG",
+      "internal_service_error": "FAIL",
+      "root_identity": "FAIL",
+      "no_mfa_on_privileged": "FLAG",
+      "console_action": "FLAG",
+      "cross_account_pattern": "FLAG",
+      "unknown_event": "FLAG"
+    }
+  },
+  "mappings": {
+    "bedrock_invoke_model": "PR-01",
+    "bedrock_invoke_agent": "PR-01",
+    "lambda_invoke": "PR-02",
+    "s3_read": "PR-04",
+    "s3_write": "PR-04",
+    "s3_delete": "PR-04",
+    "iam_privilege_change": "PR-02",
+    "iam_credential_lifecycle": "PR-01",
+    "sts_assume_role": "PR-01",
+    "kms_decrypt": "PR-04",
+    "secrets_get_value": "PR-04",
+    "access_denied": "PR-02",
+    "throttling": "PR-02",
+    "internal_service_error": "DE-01",
+    "root_identity": "PR-01",
+    "no_mfa_on_privileged": "PR-01",
+    "console_action": "PR-05",
+    "cross_account_pattern": "PR-02",
+    "unknown_event": "PR-05"
+  }
+}

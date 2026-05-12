@@ -1,0 +1,53 @@
+{
+  "_version": "1.0.0",
+  "_description": "ElevenLabs TTS /v1/history export → AKSI control ID mapping. ElevenLabs is the dominant text-to-speech provider for voice agents; voice cloning + custom voice IDs introduce identity-impersonation, consent, and exfiltration risks that no other LLM-side importer captures. Each history item becomes one EvaluationResult covering: (1) voice provenance (premade vs cloned vs professional vs generated), (2) consent recording for cloned voices, (3) high-impact voice creation actions (voice_clone / voice_design), (4) speech-to-speech voice transformation, (5) shared audio links (exfil surface), (6) over-generation (large text-to-speech corpus dumps as a covert exfil channel), (7) failures.",
+  "_metadata": {
+    "source_format": "elevenlabs",
+    "schema": "elevenlabs-history-export-v1",
+    "owner": "ancilis-importers",
+    "default_text_length_threshold_chars": 50000,
+    "consent_signed_required_for_clone": true,
+    "signal_priority": [
+      "status_failed",
+      "cloned_voice_no_consent",
+      "voice_clone_method",
+      "voice_design_method",
+      "speech_to_speech_method",
+      "share_link_present",
+      "long_text_overgeneration",
+      "cloned_voice_iv_with_consent",
+      "cloned_voice_pvc_with_consent",
+      "voice_premade",
+      "voice_professional",
+      "voice_generated"
+    ],
+    "result_levels": {
+      "voice_premade": "PASS",
+      "voice_professional": "PASS",
+      "voice_generated": "PASS",
+      "cloned_voice_iv_with_consent": "FLAG",
+      "cloned_voice_pvc_with_consent": "FLAG",
+      "cloned_voice_no_consent": "FAIL",
+      "status_failed": "FAIL",
+      "voice_clone_method": "FLAG",
+      "voice_design_method": "FLAG",
+      "speech_to_speech_method": "FLAG",
+      "share_link_present": "FLAG",
+      "long_text_overgeneration": "FLAG"
+    }
+  },
+  "mappings": {
+    "voice_premade": "PR-01",
+    "voice_professional": "PR-01",
+    "voice_generated": "PR-01",
+    "cloned_voice_iv_with_consent": "PR-01",
+    "cloned_voice_pvc_with_consent": "PR-01",
+    "cloned_voice_no_consent": "DE-01",
+    "status_failed": "DE-01",
+    "voice_clone_method": "PR-05",
+    "voice_design_method": "PR-05",
+    "speech_to_speech_method": "PR-04",
+    "share_link_present": "PR-04",
+    "long_text_overgeneration": "PR-04"
+  }
+}

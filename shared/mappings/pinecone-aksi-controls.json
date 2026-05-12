@@ -1,0 +1,47 @@
+{
+  "_version": "1.0.0",
+  "_description": "Pinecone vector store operation log → AKSI control ID mapping. Pinecone is the dominant managed vector store in production agent stacks; every query/upsert/delete/fetch operation is a data-access governance event. Each operation record produces one EvaluationResult. The operation type drives the primary control mapping, with additional flags for over-fetch (top_k > threshold), un-scoped queries (no filter), raw vector exposure (include_values=true on fetch), failures (status=failure), and cross-namespace access patterns within a single trace/api_key (scope expansion). Filter values, vector data, and metadata payloads are NEVER stored — only key names and counts.",
+  "_metadata": {
+    "source_format": "pinecone",
+    "schema": "pinecone-operation-export-v1",
+    "owner": "ancilis-importers",
+    "default_top_k_threshold": 100,
+    "default_cross_namespace_detection": true,
+    "signal_priority": [
+      "status_failure",
+      "fetch_include_values",
+      "query_top_k_exceeded",
+      "query_no_filter",
+      "cross_namespace_pattern",
+      "operation_query_success",
+      "operation_upsert_success",
+      "operation_delete_success",
+      "operation_fetch_success",
+      "operation_other_success"
+    ],
+    "result_levels": {
+      "operation_query_success": "PASS",
+      "operation_upsert_success": "PASS",
+      "operation_delete_success": "PASS",
+      "operation_fetch_success": "PASS",
+      "operation_other_success": "PASS",
+      "fetch_include_values": "FLAG",
+      "query_top_k_exceeded": "FLAG",
+      "query_no_filter": "FLAG",
+      "cross_namespace_pattern": "FLAG",
+      "status_failure": "FAIL"
+    }
+  },
+  "mappings": {
+    "operation_query_success": "PR-04",
+    "operation_upsert_success": "PR-03",
+    "operation_delete_success": "PR-05",
+    "operation_fetch_success": "PR-04",
+    "operation_other_success": "PR-04",
+    "fetch_include_values": "PR-04",
+    "query_top_k_exceeded": "PR-04",
+    "query_no_filter": "PR-04",
+    "cross_namespace_pattern": "PR-02",
+    "status_failure": "DE-01"
+  }
+}

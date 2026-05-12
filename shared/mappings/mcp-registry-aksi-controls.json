@@ -1,0 +1,41 @@
+{
+  "_version": "1.0.0",
+  "_description": "MCP server registry catalog → AKSI control ID mapping. Each registry entry describes one MCP server (filesystem, github, slack, ...). Trust signals, declared permissions, declared tool surface, and cross-entry collisions all produce control results so that the act of registering a server leaves a verifiable evidence trail.",
+  "_metadata": {
+    "source_format": "mcp-registry",
+    "schema": "mcp-registry-catalog-v1",
+    "owner": "ancilis-importers",
+    "supported_shapes": [
+      "modelcontextprotocol-well-known",
+      "smithery-data-array"
+    ],
+    "collision_action": "FLAG",
+    "under_declared_threshold_tool_count": 1,
+    "scope_expansion_permission_keywords": [
+      "write",
+      "exec",
+      "execute",
+      "shell",
+      "spawn",
+      "network",
+      "fetch",
+      "send"
+    ],
+    "trust_signal_to_result": {
+      "verified": "PASS",
+      "official": "PASS",
+      "publisher_signed": "PASS",
+      "community": "FLAG",
+      "unverified": "FLAG",
+      "untrusted": "FAIL",
+      "missing": "FAIL"
+    }
+  },
+  "mappings": {
+    "trust_signal": "PR-01",
+    "scope_expansion": "PR-02",
+    "under_declared_permissions": "PR-03",
+    "empty_tool_surface": "PR-05",
+    "tool_name_collision": "PR-01"
+  }
+}

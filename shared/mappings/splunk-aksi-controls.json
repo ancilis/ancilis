@@ -1,0 +1,83 @@
+{
+  "_version": "1.0.0",
+  "_description": "Splunk notable event → AKSI control ID mapping. Each event's severity, status, disposition, category, and Splunk AI Assistant for SecOps autonomy fields select a control. Critical-severity open notables (status new/in_progress) become DE-01 FAIL (open critical incident); critical resolved+true_positive becomes PR-05 FAIL (confirmed real incident requiring audit-trail closure evidence); critical resolved+false_positive becomes PR-05 PASS. AI/ML category at high/critical severity becomes DE-01 FAIL with ai_agent_id captured. Splunk AI Assistant for SecOps fields (ai_runbook_executed, ai_action_taken, user_decision, ai_confidence_score) drive PR-02/PR-03 governance: autonomous high-impact actions without human review become PR-02 FAIL; rejected runbook actions become PR-02 FAIL; runbooks below the confidence threshold become PR-03 FLAG. Broad-impact alerts (_count_distinct_users) and high-volume AI synthetics layer PR-04 FLAG.",
+  "_metadata": {
+    "source_format": "splunk",
+    "schema": "splunk-notable-events-v0",
+    "owner": "ancilis-importers",
+    "spec_url": "https://docs.splunk.com/Documentation/Splunk/latest/RESTREF/RESTsearch",
+    "default_ai_confidence_threshold": 0.7,
+    "default_broad_impact_user_count": 50,
+    "default_ai_volume_per_day": 100,
+    "default_false_positive_pattern_threshold": 20,
+    "high_impact_actions": [
+      "isolate_host",
+      "block_user",
+      "quarantine",
+      "disable_account"
+    ],
+    "audit_relayed_sourcetypes": [
+      "WinEventLog:Security",
+      "linux_audit"
+    ],
+    "signal_priority": [
+      "critical_open",
+      "critical_resolved_true_positive",
+      "high_open",
+      "ai_ml_high_severity",
+      "runbook_user_rejected",
+      "high_impact_action_no_decision",
+      "quarantine_no_decision",
+      "autonomous_runbook_no_review",
+      "low_confidence_autonomous",
+      "high_volume_ai_synthetic",
+      "repeated_false_positive_synthetic",
+      "broad_impact_user_count",
+      "medium_open",
+      "critical_false_positive",
+      "security_test_disposition",
+      "low_severity",
+      "informational"
+    ],
+    "result_levels": {
+      "critical_open": "FAIL",
+      "critical_resolved_true_positive": "FAIL",
+      "critical_false_positive": "PASS",
+      "high_open": "FAIL",
+      "medium_open": "FLAG",
+      "low_severity": "PASS",
+      "informational": "PASS",
+      "ai_ml_high_severity": "FAIL",
+      "autonomous_runbook_no_review": "FLAG",
+      "runbook_user_approved": "PASS",
+      "runbook_user_rejected": "FAIL",
+      "high_impact_action_no_decision": "FAIL",
+      "low_confidence_autonomous": "FLAG",
+      "quarantine_no_decision": "FAIL",
+      "broad_impact_user_count": "FLAG",
+      "high_volume_ai_synthetic": "FLAG",
+      "repeated_false_positive_synthetic": "FLAG",
+      "security_test_disposition": "PASS"
+    }
+  },
+  "mappings": {
+    "critical_open": "DE-01",
+    "critical_resolved_true_positive": "PR-05",
+    "critical_false_positive": "PR-05",
+    "high_open": "DE-01",
+    "medium_open": "PR-05",
+    "low_severity": "PR-05",
+    "informational": "PR-05",
+    "ai_ml_high_severity": "DE-01",
+    "autonomous_runbook_no_review": "PR-02",
+    "runbook_user_approved": "PR-05",
+    "runbook_user_rejected": "PR-02",
+    "high_impact_action_no_decision": "PR-02",
+    "low_confidence_autonomous": "PR-03",
+    "quarantine_no_decision": "PR-02",
+    "broad_impact_user_count": "PR-04",
+    "high_volume_ai_synthetic": "PR-04",
+    "repeated_false_positive_synthetic": "PR-03",
+    "security_test_disposition": "PR-05"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "_metadata": {
+    "description": "LangSmith run_type → AKSI control ID mapping. Errored runs use the '<run_type>.error' key first; falls back to the run_type entry if no error-specific entry exists. The 'unknown' key is used when a run_type is missing or unrecognized.",
+    "version": "1.0",
+    "source": "langsmith"
+  },
+  "mappings": {
+    "llm": "PR-01",
+    "llm.error": "DE-01",
+    "tool": "PR-02",
+    "tool.error": "PR-02",
+    "retriever": "PR-04",
+    "retriever.error": "PR-04",
+    "chain": "PR-05",
+    "chain.error": "DE-01",
+    "prompt": "PR-03",
+    "prompt.error": "PR-03",
+    "unknown": "PR-05"
+  }
+}

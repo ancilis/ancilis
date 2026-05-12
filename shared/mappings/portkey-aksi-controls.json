@@ -1,0 +1,50 @@
+{
+  "_version": "1.0.0",
+  "_description": "Portkey LLM gateway request log → AKSI control ID mapping. Portkey (https://portkey.ai) is a popular LLM gateway alternative to LiteLLM/OpenRouter that adds caching, retries, fallbacks, load balancing, and guardrails on top of 100+ providers. The /v1/logs endpoint returns one record per upstream call with response status, guardrail verdicts, cache status, fallback/retry counters, and routing config. Status code drives the primary control; guardrail verdicts before/after escalate to FAIL; cache_hit_kind, fallback_used, retry_count, cost, user_feedback, and load-balance routing are additive signals.",
+  "_metadata": {
+    "source_format": "portkey",
+    "schema": "portkey-logs-v1",
+    "owner": "ancilis-importers",
+    "default_cost_threshold_usd": 1.0,
+    "default_retry_threshold": 2,
+    "signal_priority": [
+      "before_guardrail_failed",
+      "after_guardrail_failed",
+      "status_5xx",
+      "status_4xx",
+      "fallback_used",
+      "retry_threshold_exceeded",
+      "cost_threshold_exceeded",
+      "loadbalance_multi_target",
+      "negative_user_feedback",
+      "semantic_cache_hit",
+      "status_2xx"
+    ],
+    "result_levels": {
+      "status_2xx": "PASS",
+      "status_4xx": "FLAG",
+      "status_5xx": "FAIL",
+      "before_guardrail_failed": "FAIL",
+      "after_guardrail_failed": "FAIL",
+      "semantic_cache_hit": "PASS",
+      "fallback_used": "FLAG",
+      "retry_threshold_exceeded": "FLAG",
+      "cost_threshold_exceeded": "FLAG",
+      "negative_user_feedback": "FLAG",
+      "loadbalance_multi_target": "FLAG"
+    }
+  },
+  "mappings": {
+    "status_2xx": "PR-01",
+    "status_4xx": "PR-02",
+    "status_5xx": "DE-01",
+    "before_guardrail_failed": "PR-03",
+    "after_guardrail_failed": "DE-01",
+    "semantic_cache_hit": "PR-05",
+    "fallback_used": "PR-01",
+    "retry_threshold_exceeded": "PR-02",
+    "cost_threshold_exceeded": "PR-04",
+    "negative_user_feedback": "PR-05",
+    "loadbalance_multi_target": "PR-01"
+  }
+}

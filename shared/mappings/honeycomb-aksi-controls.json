@@ -1,0 +1,71 @@
+{
+  "_version": "1.0.0",
+  "_description": "Honeycomb for LLMs event → AKSI control mapping. Honeycomb ingests OpenTelemetry GenAI spans and adds derivative computed fields (cost-per-tenant, latency-p95, error-rate) and trigger annotations (alerts, SLO burn, BubbleUp anomaly detection). The importer maps native gen_ai.* operation values, status_code/error fields, Honeycomb trigger annotations, and derivative-field threshold breaches to AKSI controls.",
+  "_metadata": {
+    "source_format": "honeycomb",
+    "schema": "honeycomb-events-v1",
+    "owner": "ancilis-importers",
+    "spec_url": "https://docs.honeycomb.io/api/tag/Events/",
+    "operation_to_control": {
+      "chat": "PR-01",
+      "text_completion": "PR-01",
+      "completion": "PR-01",
+      "embeddings": "PR-04",
+      "embedding": "PR-04",
+      "execute_tool": "PR-02",
+      "tool_use": "PR-02"
+    },
+    "trigger_to_control": {
+      "alert_critical": "DE-01",
+      "slo_burn_critical": "PR-05",
+      "anomaly_detection": "PR-05"
+    },
+    "derivative_to_control": {
+      "high_error_rate_24h": "PR-03",
+      "high_tenant_cost_24h": "PR-04",
+      "high_latency_p95_24h": "PR-03"
+    },
+    "default_error_rate_threshold": 0.05,
+    "default_tenant_cost_threshold_usd": 100.0,
+    "default_latency_p95_threshold_ms": 30000,
+    "default_control": "PR-03",
+    "supported_systems": [
+      "openai",
+      "anthropic",
+      "vertex_ai",
+      "aws.bedrock",
+      "azure.ai.openai",
+      "cohere",
+      "groq",
+      "mistral_ai"
+    ],
+    "notes": [
+      "honeycomb.trigger.type=alert + severity=critical → DE-01 FAIL (Honeycomb already escalated; treat as confirmed incident)",
+      "honeycomb.trigger.type=slo_burn + severity=critical → PR-05 FAIL (SLO burn = production trust degradation; audit-trail integrity compromised)",
+      "honeycomb.trigger.type=anomaly_detection → PR-05 FLAG (BubbleUp surfaced anomaly — surface for human review)",
+      "honeycomb.derivative.error_rate_24h > 0.05 → PR-03 FLAG (recent prompt/tenant error degradation)",
+      "honeycomb.derivative.cost_per_tenant_usd_24h > $100 → PR-04 FLAG (tenant-cost exposure anomaly)",
+      "honeycomb.derivative.latency_p95_ms_24h > 30000ms → PR-03 FLAG (latency degradation = quality-of-service issue)",
+      "prompt.template_id present without prompt.version → PR-05 FLAG (un-versioned prompt = unauditable)",
+      "agent.framework absent on a gen_ai span → PR-05 FLAG (raw API use without framework attribution = audit-completeness gap)"
+    ]
+  },
+  "mappings": {
+    "operation_chat": "PR-01",
+    "operation_text_completion": "PR-01",
+    "operation_completion": "PR-01",
+    "operation_embeddings": "PR-04",
+    "operation_embedding": "PR-04",
+    "operation_execute_tool": "PR-02",
+    "operation_tool_use": "PR-02",
+    "status_error": "DE-01",
+    "trigger_alert_critical": "DE-01",
+    "trigger_slo_burn_critical": "PR-05",
+    "trigger_anomaly_detection": "PR-05",
+    "derivative_high_error_rate_24h": "PR-03",
+    "derivative_high_tenant_cost_24h": "PR-04",
+    "derivative_high_latency_p95_24h": "PR-03",
+    "prompt_unversioned": "PR-05",
+    "framework_missing": "PR-05"
+  }
+}

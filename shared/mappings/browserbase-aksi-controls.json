@@ -1,0 +1,73 @@
+{
+  "_version": "1.0.0",
+  "_description": "Browserbase hosted browser-automation session export → AKSI control ID mapping. Browserbase exposes /v1/sessions and /v1/sessions/{id}/logs records describing headless Chromium sessions driven by AI agents. Each session is a credentialed third-party action with massive PII and exfiltration risk: it can fill forms, click buttons, log into apps, scrape pages, evaluate arbitrary JavaScript, and download files. The session status drives the primary control; captcha-solver use, stealth-mode, proxy-country mismatch, downloads, logged-in surfaces, evaluate actions, credential-entry on auth domains, broad-crawl URL counts, long-running durations, and a synthetic cross-domain pattern produce additive flags.",
+  "_metadata": {
+    "source_format": "browserbase",
+    "schema": "browserbase-session-export-v1",
+    "owner": "ancilis-importers",
+    "cross_domain_threshold": 5,
+    "default_url_count_threshold": 50,
+    "default_duration_threshold_ms": 300000,
+    "auth_domain_patterns": ["login", "signin", "signup", "auth", "sso"],
+    "high_trust_domain_patterns": [
+      "google.com",
+      "github.com",
+      "microsoft.com",
+      "okta.com",
+      "auth0.com",
+      "salesforce.com",
+      "linkedin.com",
+      "facebook.com",
+      "apple.com",
+      "amazon.com"
+    ],
+    "signal_priority": [
+      "status_failed",
+      "status_error",
+      "status_timed_out",
+      "captcha_solver_used",
+      "stealth_mode_high_trust",
+      "proxy_country_mismatch",
+      "downloads_present",
+      "logged_in_surfaces",
+      "evaluate_action",
+      "credential_entry_on_auth_domain",
+      "url_count_above_threshold",
+      "duration_above_threshold",
+      "cross_domain_pattern",
+      "status_completed"
+    ],
+    "result_levels": {
+      "status_completed": "PASS",
+      "status_failed": "FAIL",
+      "status_error": "FAIL",
+      "status_timed_out": "FLAG",
+      "captcha_solver_used": "FLAG",
+      "stealth_mode_high_trust": "FLAG",
+      "proxy_country_mismatch": "FLAG",
+      "downloads_present": "FLAG",
+      "logged_in_surfaces": "FLAG",
+      "evaluate_action": "FLAG",
+      "credential_entry_on_auth_domain": "FLAG",
+      "url_count_above_threshold": "FLAG",
+      "duration_above_threshold": "FLAG",
+      "cross_domain_pattern": "FLAG"
+    }
+  },
+  "mappings": {
+    "status_completed": "PR-05",
+    "status_failed": "DE-01",
+    "status_error": "DE-01",
+    "status_timed_out": "PR-02",
+    "captcha_solver_used": "PR-01",
+    "stealth_mode_high_trust": "PR-01",
+    "proxy_country_mismatch": "PR-01",
+    "downloads_present": "PR-04",
+    "logged_in_surfaces": "PR-04",
+    "evaluate_action": "PR-03",
+    "credential_entry_on_auth_domain": "PR-04",
+    "url_count_above_threshold": "PR-04",
+    "duration_above_threshold": "PR-02",
+    "cross_domain_pattern": "PR-04"
+  }
+}

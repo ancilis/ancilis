@@ -1,0 +1,84 @@
+{
+  "_version": "1.0.0",
+  "_description": "Stripe event → AKSI control ID mapping. Stripe events are the canonical record of agent-driven payment activity: charges, payment intents, refunds, disputes, payouts, transfers, subscriptions, and Radar reviews. Every Stripe API call by an agent is a regulated financial action with KYC/AML/SOX implications, so this mapping is graded by amount, risk_level, and money-direction (charges in vs payouts/transfers out). Test-mode events (livemode=false) are captured but their decisions are downgraded so test-mode never blocks. Card data is sanitized to non-sensitive fields only (country/funding/brand) — last4/exp/cvc/PAN are NEVER stored. Cross-customer pattern (single agent_id touching > N customers in an export) produces a synthetic PR-02 FLAG.",
+  "_metadata": {
+    "source_format": "stripe",
+    "schema": "stripe-event-2024-12-18.acacia",
+    "owner": "ancilis-importers",
+    "cross_customer_threshold": 50,
+    "amount_thresholds": {
+      "flag_cents": 100000,
+      "fail_cents": 1000000
+    },
+    "event_patterns": [
+      {"event_type": "charge.succeeded", "signal": "charge_succeeded", "result": "PASS", "control": "PR-02"},
+      {"event_type": "charge.failed", "signal": "charge_failed", "result": "PASS", "control": "DE-01"},
+      {"event_type": "charge.refunded", "signal": "charge_refunded", "result": "PASS", "control": "PR-05"},
+      {"event_type": "charge.dispute.created", "signal": "charge_dispute", "result": "FAIL", "control": "PR-02"},
+      {"event_type": "payment_intent.succeeded", "signal": "payment_intent_succeeded", "result": "PASS", "control": "PR-04"},
+      {"event_type": "payment_intent.payment_failed", "signal": "payment_intent_failed", "result": "FLAG", "control": "PR-02"},
+      {"event_type": "payment_intent.requires_action", "signal": "payment_intent_3ds", "result": "FLAG", "control": "PR-01"},
+      {"event_type": "payout.paid", "signal": "payout_paid", "result": "FLAG", "control": "PR-04"},
+      {"event_type": "payout.failed", "signal": "payout_failed", "result": "FAIL", "control": "DE-01"},
+      {"event_type": "transfer.created", "signal": "transfer_created", "result": "FLAG", "control": "PR-04"},
+      {"event_type": "refund.created", "signal": "refund_created", "result": "PASS", "control": "PR-05"},
+      {"event_type": "review.opened", "signal": "review_opened", "result": "PASS", "control": "PR-02"},
+      {"event_type": "review.closed", "signal": "review_closed", "result": "PASS", "control": "PR-02"},
+      {"event_type": "customer.created", "signal": "customer_created", "result": "PASS", "control": "PR-05"},
+      {"event_type": "customer.subscription.created", "signal": "subscription_created", "result": "PASS", "control": "PR-05"},
+      {"event_type": "customer.subscription.deleted", "signal": "subscription_deleted", "result": "PASS", "control": "PR-05"},
+      {"event_type": "invoice.payment_succeeded", "signal": "invoice_payment_succeeded", "result": "PASS", "control": "PR-02"},
+      {"event_type": "invoice.payment_failed", "signal": "invoice_payment_failed", "result": "FLAG", "control": "PR-02"},
+      {"event_type": "account.updated", "signal": "account_updated", "result": "FLAG", "control": "PR-05"}
+    ],
+    "risk_level_overrides": {
+      "charge.succeeded": {
+        "normal": {"signal": "charge_succeeded", "result": "PASS", "control": "PR-02"},
+        "elevated": {"signal": "charge_succeeded_elevated_risk", "result": "FLAG", "control": "PR-02"},
+        "highest": {"signal": "charge_succeeded_highest_risk", "result": "FAIL", "control": "PR-02"}
+      }
+    },
+    "outcome_type_overrides": {
+      "blocked": {"signal": "outcome_blocked", "result": "PASS", "control": "PR-02"},
+      "manual_review": {"signal": "outcome_manual_review", "result": "FLAG", "control": "PR-02"}
+    },
+    "review_closed_outcomes": {
+      "approved": {"signal": "review_closed_approved", "result": "PASS", "control": "PR-02"},
+      "refunded": {"signal": "review_closed_refunded", "result": "FAIL", "control": "PR-02"},
+      "refunded_as_fraud": {"signal": "review_closed_refunded", "result": "FAIL", "control": "PR-02"},
+      "disputed": {"signal": "review_closed_refunded", "result": "FAIL", "control": "PR-02"}
+    }
+  },
+  "mappings": {
+    "charge_succeeded": "PR-02",
+    "charge_succeeded_elevated_risk": "PR-02",
+    "charge_succeeded_highest_risk": "PR-02",
+    "charge_failed": "DE-01",
+    "charge_refunded": "PR-05",
+    "charge_dispute": "PR-02",
+    "payment_intent_succeeded": "PR-04",
+    "payment_intent_succeeded_large": "PR-04",
+    "payment_intent_succeeded_medium": "PR-04",
+    "payment_intent_failed": "PR-02",
+    "payment_intent_3ds": "PR-01",
+    "payout_paid": "PR-04",
+    "payout_failed": "DE-01",
+    "transfer_created": "PR-04",
+    "refund_created": "PR-05",
+    "review_opened": "PR-02",
+    "review_closed": "PR-02",
+    "review_closed_approved": "PR-02",
+    "review_closed_refunded": "PR-02",
+    "customer_created": "PR-05",
+    "subscription_created": "PR-05",
+    "subscription_deleted": "PR-05",
+    "invoice_payment_succeeded": "PR-02",
+    "invoice_payment_failed": "PR-02",
+    "account_updated": "PR-05",
+    "outcome_blocked": "PR-02",
+    "outcome_manual_review": "PR-02",
+    "card_country_mismatch": "PR-04",
+    "cross_customer_pattern": "PR-02",
+    "unknown_event": "PR-05"
+  }
+}

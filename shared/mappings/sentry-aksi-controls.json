@@ -1,0 +1,72 @@
+{
+  "_version": "1.0.0",
+  "_description": "Sentry event → AKSI control ID mapping. Each event's `type` + `level` + (optional) `contexts.ai.operation` selects a baseline control. Unhandled fatal/error events become DE-01 FAIL (uncaught production exceptions). Handled errors and warnings surface as PR-05 FLAG. Transactions become PR-05 PASS audit-trail unless `contexts.ai.response_quality_score` falls below the configured threshold (PR-03 FLAG). AI Monitoring operations (chat / embeddings / agent_run / tool_call) layer in PR-01 / PR-02 captures. Security-keyword exception detection (e.g. SecurityError, AuthenticationFailed, credential, API key) layers PR-01 FLAG. Group-level widespread errors (event_count + user_count above threshold) layer PR-04 FLAG.",
+  "_metadata": {
+    "source_format": "sentry",
+    "schema": "sentry-events-v0",
+    "owner": "ancilis-importers",
+    "spec_url": "https://docs.sentry.io/api/events/",
+    "default_group_event_threshold": 1000,
+    "default_group_user_threshold": 100,
+    "default_response_quality_threshold": 0.5,
+    "security_keyword_patterns": [
+      "*SecurityError*",
+      "*PermissionError*",
+      "*AuthenticationFailed*",
+      "*Unauthorized*",
+      "*Forbidden*",
+      "*credential*",
+      "*Credential*",
+      "*secret*",
+      "*Secret*",
+      "*API key*",
+      "*api_key*",
+      "*api key*",
+      "*token*expired*",
+      "*invalid*token*",
+      "*signature*invalid*"
+    ],
+    "signal_priority": [
+      "type_error_fatal",
+      "type_error_unhandled",
+      "security_keyword",
+      "low_quality_score",
+      "type_error_handled",
+      "type_warning",
+      "widespread_error",
+      "operation_tool_call",
+      "operation_chat",
+      "operation_embeddings",
+      "operation_agent_run",
+      "type_transaction"
+    ],
+    "result_levels": {
+      "type_error_fatal": "FAIL",
+      "type_error_unhandled": "FAIL",
+      "type_error_handled": "FLAG",
+      "type_warning": "FLAG",
+      "type_transaction": "PASS",
+      "low_quality_score": "FLAG",
+      "security_keyword": "FLAG",
+      "widespread_error": "FLAG",
+      "operation_chat": "PASS",
+      "operation_embeddings": "PASS",
+      "operation_agent_run": "PASS",
+      "operation_tool_call": "PASS"
+    }
+  },
+  "mappings": {
+    "type_error_fatal": "DE-01",
+    "type_error_unhandled": "DE-01",
+    "type_error_handled": "PR-05",
+    "type_warning": "PR-05",
+    "type_transaction": "PR-05",
+    "low_quality_score": "PR-03",
+    "security_keyword": "PR-01",
+    "widespread_error": "PR-04",
+    "operation_chat": "PR-01",
+    "operation_embeddings": "PR-01",
+    "operation_agent_run": "PR-01",
+    "operation_tool_call": "PR-02"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "_version": "1.0.0",
+  "_description": "LiteLLM gateway request log → AKSI control ID mapping. LiteLLM is the most-used LLM gateway and ships callback logs that normalize 100+ providers behind an OpenAI-compatible shape. Each entry is one upstream call (completion/embedding/moderation/image). call_type drives the primary control; status=failure escalates to DE-01 FAIL; cost > threshold and guardrail_violation are additive signals.",
+  "_metadata": {
+    "source_format": "litellm",
+    "schema": "litellm-callback-log-v1",
+    "owner": "ancilis-importers",
+    "default_cost_threshold_usd": 1.0,
+    "signal_priority": [
+      "guardrail_violation",
+      "status_failure",
+      "cost_threshold_exceeded",
+      "call_type"
+    ],
+    "result_levels": {
+      "completion_success": "PASS",
+      "embeddings_success": "PASS",
+      "moderation_success": "PASS",
+      "image_generation_success": "PASS",
+      "status_failure": "FAIL",
+      "guardrail_violation": "FAIL",
+      "cost_threshold_exceeded": "FLAG"
+    }
+  },
+  "mappings": {
+    "completion": "PR-01",
+    "embeddings": "PR-04",
+    "moderation": "PR-04",
+    "image_generation": "PR-04",
+    "status_failure": "DE-01",
+    "guardrail_violation": "PR-02",
+    "cost_threshold_exceeded": "PR-04"
+  }
+}
