@@ -1,0 +1,10 @@
+{
+  "framework_version": "0.6",
+  "framework_commit_sha": "aeda1839054090a8384f3d9d2700a656fab519a2",
+  "framework_repo": "ancilis-one-shot",
+  "framework_branch": "codex/aksi-production-grade-framework",
+  "framework_path": "docs/framework/aksi-framework-master.md",
+  "framework_master_sha256": "1e7632d0b2561d768b4d5be898fffd44e89e0378c4731bc7b438b9b5fd4f0322",
+  "frozen_at": "2026-05-11T15:50:49-04:00",
+  "frozen_for_sdk_build": "aksi-v06-sdk-full-support"
+}
