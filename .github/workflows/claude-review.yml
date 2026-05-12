@@ -1,0 +1,152 @@
+# Canonical Claude reviewer workflow.
+#
+# Deploy a copy to `.github/workflows/claude-review.yml` in each repo whose
+# branch protection requires "1 required approving review" — currently
+# ancilis/ancilis and ancilis/ancilis-one-shot.
+#
+# Required repo secret: CLAUDE_CODE_OAUTH_TOKEN
+#   (generate via `claude` CLI: `claude /install-github-app` or in the
+#    Claude Code dashboard → GitHub App → install on the repo).
+#
+# What it does: runs on PR open / sync / ready-for-review, asks Claude to
+# read the diff and produce a structured verdict + summary, then calls
+# `gh pr review --approve | --comment | --request-changes` with the
+# Claude-supplied body. The formal review state satisfies branch
+# protection without a human in the loop.
+#
+# Reasoning posture: see `prompt` below. Errs toward `comment` when in
+# doubt — only `approve` for clean small changes, only `request_changes`
+# for real defects.
+
+name: Claude reviewer
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to review manually
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Skip drafts on pull_request events; allow manual dispatch on any PR.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve PR number
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ inputs.pr_number }}" ]; then
+            echo "number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Claude reviewer
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Force a structured JSON response we can parse in the next step.
+          # See https://github.com/anthropics/claude-code-action — the
+          # `--json-schema` flag is what populates `outputs.structured_output`.
+          claude_args: |
+            --json-schema '{"type":"object","required":["verdict","summary"],"properties":{"verdict":{"type":"string","enum":["approve","comment","request_changes"]},"summary":{"type":"string","description":"Markdown review body, 2-8 sentences"}}}'
+            --allowed-tools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*)"
+            --max-turns 12
+          prompt: |
+            You are the Claude reviewer for the Ancilis project. Review PR #${{ steps.pr.outputs.number }} in this repo.
+
+            ## How to gather context
+
+            1. `gh pr view ${{ steps.pr.outputs.number }} --json title,body,author,baseRefName,headRefName,additions,deletions,changedFiles,labels`
+            2. `gh pr diff ${{ steps.pr.outputs.number }}` — read the full diff
+            3. Use Read / Glob to look at any unchanged files you need for context (e.g. the function the diff modifies)
+            4. `gh pr checks ${{ steps.pr.outputs.number }}` if CI status is relevant
+
+            ## How to decide
+
+            Pick exactly one verdict:
+
+            - **`approve`** — the change is correct, in-scope (matches the PR title and the linked ANC ticket if any), tests are present where they should be, and there's no security or scope concern. Small/medium changes that "do what they say on the tin" should land here.
+            - **`comment`** — the change has questions, suggestions, or context worth surfacing, but nothing blocking. Use this for nitpicks, future-work notes, or when you want a human to weigh in but won't block the merge.
+            - **`request_changes`** — there's a real problem the author must address before merge: a defect, a security regression, missing tests for new code paths, unauthorized scope drift beyond the linked ticket, or a CI failure that isn't a known flake.
+
+            ## Ancilis context
+
+            - Two repos in scope: `ancilis/ancilis` (SDK) and `ancilis/ancilis-one-shot` (Platform).
+            - Platform-first focus per ANC-698. Anything not serving that should be flagged (use `comment`, not `request_changes`, unless the PR is truly off-mission).
+            - Agent-authored PRs (e.g. by `ancilis` or `dependabot[bot]`) are normal — review them on their merits like any human PR.
+            - PR titles should reference an ANC-XXX ticket when applicable. Missing ANC ref is a `comment` flag, not a `request_changes` block.
+            - The "Validate ANC issue linkage" CI check is informational, not blocking — it failing isn't a reason to request changes.
+
+            ## Output format
+
+            Return ONLY a JSON object matching the configured schema:
+
+            ```json
+            {"verdict":"approve|comment|request_changes","summary":"<your markdown review, 2-8 sentences>"}
+            ```
+
+            The `summary` is what gets posted as the formal review body. Make it useful: name what changed, what you checked, why your verdict is what it is.
+
+      - name: Submit formal review
+        if: steps.claude.outcome == 'success' && steps.claude.outputs.structured_output != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          VERDICT: ${{ fromJSON(steps.claude.outputs.structured_output).verdict }}
+          SUMMARY: ${{ fromJSON(steps.claude.outputs.structured_output).summary }}
+        run: |
+          # Compose body with attribution and the session id (useful for
+          # auditing what model+turn produced this review).
+          BODY=$(cat <<BODY_EOF
+          $SUMMARY
+
+          ---
+          🤖 _Submitted by the Claude reviewer Action. session=\`${{ steps.claude.outputs.session_id }}\`._
+          BODY_EOF
+          )
+
+          case "$VERDICT" in
+            approve)
+              echo "Approving PR #$PR_NUMBER"
+              gh pr review "$PR_NUMBER" --approve --body "$BODY"
+              ;;
+            request_changes)
+              echo "Requesting changes on PR #$PR_NUMBER"
+              gh pr review "$PR_NUMBER" --request-changes --body "$BODY"
+              ;;
+            comment|*)
+              echo "Posting comment review on PR #$PR_NUMBER"
+              gh pr review "$PR_NUMBER" --comment --body "$BODY"
+              ;;
+          esac
+
+      - name: Surface failure as a comment (so reviewers know Claude bailed)
+        if: failure() || steps.claude.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          gh pr comment "$PR_NUMBER" --body "⚠️ Claude reviewer Action failed to produce a verdict. Falling back to human review. (Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
