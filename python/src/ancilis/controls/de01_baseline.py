@@ -11,6 +11,7 @@ from ancilis.config import ResolvedConfig
 
 if TYPE_CHECKING:
     from ancilis.engine.action import Action
+    from ancilis.engine.result import ControlResult
 
 
 BASELINE_MIN_EVENTS = 25
@@ -130,7 +131,7 @@ class DE01BaselineEvaluator:
     def set_baseline(self, window: BaselineWindow) -> None:
         self._baseline = window
 
-    def evaluate(self, action: Action, config: ResolvedConfig):  # -> ControlResult
+    def evaluate(self, action: Action, config: ResolvedConfig) -> ControlResult:
         start = time.perf_counter()
         from ancilis.engine.result import ControlResult
 
@@ -194,7 +195,7 @@ class DE01BaselineEvaluator:
         action: Action,
         config: ResolvedConfig,
         current_rate: float,
-    ):  # -> ControlResult
+    ) -> ControlResult:
         """Evaluate with an explicit current rate for frequency spike detection."""
         start = time.perf_counter()
         from ancilis.engine.result import ControlResult
