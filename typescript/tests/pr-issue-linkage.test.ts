@@ -26,13 +26,18 @@ type Workflow = {
   >;
 };
 
-function runGuard(title: string, headRef: string): { status: number | null; stdout: string; stderr: string } {
+function runGuard(
+  title: string,
+  headRef: string,
+  authorLogin = "",
+): { status: number | null; stdout: string; stderr: string } {
   const result = spawnSync("node", ["scripts/check_pr_issue_linkage.mjs"], {
     cwd: process.cwd(),
     env: {
       ...process.env,
       PR_TITLE: title,
       PR_HEAD_REF: headRef,
+      PR_AUTHOR_LOGIN: authorLogin,
     },
     encoding: "utf-8",
   });
@@ -73,6 +78,38 @@ describe("PR issue linkage guard", () => {
     expect(result.status).toBe(1);
     expect(`${result.stdout}\n${result.stderr}`).toMatch(/ANC-\d+/i);
   });
+
+  it("accepts Dependabot pull requests on dependabot branches without an ANC issue id", () => {
+    const result = runGuard(
+      "chore(deps): bump vite from 4.5.0 to 4.5.1",
+      "dependabot/npm_and_yarn/vite-4.5.1",
+      "dependabot[bot]",
+    );
+
+    expect(result.status).toBe(0);
+  });
+
+  it("rejects human-authored pull requests on dependabot branches without an ANC issue id", () => {
+    const result = runGuard(
+      "feat: sneak past linkage",
+      "dependabot/npm_and_yarn/vite-4.5.1",
+      "octocat",
+    );
+
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}\n${result.stderr}`).toMatch(/ANC-\d+/i);
+  });
+
+  it("rejects Dependabot-authored pull requests when the branch is not a dependabot branch", () => {
+    const result = runGuard(
+      "chore(deps): bump vite from 4.5.0 to 4.5.1",
+      "chore/dependabot-bump-vite",
+      "dependabot[bot]",
+    );
+
+    expect(result.status).toBe(1);
+    expect(`${result.stdout}\n${result.stderr}`).toMatch(/ANC-\d+/i);
+  });
 });
 
 describe("PR issue linkage governance", () => {
@@ -88,13 +125,16 @@ describe("PR issue linkage governance", () => {
     expect(runStep?.env).toMatchObject({
       PR_TITLE: "${{ github.event.pull_request.title }}",
       PR_HEAD_REF: "${{ github.event.pull_request.head.ref }}",
+      PR_AUTHOR_LOGIN: "${{ github.event.pull_request.user.login }}",
     });
   });
 
-  it("documents the one-issue-per-PR rule in CONTRIBUTING", () => {
+  it("documents the one-issue-per-PR rule and narrow Dependabot exception in CONTRIBUTING", () => {
     const contributing = readFileSync(join(process.cwd(), "CONTRIBUTING.md"), "utf-8");
 
     expect(contributing).toMatch(/one issue per pull request/i);
     expect(contributing).toMatch(/ANC-\d+/i);
+    expect(contributing).toMatch(/dependabot\[bot\]/i);
+    expect(contributing).toMatch(/dependabot\//i);
   });
 });

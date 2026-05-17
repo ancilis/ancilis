@@ -53,7 +53,9 @@ contribution.
 Open one issue per pull request. Each PR targeting `main` should map to a
 single tracked issue, and the issue id must appear in either the PR title or
 the head branch name using the `ANC-####` format (for example, `ANC-1234`).
-PRs fail CI when both fields omit the issue id.
+PRs fail CI when both fields omit the issue id. The only exception is a real
+Dependabot PR authored by `dependabot[bot]` on a `dependabot/...` branch; do
+not rely on a `dependabot/...` branch name alone to bypass the rule.
 
 ## Code Style
 

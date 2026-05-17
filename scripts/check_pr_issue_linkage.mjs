@@ -4,8 +4,16 @@ function hasIssueId(value) {
   return ISSUE_ID_PATTERN.test(value ?? "");
 }
 
-function validatePullRequestIssueLinkage(title, headRef) {
+function isDependabotPullRequest(authorLogin, headRef) {
+  return authorLogin === "dependabot[bot]" && headRef.startsWith("dependabot/");
+}
+
+function validatePullRequestIssueLinkage(title, headRef, authorLogin) {
   if (hasIssueId(title) || hasIssueId(headRef)) {
+    return;
+  }
+
+  if (isDependabotPullRequest(authorLogin, headRef)) {
     return;
   }
 
@@ -16,9 +24,10 @@ function validatePullRequestIssueLinkage(title, headRef) {
 
 const title = process.env.PR_TITLE ?? "";
 const headRef = process.env.PR_HEAD_REF ?? "";
+const authorLogin = process.env.PR_AUTHOR_LOGIN ?? "";
 
 try {
-  validatePullRequestIssueLinkage(title, headRef);
+  validatePullRequestIssueLinkage(title, headRef, authorLogin);
   console.log(`ANC issue linkage OK: title="${title}" branch="${headRef}"`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
