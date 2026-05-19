@@ -177,7 +177,7 @@ class ActivationResolver:
                     spec.active_controls.append(control_id)
                 if control_id not in spec.activation_source or spec.activation_source[control_id] == "baseline":
                     spec.activation_source[control_id] = f"certification_targets:{cid_target}"
-            spec.control_thresholds.setdefault(control_id, "standard")
+                spec.control_thresholds.setdefault(control_id, "standard")
 
             # Merge evidence requirements from certification
             evidence_packaging = profile.get("evidence_packaging", {})

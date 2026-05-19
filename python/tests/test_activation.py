@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+import ancilis.activation.resolver as resolver_module
 from ancilis.activation.advisory import (
     CertificationUpgradeAdvisory,
     ClassificationAdvisory,
@@ -109,6 +110,26 @@ class TestPath2CertificationIntent:
         profile = load_certification_profile("aiuc-1")
         assert profile is not None
         assert "version" in profile
+
+    def test_certification_required_controls_all_receive_standard_threshold(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(
+            resolver_module,
+            "load_certification_profiles",
+            lambda _: {
+                "future-cert": {
+                    "required_aksi_controls": ["FUT-01", "FUT-02"],
+                    "evidence_packaging": {},
+                }
+            },
+        )
+
+        spec = ActivationResolver().resolve(certification_targets=["future-cert"])
+
+        assert spec.control_thresholds["FUT-01"] == "standard"
+        assert spec.control_thresholds["FUT-02"] == "standard"
 
 
 # --- Both Paths Composing ---
