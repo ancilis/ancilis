@@ -196,7 +196,7 @@ def test_check_posture_returns_latest_session_active_evaluator_results() -> None
     structured = _call_tool_structured(server, "ancilis_check_posture")
 
     assert structured["session_id"] == "latest-session"
-    assert structured["posture_score"] == 0.1
+    assert structured["posture_score"] == 0.0909
     assert structured["active_overlays"] == ["glba", "soc2"]
     assert structured["evaluated_at"]
     assert [control["id"] for control in structured["controls"]] == ["PR-01", "PR-02"]

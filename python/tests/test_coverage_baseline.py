@@ -227,20 +227,28 @@ def test_evaluation_result_full():
 def test_evaluators_init_exports():
     import ancilis.engine.evaluators as evs
     from ancilis.engine.evaluators import (
-        PR01IdentityEvaluator,
+        PR01ActionAuthorizationEvaluator,
         PR02ScopeEvaluator,
         PR03ProvenanceEvaluator,
         PR04ExposureEvaluator,
-        PR05AuditEvaluator,
-        PR06ConfigBaselineEvaluator,
+        PR05IsolationEvaluator,
+        PR06AuditTrailEvaluator,
         PR07TransportEvaluator,
         PR08InputEvaluator,
         DE01BaselineEvaluator,
+        DE02ClassificationDriftEvaluator,
+        DE03ConfigDriftEvaluator,
+        GOV01IdentityAuthEvaluator,
         RateTracker,
         BaselineWindow,
         DeviationFlag,
     )
-    assert evs.PR01IdentityEvaluator is PR01IdentityEvaluator
+    assert evs.PR01ActionAuthorizationEvaluator is PR01ActionAuthorizationEvaluator
+    assert evs.PR05IsolationEvaluator is PR05IsolationEvaluator
+    assert evs.PR06AuditTrailEvaluator is PR06AuditTrailEvaluator
+    assert evs.DE02ClassificationDriftEvaluator is DE02ClassificationDriftEvaluator
+    assert evs.DE03ConfigDriftEvaluator is DE03ConfigDriftEvaluator
+    assert evs.GOV01IdentityAuthEvaluator is GOV01IdentityAuthEvaluator
     assert evs.RateTracker is RateTracker
     assert evs.BaselineWindow is BaselineWindow
 

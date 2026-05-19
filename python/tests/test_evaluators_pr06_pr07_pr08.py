@@ -1,11 +1,11 @@
-"""Tests for PR-06, PR-07, and PR-08 evaluators."""
+"""Tests for DE-03, PR-07, and PR-08 evaluators."""
 
 from __future__ import annotations
 
 import pytest
 
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
-from ancilis.engine.evaluators.pr06_config_baseline import PR06ConfigBaselineEvaluator
+from ancilis.engine.evaluators.de03_config_drift import DE03ConfigDriftEvaluator
 from ancilis.engine.evaluators.pr07_transport import (
     PR07TransportEvaluator,
     _is_localhost,
@@ -16,12 +16,12 @@ from ancilis.testing._helpers import make_action, make_test_config
 
 
 # ---------------------------------------------------------------------------
-# PR-06: Configuration Integrity Baseline
+# DE-03: Configuration/Dependency Drift Monitoring
 # ---------------------------------------------------------------------------
 
-class TestPR06ConfigBaselineEvaluator:
+class TestDE03ConfigDriftEvaluator:
     def setup_method(self):
-        self.evaluator = PR06ConfigBaselineEvaluator()
+        self.evaluator = DE03ConfigDriftEvaluator()
         self.config = make_test_config()
 
     def test_skip_no_tool(self):

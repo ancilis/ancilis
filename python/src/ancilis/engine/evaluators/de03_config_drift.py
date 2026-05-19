@@ -1,4 +1,4 @@
-"""PR-06: Configuration Integrity Baseline evaluator."""
+"""DE-03: Configuration/Dependency Drift Monitoring evaluator."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from ancilis.engine.action import Action
 from ancilis.engine.result import ControlResult
 
 
-class PR06ConfigBaselineEvaluator:
+class DE03ConfigDriftEvaluator:
     """Establishes and monitors configuration baselines for agent tools.
 
     On first evaluation for a given tool, records the tool's configuration hash
@@ -20,8 +20,8 @@ class PR06ConfigBaselineEvaluator:
     FAIL if drift is detected.
     """
 
-    control_id = "PR-06"
-    control_name = "Configuration Integrity Baseline"
+    control_id = "DE-03"
+    control_name = "Configuration/Dependency Drift Monitoring"
 
     def __init__(self) -> None:
         # In-memory baseline store: tool_name -> baseline_hash
@@ -38,7 +38,7 @@ class PR06ConfigBaselineEvaluator:
         if not tool or not tool.description_hash:
             return None
 
-        raw = f"{tool.name}:{tool.description_hash}"
+        raw = ":".join([tool.name, tool.description_hash, tool.version or "", tool.server or ""])
         return hashlib.sha256(raw.encode()).hexdigest()
 
     def evaluate(self, action: Action, config: ResolvedConfig) -> ControlResult:

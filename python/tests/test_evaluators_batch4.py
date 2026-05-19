@@ -1,4 +1,4 @@
-"""Tests for PR-06, GOV-03, DE-02 evaluators (ANC-512)."""
+"""Tests for DE-03, GOV-03, DE-02 evaluators (ANC-512)."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ import pytest
 
 from ancilis.config import load_config
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
-from ancilis.engine.evaluators.pr06_config_baseline import PR06ConfigBaselineEvaluator
+from ancilis.engine.evaluators.de03_config_drift import DE03ConfigDriftEvaluator
 from ancilis.engine.evaluators.gov03_risk_tolerance import GOV03RiskToleranceEvaluator
-from ancilis.engine.evaluators.de02_config_drift import DE02ConfigDriftEvaluator
+from ancilis.engine.evaluators.de02_classification_drift import DE02ClassificationDriftEvaluator
 
 
 # --- Helpers ---
@@ -78,23 +78,23 @@ def _make_config_partial():
 
 
 # ============================================================
-# PR-06: Configuration Integrity Baseline
+# DE-03: Configuration/Dependency Drift Monitoring
 # ============================================================
 
 
-class TestPR06ConfigBaseline:
+class TestDE03ConfigDrift:
     def test_first_observation_establishes_baseline(self):
-        ev = PR06ConfigBaselineEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         action = _make_action(tool_name="read_file", description_hash="abc123")
         result = ev.evaluate(action, _make_config_minimal())
         assert result.result == "PASS"
-        assert result.control_id == "PR-06"
+        assert result.control_id == "DE-03"
         assert result.evidence_data["baseline_established"] is True
         assert result.evidence_data["hash_match"] is True
         assert "established" in result.detail.lower()
 
     def test_same_hash_passes_on_repeat(self):
-        ev = PR06ConfigBaselineEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         action = _make_action(tool_name="read_file", description_hash="abc123")
         ev.evaluate(action, _make_config_minimal())  # establish
         result = ev.evaluate(action, _make_config_minimal())  # verify
@@ -102,7 +102,7 @@ class TestPR06ConfigBaseline:
         assert result.evidence_data["hash_match"] is True
 
     def test_changed_hash_fails(self):
-        ev = PR06ConfigBaselineEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         action1 = _make_action(tool_name="read_file", description_hash="abc123")
         action2 = _make_action(tool_name="read_file", description_hash="xyz999")
         ev.evaluate(action1, _make_config_minimal())  # establish baseline
@@ -112,7 +112,7 @@ class TestPR06ConfigBaseline:
         assert "drift" in result.detail.lower()
 
     def test_no_tool_name_skips(self):
-        ev = PR06ConfigBaselineEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         action = _make_action_no_tool()
         result = ev.evaluate(action, _make_config_minimal())
         assert result.result == "SKIP"
@@ -120,14 +120,14 @@ class TestPR06ConfigBaseline:
 
     def test_no_description_hash_skips(self):
         """Without description_hash, cannot establish a reliable baseline — SKIP."""
-        ev = PR06ConfigBaselineEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         action = _make_action(tool_name="read_file", description_hash=None, version="1.0")
         result = ev.evaluate(action, _make_config_minimal())
         assert result.result == "SKIP"
 
     def test_different_tools_tracked_independently(self):
         """Two distinct tools each get their own baseline slot."""
-        ev = PR06ConfigBaselineEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         a1 = _make_action(tool_name="tool_a", description_hash="hash_a")
         a2 = _make_action(tool_name="tool_b", description_hash="hash_b")
         r1 = ev.evaluate(a1, _make_config_minimal())
@@ -214,48 +214,51 @@ class TestGOV03RiskTolerance:
 
 
 # ============================================================
-# DE-02: Configuration Drift Monitoring
+# DE-02: Classification Drift and Boundary Validation
 # ============================================================
 
 
-class TestDE02ConfigDrift:
-    def test_first_observation_passes(self):
-        ev = DE02ConfigDriftEvaluator()
+class TestDE02ClassificationDrift:
+    def test_clean_action_passes(self):
+        ev = DE02ClassificationDriftEvaluator()
         action = _make_action(tool_name="read_file", description_hash="abc123")
-        result = ev.evaluate(action, _make_config_minimal())
+        result = ev.evaluate(action, _make_config_full())
         assert result.result == "PASS"
         assert result.control_id == "DE-02"
-        assert result.evidence_data["first_observation"] is True
-        assert result.evidence_data["drift_detected"] is False
+        assert result.evidence_data["observed_data_classes"] == []
 
-    def test_same_fingerprint_passes(self):
-        ev = DE02ConfigDriftEvaluator()
-        action = _make_action(tool_name="read_file", description_hash="abc123")
-        ev.evaluate(action, _make_config_minimal())
-        result = ev.evaluate(action, _make_config_minimal())
-        assert result.result == "PASS"
-        assert result.evidence_data["drift_detected"] is False
-
-    def test_changed_fingerprint_fails(self):
-        ev = DE02ConfigDriftEvaluator()
-        action1 = _make_action(tool_name="read_file", description_hash="abc123")
-        action2 = _make_action(tool_name="read_file", description_hash="xyz999")
-        ev.evaluate(action1, _make_config_minimal())
-        result = ev.evaluate(action2, _make_config_minimal())
+    def test_undeclared_classification_fails(self):
+        ev = DE02ClassificationDriftEvaluator()
+        action = _make_action(tool_name="read_file")
+        action.parameters.raw = {"card": "4111-1111-1111-1111"}
+        result = ev.evaluate(action, _make_config_full())
         assert result.result == "FAIL"
-        assert result.evidence_data["drift_detected"] is True
-        assert "previous_fingerprint" in result.evidence_data
-        assert "drift" in result.detail.lower()
+        assert result.evidence_data["undeclared_data_classes"] == ["DC-CHD"]
 
-    def test_no_tool_name_skips(self):
-        ev = DE02ConfigDriftEvaluator()
-        action = _make_action_no_tool()
-        result = ev.evaluate(action, _make_config_minimal())
-        assert result.result == "SKIP"
+    def test_declared_classification_passes(self):
+        ev = DE02ClassificationDriftEvaluator()
+        action = _make_action(tool_name="read_file")
+        action.parameters.raw = {"ssn": "123-45-6789"}
+        result = ev.evaluate(action, _make_config_full())
+        assert result.result == "PASS"
 
+    def test_boundary_violation_fails(self):
+        ev = DE02ClassificationDriftEvaluator()
+        action = _make_action(tool_name="read_file")
+        action.parameters.raw = {"destination": "blocked.example.com"}
+        config = load_config(raw={
+            "agent": {"name": "test-agent"},
+            "security": {"scope": {"blocked_destinations": ["blocked.example.com"]}},
+        })
+        result = ev.evaluate(action, config)
+        assert result.result == "FAIL"
+        assert result.evidence_data["boundary_violation"]
+
+
+class TestDE03MovedConfigDriftCoverage:
     def test_different_tools_independent_tracking(self):
         """Drift on tool_a should not affect tool_b."""
-        ev = DE02ConfigDriftEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         a1v1 = _make_action(tool_name="tool_a", description_hash="hash_a1")
         a1v2 = _make_action(tool_name="tool_a", description_hash="hash_a2")
         b1 = _make_action(tool_name="tool_b", description_hash="hash_b1")
@@ -270,14 +273,14 @@ class TestDE02ConfigDrift:
 
     def test_no_description_hash_skips(self):
         """Without description_hash, cannot reliably fingerprint — SKIP."""
-        ev = DE02ConfigDriftEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         action = _make_action(tool_name="list_files", description_hash=None, version="1.0")
         result = ev.evaluate(action, _make_config_minimal())
         assert result.result == "SKIP"
 
     def test_fingerprint_includes_server_and_version(self):
         """Changing server with description_hash present should be detected as drift."""
-        ev = DE02ConfigDriftEvaluator()
+        ev = DE03ConfigDriftEvaluator()
         a1 = _make_action(tool_name="list_files", description_hash="same_hash", version="1.0", server="mcp://a")
         a2 = _make_action(tool_name="list_files", description_hash="same_hash", version="1.0", server="mcp://b")
         ev.evaluate(a1, _make_config_minimal())
