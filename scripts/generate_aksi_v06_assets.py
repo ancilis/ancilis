@@ -5,13 +5,15 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-FROZEN_SOURCE = Path("/private/tmp/aksi-v06-src")
+FROZEN_SOURCE_ENV = "AKSI_FROZEN_SRC"
+FROZEN_SOURCE = Path(os.environ.get(FROZEN_SOURCE_ENV, "__AKSI_FROZEN_SRC_NOT_SET__")).expanduser()
 GRAPH_PATH = FROZEN_SOURCE / "AKSI_GRAPH.json"
 CONTROL_CATALOG_PATH = FROZEN_SOURCE / "platform/backend/app/engine/control_catalog.py"
 CLASS_SCHEMA_PATH = FROZEN_SOURCE / "shared/classifications/schema/aksi_class.schema.json"
@@ -206,7 +208,8 @@ SDK_TAXONOMY_OVERLAY_OVERRIDES = {
     # The platform graph is intentionally broad. The SDK taxonomy is the
     # activation contract: it only auto-enables overlays that are ready enough
     # for default developer workflows and keeps jurisdiction-specific overlays
-    # opt-in unless the data class is a strong signal.
+    # opt-in unless the data class is a strong signal. See
+    # docs/adr/0001-sdk-taxonomy-overlay-overrides.md.
     "DC-BIO": ["eu-ai-act"],
     "DC-CUI": ["cmmc-l2"],
     "DC-FCI": ["fedramp"],
@@ -611,6 +614,12 @@ def generate_controls_reference() -> None:
 
 
 def main() -> None:
+    if FROZEN_SOURCE_ENV not in os.environ:
+        raise SystemExit(
+            "AKSI_FROZEN_SRC must point to the frozen AKSI v0.6 artifact checkout "
+            "before running scripts/generate_aksi_v06_assets.py."
+        )
+
     missing = [
         path
         for path in (

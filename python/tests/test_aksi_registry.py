@@ -77,9 +77,17 @@ class TestAKSIControlRegistry:
 
     def test_all_controls_have_regulatory_mappings(self):
         controls = load_control_definitions()
+        empty_mappings = []
         for cid, cdef in controls.items():
             assert "regulatory_mappings" in cdef, f"{cid} missing regulatory_mappings"
             assert isinstance(cdef["regulatory_mappings"], dict)
+            if not cdef["regulatory_mappings"]:
+                empty_mappings.append(cid)
+        if empty_mappings:
+            pytest.xfail(
+                "ANC-2082 tracks restoring non-empty AKSI v0.6 regulatory_mappings "
+                f"for shared controls: {', '.join(sorted(empty_mappings))}"
+            )
 
     def test_common_controls_baseline_true_extension_controls_false(self):
         controls = load_control_definitions()
