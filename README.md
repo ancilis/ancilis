@@ -232,9 +232,22 @@ ancilis status --verbose          Per-control detail
 ancilis report                    Terminal report
 ancilis report --format markdown  Markdown for review
 ancilis report --format pdf       PDF for audit (requires pandoc)
+ancilis evidence list             Recent evidence records
+ancilis evidence show <id>        Full evidence record by ID or prefix
+ancilis evidence verify           Verify evidence hash chain integrity
+ancilis certify --target soc2 --dry-run
+                                  Framework coverage and gaps
 ancilis config validate           Check your config
 ancilis approve-tool <name>       Approve a discovered tool
 ancilis doctor                    First-run setup check
+```
+
+Example evidence workflows:
+
+```bash
+ancilis evidence list --limit 10
+ancilis evidence show 9f2a4c1
+ancilis certify --target soc2 --dry-run
 ```
 
 ## CI/CD
