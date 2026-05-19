@@ -11,6 +11,8 @@ from ancilis.engine.evaluators.pr05_isolation import PR05IsolationEvaluator
 from ancilis.engine.evaluators.pr06_audit_trail import PR06AuditTrailEvaluator
 from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
 from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
+from ancilis.engine.evaluators.pr09_sandbox import PR09SandboxEvaluator
+from ancilis.engine.evaluators.rs02_containment import RS02ContainmentEvaluator
 from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow, DeviationFlag
 from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
 from ancilis.engine.evaluators.gov02_ownership import GOV02OwnershipEvaluator
@@ -36,5 +38,7 @@ __all__ = [
     "PR06AuditTrailEvaluator",
     "PR07TransportEvaluator",
     "PR08InputEvaluator",
+    "PR09SandboxEvaluator",
+    "RS02ContainmentEvaluator",
     "RateTracker",
 ]

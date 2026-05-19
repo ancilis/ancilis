@@ -30,6 +30,8 @@ from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow
 from ancilis.engine.evaluators.pr06_audit_trail import PR06AuditTrailEvaluator
 from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
 from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
+from ancilis.engine.evaluators.pr09_sandbox import PR09SandboxEvaluator
+from ancilis.engine.evaluators.rs02_containment import RS02ContainmentEvaluator
 
 # Controls that have evaluators
 EVALUATOR_CONTROL_IDS = {
@@ -49,6 +51,8 @@ EVALUATOR_CONTROL_IDS = {
     "PR-06",
     "PR-07",
     "PR-08",
+    "PR-09",
+    "RS-02",
 }
 
 POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS = {
@@ -62,7 +66,7 @@ RUNTIME_POLICY_GATE_SOURCES = (
     "explicit:security.controls",
     "certification_targets:",
 )
-POST_EVALUATION_CONTROL_IDS = {"PR-06"}
+POST_EVALUATION_CONTROL_IDS = {"PR-06", "RS-02"}
 
 # Maps PR-04 pattern types to data classification DC codes
 PATTERN_TO_DC: dict[str, str] = {
@@ -108,11 +112,13 @@ class Engine:
             "PR-06": PR06AuditTrailEvaluator(),
             "PR-07": PR07TransportEvaluator(),
             "PR-08": PR08InputEvaluator(),
+            "PR-09": PR09SandboxEvaluator(),
             "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
             "DE-02": DE02ClassificationDriftEvaluator(),
             "DE-03": DE03ConfigDriftEvaluator(),
             "DE-04": DE04IntegrityEvaluator(evidence_store=evidence_store),
             "GOV-02": GOV02OwnershipEvaluator(),
+            "RS-02": RS02ContainmentEvaluator(),
         }
         for control_id, definition in getattr(self.config, "custom_controls", {}).items():
             self._evaluators[control_id] = CustomControlEvaluator(definition)

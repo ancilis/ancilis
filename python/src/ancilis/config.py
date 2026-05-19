@@ -60,11 +60,21 @@ class ScopeConfig(BaseModel):
     blocked_destinations: list[str] = Field(default_factory=list)
 
 
+class SandboxPolicyConfig(BaseModel):
+    approved_execution_classes: list[str] = Field(default_factory=list)
+
+
+class ResponsePolicyConfig(BaseModel):
+    containment_required_for_results: list[str] = Field(default_factory=lambda: ["FAIL", "ERROR"])
+
+
 class SecurityConfig(BaseModel):
     mode: str = "audit"
     controls: dict[str, ControlOverride] = Field(default_factory=dict)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     scope: ScopeConfig = Field(default_factory=ScopeConfig)
+    sandbox_policy: SandboxPolicyConfig = Field(default_factory=SandboxPolicyConfig)
+    response_policy: ResponsePolicyConfig = Field(default_factory=ResponsePolicyConfig)
 
     @field_validator("mode")
     @classmethod
@@ -368,6 +378,8 @@ class ResolvedConfig:
         self.scope_max_actions_per_minute: int | None = None
         self.scope_allowed_destinations: list[str] = []
         self.scope_blocked_destinations: list[str] = []
+        self.sandbox_approved_execution_classes: list[str] = []
+        self.response_containment_required_for_results: list[str] = []
         self.active_certifications: list[str] = []
         self.llm_provider: str | None = None
         self.platform_url: str | None = None
@@ -526,6 +538,13 @@ def resolve_config(
     result.scope_max_actions_per_minute = config.security.scope.max_actions_per_minute
     result.scope_allowed_destinations = list(config.security.scope.allowed_destinations)
     result.scope_blocked_destinations = list(config.security.scope.blocked_destinations)
+    result.sandbox_approved_execution_classes = list(
+        config.security.sandbox_policy.approved_execution_classes
+    )
+    result.response_containment_required_for_results = [
+        status.upper()
+        for status in config.security.response_policy.containment_required_for_results
+    ]
 
     # Load shared data
     control_defs = load_control_definitions()
