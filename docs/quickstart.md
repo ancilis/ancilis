@@ -79,7 +79,7 @@ ancilis report --format markdown --output report.md
 ## Next steps
 
 - [Configuration reference](configuration.md) — every config field documented
-- [Controls reference](controls-reference.md) — all 26 AKSI controls with regulatory mappings
+- [Controls reference](controls-reference.md) — all 41 AKSI v0.6 controls and support levels
 - [Data classification guide](data-classification.md) — declare `my_agent_handles`, get HIPAA/GDPR/SOC 2 overlays automatically
 - [Producers](producers.md) — MCP, CLI, and HTTP integration paths
 - [Examples](../examples/) — runnable examples for each integration path

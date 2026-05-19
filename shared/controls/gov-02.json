@@ -1,36 +1,80 @@
 {
   "id": "GOV-02",
-  "name": "Agent Ownership & Accountability",
+  "product_control_id": "AKSI-GOV-02",
+  "framework_version": "0.6",
+  "framework_source_commit": "aeda1839054090a8384f3d9d2700a656fab519a2",
+  "name": "Ownership Accountability",
   "function": "GOVERN",
-  "csf_mapping": "GV.RR",
-  "description": "Every deployed agent has a designated human owner accountable for its behavior, compliance posture, and incident response. Ownership resolves to a real, contactable individual.",
-  "threat_addressed": "Unowned agents create accountability gaps. When an agent causes a compliance incident or security breach, no individual is responsible for response, remediation, or regulatory reporting.",
-  "enforcement_mechanism": "Every deployed agent has a designated human owner recorded in the agent registry. The owner is a real, contactable individual (not a team alias or role), accountable for the agent's behavior, compliance posture, and incident response. Ownership confirmed within defined review cycle.",
-  "security_outcome": {
-    "pass": "Every active agent has a current, verified human owner. No orphaned agents. Ownership resolves to a real individual.",
-    "fail": "Agent ownership or oversight responsibilities undefined."
-  },
-  "evidence_fields": [
-    "agent_owner_mapping",
-    "ownership_confirmation_timestamps"
+  "csf_mapping": "",
+  "description": "Each AI system has a named accountable owner for operation, risk decisions, and remediation.",
+  "effort_level": "quick",
+  "common": true,
+  "trigger_classifications": [],
+  "trigger_certification_targets": [],
+  "evidence_sources": [
+    "sdk_direct",
+    "github",
+    "jira",
+    "attestation"
   ],
+  "evidence_keywords": [
+    "owner",
+    "accountability",
+    "responsibility",
+    "governance"
+  ],
+  "overlays": [
+    "agent-payments",
+    "agent-runtime-threats",
+    "aiuc-1",
+    "anthropic_usage_policy",
+    "ccpa",
+    "cmmc-l2",
+    "csa_aicm",
+    "csa_ccm",
+    "dora",
+    "eu-ai-act",
+    "eu_cra",
+    "eu_gpai_code",
+    "fda_ai_device_pccp",
+    "fda_medical_device_cybersecurity",
+    "fedramp",
+    "gdpr",
+    "glba",
+    "hipaa",
+    "hitrust_ai_security",
+    "iso-23894",
+    "iso-27001",
+    "iso-27701",
+    "iso-42001",
+    "itar-ear",
+    "nis2",
+    "nist_ai_600_1_genai_profile",
+    "nist-ai-rmf",
+    "nist-csf",
+    "nist_privacy_framework",
+    "nist_sp_800_218_ssdf",
+    "nydfs-500",
+    "pci-dss-v4",
+    "sec-cyber-disclosure",
+    "securities-mnpi",
+    "soc2"
+  ],
+  "support_level": "runtime_evaluator",
   "default_enabled": true,
   "baseline": true,
-  "regulatory_mappings": {
-    "nist_csf": "GV.RR-01, GV.RR-02",
-    "iso_42001": "GOV 1.3",
-    "iso_27001": "A.5.2",
-    "soc2": "CC1.2, CC1.3",
-    "cmmc": "CA.L2",
-    "eu_ai_act": "Art.26",
-    "fedramp": null,
-    "gdpr": null,
-    "dora": "Art.5(2)",
-    "nis2": "Art.20",
-    "pci_dss": "Req 12.4",
-    "owasp": null
+  "security_outcome": {
+    "pass": "Current evidence supports AKSI v0.6 GOV-02: Ownership Accountability.",
+    "fail": "Required evidence for AKSI v0.6 GOV-02: Ownership Accountability is missing, stale, or contradictory."
   },
-  "display_name": "Agent ownership",
-  "display_detail": "Validates that every agent has a designated human owner accountable for its behavior, compliance posture, and incident response.",
-  "remediation_hint_template": "Agent owner not assigned or unverified. Add agent.owner in ancilis.yaml with a contactable individual accountable for this agent."
+  "evidence_fields": [
+    "owner",
+    "accountability",
+    "responsibility",
+    "governance"
+  ],
+  "regulatory_mappings": {},
+  "display_name": "Ownership Accountability",
+  "display_detail": "Each AI system has a named accountable owner for operation, risk decisions, and remediation.",
+  "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-02 (Ownership Accountability) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
 }

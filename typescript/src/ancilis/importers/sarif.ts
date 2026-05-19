@@ -6,27 +6,42 @@ import { sharedPathFrom } from "../shared-path.js";
 import type { ControlResult, EvaluationResult } from "../engine/result.js";
 
 const CONTROL_NAMES: Record<string, string> = {
-  "PR-01": "Prompt Injection Prevention",
-  "PR-02": "Rate Limiting",
-  "PR-03": "Input Validation",
-  "PR-04": "Cryptographic Controls",
-  "PR-05": "Secret Detection",
-  "DE-01": "Data Exfiltration Prevention",
+  "PR-01": "Action Authorization",
+  "PR-02": "Permission Scope Enforcement",
+  "PR-03": "Tool/Model Integrity & Provenance",
+  "PR-04": "Data Exposure Prevention",
+  "PR-05": "Context & Tenant Isolation",
+  "PR-08": "Input Validation & Injection Resistance",
+  "PR-09": "Controlled Code Execution & Sandbox Enforcement",
+  "DE-01": "Behavioral Anomaly Detection",
 };
 
 const UNMAPPED_CONTROL = "PR-03";
 
-interface SarifMappings {
-  mappings: Record<string, string>;
+interface SarifMappingEntry {
+  rule_id: string;
+  control_id: string;
+  match?: "exact" | "glob";
 }
 
-function loadMappings(): Record<string, string> {
+interface SarifMappings {
+  mappings: Record<string, string> | SarifMappingEntry[];
+}
+
+function loadMappings(): SarifMappingEntry[] {
   try {
     const p = sharedPathFrom(import.meta.url, "mappings", "sarif-aksi-controls.json");
     const data = JSON.parse(readFileSync(p, "utf-8")) as SarifMappings;
-    return data.mappings ?? {};
+    if (Array.isArray(data.mappings)) {
+      return data.mappings.filter((entry) => entry.rule_id && entry.control_id);
+    }
+    return Object.entries(data.mappings ?? {}).map(([rule_id, control_id]) => ({
+      rule_id,
+      control_id,
+      match: rule_id.includes("*") || rule_id.includes("?") ? "glob" : "exact",
+    }));
   } catch {
-    return {};
+    return [];
   }
 }
 
@@ -43,10 +58,16 @@ function fnmatch(name: string, pattern: string): boolean {
   return regex.test(name);
 }
 
-function mapRuleToControl(ruleId: string, mappings: Record<string, string>): string {
-  if (ruleId in mappings) return mappings[ruleId]!;
-  for (const [pattern, controlId] of Object.entries(mappings)) {
-    if (fnmatch(ruleId, pattern)) return controlId;
+function mapRuleToControl(ruleId: string, mappings: SarifMappingEntry[]): string {
+  for (const entry of mappings) {
+    if ((entry.match ?? "exact") !== "glob" && entry.rule_id === ruleId) {
+      return entry.control_id;
+    }
+  }
+  for (const entry of mappings) {
+    if ((entry.match ?? "exact") === "glob" && fnmatch(ruleId, entry.rule_id)) {
+      return entry.control_id;
+    }
   }
   return UNMAPPED_CONTROL;
 }
@@ -64,7 +85,7 @@ function formatLocation(location: Record<string, unknown>): string {
 export class SarifImporter {
   private readonly agentId: string;
   private readonly mode: "audit" | "enforce";
-  private readonly mappings: Record<string, string>;
+  private readonly mappings: SarifMappingEntry[];
 
   constructor(agentId = "import", mode: "audit" | "enforce" = "audit") {
     this.agentId = agentId;

@@ -18,6 +18,7 @@ import duckdb
 if TYPE_CHECKING:
     from ancilis.baselines.models import DriftReport
 
+from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
 from ancilis.config import ResolvedConfig
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.adapter import EvidenceAdapter, EvidenceAdapterPayload
@@ -80,7 +81,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     tenant_id VARCHAR,
     detected_data_types JSON NOT NULL DEFAULT '[]',
     sdk_version VARCHAR,
-    classification_context JSON NOT NULL DEFAULT '{}'
+    classification_context JSON NOT NULL DEFAULT '{}',
+    framework_version VARCHAR
 );
 """
 
@@ -90,15 +92,15 @@ INSERT INTO evidence_records (
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
-    detected_data_types, sdk_version, classification_context
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    detected_data_types, sdk_version, classification_context, framework_version
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_COLUMNS = """
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary,
-tenant_id, detected_data_types, sdk_version, classification_context
+tenant_id, detected_data_types, sdk_version, classification_context, framework_version
 """
 
 SYNC_SELECT_COLUMNS = """
@@ -107,7 +109,7 @@ er.session_id, er.source_type, er.tool_name, er.decision, er.mode,
 er.control_results, er.active_overlays, er.data_classifications,
 er.active_certifications, er.record_hash, er.previous_hash, er.total_duration_ms,
 er.output_summary, er.tenant_id, er.detected_data_types, er.sdk_version,
-er.classification_context
+er.classification_context, er.framework_version
 """
 
 CREATE_SYNC_TABLES_SQL = """
@@ -214,6 +216,10 @@ class EvidenceStore:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN classification_context JSON DEFAULT '{}'"
             )
+        if "framework_version" not in columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN framework_version VARCHAR"
+            )
         self._backfill_missing_sync_state_rows()
 
     @property
@@ -282,6 +288,9 @@ class EvidenceStore:
         ]
 
         detected_data_types = list(getattr(evaluation, "detected_data_types", None) or [])
+        framework_version = (
+            getattr(evaluation, "framework_version", None) or AKSI_FRAMEWORK_VERSION
+        )
 
         _sdk_ver: str | None
         try:
@@ -313,6 +322,7 @@ class EvidenceStore:
             tenant_id=self._tenant_id,
             detected_data_types=detected_data_types,
             sdk_version=_sdk_ver,
+            framework_version=framework_version,
             classification_context=classification_context,
         )
         record_hash = compute_hash(canon)
@@ -338,6 +348,7 @@ class EvidenceStore:
             tenant_id=self._tenant_id,
             detected_data_types=detected_data_types,
             sdk_version=_sdk_ver,
+            framework_version=framework_version,
             classification_context=classification_context,
         )
 
@@ -363,6 +374,7 @@ class EvidenceStore:
             json.dumps(record.detected_data_types),
             record.sdk_version,
             json.dumps(record.classification_context),
+            record.framework_version,
         ])
         self._create_sync_state_row(record.record_id)
 
@@ -767,11 +779,38 @@ class EvidenceStore:
                 tenant_id=record.tenant_id,
                 detected_data_types=record.detected_data_types,
                 sdk_version=record.sdk_version,
+                framework_version=record.framework_version,
                 classification_context=record.classification_context,
             )
             expected_hash = compute_hash(canon)
 
             if in_scope and record.record_hash != expected_hash:
+                pre_framework_canon = canonical_payload(
+                    evaluation_id=record.evaluation_id,
+                    timestamp=record.timestamp,
+                    agent_id=record.agent_id,
+                    source_type=record.source_type,
+                    tool_name=record.tool_name,
+                    decision=record.decision,
+                    mode=record.mode,
+                    control_results=record.control_results,
+                    active_overlays=record.active_overlays,
+                    data_classifications=record.data_classifications,
+                    active_certifications=record.active_certifications,
+                    total_duration_ms=record.total_duration_ms,
+                    previous_hash=record.previous_hash,
+                    output_summary=record.output_summary,
+                    session_id=record.session_id,
+                    tenant_id=record.tenant_id,
+                    detected_data_types=record.detected_data_types,
+                    sdk_version=record.sdk_version,
+                    classification_context=record.classification_context,
+                )
+                pre_framework_hash = compute_hash(pre_framework_canon)
+                if record.record_hash == pre_framework_hash:
+                    expected_previous = record.record_hash
+                    continue
+
                 legacy_canon = canonical_payload(
                     evaluation_id=record.evaluation_id,
                     timestamp=record.timestamp,
@@ -939,7 +978,8 @@ class EvidenceStore:
         session_id, source_type, tool_name, decision, mode, control_results,
         active_overlays, data_classifications, active_certifications,
         record_hash, previous_hash, total_duration_ms, output_summary,
-        tenant_id, detected_data_types, sdk_version, classification_context
+        tenant_id, detected_data_types, sdk_version, classification_context,
+        framework_version
         """
         raw_detected = row[19] if len(row) > 19 else None
         detected_data_types: list[str] = (
@@ -971,4 +1011,5 @@ class EvidenceStore:
             detected_data_types=detected_data_types,
             sdk_version=row[20] if len(row) > 20 else None,
             classification_context=classification_context,
+            framework_version=row[22] if len(row) > 22 else None,
         )

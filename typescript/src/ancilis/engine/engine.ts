@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { AKSI_FRAMEWORK_VERSION } from "../aksi/version.js";
 import type { ResolvedConfig } from "../config/index.js";
 import { sharedPathFrom } from "../shared-path.js";
 import type { Action } from "./action.js";
@@ -20,6 +21,7 @@ import { DE01BaselineEvaluator } from "../controls/de01Baseline.js";
 import type { BaselineWindow } from "../controls/de01Baseline.js";
 import { DE02ConfigDriftEvaluator } from "./evaluators/de02-config-drift.js";
 import { DE04IntegrityEvaluator } from "./evaluators/de04-integrity.js";
+import { GOV02OwnershipEvaluator } from "./evaluators/gov02-ownership.js";
 import type { DE04StoreAdapter } from "./evaluators/de04-integrity.js";
 import { ToolRegistry } from "./registry.js";
 import type { ControlResult, EvaluationResult } from "./result.js";
@@ -70,6 +72,7 @@ export class Engine {
       ["DE-01", new DE01BaselineEvaluator(options?.baselineWindow)],
       ["DE-02", new DE02ConfigDriftEvaluator()],
       ["DE-04", new DE04IntegrityEvaluator(options?.evidenceStore ?? null)],
+      ["GOV-02", new GOV02OwnershipEvaluator()],
     ]);
   }
 
@@ -183,6 +186,7 @@ export class Engine {
       timestamp: new Date().toISOString(),
       agentId: action.agentId,
       sourceType: action.sourceType ?? "agent",
+      frameworkVersion: action.frameworkVersion ?? AKSI_FRAMEWORK_VERSION,
       mode: this.config.mode as "audit" | "enforce",
       controlResults,
       decision,

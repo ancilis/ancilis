@@ -279,6 +279,7 @@ class TestOutputDisclosure:
             session_id=rec.session_id,
             detected_data_types=rec.detected_data_types,
             sdk_version=rec.sdk_version,
+            framework_version=rec.framework_version,
             classification_context=rec.classification_context,
         )
         payload_without_output = canonical_payload(
@@ -299,6 +300,7 @@ class TestOutputDisclosure:
             session_id=rec.session_id,
             detected_data_types=rec.detected_data_types,
             sdk_version=rec.sdk_version,
+            framework_version=rec.framework_version,
             classification_context=rec.classification_context,
         )
         assert compute_hash(payload_with_output) != compute_hash(payload_without_output)

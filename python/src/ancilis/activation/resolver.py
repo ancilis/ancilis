@@ -18,19 +18,21 @@ from ancilis.plugins import PluginRegistry
 
 logger = logging.getLogger("ancilis.activation")
 
-# All 26 AKSI controls — always active as baseline
-ALL_AKSI_CONTROLS = {
-    "GOV-01", "GOV-02", "GOV-03", "GOV-04",
+# AKSI v0.6 controls: 39 common controls plus 2 payment extension controls.
+COMMON_AKSI_CONTROLS = {
+    "GOV-01", "GOV-02", "GOV-03", "GOV-04", "GOV-05", "GOV-06", "GOV-07",
     "ID-01", "ID-02", "ID-03", "ID-04", "ID-05",
     "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
-    "DE-01", "DE-02", "DE-03", "DE-04",
-    "RS-01", "RS-02", "RS-03",
-    "RC-01", "RC-02",
+    "PR-09", "PR-10", "PR-11", "PR-12",
+    "DE-01", "DE-02", "DE-03", "DE-04", "DE-05", "DE-06",
+    "RS-01", "RS-02", "RS-03", "RS-04", "RS-05", "RS-06",
+    "RC-01", "RC-02", "RC-03",
 }
+EXTENDED_CONTROLS = {"PAY-01", "PAY-02"}
+ALL_AKSI_CONTROLS = COMMON_AKSI_CONTROLS | EXTENDED_CONTROLS
 
-# Legacy aliases for backward compatibility
-BASELINE_CONTROLS = ALL_AKSI_CONTROLS
-EXTENDED_CONTROLS: set[str] = set()  # All controls are now baseline
+# Legacy alias for callers that still import BASELINE_CONTROLS.
+BASELINE_CONTROLS = COMMON_AKSI_CONTROLS
 
 
 @dataclass
@@ -73,8 +75,8 @@ class ActivationResolver:
     ) -> ActivationSpec:
         spec = ActivationSpec()
 
-        # 1. Start with all 26 AKSI controls (all are baseline)
-        for cid in sorted(ALL_AKSI_CONTROLS):
+        # 1. Start with the AKSI v0.6 common controls.
+        for cid in sorted(COMMON_AKSI_CONTROLS):
             spec.active_controls.append(cid)
             spec.control_thresholds[cid] = "standard"
             spec.activation_source[cid] = "baseline"
@@ -92,6 +94,12 @@ class ActivationResolver:
         # 4. Path 2 — certification intent
         if certification_targets:
             self._resolve_certification_path(spec, certification_targets)
+
+        self._activate_extension_controls(
+            spec,
+            classifications=set(spec.data_classifications),
+            certification_targets=set(certification_targets or []),
+        )
 
         # 5. Explicit compliance overlay config
         if compliance_overlays:
@@ -150,11 +158,14 @@ class ActivationResolver:
     def _resolve_certification_path(self, spec: ActivationSpec, cert_targets: list[str]) -> None:
         """Path 2: Load certification profiles and activate required controls."""
         cert_profiles = load_certification_profiles(cert_targets)
+        extension_targets = self._extension_certification_targets()
 
         for cid_target in cert_targets:
             profile = cert_profiles.get(cid_target)
             if profile is None:
-                logger.warning("Unknown certification target '%s' — skipping", cid_target)
+                normalized = cid_target.upper().replace("-", "_")
+                if normalized not in extension_targets:
+                    logger.warning("Unknown certification target '%s' — skipping", cid_target)
                 continue
 
             spec.active_certifications.append(cid_target)
@@ -178,6 +189,43 @@ class ActivationResolver:
                 if oid not in spec.active_overlays:
                     spec.active_overlays.append(oid)
                     spec.activation_source[oid] = f"certification_targets:{cid_target}"
+
+    def _extension_certification_targets(self) -> set[str]:
+        targets: set[str] = set()
+        for control_def in self._control_defs.values():
+            if control_def.get("common", True):
+                continue
+            targets.update(control_def.get("trigger_certification_targets", []))
+        return targets
+
+    def _activate_extension_controls(
+        self,
+        spec: ActivationSpec,
+        *,
+        classifications: set[str],
+        certification_targets: set[str],
+    ) -> None:
+        normalized_targets = {target.upper().replace("-", "_") for target in certification_targets}
+        for control_id, control_def in sorted(self._control_defs.items()):
+            if control_def.get("common", True):
+                continue
+            trigger_classifications = set(control_def.get("trigger_classifications", []))
+            trigger_targets = set(control_def.get("trigger_certification_targets", []))
+            class_match = sorted(trigger_classifications.intersection(classifications))
+            target_match = sorted(trigger_targets.intersection(normalized_targets))
+            if not class_match and not target_match:
+                continue
+            if control_id not in spec.active_controls:
+                spec.active_controls.append(control_id)
+            spec.control_thresholds.setdefault(control_id, "standard")
+            if class_match:
+                spec.activation_source[control_id] = f"classification:{class_match[0]}"
+            elif target_match:
+                original_target = _first_original_certification_target(
+                    certification_targets,
+                    target_match[0],
+                )
+                spec.activation_source[control_id] = f"certification_targets:{original_target}"
 
     def _resolve_explicit_overlay_path(
         self,
@@ -293,3 +341,13 @@ class ActivationResolver:
 
 def _is_plugin_overlay(overlay_id: str) -> bool:
     return overlay_id.startswith("plugin:")
+
+
+def _first_original_certification_target(
+    targets: set[str],
+    normalized_target: str,
+) -> str:
+    for target in targets:
+        if target.upper().replace("-", "_") == normalized_target:
+            return target
+    return normalized_target

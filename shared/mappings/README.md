@@ -6,16 +6,21 @@
 
 ```json
 {
-  "_version": "1.0.0",
-  "mappings": {
-    "<rule-id-or-pattern>": "<aksi-control-id>"
-  }
+  "version": 1,
+  "mappings": [
+    {
+      "rule_id": "<rule-id-or-pattern>",
+      "control_id": "<aksi-control-id>",
+      "match": "exact",
+      "description": "Why this scanner rule maps to the AKSI control."
+    }
+  ]
 }
 ```
 
 ### Pattern matching
 
-Patterns are matched in order; **first match wins**.
+Exact rules are evaluated before glob rules. Glob rules are then evaluated in file order.
 
 | Pattern style | Example | Matches |
 |---|---|---|
@@ -28,15 +33,15 @@ Glob matching uses `*` as a wildcard suffix only (no full glob syntax).
 
 | Control | Meaning |
 |---|---|
-| `PR-01` | Access control / request validation |
-| `PR-02` | Rate limiting |
-| `PR-03` | Input validation / injection prevention |
-| `PR-04` | Cryptographic controls |
-| `PR-05` | Secrets management |
+| `PR-02` | Permission scope enforcement |
+| `PR-03` | Tool/model integrity and provenance |
+| `PR-04` | Data exposure prevention |
+| `PR-08` | Input validation and injection resistance |
+| `PR-09` | Controlled code execution and sandbox enforcement |
 
 ### Adding entries
 
-Add new mappings to the `mappings` object. More specific patterns should appear before wildcards since matching is first-match.
+Add new mappings to the `mappings` array. Set `match` to `exact` for one rule ID or `glob` for a wildcard pattern.
 
 ### CycloneDX
 

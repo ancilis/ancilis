@@ -218,6 +218,24 @@ def test_ci_typescript_example_score_steps_tolerate_non_compliant_scan_exit():
         assert "npx ancilis scan --ci --config ancilis.yaml 2>&1 || true" in step["run"]
 
 
+def test_aksi_v06_generator_requires_configured_frozen_source() -> None:
+    script = ROOT / "scripts" / "generate_aksi_v06_assets.py"
+    env = os.environ.copy()
+    env.pop("AKSI_FROZEN_SRC", None)
+
+    result = subprocess.run(
+        [sys.executable, str(script)],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode != 0
+    assert "AKSI_FROZEN_SRC" in result.stderr
+    assert "/private/tmp" not in script.read_text()
+
+
 def test_ci_typescript_example_setup_steps_include_dev_dependencies():
     workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
 

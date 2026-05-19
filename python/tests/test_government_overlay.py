@@ -13,7 +13,7 @@ from ancilis.activation.loader import (
     load_overlay_profiles,
     load_taxonomy,
 )
-from ancilis.activation.resolver import ALL_AKSI_CONTROLS, ActivationResolver
+from ancilis.activation.resolver import COMMON_AKSI_CONTROLS, ActivationResolver
 from ancilis.cli.main import cli
 from ancilis.config import load_config
 
@@ -54,7 +54,7 @@ class TestGovernmentOverlayProfile:
     def test_cmmc_framework_mapping_covers_all_aksi_controls(self) -> None:
         profile = load_overlay_profiles()["cmmc-l2"]
 
-        assert set(profile["framework_mapping"]) == ALL_AKSI_CONTROLS
+        assert set(profile["framework_mapping"]) == COMMON_AKSI_CONTROLS
 
     def test_cmmc_active_controls_reference_cmmc_and_nist(self) -> None:
         profile = load_overlay_profiles()["cmmc-l2"]
@@ -108,11 +108,13 @@ class TestGovernmentOverlayProfile:
 
     # --- regulatory_mappings.cmmc coverage (ANC-550 acceptance criterion) ---
 
-    def test_all_26_aksi_controls_have_regulatory_mappings_cmmc(self) -> None:
+    def test_all_common_aksi_controls_have_regulatory_mappings_cmmc(self) -> None:
         profile = load_overlay_profiles()["cmmc-l2"]
         controls = profile["controls"]
 
-        assert set(controls.keys()) == ALL_AKSI_CONTROLS, "CMMC-L2 must cover all 26 AKSI controls"
+        assert set(controls.keys()) == COMMON_AKSI_CONTROLS, (
+            "CMMC-L2 must cover all 39 common AKSI controls"
+        )
         for control_id, control in controls.items():
             assert "regulatory_mappings" in control, (
                 f"{control_id} missing regulatory_mappings field"
@@ -244,11 +246,11 @@ class TestGovContractorCertTarget:
         assert "cmmc-l2" in profile["required_overlays"]
         assert "fedramp" in profile["required_overlays"]
 
-    def test_gov_contractor_requires_all_26_aksi_controls(self) -> None:
+    def test_gov_contractor_requires_all_common_aksi_controls(self) -> None:
         profile = load_certification_profile("gov-contractor")
         required = set(profile["required_aksi_controls"])
 
-        assert required == ALL_AKSI_CONTROLS
+        assert required == COMMON_AKSI_CONTROLS
 
     def test_gov_contractor_strict_threshold_controls(self) -> None:
         profile = load_certification_profile("gov-contractor")
@@ -274,7 +276,7 @@ class TestGovContractorCertTarget:
         assert "gov-contractor" in spec.active_certifications
         assert "cmmc-l2" in spec.active_overlays
         assert "fedramp" in spec.active_overlays
-        assert set(spec.active_controls) == ALL_AKSI_CONTROLS
+        assert set(spec.active_controls) == COMMON_AKSI_CONTROLS
 
     def test_gov_contractor_cert_stacks_strict_thresholds(self) -> None:
         resolver = ActivationResolver()

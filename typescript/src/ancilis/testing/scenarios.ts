@@ -1,6 +1,7 @@
 /** ComplianceScenarios — pre-built test datasets for common compliance states. */
 
 import { randomUUID } from "node:crypto";
+import { AKSI_FRAMEWORK_VERSION } from "../aksi/version.js";
 import type { ControlResult, EvaluationResult } from "../engine/result.js";
 import { ScanResult } from "./scan-result.js";
 
@@ -24,6 +25,7 @@ function makeEvaluation(
     timestamp: new Date().toISOString(),
     agentId,
     sourceType: "agent",
+    frameworkVersion: AKSI_FRAMEWORK_VERSION,
     mode,
     controlResults,
     decision,

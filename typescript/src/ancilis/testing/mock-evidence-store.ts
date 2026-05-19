@@ -1,6 +1,7 @@
 /** MockEvidenceStore — in-memory evidence store for testing (no DuckDB). */
 
 import { randomUUID } from "node:crypto";
+import { AKSI_FRAMEWORK_VERSION } from "../aksi/version.js";
 import { GENESIS_SEED, canonicalPayload, computeHash } from "../evidence/chain.js";
 import type { EvidenceRecord } from "../evidence/record.js";
 import type { EvaluationResult } from "../engine/result.js";
@@ -48,6 +49,7 @@ export class MockEvidenceStore {
     const sessionId = evaluation.context?.sessionId ?? null;
     const detectedDataTypes = [...(evaluation.detectedDataTypes ?? [])];
     const sdkVersion = null;
+    const frameworkVersion = evaluation.frameworkVersion ?? AKSI_FRAMEWORK_VERSION;
     const classificationContext: Record<string, unknown> = {};
 
     const controlResultsData = evaluation.controlResults.map((cr) => ({
@@ -78,6 +80,7 @@ export class MockEvidenceStore {
       tenantId: this._tenantId,
       detectedDataTypes,
       sdkVersion,
+      frameworkVersion,
       classificationContext,
     });
     const recordHash = computeHash(canon);
@@ -103,6 +106,7 @@ export class MockEvidenceStore {
       tenantId: this._tenantId ?? null,
       detectedDataTypes,
       sdkVersion,
+      frameworkVersion,
       classificationContext,
     };
 
@@ -199,11 +203,39 @@ export class MockEvidenceStore {
         tenantId: record.tenantId,
         detectedDataTypes: record.detectedDataTypes,
         sdkVersion: record.sdkVersion,
+        frameworkVersion: record.frameworkVersion,
         classificationContext: record.classificationContext,
       });
       const expectedHash = computeHash(canon);
 
       if (inScope && record.recordHash !== expectedHash) {
+        const preFrameworkCanon = canonicalPayload({
+          evaluationId: record.evaluationId,
+          timestamp: record.timestamp,
+          agentId: record.agentId,
+          sourceType: record.sourceType ?? "agent",
+          toolName: record.toolName,
+          decision: record.decision,
+          mode: record.mode,
+          controlResults: record.controlResults,
+          activeOverlays: record.activeOverlays,
+          dataClassifications: record.dataClassifications,
+          activeCertifications: record.activeCertifications,
+          totalDurationMs: record.totalDurationMs,
+          previousHash: record.previousHash,
+          outputSummary: record.outputSummary,
+          sessionId: record.sessionId,
+          tenantId: record.tenantId,
+          detectedDataTypes: record.detectedDataTypes,
+          sdkVersion: record.sdkVersion,
+          classificationContext: record.classificationContext,
+        });
+        const preFrameworkHash = computeHash(preFrameworkCanon);
+        if (record.recordHash === preFrameworkHash) {
+          expectedPrevious = record.recordHash;
+          continue;
+        }
+
         const legacyCanon = canonicalPayload({
           evaluationId: record.evaluationId,
           timestamp: record.timestamp,
@@ -338,6 +370,7 @@ export class MockEvidenceStore {
       tenantId: partial.tenantId ?? this._tenantId ?? null,
       detectedDataTypes: partial.detectedDataTypes ?? [],
       sdkVersion: partial.sdkVersion ?? null,
+      frameworkVersion: partial.frameworkVersion ?? AKSI_FRAMEWORK_VERSION,
       classificationContext: partial.classificationContext ?? {},
     };
 
@@ -360,6 +393,7 @@ export class MockEvidenceStore {
       tenantId: record.tenantId,
       detectedDataTypes: record.detectedDataTypes,
       sdkVersion: record.sdkVersion,
+      frameworkVersion: record.frameworkVersion,
       classificationContext: record.classificationContext,
     });
     record.recordHash = computeHash(canon);

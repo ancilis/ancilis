@@ -19,9 +19,11 @@ class TestMinimalConfig:
 
     def test_minimal_config_all_controls_active(self):
         resolved = load_config(raw={"agent": {"name": "my-agent"}})
-        assert len(resolved.controls) == 26
-        for cs in resolved.controls.values():
-            assert cs.enabled is True
+        assert len(resolved.controls) == 41
+        enabled = {cid for cid, cs in resolved.controls.items() if cs.enabled}
+        assert len(enabled) == 39
+        assert "PAY-01" not in enabled
+        assert "PAY-02" not in enabled
 
     def test_minimal_config_no_overlays(self):
         resolved = load_config(raw={"agent": {"name": "my-agent"}})

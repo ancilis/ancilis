@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import { stringify as stringifyYaml } from "yaml";
 import {
   ActivationResolver,
-  ALL_AKSI_CONTROLS,
+  COMMON_AKSI_CONTROLS,
 } from "../src/ancilis/activation/resolver.js";
 import {
   loadOverlayProfiles,
@@ -71,7 +71,7 @@ describe("CMMC-L2 — Profile", () => {
   it("cmmc-l2 framework mapping covers all AKSI controls", () => {
     const profile = loadOverlayProfiles().get("cmmc-l2")!;
     const keys = new Set(Object.keys(profile.framework_mapping as Record<string, unknown>));
-    expect(keys).toEqual(ALL_AKSI_CONTROLS);
+    expect(keys).toEqual(COMMON_AKSI_CONTROLS);
   });
 
   it("cmmc-l2 active controls reference CMMC Level 2 and NIST", () => {
@@ -206,7 +206,7 @@ describe("Securities MNPI — Profile", () => {
   it("securities-mnpi framework mapping covers all AKSI controls", () => {
     const profile = loadOverlayProfiles().get("securities-mnpi")!;
     const keys = new Set(Object.keys(profile.framework_mapping as Record<string, unknown>));
-    expect(keys).toEqual(ALL_AKSI_CONTROLS);
+    expect(keys).toEqual(COMMON_AKSI_CONTROLS);
   });
 
   it("securities-mnpi active controls reference SEC Reg FD and SOX", () => {
@@ -334,7 +334,7 @@ describe("FedRAMP — Profile", () => {
   it("fedramp framework mapping covers all AKSI controls", () => {
     const profile = loadOverlayProfiles().get("fedramp")!;
     const mappingKeys = new Set(Object.keys(profile.framework_mapping as Record<string, unknown>));
-    for (const ctrl of ALL_AKSI_CONTROLS) {
+    for (const ctrl of COMMON_AKSI_CONTROLS) {
       expect(mappingKeys.has(ctrl)).toBe(true);
     }
   });
@@ -511,7 +511,7 @@ describe("GLBA Financial — Profile", () => {
   it("glba framework mapping covers all AKSI controls", () => {
     const profile = loadOverlayProfiles().get("glba")!;
     const mappingKeys = new Set(Object.keys(profile.framework_mapping as Record<string, unknown>));
-    for (const ctrl of ALL_AKSI_CONTROLS) {
+    for (const ctrl of COMMON_AKSI_CONTROLS) {
       expect(mappingKeys.has(ctrl)).toBe(true);
     }
   });

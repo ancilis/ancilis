@@ -24,6 +24,7 @@ export interface Action {
   timestamp: string;
   agentId: string;
   sourceType?: string;
+  frameworkVersion?: string;
   producerType?: string;
   producerVersion?: string;
   agentOwner?: string | null;

@@ -88,6 +88,7 @@
             "enum": [
               "PASS",
               "FAIL",
+              "FLAG",
               "SKIP",
               "ERROR"
             ]
@@ -184,6 +185,14 @@
         }
       },
       "additionalProperties": true
+    },
+    "framework_version": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": "0.6",
+      "description": "AKSI framework version used to produce this record."
     }
   }
 }

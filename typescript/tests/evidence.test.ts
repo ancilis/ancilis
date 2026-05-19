@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { DuckDBInstance } from "@duckdb/node-api";
+import { AKSI_FRAMEWORK_VERSION } from "../src/ancilis/aksi/version.js";
 import { loadConfig } from "../src/ancilis/config/index.js";
 import type { ResolvedConfig } from "../src/ancilis/config/index.js";
 import type { EvaluationResult } from "../src/ancilis/engine/result.js";
@@ -123,11 +124,12 @@ describe("Hash Chain", () => {
       previousHash: GENESIS_SEED,
       detectedDataTypes: ["DC-PII"],
       sdkVersion: "0.1.0",
+      frameworkVersion: "0.6",
       classificationContext: { llm_provider: "openai" },
     });
 
     expect(payload).toBe(
-      `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","classification_context":{"llm_provider":"openai"},"control_results":[],"data_classifications":[],"decision":"ALLOW","detected_data_types":["DC-PII"],"evaluation_id":"e1","mode":"audit","previous_hash":"${GENESIS_SEED}","sdk_version":"0.1.0","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":1.0}`,
+      `{"active_certifications":[],"active_overlays":[],"agent_id":"agent","classification_context":{"llm_provider":"openai"},"control_results":[],"data_classifications":[],"decision":"ALLOW","detected_data_types":["DC-PII"],"evaluation_id":"e1","framework_version":"0.6","mode":"audit","previous_hash":"${GENESIS_SEED}","sdk_version":"0.1.0","source_type":"agent","timestamp":"2025-01-01T00:00:00Z","tool_name":"tool","total_duration_ms":1.0}`,
     );
   });
 
@@ -317,7 +319,7 @@ describe("Evidence Store", () => {
     expect(errors.some(error => error.includes("hash mismatch"))).toBe(true);
   });
 
-  it("store hashes detected data types, SDK version, and classification context", async () => {
+  it("store hashes detected data types, SDK version, framework version, and classification context", async () => {
     store = new EvidenceStore(
       makeConfig({ agent: { name: "test-agent", llm_provider: "openai" } }),
       { inMemory: true },
@@ -347,11 +349,13 @@ describe("Evidence Store", () => {
       tenantId: record.tenantId,
       detectedDataTypes: record.detectedDataTypes,
       sdkVersion: record.sdkVersion,
+      frameworkVersion: record.frameworkVersion,
       classificationContext: record.classificationContext,
     }));
 
     expect(record.classificationContext).toEqual({ llm_provider: "openai" });
     expect(record.detectedDataTypes).toEqual(["DC-PII"]);
+    expect(record.frameworkVersion).toBe(AKSI_FRAMEWORK_VERSION);
     expect(record.recordHash).toBe(expected);
   });
 
@@ -367,6 +371,20 @@ describe("Evidence Store", () => {
     );
     await store.run("UPDATE evidence_records SET detected_data_types = ? WHERE record_id = ?", [
       JSON.stringify(["DC-CHD"]),
+      record.recordId,
+    ]);
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(false);
+    expect(errors.some(error => error.includes("hash mismatch"))).toBe(true);
+  });
+
+  it("verify chain detects framework version tampering", async () => {
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
+
+    const record = await store.store(makeEvaluation({ evaluationId: "framework-tamper" }), "metadata-tool");
+    await store.run("UPDATE evidence_records SET framework_version = ? WHERE record_id = ?", [
+      "0.5",
       record.recordId,
     ]);
 
@@ -455,6 +473,44 @@ describe("Evidence Store", () => {
         JSON.stringify({ llm_provider: "openai" }),
       ],
     );
+
+    const { valid, errors } = await store.verifyChain();
+    expect(valid).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  it("verify chain accepts hashes written before framework version was hash-covered", async () => {
+    store = new EvidenceStore(makeConfig(), { inMemory: true });
+
+    const record = await store.store(
+      makeEvaluation({ evaluationId: "pre-framework-e1", detectedDataTypes: ["DC-PII"] }),
+      "metadata-tool",
+    );
+    const preFrameworkHash = computeHash(canonicalPayload({
+      evaluationId: record.evaluationId,
+      timestamp: record.timestamp,
+      agentId: record.agentId,
+      sourceType: record.sourceType,
+      toolName: record.toolName,
+      decision: record.decision,
+      mode: record.mode,
+      controlResults: record.controlResults,
+      activeOverlays: record.activeOverlays,
+      dataClassifications: record.dataClassifications,
+      activeCertifications: record.activeCertifications,
+      totalDurationMs: record.totalDurationMs,
+      previousHash: record.previousHash,
+      outputSummary: record.outputSummary,
+      sessionId: record.sessionId,
+      tenantId: record.tenantId,
+      detectedDataTypes: record.detectedDataTypes,
+      sdkVersion: record.sdkVersion,
+      classificationContext: record.classificationContext,
+    }));
+    await store.run("UPDATE evidence_records SET record_hash = ? WHERE record_id = ?", [
+      preFrameworkHash,
+      record.recordId,
+    ]);
 
     const { valid, errors } = await store.verifyChain();
     expect(valid).toBe(true);
@@ -823,6 +879,35 @@ describe("EvidenceStore sdkVersion field", () => {
     await store.run("UPDATE evidence_records SET sdk_version = '1.2.3'");
     const records = await store.getRecords();
     expect(records[0].sdkVersion).toBe("1.2.3");
+    await store.close();
+  });
+});
+
+describe("EvidenceStore frameworkVersion field", () => {
+  it("frameworkVersion is populated from shared AKSI metadata", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "t1");
+    const records = await store.getRecords();
+    expect(records[0].frameworkVersion).toBe(AKSI_FRAMEWORK_VERSION);
+    await store.close();
+  });
+
+  it("frameworkVersion is consistent across multiple records", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation({ evaluationId: "e1" }), "t1");
+    await store.store(makeEvaluation({ evaluationId: "e2" }), "t2");
+    const records = await store.getRecords();
+    expect(records[0].frameworkVersion).toBe(AKSI_FRAMEWORK_VERSION);
+    expect(records[1].frameworkVersion).toBe(AKSI_FRAMEWORK_VERSION);
+    await store.close();
+  });
+
+  it("frameworkVersion round-trips through store correctly", async () => {
+    const store = new EvidenceStore(makeConfig(), { inMemory: true });
+    await store.store(makeEvaluation(), "t1");
+    await store.run("UPDATE evidence_records SET framework_version = '0.5'");
+    const records = await store.getRecords();
+    expect(records[0].frameworkVersion).toBe("0.5");
     await store.close();
   });
 });

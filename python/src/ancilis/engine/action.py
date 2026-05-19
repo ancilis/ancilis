@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
+
 
 @dataclass
 class ToolInfo:
@@ -39,5 +41,6 @@ class Action:
     agent_owner: str | None = None
     context: ActionContext = field(default_factory=ActionContext)
     source_type: str = "agent"
+    framework_version: str = AKSI_FRAMEWORK_VERSION
     producer_type: str = "mcp"  # default preserves backward compat
     producer_version: str = "0.1.0"

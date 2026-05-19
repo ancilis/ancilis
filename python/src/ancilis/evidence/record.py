@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
+
 
 @dataclass
 class EvidenceRecord:
@@ -28,4 +30,5 @@ class EvidenceRecord:
     session_id: str | None = None
     tenant_id: str | None = None
     sdk_version: str | None = None
+    framework_version: str | None = AKSI_FRAMEWORK_VERSION
     classification_context: dict[str, Any] = field(default_factory=dict)

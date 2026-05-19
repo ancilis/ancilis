@@ -178,6 +178,8 @@ def _shared_props(
         props.append(_prop("detected-data-types", json.dumps(record.detected_data_types)))
     if record.sdk_version is not None:
         props.append(_prop("sdk-version", record.sdk_version))
+    if record.framework_version is not None:
+        props.append(_prop("aksi-framework-version", record.framework_version))
     if record.classification_context:
         props.append(_prop("classification-context", json.dumps(record.classification_context, sort_keys=True)))
     return props

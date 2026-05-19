@@ -2,21 +2,24 @@
 
 import {
   loadCertificationProfiles,
+  loadControlDefinitions,
   loadOverlayProfiles,
   loadTaxonomy,
 } from "./loader.js";
 import { normalizeOverlayIds } from "../overlays/index.js";
 
-export const ALL_AKSI_CONTROLS = new Set([
-  "GOV-01", "GOV-02", "GOV-03", "GOV-04",
+export const COMMON_AKSI_CONTROLS = new Set([
+  "GOV-01", "GOV-02", "GOV-03", "GOV-04", "GOV-05", "GOV-06", "GOV-07",
   "ID-01", "ID-02", "ID-03", "ID-04", "ID-05",
   "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
-  "DE-01", "DE-02", "DE-03", "DE-04",
-  "RS-01", "RS-02", "RS-03",
-  "RC-01", "RC-02",
+  "PR-09", "PR-10", "PR-11", "PR-12",
+  "DE-01", "DE-02", "DE-03", "DE-04", "DE-05", "DE-06",
+  "RS-01", "RS-02", "RS-03", "RS-04", "RS-05", "RS-06",
+  "RC-01", "RC-02", "RC-03",
 ]);
-export const BASELINE_CONTROLS = ALL_AKSI_CONTROLS;
-export const EXTENDED_CONTROLS = new Set<string>();
+export const EXTENDED_CONTROLS = new Set(["PAY-01", "PAY-02"]);
+export const ALL_AKSI_CONTROLS = new Set([...COMMON_AKSI_CONTROLS, ...EXTENDED_CONTROLS]);
+export const BASELINE_CONTROLS = COMMON_AKSI_CONTROLS;
 
 export interface ActivationSpec {
   activeControls: string[];
@@ -33,10 +36,12 @@ export interface ActivationSpec {
 
 export class ActivationResolver {
   private overlayProfiles: Map<string, Record<string, unknown>>;
+  private controlDefs: Map<string, Record<string, unknown>>;
   private taxonomy: Record<string, unknown>;
 
   constructor() {
     this.overlayProfiles = loadOverlayProfiles();
+    this.controlDefs = loadControlDefinitions();
     this.taxonomy = loadTaxonomy();
   }
 
@@ -57,8 +62,8 @@ export class ActivationResolver {
       humanOversightRequired: false,
     };
 
-    // 1. All 26 AKSI controls are baseline
-    for (const cid of [...ALL_AKSI_CONTROLS].sort()) {
+    // 1. AKSI v0.6 common controls are baseline.
+    for (const cid of [...COMMON_AKSI_CONTROLS].sort()) {
       spec.activeControls.push(cid);
       spec.controlThresholds[cid] = "standard";
       spec.activationSource[cid] = "baseline";
@@ -80,6 +85,11 @@ export class ActivationResolver {
     if (options?.certificationTargets && options.certificationTargets.length > 0) {
       this.resolveCertificationPath(spec, options.certificationTargets);
     }
+
+    this.activateExtensionControls(spec, {
+      classifications: new Set(spec.dataClassifications),
+      certificationTargets: new Set(options?.certificationTargets ?? []),
+    });
 
     spec.activeControls = [...new Set(spec.activeControls)].sort();
     spec.activationSummary = this.buildSummary(spec);
@@ -134,10 +144,16 @@ export class ActivationResolver {
 
   private resolveCertificationPath(spec: ActivationSpec, certTargets: string[]): void {
     const certProfiles = loadCertificationProfiles(certTargets);
+    const extensionTargets = this.extensionCertificationTargets();
 
     for (const cidTarget of certTargets) {
       const profile = certProfiles.get(cidTarget);
-      if (!profile) continue;
+      if (!profile) {
+        if (!extensionTargets.has(normalizeCertificationTarget(cidTarget))) {
+          continue;
+        }
+        continue;
+      }
 
       spec.activeCertifications.push(cidTarget);
 
@@ -156,6 +172,41 @@ export class ActivationResolver {
       const retention = (evidencePackaging.retention_days as number) ?? 365;
       if (retention > spec.evidenceRetentionDays) {
         spec.evidenceRetentionDays = retention;
+      }
+    }
+  }
+
+  private extensionCertificationTargets(): Set<string> {
+    const targets = new Set<string>();
+    for (const controlDef of this.controlDefs.values()) {
+      if (controlDef.common !== false) continue;
+      for (const target of ((controlDef.trigger_certification_targets as string[] | undefined) ?? [])) {
+        targets.add(target);
+      }
+    }
+    return targets;
+  }
+
+  private activateExtensionControls(
+    spec: ActivationSpec,
+    scope: { classifications: Set<string>; certificationTargets: Set<string> },
+  ): void {
+    const normalizedTargets = new Set([...scope.certificationTargets].map(normalizeCertificationTarget));
+    for (const [controlId, controlDef] of [...this.controlDefs.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+      if (controlDef.common !== false) continue;
+      const triggerClasses = new Set((controlDef.trigger_classifications as string[] | undefined) ?? []);
+      const triggerTargets = new Set((controlDef.trigger_certification_targets as string[] | undefined) ?? []);
+      const classMatches = [...triggerClasses].filter(code => scope.classifications.has(code)).sort();
+      const targetMatches = [...triggerTargets].filter(target => normalizedTargets.has(target)).sort();
+      if (classMatches.length === 0 && targetMatches.length === 0) continue;
+      if (!spec.activeControls.includes(controlId)) {
+        spec.activeControls.push(controlId);
+      }
+      spec.controlThresholds[controlId] ??= "standard";
+      if (classMatches.length > 0) {
+        spec.activationSource[controlId] = `classification:${classMatches[0]}`;
+      } else if (targetMatches.length > 0) {
+        spec.activationSource[controlId] = `certification_targets:${firstOriginalCertificationTarget(scope.certificationTargets, targetMatches[0]!)}`;
       }
     }
   }
@@ -214,4 +265,20 @@ export class ActivationResolver {
 
     return summary;
   }
+}
+
+function normalizeCertificationTarget(target: string): string {
+  return target.toUpperCase().replaceAll("-", "_");
+}
+
+function firstOriginalCertificationTarget(
+  targets: Set<string>,
+  normalizedTarget: string,
+): string {
+  for (const target of targets) {
+    if (normalizeCertificationTarget(target) === normalizedTarget) {
+      return target;
+    }
+  }
+  return normalizedTarget;
 }
