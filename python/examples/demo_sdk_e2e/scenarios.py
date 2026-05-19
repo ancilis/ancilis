@@ -15,7 +15,7 @@ class ScenarioResult:
     expected_detected: tuple[str, ...]
 
 
-class ScenarioMismatch(RuntimeError):
+class ScenarioMismatchError(RuntimeError):
     """Raised when production classification output differs from this demo spec."""
 
 
@@ -27,7 +27,7 @@ def _assert_detected(
     actual = tuple(result.run.evidence_record.detected_data_types)
     expected = result.expected_detected
     if actual != expected:
-        raise ScenarioMismatch(
+        raise ScenarioMismatchError(
             f"{scenario_name}: expected detected_data_types={list(expected)!r}, "
             f"got {list(actual)!r}"
         )

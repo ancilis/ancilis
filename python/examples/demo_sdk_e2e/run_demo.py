@@ -11,7 +11,7 @@ import sys
 import time
 
 from scenarios import (
-    ScenarioMismatch,
+    ScenarioMismatchError,
     blocker_payload,
     describe_result,
     scenario_benign,
@@ -117,7 +117,7 @@ def main() -> int:
         print(f"Evidence database: {DB_PATH}")
         print(f"PII evidence record: {pii_record_id}")
         return 0
-    except (ScenarioMismatch, subprocess.CalledProcessError, Exception) as exc:
+    except (ScenarioMismatchError, subprocess.CalledProcessError, Exception) as exc:
         records = []
         try:
             records = _records_for_blocker(agent)
