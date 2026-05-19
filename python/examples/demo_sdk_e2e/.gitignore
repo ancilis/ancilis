@@ -1,0 +1,4 @@
+demo_evidence.duckdb
+demo_evidence.duckdb.wal
+processed_records.ndjson
+__pycache__/
