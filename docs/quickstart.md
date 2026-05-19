@@ -72,6 +72,9 @@ evidence.close()
 ```bash
 ancilis doctor            # verify config and assets loaded correctly
 ancilis status            # current posture — controls active, calls evaluated, violations
+ancilis evidence list     # recent evidence records
+ancilis evidence show <id-prefix>
+ancilis certify --target soc2
 ancilis report            # 30-day posture report in terminal format
 ancilis report --format markdown --output report.md
 ```

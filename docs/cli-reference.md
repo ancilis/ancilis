@@ -325,6 +325,60 @@ Checks: Python version, config validity, evidence store path, CLI dependencies (
 
 Evidence store management commands.
 
+### `ancilis evidence list`
+
+List evidence records from the configured evidence store, newest first.
+
+```bash
+ancilis evidence list [OPTIONS]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+| `--limit INTEGER` | Maximum records to return (default: `20`) |
+| `--since TEXT` | Only include records at or after this ISO-8601 timestamp |
+| `--agent-id TEXT` | Filter to a single agent ID |
+| `--classification TEXT` | Filter by data classification code, such as `DC-PII` |
+| `--control-id TEXT` | Filter by AKSI control ID, such as `PR-05` |
+| `--format json\|table` | Output format (default: `table`) |
+
+**Examples:**
+
+```bash
+ancilis evidence list --limit 10
+ancilis evidence list --classification DC-PII --control-id PR-05
+ancilis evidence list --since 2026-05-19T00:00:00+00:00 --format json
+```
+
+If no records match, the command prints `No evidence records found.` and exits successfully.
+
+### `ancilis evidence show`
+
+Show a full evidence record by exact ID or by a short prefix of at least seven
+characters.
+
+```bash
+ancilis evidence show [OPTIONS] EVIDENCE_ID
+```
+
+| Option | Description |
+|--------|-------------|
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+| `--format json\|pretty` | Output format (default: `pretty`) |
+
+**Examples:**
+
+```bash
+ancilis evidence show 9f2a4c1
+ancilis evidence show 9f2a4c1 --format json
+```
+
+If a short prefix matches multiple records, the command exits non-zero and lists
+the matching evidence IDs.
+
 ### `ancilis evidence sessions`
 
 List known evidence sessions with record counts and time ranges.
@@ -363,6 +417,36 @@ ancilis evidence reset [OPTIONS]
 
 !!! warning
     This operation is irreversible. All evidence records are permanently deleted.
+
+---
+
+## `ancilis certify`
+
+Report dry-run framework coverage from local evidence. In v0.1 this command
+does not generate certification artifacts; it computes covered, partial, and
+gap controls for the selected target.
+
+```bash
+ancilis certify --target TARGET [OPTIONS]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--target soc2\|hipaa\|pci\|aiuc1\|eu_ai_act` | Framework or certification target to evaluate |
+| `--dry-run` | Accepted as a no-op; dry-run coverage is the v0.1 behavior |
+| `--format json\|table` | Output format (default: `table`) |
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+
+**Examples:**
+
+```bash
+ancilis certify --target soc2
+ancilis certify --target pci --format json --dry-run
+```
+
+If no evidence exists, `certify` lists all in-scope AKSI controls for the target
+as gaps and exits successfully.
 
 ---
 
