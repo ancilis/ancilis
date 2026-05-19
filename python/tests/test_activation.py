@@ -123,7 +123,7 @@ class TestBothPaths:
         )
         assert "hipaa" in spec.active_overlays
         assert "aiuc-1" in spec.active_certifications
-        assert len(spec.active_controls) == 26
+        assert len(spec.active_controls) == 39
 
     def test_conflict_strictest_wins(self):
         resolver = ActivationResolver()

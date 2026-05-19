@@ -181,7 +181,7 @@
       "applicable": true,
       "evidence_requirements": [
         "Network traffic filtering prevents unauthorized data exfiltration from the authorization boundary; egress filtering rules documented and reviewed (SC-5, SC-7(3))",
-        "Federal data minimization procedures applied to AI agent workflows \u2014 only data necessary for authorized function ingested, retained, or transmitted (SC-5)",
+        "Federal data minimization procedures applied to AI agent workflows — only data necessary for authorized function ingested, retained, or transmitted (SC-5)",
         "Data-in-transit protections include TLS 1.2+ enforcement; downgrade attacks mitigated at network boundaries per FedRAMP transport encryption requirements (SC-8)"
       ],
       "threshold_adjustments": {},
@@ -392,6 +392,15 @@
       "NIST SP 800-53 Rev 5 PL-1, PM-10",
       "FedRAMP Moderate PL-1, AT-2, AT-3"
     ],
+    "GOV-05": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "GOV-06": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
+    ],
+    "GOV-07": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
     "ID-01": [
       "NIST SP 800-53 Rev 5 CM-8, CM-10",
       "FedRAMP Moderate CM-8, CM-10, CM-11"
@@ -444,6 +453,18 @@
       "NIST SP 800-53 Rev 5 SI-2, SI-3",
       "FedRAMP Moderate SI-2, SI-3, SI-3(1)"
     ],
+    "PR-09": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "PR-10": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-10 Memory & Context Integrity"
+    ],
+    "PR-11": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ],
+    "PR-12": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
     "DE-01": [
       "NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-8, SI-4",
       "FedRAMP Moderate IR-4, IR-5, IR-6, IR-8, SI-4"
@@ -460,6 +481,12 @@
       "NIST SP 800-53 Rev 5 AU-6, AU-12",
       "FedRAMP Moderate AU-6, AU-12, AU-6(1)"
     ],
+    "DE-05": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "DE-06": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
     "RS-01": [
       "NIST SP 800-53 Rev 5 IR-4, IR-8",
       "FedRAMP Moderate IR-4, IR-8, IR-4(1)"
@@ -472,6 +499,15 @@
       "NIST SP 800-53 Rev 5 IR-4, IR-8",
       "FedRAMP Moderate IR-4, IR-8, IR-4(6)"
     ],
+    "RS-04": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
+    ],
+    "RS-05": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "RS-06": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-06 Coordinated Vulnerability Disclosure & Security Update Handling"
+    ],
     "RC-01": [
       "NIST SP 800-53 Rev 5 CP-2, CP-9",
       "FedRAMP Moderate CP-2, CP-9, CP-10"
@@ -479,9 +515,12 @@
     "RC-02": [
       "NIST SP 800-53 Rev 5 CA-7, CP-2",
       "FedRAMP Moderate CA-7, CP-2, CP-2(8)"
+    ],
+    "RC-03": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
     ]
   },
   "evidence_retention_minimum_days": 1095,
   "human_oversight_required": false,
-  "notes": "FedRAMP Rev 5 Moderate aligns cloud service providers to the NIST SP 800-53 Rev 5 Moderate impact baseline for federal authorization. This overlay focuses on evidencing the six currently enforced AKSI evaluator controls with FedRAMP-specific evidence fields (PIV/CAC, FIPS 140, ConMon, US-CERT) while preserving a full 26-control framework mapping so federal cloud deployments can demonstrate authorization readiness without changing resolver logic. Evidence field names are non-overlapping with the CMMC-L2 overlay to support simultaneous activation when both overlays are triggered."
+  "notes": "FedRAMP Rev 5 Moderate aligns cloud service providers to the NIST SP 800-53 Rev 5 Moderate impact baseline for federal authorization. This overlay focuses on evidencing the six currently enforced AKSI evaluator controls with FedRAMP-specific evidence fields (PIV/CAC, FIPS 140, ConMon, US-CERT) while preserving a full 39 common-control framework mapping so federal cloud deployments can demonstrate authorization readiness without changing resolver logic. Evidence field names are non-overlapping with the CMMC-L2 overlay to support simultaneous activation when both overlays are triggered."
 }

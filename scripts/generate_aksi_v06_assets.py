@@ -202,6 +202,61 @@ DEVELOPER_TYPE_MAPPING = {
     "medical_device": ["DC-MEDDEV"],
 }
 
+SDK_TAXONOMY_OVERLAY_OVERRIDES = {
+    # The platform graph is intentionally broad. The SDK taxonomy is the
+    # activation contract: it only auto-enables overlays that are ready enough
+    # for default developer workflows and keeps jurisdiction-specific overlays
+    # opt-in unless the data class is a strong signal.
+    "DC-BIO": ["eu-ai-act"],
+    "DC-CUI": ["cmmc-l2"],
+    "DC-FCI": ["fedramp"],
+    "DC-FIN": ["glba", "soc2"],
+    "DC-GEN": [],
+    "DC-GOV": ["cmmc-l2", "fedramp"],
+    "DC-MNPI": ["securities-mnpi"],
+    "DC-NPI": ["glba", "soc2"],
+    "DC-PII": ["ccpa", "gdpr", "soc2"],
+}
+
+SDK_SARIF_MAPPING_OVERRIDES = [
+    {
+        "rule_id": "js/sql-injection",
+        "control_id": "PR-08",
+        "match": "exact",
+        "description": "CodeQL JavaScript SQL injection findings map to input validation and sanitization.",
+    },
+    {
+        "rule_id": "js/sql-*",
+        "control_id": "PR-08",
+        "match": "glob",
+        "description": "CodeQL JavaScript SQL injection-family findings map to input validation and sanitization.",
+    },
+    {
+        "rule_id": "js/xss",
+        "control_id": "PR-08",
+        "match": "exact",
+        "description": "CodeQL JavaScript XSS findings map to input validation and sanitization.",
+    },
+    {
+        "rule_id": "js/hardcoded-credentials",
+        "control_id": "PR-04",
+        "match": "exact",
+        "description": "Hard-coded credential findings map to data exposure prevention.",
+    },
+    {
+        "rule_id": "js/missing-rate-limiting",
+        "control_id": "PR-02",
+        "match": "exact",
+        "description": "Missing rate limiting findings map to permission scope enforcement.",
+    },
+    {
+        "rule_id": "cwe-798",
+        "control_id": "PR-04",
+        "match": "exact",
+        "description": "Hard-coded credential findings map to data exposure prevention.",
+    },
+]
+
 
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text())
@@ -363,10 +418,13 @@ def generate_taxonomy() -> list[str]:
 
     classifications = []
     for code in class_codes:
-        overlays = [
-            normalize_overlay_id(overlay)
-            for overlay in graph["dc_codes"].get(code, {}).get("overlays", [])
-        ]
+        overlays = SDK_TAXONOMY_OVERLAY_OVERRIDES.get(
+            code,
+            [
+                normalize_overlay_id(overlay)
+                for overlay in graph["dc_codes"].get(code, {}).get("overlays", [])
+            ],
+        )
         classifications.append(
             {
                 "code": code,
@@ -452,7 +510,12 @@ def update_result_schemas() -> None:
 
 
 def copy_platform_mappings() -> None:
-    shutil.copyfile(SARIF_MAPPING_PATH, SDK_SARIF_MAPPING_PATH)
+    data = read_json(SARIF_MAPPING_PATH)
+    mappings = data.setdefault("mappings", [])
+    override_ids = {entry["rule_id"] for entry in SDK_SARIF_MAPPING_OVERRIDES}
+    mappings[:] = [entry for entry in mappings if entry.get("rule_id") not in override_ids]
+    mappings.extend(SDK_SARIF_MAPPING_OVERRIDES)
+    write_json(SDK_SARIF_MAPPING_PATH, data)
 
 
 def generate_oscal_mapping(control_ids: list[str]) -> None:

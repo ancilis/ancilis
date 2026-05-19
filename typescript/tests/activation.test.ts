@@ -423,12 +423,12 @@ describe("Conflict Resolution", () => {
     expect(spec.activeControls.length).toBe(39);
   });
 
-  it("financial_records activates v0.6 financial overlays with strict financial controls", () => {
+  it("financial_records activates financial security overlays with strict financial controls", () => {
     const resolver = new ActivationResolver();
     const spec = resolver.resolve({ dataHandling: ["financial_records"] });
     expect(spec.dataClassifications).toContain("DC-FIN");
     expect(spec.activeOverlays).toContain("glba");
-    expect(spec.activeOverlays).toContain("dora");
+    expect(spec.activeOverlays).toContain("soc2");
     expect(spec.controlThresholds["PR-01"]).toBe("strict");
     expect(spec.controlThresholds["PR-05"]).toBe("strict");
   });

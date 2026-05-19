@@ -9,7 +9,7 @@ import yaml
 from click.testing import CliRunner
 
 from ancilis.activation.loader import load_overlay_profiles, load_taxonomy
-from ancilis.activation.resolver import ALL_AKSI_CONTROLS, ActivationResolver
+from ancilis.activation.resolver import COMMON_AKSI_CONTROLS, ActivationResolver
 from ancilis.cli.main import cli
 from ancilis.config import load_config
 
@@ -51,7 +51,7 @@ class TestFedRAMPOverlayProfile:
     def test_fedramp_framework_mapping_covers_all_aksi_controls(self) -> None:
         profile = load_overlay_profiles()["fedramp"]
 
-        assert set(profile["framework_mapping"]) == ALL_AKSI_CONTROLS
+        assert set(profile["framework_mapping"]) == COMMON_AKSI_CONTROLS
 
     def test_fedramp_active_controls_reference_nist_800_53_rev5(self) -> None:
         profile = load_overlay_profiles()["fedramp"]

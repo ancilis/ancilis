@@ -34,23 +34,23 @@ describe("SarifImporter", () => {
     expect(results[0]!.agentId).toBe("test-agent");
   });
 
-  it("maps js/sql-injection → PR-03 (Input Validation)", () => {
+  it("maps js/sql-injection → PR-08 (Input Validation & Injection Resistance)", () => {
     const importer = new SarifImporter();
     const results = importer.parse(SARIF_FIXTURE);
     const cr = results[0]!.controlResults.find((c) => c.evidenceData["rule_id"] === "js/sql-injection");
     expect(cr).toBeDefined();
-    expect(cr!.controlId).toBe("PR-03");
-    expect(cr!.controlName).toBe("Input Validation");
+    expect(cr!.controlId).toBe("PR-08");
+    expect(cr!.controlName).toBe("Input Validation & Injection Resistance");
   });
 
-  it("maps js/hardcoded-credentials → PR-05 (Secret Detection)", () => {
+  it("maps js/hardcoded-credentials → PR-04 (Data Exposure Prevention)", () => {
     const importer = new SarifImporter();
     const results = importer.parse(SARIF_FIXTURE);
     const cr = results[0]!.controlResults.find(
       (c) => c.evidenceData["rule_id"] === "js/hardcoded-credentials"
     );
     expect(cr).toBeDefined();
-    expect(cr!.controlId).toBe("PR-05");
+    expect(cr!.controlId).toBe("PR-04");
   });
 
   it("maps js/missing-rate-limiting → PR-02 (Rate Limiting)", () => {
@@ -153,7 +153,7 @@ describe("SarifImporter", () => {
       ],
     });
     const results = new SarifImporter().parseString(sarif);
-    expect(results[0]!.controlResults[0]!.controlId).toBe("PR-03");
+    expect(results[0]!.controlResults[0]!.controlId).toBe("PR-08");
   });
 });
 

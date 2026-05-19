@@ -106,9 +106,7 @@
       "name": "Controlled Unclassified Information",
       "description": "Controlled Unclassified Information requiring safeguarding or dissemination controls.",
       "overlays": [
-        "cmmc-l2",
-        "fedramp",
-        "nis2"
+        "cmmc-l2"
       ],
       "overlay_status": "active",
       "pattern_detection": {
@@ -121,7 +119,7 @@
       "name": "Federal Contract Information",
       "description": "Non-public federal contract information provided by or generated for government contracts.",
       "overlays": [
-        "cmmc-l2"
+        "fedramp"
       ],
       "overlay_status": "active",
       "pattern_detection": {
@@ -149,8 +147,6 @@
       "overlays": [
         "ccpa",
         "gdpr",
-        "iso-27701",
-        "nist_privacy_framework",
         "soc2"
       ],
       "overlay_status": "active",
@@ -189,9 +185,8 @@
       "name": "Financial Services Data",
       "description": "Financial account, transaction, institution, or financial-services operational data.",
       "overlays": [
-        "dora",
         "glba",
-        "nydfs-500"
+        "soc2"
       ],
       "overlay_status": "active",
       "pattern_detection": {
@@ -226,8 +221,7 @@
       "description": "Nonpublic personal information used by financial institutions and privacy programs.",
       "overlays": [
         "glba",
-        "nist_privacy_framework",
-        "nydfs-500"
+        "soc2"
       ],
       "overlay_status": "active",
       "pattern_detection": {
@@ -251,8 +245,8 @@
       "name": "Government System Data",
       "description": "Government system, federal environment, or public-sector operational data.",
       "overlays": [
-        "fedramp",
-        "nis2"
+        "cmmc-l2",
+        "fedramp"
       ],
       "overlay_status": "active",
       "pattern_detection": {
@@ -339,8 +333,7 @@
       "name": "Biometric Data",
       "description": "Biometric identifiers, measurements, templates, or authentication factors.",
       "overlays": [
-        "eu-ai-act",
-        "gdpr"
+        "eu-ai-act"
       ],
       "overlay_status": "active",
       "pattern_detection": {

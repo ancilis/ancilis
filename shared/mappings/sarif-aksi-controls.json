@@ -26,16 +26,46 @@
       "description": "SQL injection findings map to input validation."
     },
     {
-      "rule_id": "cwe-798",
-      "control_id": "PR-01",
-      "match": "exact",
-      "description": "Hard-coded credential findings map to authentication controls."
-    },
-    {
       "rule_id": "bandit.B6*",
       "control_id": "PR-09",
       "match": "glob",
       "description": "Bandit shell and subprocess execution findings map to sandbox enforcement."
+    },
+    {
+      "rule_id": "js/sql-injection",
+      "control_id": "PR-08",
+      "match": "exact",
+      "description": "CodeQL JavaScript SQL injection findings map to input validation and sanitization."
+    },
+    {
+      "rule_id": "js/sql-*",
+      "control_id": "PR-08",
+      "match": "glob",
+      "description": "CodeQL JavaScript SQL injection-family findings map to input validation and sanitization."
+    },
+    {
+      "rule_id": "js/xss",
+      "control_id": "PR-08",
+      "match": "exact",
+      "description": "CodeQL JavaScript XSS findings map to input validation and sanitization."
+    },
+    {
+      "rule_id": "js/hardcoded-credentials",
+      "control_id": "PR-04",
+      "match": "exact",
+      "description": "Hard-coded credential findings map to data exposure prevention."
+    },
+    {
+      "rule_id": "js/missing-rate-limiting",
+      "control_id": "PR-02",
+      "match": "exact",
+      "description": "Missing rate limiting findings map to permission scope enforcement."
+    },
+    {
+      "rule_id": "cwe-798",
+      "control_id": "PR-04",
+      "match": "exact",
+      "description": "Hard-coded credential findings map to data exposure prevention."
     }
   ]
 }

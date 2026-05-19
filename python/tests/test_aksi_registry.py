@@ -12,10 +12,7 @@ from ancilis.activation.loader import (
     load_overlay_profiles,
     load_taxonomy,
 )
-from ancilis.activation.resolver import (
-    ALL_AKSI_CONTROLS,
-    ActivationResolver,
-)
+from ancilis.activation.resolver import ActivationResolver
 from ancilis.config import load_config
 
 
@@ -500,13 +497,13 @@ class TestActivationPaths:
         assert "nist-csf" in spec.active_overlays
         assert len(spec.active_controls) == 39
 
-    def test_financial_data_activates_glba_and_dora(self):
-        """Financial data should activate the v0.6 financial overlays."""
+    def test_financial_data_activates_glba_and_soc2(self):
+        """Financial data should activate the default financial security overlays."""
         resolver = ActivationResolver()
         spec = resolver.resolve(my_agent_handles=["financial_data"])
         assert "DC-FIN" in spec.data_classifications
         assert "glba" in spec.active_overlays
-        assert "dora" in spec.active_overlays
+        assert "soc2" in spec.active_overlays
 
     def test_mnpi_activates_securities_overlay(self):
         """Declared MNPI should activate the securities overlay."""

@@ -7,7 +7,7 @@
     "DC-CUI",
     "DC-GOV"
   ],
-  "description": "Government overlay for agents handling Controlled Unclassified Information or federal-system data that must be safeguarded to CMMC Level 2 expectations. Provides full 26-control AKSI coverage with CMMC Level 2 and NIST SP 800-171 Rev. 3 citations across all control domains: governance, identification, protection, detection, response, and recovery. Suitable for contractor audit preparation and C3PAO assessment readiness.",
+  "description": "Government overlay for agents handling Controlled Unclassified Information or federal-system data that must be safeguarded to CMMC Level 2 expectations. Provides full 39 common-control AKSI coverage with CMMC Level 2 and NIST SP 800-171 Rev. 3 citations or documented gap notes across governance, identification, protection, detection, response, and recovery. Suitable for contractor audit preparation and C3PAO assessment readiness.",
   "jurisdiction": "us",
   "enforcement_date": "2025-01-01",
   "applicable_data_types": [
@@ -17,6 +17,186 @@
     "government_system"
   ],
   "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "System Security Plan (SSP) documented, approved by senior security official, and covering all CUI system components per CA.L2-3.12.1 / NIST SP 800-171r3 03.12.01",
+        "Security policies governing CUI protection aligned to organizational mission, reviewed at minimum annually, and updated following significant changes",
+        "SSP scope includes AI agent components, automated workflows, and their CUI data flows with documented safeguard rationale"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.1; NIST SP 800-171 Rev. 3 03.12.01, 03.12.03",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CA.L2-3.12.1"
+        ]
+      }
+    },
+    "GOV-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Roles and responsibilities for CUI safeguarding defined in SSP and assigned to named individuals or positions per CA.L2-3.12.2 / 03.12.02",
+        "Plan of Action & Milestones (POA&M) maintained with remediation owners, target dates, and milestone tracking for all open deficiencies (03.12.02)",
+        "Personnel handling CUI have signed security agreements and completed role-specific CUI handling training per PS.L2-3.9.1 / 03.09.01"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.2, PS.L2-3.9.1; NIST SP 800-171 Rev. 3 03.12.02, 03.12.05, 03.09.01",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CA.L2-3.12.2"
+        ]
+      }
+    },
+    "GOV-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessment conducted covering threats and vulnerabilities to CUI systems, with likelihood and impact ratings per RA.L2-3.11.1 / 03.11.01",
+        "Vulnerability scan results document assessment of CUI system components on a recurring basis; findings drive remediation prioritization (03.11.02 / RA.L2-3.11.2)",
+        "Risk assessment outputs used to update SSP safeguards and prioritize POA&M items; documented linkage between risk findings and control decisions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 RA.L2-3.11.1, RA.L2-3.11.2; NIST SP 800-171 Rev. 3 03.11.01, 03.11.02",
+      "regulatory_mappings": {
+        "cmmc": [
+          "RA.L2-3.11.1",
+          "RA.L2-3.11.2"
+        ]
+      }
+    },
+    "GOV-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Management review and acceptance of residual risks documented in SSP or POA&M at a defined frequency; senior official sign-off recorded per 03.12.03",
+        "Oversight mechanisms ensure automated agent actions affecting CUI access or processing are subject to human review before implementation",
+        "Designated security oversight role documented in SSP with responsibility for monitoring automated system behavior in CUI environments per 03.15.02"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 CA.L2-3.12.3; NIST SP 800-171 Rev. 3 03.12.03, 03.12.04, 03.15.02",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "No dedicated CMMC L2 practice for human oversight mandate; governance documentation expectation addressed closest by CA.L2-3.12.3 (plans of action). NIST SP 800-171 Rev 3 03.15.02, 03.15.03 added post-CMMC L2 finalization."
+      }
+    },
+    "GOV-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how GOV-05 (Purpose, Legal Basis & Data-Use Authority) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing GOV-05 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when GOV-05 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control GOV-05 (Purpose, Legal Basis & Data-Use Authority) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "GOV-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how GOV-06 (External Obligation Registry & Posture Reporting) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing GOV-06 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when GOV-06 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control GOV-06 (External Obligation Registry & Posture Reporting) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "GOV-07": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how GOV-07 (Transparency, Instructions & Affected-Party Feedback) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing GOV-07 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when GOV-07 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control GOV-07 (Transparency, Instructions & Affected-Party Feedback) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "ID-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Baseline configuration and hardware/software inventory for all CUI system components documented and current per CM.L2-3.4.1 / 03.04.01",
+        "Software inventory distinguishes authorized vs. unauthorized software; unauthorized software detected and removed per CM.L2-3.4.7 / 03.04.10",
+        "Inventory updated when components are added, changed, or decommissioned; AI agent components (models, tools, integrations) explicitly enumerated"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.7; NIST SP 800-171 Rev. 3 03.04.01, 03.04.10",
+      "regulatory_mappings": {
+        "cmmc": [
+          "CM.L2-3.4.1",
+          "CM.L2-3.4.7"
+        ]
+      }
+    },
+    "ID-02": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Managed interfaces control communications at external CUI system boundaries; authorized and unauthorized external connections documented per SC.L2-3.13.1 / 03.13.01",
+        "Network architecture diagrams show CUI system boundaries, internal segmentation, and interconnections with other systems (03.13.03 / SC.L2-3.13.3)",
+        "Firewall or boundary protection rule sets reviewed to confirm only authorized data flows traverse CUI system boundaries; reviews documented"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 SC.L2-3.13.1, SC.L2-3.13.3; NIST SP 800-171 Rev. 3 03.13.01, 03.13.03",
+      "regulatory_mappings": {
+        "cmmc": [
+          "SC.L2-3.13.1",
+          "SC.L2-3.13.3"
+        ]
+      }
+    },
+    "ID-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "CUI identification and marking procedures documented and applied per MP.L2-3.8.1 / 03.08.01 \u2014 all CUI-bearing media labeled consistent with NARA CUI registry requirements",
+        "CUI categories and handling requirements communicated to personnel processing, storing, or transmitting CUI (03.08.04)",
+        "Data handling procedures govern AI agent access to CUI \u2014 scope of CUI ingested, stored in context, and retained after session is documented and controlled"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 MP.L2-3.8.1, MP.L2-3.8.4; NIST SP 800-171 Rev. 3 03.08.01, 03.08.04",
+      "regulatory_mappings": {
+        "cmmc": [
+          "MP.L2-3.8.1",
+          "MP.L2-3.8.4"
+        ]
+      }
+    },
+    "ID-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Supply chain risk management policy identifies vetting requirements for ICT suppliers, cloud service providers, and subcontractors with CUI access per 03.16.01",
+        "Flow-down requirements documented in subcontractor agreements \u2014 entities with access to CUI contractually bound to equivalent CMMC Level 2 safeguards",
+        "Third-party risk assessments or equivalent supplier reviews conducted for vendors with CUI system access; results documented per 03.16.03"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 supplier-risk expectation; NIST SP 800-171 Rev. 3 03.16.01, 03.16.03",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "CMMC L2 has no dedicated supply-chain risk management practices (SR domain). NIST SP 800-171 Rev 3 03.16.x (supply chain) was added after CMMC L2 finalization. Out-of-scope for direct CMMC L2 practice mapping."
+      }
+    },
+    "ID-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Risk assessments applied to AI agent components in CUI environments \u2014 model versions, tooling, and output pathways included in risk scope per RA.L2-3.11.1 / 03.11.01",
+        "AI agent risk profile documented in SSP: CUI access scope, automated action privileges, and residual risk disposition",
+        "Continuous vulnerability monitoring includes AI agent components and external model/service dependencies; monitoring cadence documented per 03.11.05"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 RA.L2-3.11.1, RA.L2-3.11.3; NIST SP 800-171 Rev. 3 03.11.01, 03.11.03, 03.11.05",
+      "regulatory_mappings": {
+        "cmmc": [
+          "RA.L2-3.11.1",
+          "RA.L2-3.11.3"
+        ]
+      }
+    },
     "PR-01": {
       "applicable": true,
       "evidence_requirements": [
@@ -105,162 +285,6 @@
         ]
       }
     },
-    "DE-01": {
-      "applicable": true,
-      "evidence_requirements": [
-        "Monitoring detects unauthorized use, suspicious communication patterns, and indicators of compromise affecting CUI systems",
-        "Incident handling procedures define triage, containment, reporting, and recovery responsibilities for CUI security events",
-        "Incident response exercises and post-incident records demonstrate lessons learned and follow-through on corrective actions"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, IR.L2-3.6.3, SI.L2-3.14.6; NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06",
-      "regulatory_mappings": {
-        "cmmc": [
-          "IR.L2-3.6.1",
-          "IR.L2-3.6.2",
-          "IR.L2-3.6.3",
-          "SI.L2-3.14.6"
-        ]
-      }
-    },
-    "GOV-01": {
-      "applicable": true,
-      "evidence_requirements": [
-        "System Security Plan (SSP) documented, approved by senior security official, and covering all CUI system components per CA.L2-3.12.1 / NIST SP 800-171r3 03.12.01",
-        "Security policies governing CUI protection aligned to organizational mission, reviewed at minimum annually, and updated following significant changes",
-        "SSP scope includes AI agent components, automated workflows, and their CUI data flows with documented safeguard rationale"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.1; NIST SP 800-171 Rev. 3 03.12.01, 03.12.03",
-      "regulatory_mappings": {
-        "cmmc": [
-          "CA.L2-3.12.1"
-        ]
-      }
-    },
-    "GOV-02": {
-      "applicable": true,
-      "evidence_requirements": [
-        "Roles and responsibilities for CUI safeguarding defined in SSP and assigned to named individuals or positions per CA.L2-3.12.2 / 03.12.02",
-        "Plan of Action & Milestones (POA&M) maintained with remediation owners, target dates, and milestone tracking for all open deficiencies (03.12.02)",
-        "Personnel handling CUI have signed security agreements and completed role-specific CUI handling training per PS.L2-3.9.1 / 03.09.01"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.2, PS.L2-3.9.1; NIST SP 800-171 Rev. 3 03.12.02, 03.12.05, 03.09.01",
-      "regulatory_mappings": {
-        "cmmc": [
-          "CA.L2-3.12.2"
-        ]
-      }
-    },
-    "GOV-03": {
-      "applicable": true,
-      "evidence_requirements": [
-        "Risk assessment conducted covering threats and vulnerabilities to CUI systems, with likelihood and impact ratings per RA.L2-3.11.1 / 03.11.01",
-        "Vulnerability scan results document assessment of CUI system components on a recurring basis; findings drive remediation prioritization (03.11.02 / RA.L2-3.11.2)",
-        "Risk assessment outputs used to update SSP safeguards and prioritize POA&M items; documented linkage between risk findings and control decisions"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 RA.L2-3.11.1, RA.L2-3.11.2; NIST SP 800-171 Rev. 3 03.11.01, 03.11.02",
-      "regulatory_mappings": {
-        "cmmc": [
-          "RA.L2-3.11.1",
-          "RA.L2-3.11.2"
-        ]
-      }
-    },
-    "GOV-04": {
-      "applicable": true,
-      "evidence_requirements": [
-        "Management review and acceptance of residual risks documented in SSP or POA&M at a defined frequency; senior official sign-off recorded per 03.12.03",
-        "Oversight mechanisms ensure automated agent actions affecting CUI access or processing are subject to human review before implementation",
-        "Designated security oversight role documented in SSP with responsibility for monitoring automated system behavior in CUI environments per 03.15.02"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CA.L2-3.12.3; NIST SP 800-171 Rev. 3 03.12.03, 03.12.04, 03.15.02",
-      "regulatory_mappings": {
-        "cmmc": [],
-        "cmmc_gap": "No dedicated CMMC L2 practice for human oversight mandate; governance documentation expectation addressed closest by CA.L2-3.12.3 (plans of action). NIST SP 800-171 Rev 3 03.15.02, 03.15.03 added post-CMMC L2 finalization."
-      }
-    },
-    "ID-01": {
-      "applicable": true,
-      "evidence_requirements": [
-        "Baseline configuration and hardware/software inventory for all CUI system components documented and current per CM.L2-3.4.1 / 03.04.01",
-        "Software inventory distinguishes authorized vs. unauthorized software; unauthorized software detected and removed per CM.L2-3.4.7 / 03.04.10",
-        "Inventory updated when components are added, changed, or decommissioned; AI agent components (models, tools, integrations) explicitly enumerated"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.7; NIST SP 800-171 Rev. 3 03.04.01, 03.04.10",
-      "regulatory_mappings": {
-        "cmmc": [
-          "CM.L2-3.4.1",
-          "CM.L2-3.4.7"
-        ]
-      }
-    },
-    "ID-02": {
-      "applicable": true,
-      "evidence_requirements": [
-        "Managed interfaces control communications at external CUI system boundaries; authorized and unauthorized external connections documented per SC.L2-3.13.1 / 03.13.01",
-        "Network architecture diagrams show CUI system boundaries, internal segmentation, and interconnections with other systems (03.13.03 / SC.L2-3.13.3)",
-        "Firewall or boundary protection rule sets reviewed to confirm only authorized data flows traverse CUI system boundaries; reviews documented"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 SC.L2-3.13.1, SC.L2-3.13.3; NIST SP 800-171 Rev. 3 03.13.01, 03.13.03",
-      "regulatory_mappings": {
-        "cmmc": [
-          "SC.L2-3.13.1",
-          "SC.L2-3.13.3"
-        ]
-      }
-    },
-    "ID-03": {
-      "applicable": true,
-      "evidence_requirements": [
-        "CUI identification and marking procedures documented and applied per MP.L2-3.8.1 / 03.08.01 \u2014 all CUI-bearing media labeled consistent with NARA CUI registry requirements",
-        "CUI categories and handling requirements communicated to personnel processing, storing, or transmitting CUI (03.08.04)",
-        "Data handling procedures govern AI agent access to CUI \u2014 scope of CUI ingested, stored in context, and retained after session is documented and controlled"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 MP.L2-3.8.1, MP.L2-3.8.4; NIST SP 800-171 Rev. 3 03.08.01, 03.08.04",
-      "regulatory_mappings": {
-        "cmmc": [
-          "MP.L2-3.8.1",
-          "MP.L2-3.8.4"
-        ]
-      }
-    },
-    "ID-04": {
-      "applicable": true,
-      "evidence_requirements": [
-        "Supply chain risk management policy identifies vetting requirements for ICT suppliers, cloud service providers, and subcontractors with CUI access per 03.16.01",
-        "Flow-down requirements documented in subcontractor agreements \u2014 entities with access to CUI contractually bound to equivalent CMMC Level 2 safeguards",
-        "Third-party risk assessments or equivalent supplier reviews conducted for vendors with CUI system access; results documented per 03.16.03"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 supplier-risk expectation; NIST SP 800-171 Rev. 3 03.16.01, 03.16.03",
-      "regulatory_mappings": {
-        "cmmc": [],
-        "cmmc_gap": "CMMC L2 has no dedicated supply-chain risk management practices (SR domain). NIST SP 800-171 Rev 3 03.16.x (supply chain) was added after CMMC L2 finalization. Out-of-scope for direct CMMC L2 practice mapping."
-      }
-    },
-    "ID-05": {
-      "applicable": true,
-      "evidence_requirements": [
-        "Risk assessments applied to AI agent components in CUI environments \u2014 model versions, tooling, and output pathways included in risk scope per RA.L2-3.11.1 / 03.11.01",
-        "AI agent risk profile documented in SSP: CUI access scope, automated action privileges, and residual risk disposition",
-        "Continuous vulnerability monitoring includes AI agent components and external model/service dependencies; monitoring cadence documented per 03.11.05"
-      ],
-      "threshold_adjustments": {},
-      "framework_reference": "CMMC Level 2 RA.L2-3.11.1, RA.L2-3.11.3; NIST SP 800-171 Rev. 3 03.11.01, 03.11.03, 03.11.05",
-      "regulatory_mappings": {
-        "cmmc": [
-          "RA.L2-3.11.1",
-          "RA.L2-3.11.3"
-        ]
-      }
-    },
     "PR-06": {
       "applicable": true,
       "evidence_requirements": [
@@ -306,6 +330,80 @@
         "cmmc": [
           "SI.L2-3.14.2",
           "SI.L2-3.14.5"
+        ]
+      }
+    },
+    "PR-09": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how PR-09 (Controlled Code Execution & Sandbox Enforcement) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing PR-09 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when PR-09 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control PR-09 (Controlled Code Execution & Sandbox Enforcement) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "PR-10": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how PR-10 (Memory & Context Integrity) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing PR-10 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when PR-10 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-10 Memory & Context Integrity",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control PR-10 (Memory & Context Integrity) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "PR-11": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how PR-11 (Retention, Deletion & Memory Disposal) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing PR-11 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when PR-11 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control PR-11 (Retention, Deletion & Memory Disposal) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "PR-12": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how PR-12 (Secrets, Credential & Wallet Key Custody) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing PR-12 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when PR-12 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control PR-12 (Secrets, Credential & Wallet Key Custody) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "DE-01": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Monitoring detects unauthorized use, suspicious communication patterns, and indicators of compromise affecting CUI systems",
+        "Incident handling procedures define triage, containment, reporting, and recovery responsibilities for CUI security events",
+        "Incident response exercises and post-incident records demonstrate lessons learned and follow-through on corrective actions"
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, IR.L2-3.6.3, SI.L2-3.14.6; NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06",
+      "regulatory_mappings": {
+        "cmmc": [
+          "IR.L2-3.6.1",
+          "IR.L2-3.6.2",
+          "IR.L2-3.6.3",
+          "SI.L2-3.14.6"
         ]
       }
     },
@@ -356,6 +454,34 @@
         ]
       }
     },
+    "DE-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how DE-05 (AI Outcome Evaluation & Harm Monitoring) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing DE-05 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when DE-05 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control DE-05 (AI Outcome Evaluation & Harm Monitoring) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "DE-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how DE-06 (Assurance Testing & Vulnerability Evidence Ingestion) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing DE-06 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when DE-06 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control DE-06 (Assurance Testing & Vulnerability Evidence Ingestion) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
     "RS-01": {
       "applicable": true,
       "evidence_requirements": [
@@ -402,6 +528,48 @@
         ]
       }
     },
+    "RS-04": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how RS-04 (Cascade Containment & Blast-Radius Control) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing RS-04 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when RS-04 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control RS-04 (Cascade Containment & Blast-Radius Control) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "RS-05": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how RS-05 (Regulated Notification Clock & Authority Routing) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing RS-05 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when RS-05 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control RS-05 (Regulated Notification Clock & Authority Routing) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
+    "RS-06": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how RS-06 (Coordinated Vulnerability Disclosure & Security Update Handling) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing RS-06 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when RS-06 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-06 Coordinated Vulnerability Disclosure & Security Update Handling",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control RS-06 (Coordinated Vulnerability Disclosure & Security Update Handling) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
+      }
+    },
     "RC-01": {
       "applicable": true,
       "evidence_requirements": [
@@ -429,6 +597,20 @@
         "cmmc": [
           "CA.L2-3.12.3"
         ]
+      }
+    },
+    "RC-03": {
+      "applicable": true,
+      "evidence_requirements": [
+        "Document how RC-03 (Resilience Exercise & Recovery Test Evidence) is implemented for CUI or federal-system agent workflows.",
+        "Collect assessor-ready evidence showing RC-03 operation, ownership, review cadence, and exception handling in the CUI boundary.",
+        "Record POA&M, compensating-control, or residual-risk decisions when RC-03 evidence is incomplete or delegated to an external provider."
+      ],
+      "threshold_adjustments": {},
+      "framework_reference": "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence",
+      "regulatory_mappings": {
+        "cmmc": [],
+        "cmmc_gap": "AKSI v0.6 common control RC-03 (Resilience Exercise & Recovery Test Evidence) has no direct CMMC Level 2 practice enumerated in this SDK overlay. Treat it as supporting CUI readiness evidence through NIST SP 800-171 Rev. 3 adjacent controls, SSP scope, POA&M tracking, and assessor judgment."
       }
     }
   },
@@ -546,6 +728,15 @@
       "CMMC Level 2 governance documentation expectation",
       "NIST SP 800-171 Rev. 3 03.15.02, 03.15.03"
     ],
+    "GOV-05": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "GOV-06": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
+    ],
+    "GOV-07": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
     "ID-01": [
       "CMMC Level 2 CM.L2-3.4.1",
       "NIST SP 800-171 Rev. 3 03.04.01, 03.04.10"
@@ -598,6 +789,18 @@
       "CMMC Level 2 SI.L2-3.14.5",
       "NIST SP 800-171 Rev. 3 03.14.02, 03.14.05, 03.14.06"
     ],
+    "PR-09": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "PR-10": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-10 Memory & Context Integrity"
+    ],
+    "PR-11": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ],
+    "PR-12": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
     "DE-01": [
       "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, SI.L2-3.14.6",
       "NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06"
@@ -614,6 +817,12 @@
       "CMMC Level 2 AU.L2-3.3.4, AU.L2-3.3.6",
       "NIST SP 800-171 Rev. 3 03.03.04, 03.03.06, 03.03.07"
     ],
+    "DE-05": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "DE-06": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
     "RS-01": [
       "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.5",
       "NIST SP 800-171 Rev. 3 03.06.01, 03.06.05"
@@ -626,6 +835,15 @@
       "CMMC Level 2 IR.L2-3.6.3",
       "NIST SP 800-171 Rev. 3 03.06.03, 03.06.06"
     ],
+    "RS-04": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
+    ],
+    "RS-05": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "RS-06": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-06 Coordinated Vulnerability Disclosure & Security Update Handling"
+    ],
     "RC-01": [
       "CMMC Level 2 recovery planning expectation",
       "NIST SP 800-171 Rev. 3 03.15.02, 03.15.03"
@@ -633,9 +851,12 @@
     "RC-02": [
       "CMMC Level 2 CA.L2-3.12.3",
       "NIST SP 800-171 Rev. 3 03.12.03, 03.12.06"
+    ],
+    "RC-03": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
     ]
   },
   "evidence_retention_minimum_days": 1095,
   "human_oversight_required": false,
-  "notes": "CMMC Level 2 aligns contractors to the safeguarding of Controlled Unclassified Information. This overlay focuses on evidencing the six currently enforced AKSI evaluator controls while preserving a full framework mapping across the broader AKSI baseline so government-oriented deployments can demonstrate CUI handling readiness without changing resolver logic. \n\nCMCC PRACTICE GAP ANALYSIS: 110 CMMC L2 practices audited against 26 AKSI controls. 23 of 26 controls map directly to at least one CMMC L2 practice code. 3 controls have no direct CMMC L2 practice mapping (gap controls): GOV-04 (human oversight mandate \u2014 CMMC L2 governance documentation expectation only, closest CA.L2-3.12.3), ID-04 (supply chain risk \u2014 CMMC L2 has no SR domain; NIST 800-171r3 03.16.x added post-CMMC L2 finalization, out-of-scope), RC-01 (recovery planning \u2014 CMMC L2 has no RE domain; addressed under CA.L2-3.12.3 and IR.L2-3.6.x). All 26 controls contain regulatory_mappings.cmmc fields; gap controls have cmmc_gap notes. Evidence field names are non-overlapping with the FedRAMP overlay to support simultaneous activation."
+  "notes": "CMMC Level 2 aligns contractors to the safeguarding of Controlled Unclassified Information. This overlay focuses on evidencing the currently enforced runtime evaluator controls while preserving full framework coverage across the 39 common AKSI controls so government-oriented deployments can demonstrate CUI handling readiness without changing resolver logic.\n\nCMMC PRACTICE GAP ANALYSIS: 110 CMMC L2 practices audited against 39 common AKSI controls. 23 of 39 common controls map directly to at least one CMMC L2 practice code. 16 controls have no direct CMMC L2 practice mapping and include cmmc_gap notes: DE-05, DE-06, GOV-04, GOV-05, GOV-06, GOV-07, ID-04, PR-09, PR-10, PR-11, PR-12, RC-01, RC-03, RS-04, RS-05, RS-06. Evidence field names are non-overlapping with the FedRAMP overlay to support simultaneous activation."
 }
