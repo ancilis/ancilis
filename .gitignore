@@ -13,6 +13,9 @@ build/
 venv/
 env/
 .python-version
+.ruff_cache/
+.mypy_cache/
+.tox/
 
 # TypeScript / Node
 node_modules/
@@ -22,14 +25,34 @@ dist/
 !src/**/*.d.ts
 .npm
 .yarn/
+.pnpm-store/
+.pnpm-debug.log*
+.next/
+.nuxt/
+.parcel-cache/
+.turbo/
+.cache/
+.pnp.*
+.yarn-integrity
 *.tsbuildinfo
 
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
+*.cover
 coverage/
 htmlcov/
 .nyc_output/
+junit.xml
+test-results/
+playwright-report/
+
+# Logs / pids
+*.log
+pids/
+*.pid
+*.pid.lock
 
 # IDE
 .vscode/
@@ -38,6 +61,9 @@ htmlcov/
 *.swo
 *~
 .DS_Store
+Thumbs.db
+desktop.ini
+.netrwhist
 
 # Environment
 .env
@@ -47,7 +73,16 @@ htmlcov/
 # DuckDB evidence storage
 *.duckdb
 *.duckdb.wal
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
 examples/demo/discovery/discovery-manifest.json
+
+# Compiled / binary
+*.dylib
+*.dll
+*.class
 
 # Ancilis
 ancilis-reports/
