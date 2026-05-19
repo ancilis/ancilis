@@ -195,31 +195,31 @@ def resolve_certify_target(target: str) -> CertifyTarget:
     """Resolve a CLI `certify` target into internal IDs and control references."""
     kind, internal_id = _CERTIFY_TARGET_IDS[target]
     if kind == "overlay":
-        profile = load_overlay_profiles()[internal_id]
+        overlay_profile = load_overlay_profiles()[internal_id]
         control_refs = {
             control_id: str(control_data.get("framework_reference", ""))
-            for control_id, control_data in profile.get("controls", {}).items()
+            for control_id, control_data in overlay_profile.get("controls", {}).items()
             if control_data.get("applicable", True)
         }
         return CertifyTarget(
             target=target,
             target_id=internal_id,
-            target_name=str(profile.get("name", internal_id)),
+            target_name=str(overlay_profile.get("name", internal_id)),
             control_refs=dict(sorted(control_refs.items())),
         )
 
-    profile = load_certification_profile(internal_id)
-    if profile is None:
+    certification_profile = load_certification_profile(internal_id)
+    if certification_profile is None:
         raise LookupError(f"Certification profile not found for '{internal_id}'.")
-    requirement_map = profile.get("aksi_to_requirement_map", {})
+    requirement_map = certification_profile.get("aksi_to_requirement_map", {})
     control_refs = {
         control_id: ", ".join(str(requirement_id) for requirement_id in requirement_map.get(control_id, []))
-        for control_id in profile.get("required_aksi_controls", [])
+        for control_id in certification_profile.get("required_aksi_controls", [])
     }
     return CertifyTarget(
         target=target,
         target_id=internal_id,
-        target_name=str(profile.get("name", internal_id)),
+        target_name=str(certification_profile.get("name", internal_id)),
         control_refs=dict(sorted(control_refs.items())),
     )
 
