@@ -78,6 +78,7 @@ EVALUATOR_CONTROL_IDS = {
     "RC-01",
     "RC-02",
     "RC-03",
+    "RS-01",
     "RS-02",
     "RS-03",
     "RS-04",

@@ -7,6 +7,15 @@ from datetime import datetime
 from typing import Any
 
 from ancilis.activation.loader import load_certification_profile, load_overlay_profiles
+from ancilis.config import ResolvedConfig
+from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
+from ancilis.engine.engine import Engine
+from ancilis.engine.evaluators.attestation import (
+    ATTESTATION_CONTROL_SPECS,
+    get_attestation_state,
+)
+from ancilis.engine.evaluators.deferred import DEFERRED_CONTROL_SPECS
+from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.evidence.record import EvidenceRecord
 from ancilis.evidence.store import EvidenceStore
 
@@ -50,8 +59,11 @@ class CertificationCoverageRow:
     control_id: str
     framework_ref: str
     coverage_status: str
+    action_required: str
     evidence_count: int
     last_evidence_at: str | None
+    latest_result: str | None = None
+    detail: str | None = None
 
 
 _CERTIFY_TARGET_IDS = {
@@ -228,10 +240,12 @@ def certification_coverage(
     store: EvidenceStore,
     *,
     target: str,
+    config: ResolvedConfig | None = None,
 ) -> tuple[CertifyTarget, list[CertificationCoverageRow]]:
     """Compute evidence coverage for a CLI certification target."""
     resolved_target = resolve_certify_target(target)
     records = store.get_records(limit=None)
+    synthetic_results = _synthetic_certify_results(config, store) if config is not None else {}
     stats: dict[str, dict[str, Any]] = {
         control_id: {
             "evidence_count": 0,
@@ -239,6 +253,8 @@ def certification_coverage(
             "failed": 0,
             "flagged": 0,
             "last_evidence_at": None,
+            "latest_result": None,
+            "latest_detail": None,
         }
         for control_id in resolved_target.control_refs
     }
@@ -261,24 +277,160 @@ def certification_coverage(
 
             if row["last_evidence_at"] is None or record_time > _parse_iso8601(row["last_evidence_at"]):
                 row["last_evidence_at"] = record.timestamp
+                row["latest_result"] = current
+                row["latest_detail"] = str(result.get("detail", ""))
 
     rows: list[CertificationCoverageRow] = []
     for control_id, framework_ref in resolved_target.control_refs.items():
         row = stats[control_id]
-        if row["evidence_count"] == 0:
-            coverage_status = "gap"
-        elif row["failed"] > 0 or row["flagged"] > 0:
-            coverage_status = "partial"
+        latest_result = row["latest_result"]
+        detail = row["latest_detail"]
+        if config is not None and control_id in ATTESTATION_CONTROL_SPECS:
+            state = get_attestation_state(
+                store,
+                ATTESTATION_CONTROL_SPECS[control_id],
+                agent_id=getattr(config, "agent_id", None) or getattr(config, "agent_name", None)
+                if ATTESTATION_CONTROL_SPECS[control_id].per_agent
+                else None,
+            )
+            if state.status == "fresh":
+                coverage_status = "covered"
+                latest_result = "PASS"
+                detail = f"Fresh manual attestation recorded at {state.attested_at}."
+            elif state.status == "stale":
+                coverage_status = "attestation_stale"
+                latest_result = "FLAG"
+                detail = f"attestation stale, last attested {state.attested_at}"
+            elif state.status == "missing_fields":
+                coverage_status = "attestation_incomplete"
+                latest_result = "FAIL"
+                detail = "Manual attestation missing required fields: " + ", ".join(
+                    state.missing_fields
+                )
+            else:
+                coverage_status = "attestation_required"
+                latest_result = "SKIP"
+                detail = "MANUAL: attestation required"
+        elif control_id in DEFERRED_CONTROL_SPECS:
+            reason = DEFERRED_CONTROL_SPECS[control_id].reason
+            coverage_status = (
+                "deferred_cross_action"
+                if reason == "cross_action"
+                else "deferred_new_data"
+            )
+            latest_result = "SKIP"
+            detail = f"DEFERRED: {reason}"
+        elif row["evidence_count"] > 0:
+            coverage_status = _coverage_status_for_result(
+                str(row["latest_result"] or ""),
+                str(row["latest_detail"] or ""),
+                control_id,
+            )
+        elif control_id in synthetic_results:
+            synthetic = synthetic_results[control_id]
+            latest_result = str(synthetic.get("result", ""))
+            detail = str(synthetic.get("detail", ""))
+            coverage_status = _coverage_status_for_result(latest_result, detail, control_id)
         else:
-            coverage_status = "covered"
+            coverage_status = "gap"
+            detail = "No evaluator result available."
         rows.append(
             CertificationCoverageRow(
                 control_id=control_id,
                 framework_ref=framework_ref,
                 coverage_status=coverage_status,
+                action_required=_action_required(control_id, coverage_status),
                 evidence_count=int(row["evidence_count"]),
                 last_evidence_at=row["last_evidence_at"],
+                latest_result=latest_result,
+                detail=detail,
             )
         )
 
     return resolved_target, rows
+
+
+def _coverage_status_for_result(result: str, detail: str, control_id: str) -> str:
+    if "not runtime-active under the explicit/certification policy gate" in detail:
+        return "policy_gated"
+    if detail.startswith("DEFERRED:"):
+        reason = DEFERRED_CONTROL_SPECS.get(control_id)
+        if reason and reason.reason == "cross_action":
+            return "deferred_cross_action"
+        return "deferred_new_data"
+    if detail == "MANUAL: attestation required":
+        return "attestation_required"
+    if result == "PASS":
+        return "covered"
+    if result in {"FAIL", "ERROR", "FLAG"}:
+        return "gap"
+    if result == "SKIP":
+        return "covered"
+    return "gap"
+
+
+def _action_required(control_id: str, coverage_status: str) -> str:
+    if coverage_status == "covered":
+        return "—"
+    if coverage_status == "gap":
+        return "remediate"
+    if coverage_status in {
+        "attestation_required",
+        "attestation_stale",
+        "attestation_incomplete",
+    }:
+        return f"ancilis attest {control_id}"
+    if coverage_status in {"deferred_cross_action", "deferred_new_data"}:
+        return "v0.2 roadmap"
+    if coverage_status == "policy_gated":
+        return "enable in policy"
+    return "remediate"
+
+
+def _synthetic_certify_results(
+    config: ResolvedConfig,
+    store: EvidenceStore,
+) -> dict[str, dict[str, Any]]:
+    tool_name = _synthetic_tool_name(config)
+    registry = ToolRegistry()
+    registry.register(
+        ToolEntry(
+            name=tool_name,
+            status=ToolStatus.APPROVED,
+            description_hash="certify-dry-run",
+            approved_by="certify",
+        )
+    )
+    destination = config.scope_allowed_destinations[0] if config.scope_allowed_destinations else None
+    params: dict[str, Any] = {"operation": "certify_dry_run"}
+    if destination:
+        params["destination"] = destination
+    action = Action(
+        action_id="certify-dry-run",
+        timestamp=datetime.now().astimezone().isoformat(),
+        agent_id=config.agent_id or config.agent_name or "certify-cli",
+        agent_owner=config.agent_owner or None,
+        action_type="tool_call",
+        tool=ToolInfo(name=tool_name, description_hash="certify-dry-run"),
+        parameters=ActionParameters(raw=params, parameter_hash="certify-dry-run"),
+        context=ActionContext(session_id="certify-dry-run"),
+        source_type="certify",
+        producer_type="certify",
+        producer_version="0.1",
+    )
+    evaluation = Engine(config, registry=registry, evidence_store=store).evaluate(action)
+    return {
+        result.control_id: {
+            "result": result.result,
+            "detail": result.detail,
+            "evidence_data": result.evidence_data,
+        }
+        for result in evaluation.control_results
+    }
+
+
+def _synthetic_tool_name(config: ResolvedConfig) -> str:
+    for candidate in config.tools_allowed:
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+    return "certify-dry-run-tool"

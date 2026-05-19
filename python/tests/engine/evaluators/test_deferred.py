@@ -5,7 +5,7 @@ import uuid
 
 from ancilis.config import load_config, load_control_definitions
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
-from ancilis.engine.engine import Engine
+from ancilis.engine.engine import EVALUATOR_CONTROL_IDS, Engine
 from ancilis.engine.evaluators.deferred import DEFERRED_CONTROL_SPECS, DeferredEvaluator
 from ancilis.evidence.store import EvidenceStore
 
@@ -37,6 +37,7 @@ def test_deferred_specs_match_current_control_catalog() -> None:
     controls = load_control_definitions()
 
     assert set(DEFERRED_CONTROL_SPECS).issubset(controls)
+    assert set(DEFERRED_CONTROL_SPECS).issubset(EVALUATOR_CONTROL_IDS)
     assert "DE-03" not in DEFERRED_CONTROL_SPECS
 
 
