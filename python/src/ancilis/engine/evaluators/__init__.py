@@ -3,6 +3,7 @@
 from ancilis.engine.evaluators.attestation import ManualAttestationEvaluator
 from ancilis.engine.evaluators.de02_classification_drift import DE02ClassificationDriftEvaluator
 from ancilis.engine.evaluators.de03_config_drift import DE03ConfigDriftEvaluator
+from ancilis.engine.evaluators.deferred import DeferredEvaluator
 from ancilis.engine.evaluators.gov01_identity_auth import GOV01IdentityAuthEvaluator
 from ancilis.engine.evaluators.pr01_action_auth import PR01ActionAuthorizationEvaluator
 from ancilis.engine.evaluators.pr02_scope import PR02ScopeEvaluator, RateTracker
@@ -25,6 +26,7 @@ __all__ = [
     "DE01BaselineEvaluator",
     "DE02ClassificationDriftEvaluator",
     "DE03ConfigDriftEvaluator",
+    "DeferredEvaluator",
     "DE04IntegrityEvaluator",
     "DeviationFlag",
     "GOV01IdentityAuthEvaluator",

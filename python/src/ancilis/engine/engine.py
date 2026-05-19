@@ -18,6 +18,10 @@ from ancilis.engine.evaluators.attestation import (
 from ancilis.engine.evaluators.de02_classification_drift import DE02ClassificationDriftEvaluator
 from ancilis.engine.evaluators.de03_config_drift import DE03ConfigDriftEvaluator
 from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
+from ancilis.engine.evaluators.deferred import (
+    DEFERRED_CONTROL_SPECS,
+    make_deferred_evaluators,
+)
 from ancilis.engine.evaluators.base import ControlEvaluator
 from ancilis.engine.evaluators.gov01_identity_auth import GOV01IdentityAuthEvaluator
 from ancilis.engine.evaluators.gov02_ownership import GOV02OwnershipEvaluator
@@ -43,6 +47,8 @@ EVALUATOR_CONTROL_IDS = {
     "DE-02",
     "DE-03",
     "DE-04",
+    "DE-05",
+    "DE-06",
     "GOV-01",
     "GOV-02",
     "GOV-03",
@@ -52,7 +58,11 @@ EVALUATOR_CONTROL_IDS = {
     "GOV-07",
     "ID-01",
     "ID-02",
+    "ID-03",
+    "ID-04",
     "ID-05",
+    "PAY-01",
+    "PAY-02",
     "PR-01",
     "PR-02",
     "PR-03",
@@ -62,12 +72,15 @@ EVALUATOR_CONTROL_IDS = {
     "PR-07",
     "PR-08",
     "PR-09",
+    "PR-10",
     "PR-11",
+    "PR-12",
     "RC-01",
     "RC-02",
     "RC-03",
     "RS-02",
     "RS-03",
+    "RS-04",
     "RS-05",
     "RS-06",
 }
@@ -140,11 +153,18 @@ class Engine:
             "RS-02": RS02ContainmentEvaluator(),
         }
         self._evaluators.update(make_attestation_evaluators(evidence_store))
+        self._evaluators.update(make_deferred_evaluators())
         missing_attestation_defs = set(ATTESTATION_CONTROL_SPECS) - set(self._control_defs)
         if missing_attestation_defs:
             raise ValueError(
                 "Attestation evaluators registered for unknown AKSI controls: "
                 + ", ".join(sorted(missing_attestation_defs))
+            )
+        missing_deferred_defs = set(DEFERRED_CONTROL_SPECS) - set(self._control_defs)
+        if missing_deferred_defs:
+            raise ValueError(
+                "Deferred evaluators registered for unknown AKSI controls: "
+                + ", ".join(sorted(missing_deferred_defs))
             )
         for control_id, definition in getattr(self.config, "custom_controls", {}).items():
             self._evaluators[control_id] = CustomControlEvaluator(definition)
