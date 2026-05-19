@@ -1,5 +1,6 @@
 """Control evaluators."""
 
+from ancilis.engine.evaluators.attestation import ManualAttestationEvaluator
 from ancilis.engine.evaluators.de02_classification_drift import DE02ClassificationDriftEvaluator
 from ancilis.engine.evaluators.de03_config_drift import DE03ConfigDriftEvaluator
 from ancilis.engine.evaluators.gov01_identity_auth import GOV01IdentityAuthEvaluator
@@ -29,6 +30,7 @@ __all__ = [
     "GOV01IdentityAuthEvaluator",
     "GOV02OwnershipEvaluator",
     "GOV03RiskToleranceEvaluator",
+    "ManualAttestationEvaluator",
     "ID01InventoryEvaluator",
     "PR01ActionAuthorizationEvaluator",
     "PR02ScopeEvaluator",

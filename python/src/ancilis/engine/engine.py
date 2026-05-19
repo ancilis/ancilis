@@ -11,6 +11,10 @@ from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
 from ancilis.config import ResolvedConfig, load_control_definitions
 from ancilis.controls.custom import CustomControlEvaluator
 from ancilis.engine.action import Action
+from ancilis.engine.evaluators.attestation import (
+    ATTESTATION_CONTROL_SPECS,
+    make_attestation_evaluators,
+)
 from ancilis.engine.evaluators.de02_classification_drift import DE02ClassificationDriftEvaluator
 from ancilis.engine.evaluators.de03_config_drift import DE03ConfigDriftEvaluator
 from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
@@ -42,7 +46,13 @@ EVALUATOR_CONTROL_IDS = {
     "GOV-01",
     "GOV-02",
     "GOV-03",
+    "GOV-04",
+    "GOV-05",
+    "GOV-06",
+    "GOV-07",
     "ID-01",
+    "ID-02",
+    "ID-05",
     "PR-01",
     "PR-02",
     "PR-03",
@@ -52,7 +62,14 @@ EVALUATOR_CONTROL_IDS = {
     "PR-07",
     "PR-08",
     "PR-09",
+    "PR-11",
+    "RC-01",
+    "RC-02",
+    "RC-03",
     "RS-02",
+    "RS-03",
+    "RS-05",
+    "RS-06",
 }
 
 POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS = {
@@ -83,6 +100,8 @@ class EvidenceIntegrityStore(Protocol):
     def count(self) -> int: ...
 
     def verify_chain(self) -> tuple[bool, list[str]]: ...
+
+    def get_records(self, limit: int | None = 100): ...
 
 
 class Engine:
@@ -120,6 +139,13 @@ class Engine:
             "GOV-02": GOV02OwnershipEvaluator(),
             "RS-02": RS02ContainmentEvaluator(),
         }
+        self._evaluators.update(make_attestation_evaluators(evidence_store))
+        missing_attestation_defs = set(ATTESTATION_CONTROL_SPECS) - set(self._control_defs)
+        if missing_attestation_defs:
+            raise ValueError(
+                "Attestation evaluators registered for unknown AKSI controls: "
+                + ", ".join(sorted(missing_attestation_defs))
+            )
         for control_id, definition in getattr(self.config, "custom_controls", {}).items():
             self._evaluators[control_id] = CustomControlEvaluator(definition)
 
