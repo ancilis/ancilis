@@ -30,6 +30,18 @@ function readPackageVersion(): string {
 
 export const __version__ = readPackageVersion();
 
+export {
+  AKSI_FRAMEWORK_VERSION,
+  AKSI_PREFIX,
+  DEFAULT_AKSI_FRAMEWORK_VERSION,
+  isPrefixed,
+  is_prefixed,
+  loadFrameworkMetadata,
+  prefix,
+  unprefix,
+} from "./aksi/index.js";
+export type { AksiFrameworkMetadata } from "./aksi/index.js";
+
 export { Ancilis } from "./facade.js";
 export type { AncilisLoadOptions, AncilisToolOptions, AncilisToolRun } from "./facade.js";
 

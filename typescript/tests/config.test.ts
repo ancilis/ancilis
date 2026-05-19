@@ -32,12 +32,13 @@ describe("Minimal Config", () => {
     expect(resolved.mode).toBe("audit");
   });
 
-  it("activates all 26 controls by default", () => {
+  it("loads all 41 controls and enables the 39 common controls by default", () => {
     const resolved = loadConfig({ raw: { agent: { name: "my-agent" } } });
-    expect(resolved.controls.size).toBe(26);
-    for (const cs of resolved.controls.values()) {
-      expect(cs.enabled).toBe(true);
-    }
+    expect(resolved.controls.size).toBe(41);
+    const enabled = [...resolved.controls.values()].filter(cs => cs.enabled);
+    expect(enabled.length).toBe(39);
+    expect(resolved.controls.get("PAY-01")?.enabled).toBe(false);
+    expect(resolved.controls.get("PAY-02")?.enabled).toBe(false);
   });
 
   it("has no overlays or data classifications", () => {

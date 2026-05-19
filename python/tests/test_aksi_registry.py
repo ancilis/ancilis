@@ -21,19 +21,24 @@ from ancilis.config import load_config
 
 # --- Constants ---
 
-ALL_26_CONTROL_IDS = {
-    "GOV-01", "GOV-02", "GOV-03", "GOV-04",
+ALL_41_CONTROL_IDS = {
+    "GOV-01", "GOV-02", "GOV-03", "GOV-04", "GOV-05", "GOV-06", "GOV-07",
     "ID-01", "ID-02", "ID-03", "ID-04", "ID-05",
     "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
-    "DE-01", "DE-02", "DE-03", "DE-04",
-    "RS-01", "RS-02", "RS-03",
-    "RC-01", "RC-02",
+    "PR-09", "PR-10", "PR-11", "PR-12",
+    "DE-01", "DE-02", "DE-03", "DE-04", "DE-05", "DE-06",
+    "RS-01", "RS-02", "RS-03", "RS-04", "RS-05", "RS-06",
+    "RC-01", "RC-02", "RC-03",
+    "PAY-01", "PAY-02",
 }
 
-ALL_16_DC_CODES = {
-    "DC-CHD", "DC-PII", "DC-FIN", "DC-PHI", "DC-CUI", "DC-MNPI",
-    "DC-FCI", "DC-GEN", "DC-GOV", "DC-AI", "DC-ITAR", "DC-CRIT",
-    "DC-MINOR", "DC-BIO", "DC-LEGAL", "DC-IP",
+COMMON_CONTROL_IDS = ALL_41_CONTROL_IDS - {"PAY-01", "PAY-02"}
+
+ALL_23_DC_CODES = {
+    "DC-PHI", "DC-CHD", "DC-SAD", "DC-CUI", "DC-FCI", "DC-MNPI",
+    "DC-PII", "DC-FIN", "DC-NPI", "DC-GOV", "DC-AI", "DC-GEN",
+    "DC-ITAR", "DC-CRIT", "DC-MINOR", "DC-BIO", "DC-LEGAL", "DC-IP",
+    "DC-PAY", "DC-EDU", "DC-CJI", "DC-EAR", "DC-MEDDEV",
 }
 
 OVERLAY_IDS = {
@@ -52,9 +57,9 @@ OVERLAY_IDS = {
 
 
 class TestAKSIControlRegistry:
-    def test_all_26_controls_present(self):
+    def test_all_41_controls_present(self):
         controls = load_control_definitions()
-        assert set(controls.keys()) == ALL_26_CONTROL_IDS
+        assert set(controls.keys()) == ALL_41_CONTROL_IDS
 
     def test_all_controls_have_required_fields(self):
         controls = load_control_definitions()
@@ -77,18 +82,26 @@ class TestAKSIControlRegistry:
         controls = load_control_definitions()
         for cid, cdef in controls.items():
             assert "regulatory_mappings" in cdef, f"{cid} missing regulatory_mappings"
-            mappings = cdef["regulatory_mappings"]
-            assert "nist_csf" in mappings, f"{cid} missing nist_csf in regulatory_mappings"
-            assert "soc2" in mappings, f"{cid} missing soc2 in regulatory_mappings"
+            assert isinstance(cdef["regulatory_mappings"], dict)
 
-    def test_all_controls_baseline_true(self):
+    def test_common_controls_baseline_true_extension_controls_false(self):
         controls = load_control_definitions()
         for cid, cdef in controls.items():
-            assert cdef["baseline"] is True, f"{cid} should have baseline=true"
+            expected = cid in COMMON_CONTROL_IDS
+            assert cdef["baseline"] is expected, f"{cid} baseline should be {expected}"
+            assert cdef["common"] is expected, f"{cid} common should be {expected}"
 
     def test_control_functions_valid(self):
         controls = load_control_definitions()
-        valid_functions = {"GOVERN", "IDENTIFY", "PROTECT", "DETECT", "RESPOND", "RECOVER"}
+        valid_functions = {
+            "GOVERN",
+            "IDENTIFY",
+            "PROTECT",
+            "DETECT",
+            "RESPOND",
+            "RECOVER",
+            "PAYMENT",
+        }
         for cid, cdef in controls.items():
             assert cdef["function"] in valid_functions, \
                 f"{cid} has invalid function '{cdef['function']}'"
@@ -96,7 +109,7 @@ class TestAKSIControlRegistry:
     def test_govern_controls_count(self):
         controls = load_control_definitions()
         gov = [c for c in controls.values() if c["function"] == "GOVERN"]
-        assert len(gov) == 4
+        assert len(gov) == 7
 
     def test_identify_controls_count(self):
         controls = load_control_definitions()
@@ -106,22 +119,22 @@ class TestAKSIControlRegistry:
     def test_protect_controls_count(self):
         controls = load_control_definitions()
         protect = [c for c in controls.values() if c["function"] == "PROTECT"]
-        assert len(protect) == 8
+        assert len(protect) == 12
 
     def test_detect_controls_count(self):
         controls = load_control_definitions()
         detect = [c for c in controls.values() if c["function"] == "DETECT"]
-        assert len(detect) == 4
+        assert len(detect) == 6
 
     def test_respond_controls_count(self):
         controls = load_control_definitions()
         respond = [c for c in controls.values() if c["function"] == "RESPOND"]
-        assert len(respond) == 3
+        assert len(respond) == 6
 
     def test_recover_controls_count(self):
         controls = load_control_definitions()
         recover = [c for c in controls.values() if c["function"] == "RECOVER"]
-        assert len(recover) == 2
+        assert len(recover) == 3
 
     def test_descriptions_substantive(self):
         """Descriptions should not be placeholder text."""
@@ -142,10 +155,10 @@ class TestAKSIControlRegistry:
 
 
 class TestDataClassificationRegistry:
-    def test_all_16_dc_codes_present(self):
+    def test_all_23_dc_codes_present(self):
         taxonomy = load_taxonomy()
         codes = {c["code"] for c in taxonomy["classifications"]}
-        assert codes == ALL_16_DC_CODES
+        assert codes == ALL_23_DC_CODES
 
     def test_all_classifications_have_required_fields(self):
         taxonomy = load_taxonomy()
@@ -271,14 +284,16 @@ class TestOverlayProfiles:
             for field in required_fields:
                 assert field in profile, f"{oid} missing required field '{field}'"
 
-    def test_all_overlays_map_26_controls_in_framework_mapping(self):
-        """Each overlay should map all 26 AKSI controls in framework_mapping."""
+    def test_all_overlay_framework_mapping_controls_are_known(self):
+        """Each overlay should reference known AKSI v0.6 controls."""
         profiles = load_overlay_profiles()
         for oid in OVERLAY_IDS:
             profile = profiles[oid]
             fm = profile.get("framework_mapping", {})
-            for cid in ALL_26_CONTROL_IDS:
-                assert cid in fm, f"{oid} missing {cid} in framework_mapping"
+            assert fm, f"{oid} missing framework_mapping entries"
+            for cid in fm:
+                assert cid in ALL_41_CONTROL_IDS, \
+                    f"{oid} references unknown control '{cid}' in framework_mapping"
 
     def test_no_orphan_control_ids_in_overlays(self):
         """Overlay profiles should not reference non-existent control IDs."""
@@ -287,15 +302,15 @@ class TestOverlayProfiles:
             profile = profiles[oid]
             # Check framework_mapping
             for cid in profile.get("framework_mapping", {}):
-                assert cid in ALL_26_CONTROL_IDS, \
+                assert cid in ALL_41_CONTROL_IDS, \
                     f"{oid} references unknown control '{cid}' in framework_mapping"
             # Check controls section
             for cid in profile.get("controls", {}):
-                assert cid in ALL_26_CONTROL_IDS, \
+                assert cid in ALL_41_CONTROL_IDS, \
                     f"{oid} references unknown control '{cid}' in controls"
             # Check control_adjustments
             for cid in profile.get("control_adjustments", {}):
-                assert cid in ALL_26_CONTROL_IDS, \
+                assert cid in ALL_41_CONTROL_IDS, \
                     f"{oid} references unknown control '{cid}' in control_adjustments"
 
     def test_pci_dss_v4_triggered_by_chd(self):
@@ -446,7 +461,7 @@ class TestActivationPaths:
         resolver = ActivationResolver()
         spec = resolver.resolve(certification_targets=["aiuc-1"])
         assert "aiuc-1" in spec.active_certifications
-        assert len(spec.active_controls) == 26
+        assert len(spec.active_controls) == 39
 
     def test_combined_certification_and_data(self):
         resolver = ActivationResolver()
@@ -469,12 +484,12 @@ class TestActivationPaths:
         spec = resolver.resolve(my_agent_handles=["credit_cards"])
         assert "nist-csf" in spec.active_overlays
 
-    def test_all_26_controls_baseline(self):
-        """All 26 controls should be active even with no config."""
+    def test_all_common_controls_baseline(self):
+        """All 39 common controls should be active even with no config."""
         resolver = ActivationResolver()
         spec = resolver.resolve()
-        assert len(spec.active_controls) == 26
-        assert set(spec.active_controls) == ALL_26_CONTROL_IDS
+        assert len(spec.active_controls) == 39
+        assert set(spec.active_controls) == COMMON_CONTROL_IDS
 
     def test_controlled_unclassified_activates_cmmc_l2(self):
         """Declared CUI should activate the government overlay."""
@@ -483,15 +498,15 @@ class TestActivationPaths:
         assert "DC-CUI" in spec.data_classifications
         assert "cmmc-l2" in spec.active_overlays
         assert "nist-csf" in spec.active_overlays
-        assert len(spec.active_controls) == 26
+        assert len(spec.active_controls) == 39
 
-    def test_financial_data_activates_glba_and_soc2(self):
-        """Financial data should activate the financial services overlay and SOC 2."""
+    def test_financial_data_activates_glba_and_dora(self):
+        """Financial data should activate the v0.6 financial overlays."""
         resolver = ActivationResolver()
         spec = resolver.resolve(my_agent_handles=["financial_data"])
         assert "DC-FIN" in spec.data_classifications
         assert "glba" in spec.active_overlays
-        assert "soc2" in spec.active_overlays
+        assert "dora" in spec.active_overlays
 
     def test_mnpi_activates_securities_overlay(self):
         """Declared MNPI should activate the securities overlay."""
@@ -501,12 +516,12 @@ class TestActivationPaths:
         assert "securities-mnpi" in spec.active_overlays
         assert "nist-csf" in spec.active_overlays
 
-    def test_general_data_activates_soc2(self):
-        """General business data should activate SOC 2."""
+    def test_general_data_keeps_baseline_only(self):
+        """General business data has no v0.6 classification overlay by default."""
         resolver = ActivationResolver()
         spec = resolver.resolve(my_agent_handles=["general"])
         assert "DC-GEN" in spec.data_classifications
-        assert "soc2" in spec.active_overlays
+        assert spec.active_overlays == ["nist-csf"]
 
     def test_pci_strict_thresholds_applied(self):
         resolver = ActivationResolver()
@@ -547,9 +562,11 @@ class TestConfigIntegration:
         assert resolved.human_oversight_required is True
         assert resolved.evidence_retention_days >= 3650
 
-    def test_minimal_config_26_controls(self):
+    def test_minimal_config_41_controls_39_enabled(self):
         resolved = load_config(raw={"agent": {"name": "x"}})
-        assert len(resolved.controls) == 26
+        assert len(resolved.controls) == 41
+        enabled = {cid for cid, status in resolved.controls.items() if status.enabled}
+        assert enabled == COMMON_CONTROL_IDS
 
 
 class TestOverlayCitationRegression:

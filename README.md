@@ -55,7 +55,7 @@ ancilis status
 ```
 Ancilis — my-agent
   Mode: audit
-  Controls: 26 active, all passing
+  Controls: 39 common controls active, 2 payment extension controls available
   Tool calls: 1 evaluated, 0 blocked
 ```
 
@@ -197,7 +197,7 @@ Your agent calls a tool
        ↓
 Producer normalizes the call (MCP, CLI, HTTP, LLM SDK, or framework callback)
        ↓
-Engine evaluates against 26 AKSI security controls
+Engine evaluates against AKSI v0.6 controls
        ↓
 Evidence record written to local DuckDB (SHA-256 hash chain)
        ↓
@@ -216,11 +216,11 @@ Declare what data your agent handles. The right regulatory overlays activate aut
 | `health_records` | HIPAA, GDPR, SOC 2 |
 | `personal_info` | GDPR, SOC 2, CCPA |
 | `ai_training_data` | EU AI Act, ISO 42001 |
-| `financial_records` | GLBA, SOX, DORA |
+| `financial_records` | GLBA, DORA |
 | `controlled_unclassified` | CMMC L2 |
 | `biometric_data` | EU AI Act |
 
-23 data types supported across 19 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
+23 canonical data classes are supported across 19 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
 
 > **Roadmap: automatic classification.** Today you declare what data your agent handles in config. We're building runtime classification that detects data types automatically from tool call payloads and responses — regex patterns, Luhn checksums, co-occurrence analysis. When the SDK detects health records flowing through an agent you declared as general-purpose, it surfaces the finding for you to confirm. Confirmed findings activate the right overlays without config changes. Declaration gets you started; auto-classification keeps you accurate.
 
@@ -257,7 +257,7 @@ Each level adds one concept. You don't need level 2 to get value from level 1.
 
 | Level | What you add | What you get |
 |-------|-------------|-------------|
-| 1 | `agent.name` + `tools.allowed` | 26 baseline security controls, evidence for every tool call |
+| 1 | `agent.name` + `tools.allowed` | 39 common controls, evidence for every tool call |
 | 2 | `certification_targets: [soc2]` | Certification readiness reporting |
 | 3 | `my_agent_handles: [health_records]` | Automatic regulatory overlay activation |
 | 4 | `security.mode: enforce` | Non-compliant tool calls blocked before execution |
@@ -290,8 +290,9 @@ LLM SDK + framework producers also ship in the TypeScript package — `Anthropic
 
 ## What's honest
 
-- **12 of 26 controls have runtime evaluators.** The other 14 are defined in the framework and appear in reports as SKIP until evaluators ship. No false positives.
-- **19 overlay profiles, all mapping 26 controls.** SOC 2, HIPAA, PCI-DSS, EU AI Act, GDPR, CCPA, CMMC, GLBA, DORA, NIS2, FedRAMP, ISO 27001, ISO 42001, NIST CSF, NIST AI RMF, Colorado AI Act, Singapore IMDA MGF, Securities MNPI, MAS TRM.
+- **41 AKSI v0.6 controls ship in the catalog.** 39 common controls activate by default; `PAY-01` and `PAY-02` activate only for `DC-PAY`, `AGENT_PAYMENTS`, or `X402`.
+- **12 Python controls and 12 TypeScript controls have runtime evaluators.** Controls marked `support_level: attestation` are catalog-backed and appear in reports as SKIP until evaluator or imported evidence support lands. No false positives.
+- **19 overlay profiles ship today.** Existing overlays are preserved and reference known AKSI controls; v0.6 adds more catalog coverage than the current overlay depth can fully exercise.
 - **Evidence integrity depends on protecting the DB.** The hash chain detects tampering after the fact. It doesn't prevent replacing the entire database.
 - **HTTP wrapping is explicit.** Ancilis doesn't monkey-patch HTTP libraries. You wrap the calls you want evaluated.
 - **PDF export requires pandoc and xelatex.** Falls back to markdown without them.

@@ -30,6 +30,7 @@ const EXPORT_FIELDNAMES = [
   "tenant_id",
   "detected_data_types",
   "sdk_version",
+  "framework_version",
   "classification_context",
 ] as const;
 
@@ -466,6 +467,7 @@ function exportRecord(record: EvidenceRecord): Record<(typeof EXPORT_FIELDNAMES)
     tenant_id: record.tenantId ?? null,
     detected_data_types: record.detectedDataTypes ?? [],
     sdk_version: record.sdkVersion ?? null,
+    framework_version: record.frameworkVersion ?? null,
     classification_context: record.classificationContext ?? {},
   };
 }
@@ -573,6 +575,9 @@ function evidenceProps(record: EvidenceRecord, controlResult: Record<string, unk
   }
   if (record.sdkVersion !== null && record.sdkVersion !== undefined) {
     props.push({ name: "sdk-version", value: record.sdkVersion });
+  }
+  if (record.frameworkVersion !== null && record.frameworkVersion !== undefined) {
+    props.push({ name: "aksi-framework-version", value: record.frameworkVersion });
   }
   if (record.classificationContext && Object.keys(record.classificationContext).length > 0) {
     props.push({ name: "classification-context", value: canonicalJsonStringify(record.classificationContext) });

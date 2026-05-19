@@ -7,6 +7,7 @@ import json
 import pytest
 
 from ancilis.config import ResolvedConfig, load_config
+from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.chain import GENESIS_SEED, canonical_payload, compute_hash
 from ancilis.evidence.record import EvidenceRecord
@@ -304,6 +305,7 @@ class TestEvidenceStore:
         [
             ("detected_data_types", json.dumps(["DC-CHD"])),
             ("sdk_version", "9.9.9"),
+            ("framework_version", "0.5"),
             ("classification_context", json.dumps({"llm_provider": "tampered"})),
         ],
     )
@@ -340,6 +342,7 @@ class TestEvidenceStore:
         record = store.store(ev, tool_name="t1")
         assert record.detected_data_types == ["DC-PII"]
         assert record.sdk_version is not None
+        assert record.framework_version == AKSI_FRAMEWORK_VERSION
         assert record.classification_context == {"llm_provider": "openai"}
 
         legacy_canon = canonical_payload(
@@ -363,6 +366,45 @@ class TestEvidenceStore:
         store._connection.execute(
             "UPDATE evidence_records SET record_hash = ? WHERE record_id = ?",
             [compute_hash(legacy_canon), record.record_id],
+        )
+
+        valid, errors = store.verify_chain()
+        assert valid is True
+        assert errors == []
+        store.close()
+
+    def test_verify_chain_accepts_pre_framework_version_hash(self):
+        config = load_config(raw={"agent": {"name": "test-agent", "llm_provider": "openai"}})
+        store = EvidenceStore(config, in_memory=True)
+
+        ev = make_evaluation(evaluation_id="e1")
+        ev.detected_data_types = ["DC-PII"]
+        record = store.store(ev, tool_name="t1")
+
+        pre_framework_canon = canonical_payload(
+            evaluation_id=record.evaluation_id,
+            timestamp=record.timestamp,
+            agent_id=record.agent_id,
+            source_type=record.source_type,
+            tool_name=record.tool_name,
+            decision=record.decision,
+            mode=record.mode,
+            control_results=record.control_results,
+            active_overlays=record.active_overlays,
+            data_classifications=record.data_classifications,
+            active_certifications=record.active_certifications,
+            total_duration_ms=record.total_duration_ms,
+            previous_hash=record.previous_hash,
+            output_summary=record.output_summary,
+            session_id=record.session_id,
+            tenant_id=record.tenant_id,
+            detected_data_types=record.detected_data_types,
+            sdk_version=record.sdk_version,
+            classification_context=record.classification_context,
+        )
+        store._connection.execute(
+            "UPDATE evidence_records SET record_hash = ? WHERE record_id = ?",
+            [compute_hash(pre_framework_canon), record.record_id],
         )
 
         valid, errors = store.verify_chain()
@@ -806,6 +848,7 @@ class TestSdkVersionStore:
         store.store(make_evaluation(), tool_name="t1")
         records = store.get_records()
         assert records[0].sdk_version == ancilis.__version__
+        assert records[0].framework_version == AKSI_FRAMEWORK_VERSION
         store.close()
 
     def test_sdk_version_round_trips(self):
@@ -960,4 +1003,39 @@ class TestClassificationContextStore:
         records = store.get_records()
         assert len(records) == 1
         assert records[0].classification_context == {"llm_provider": "openai"}
+        assert records[0].framework_version == AKSI_FRAMEWORK_VERSION
         store.close()
+
+
+# --- framework_version store round-trip (AKSI v0.6) ---
+
+
+class TestFrameworkVersionStore:
+    """Store round-trip for AKSI framework_version field."""
+
+    def test_framework_version_populated_from_shared_metadata(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        records = store.get_records()
+        assert records[0].framework_version == AKSI_FRAMEWORK_VERSION
+        store.close()
+
+    def test_framework_version_round_trips(self):
+        config = make_config()
+        store = EvidenceStore(config, in_memory=True)
+        store.store(make_evaluation(), tool_name="t1")
+        store.store(make_evaluation(evaluation_id="eval-002"), tool_name="t2")
+        records = store.get_records()
+        assert records[0].framework_version == AKSI_FRAMEWORK_VERSION
+        assert records[1].framework_version == AKSI_FRAMEWORK_VERSION
+        store.close()
+
+    def test_framework_version_missing_column_returns_none(self):
+        # 22-element row: all columns up to classification_context, no framework_version
+        short_row = (1, "r1", "ev1", "2025-01-01T00:00:00Z", "agent", "sess",
+                     "agent", "tool", "ALLOW", "audit",
+                     "[]", "[]", "[]", "[]",
+                     "hash", "prev", 1.0, None, None, "[]", "0.1.0", "{}")
+        rec = EvidenceStore._row_to_record(short_row)
+        assert rec.framework_version is None

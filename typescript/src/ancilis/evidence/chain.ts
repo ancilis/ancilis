@@ -66,6 +66,7 @@ export function canonicalPayload(fields: {
   tenantId?: string | null;
   detectedDataTypes?: string[] | null;
   sdkVersion?: string | null;
+  frameworkVersion?: string | null;
   classificationContext?: Record<string, unknown> | null;
 }): string {
   const payload: Record<string, unknown> = {
@@ -97,6 +98,9 @@ export function canonicalPayload(fields: {
   }
   if (fields.sdkVersion !== undefined) {
     payload.sdk_version = fields.sdkVersion;
+  }
+  if (fields.frameworkVersion !== undefined) {
+    payload.framework_version = fields.frameworkVersion;
   }
   if (fields.classificationContext !== undefined) {
     payload.classification_context = fields.classificationContext ?? {};

@@ -74,7 +74,7 @@ describe("Path 1 — Data Classification", () => {
     const resolver = new ActivationResolver();
     const spec = resolver.resolve();
     expect(spec.activeOverlays).toEqual(["nist-csf"]);
-    expect(spec.activeControls.length).toBe(26);
+    expect(spec.activeControls.length).toBe(39);
     expect(spec.dataClassifications).toEqual([]);
   });
 });
@@ -121,7 +121,7 @@ describe("Both Paths Composing", () => {
     });
     expect(spec.activeOverlays).toContain("hipaa");
     expect(spec.activeCertifications).toContain("aiuc-1");
-    expect(spec.activeControls.length).toBe(26);
+    expect(spec.activeControls.length).toBe(39);
   });
 
   it("conflict strictest wins", () => {
@@ -400,7 +400,7 @@ describe("Conflict Resolution", () => {
     const resolver = new ActivationResolver();
     const spec = resolver.resolve({ certificationTargets: ["aiuc-1"] });
     expect(spec.activeCertifications).toContain("aiuc-1");
-    expect(spec.activeControls.length).toBe(26);
+    expect(spec.activeControls.length).toBe(39);
   });
 
   it("combined certification and data keeps nist-csf baseline active", () => {
@@ -420,15 +420,15 @@ describe("Conflict Resolution", () => {
     expect(spec.dataClassifications).toContain("DC-CUI");
     expect(spec.activeOverlays).toContain("cmmc-l2");
     expect(spec.activeOverlays).toContain("nist-csf");
-    expect(spec.activeControls.length).toBe(26);
+    expect(spec.activeControls.length).toBe(39);
   });
 
-  it("financial_records activates glba with strict financial controls", () => {
+  it("financial_records activates v0.6 financial overlays with strict financial controls", () => {
     const resolver = new ActivationResolver();
     const spec = resolver.resolve({ dataHandling: ["financial_records"] });
     expect(spec.dataClassifications).toContain("DC-FIN");
     expect(spec.activeOverlays).toContain("glba");
-    expect(spec.activeOverlays).toContain("soc2");
+    expect(spec.activeOverlays).toContain("dora");
     expect(spec.controlThresholds["PR-01"]).toBe("strict");
     expect(spec.controlThresholds["PR-05"]).toBe("strict");
   });

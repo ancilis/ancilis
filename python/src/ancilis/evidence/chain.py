@@ -31,6 +31,7 @@ def canonical_payload(
     *,
     detected_data_types: list[str] | None | object = _MISSING,
     sdk_version: str | None | object = _MISSING,
+    framework_version: str | None | object = _MISSING,
     classification_context: dict[str, Any] | None | object = _MISSING,
 ) -> str:
     """Build the canonical JSON string used as hash input.
@@ -66,6 +67,8 @@ def canonical_payload(
         payload["detected_data_types"] = detected_data_types or []
     if sdk_version is not _MISSING:
         payload["sdk_version"] = sdk_version
+    if framework_version is not _MISSING:
+        payload["framework_version"] = framework_version
     if classification_context is not _MISSING:
         payload["classification_context"] = classification_context or {}
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)

@@ -199,14 +199,6 @@ class AncilisConfig(BaseModel):
 
 # --- Shared JSON Loaders ---
 
-VALID_CONTROL_IDS = {
-    "GOV-01", "GOV-02", "GOV-03", "GOV-04",
-    "ID-01", "ID-02", "ID-03", "ID-04", "ID-05",
-    "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
-    "DE-01", "DE-02", "DE-03", "DE-04",
-    "RS-01", "RS-02", "RS-03",
-    "RC-01", "RC-02",
-}
 CERTIFICATIONS_DIR = SHARED_DIR / "overlays" / "certifications"
 
 VALID_CERTIFICATION_TARGETS: set[str] = set()
@@ -226,6 +218,10 @@ def _load_valid_certification_targets() -> set[str]:
     if CERTIFICATIONS_DIR.exists():
         for path in CERTIFICATIONS_DIR.glob("*.json"):
             targets.add(path.stem)
+    for control_def in load_control_definitions().values():
+        if control_def.get("common", True):
+            continue
+        targets.update(control_def.get("trigger_certification_targets", []))
     VALID_CERTIFICATION_TARGETS = targets
     return targets
 
@@ -237,6 +233,9 @@ def load_control_definitions() -> dict[str, dict[str, Any]]:
         data = json.loads(path.read_text())
         controls[data["id"]] = data
     return controls
+
+
+VALID_CONTROL_IDS = set(load_control_definitions())
 
 
 def load_overlay_definitions(
@@ -257,6 +256,55 @@ def load_taxonomy() -> dict[str, Any]:
     """Load the classification taxonomy from shared/classifications/."""
     data = json.loads(CLASSIFICATIONS_FILE.read_text())
     return cast(dict[str, Any], data)
+
+
+def _normalized_certification_targets(certification_targets: list[str]) -> set[str]:
+    return {target.upper().replace("-", "_") for target in certification_targets}
+
+
+def _activate_extension_controls(
+    result: ResolvedConfig,
+    control_defs: dict[str, dict[str, Any]],
+    *,
+    data_classifications: set[str],
+    certification_targets: list[str],
+    config: AncilisConfig,
+) -> None:
+    normalized_targets = _normalized_certification_targets(certification_targets)
+    for cid, cdef in sorted(control_defs.items()):
+        if cdef.get("common", True):
+            continue
+        override = config.security.controls.get(cid)
+        if override is not None and override.enabled is False:
+            continue
+        trigger_classes = set(cdef.get("trigger_classifications", []))
+        trigger_targets = set(cdef.get("trigger_certification_targets", []))
+        class_matches = sorted(trigger_classes.intersection(data_classifications))
+        target_matches = sorted(trigger_targets.intersection(normalized_targets))
+        if not class_matches and not target_matches:
+            continue
+        control = result.controls.get(cid)
+        if control is None:
+            continue
+        control.enabled = True
+        sources = result.control_activation_sources.setdefault(cid, set())
+        if class_matches:
+            sources.add(f"classification:{class_matches[0]}")
+        if target_matches:
+            sources.add(
+                "certification_targets:"
+                + _first_original_certification_target(certification_targets, target_matches[0])
+            )
+
+
+def _first_original_certification_target(
+    targets: list[str],
+    normalized_target: str,
+) -> str:
+    for target in targets:
+        if target.upper().replace("-", "_") == normalized_target:
+            return target
+    return normalized_target
 
 
 def _add_plugin_data_classification_overlays(
@@ -405,6 +453,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
         controls = security.get("controls", {})
         if isinstance(controls, dict):
             custom_control_ids: set[str] | None = None
+            valid_control_ids = set(load_control_definitions())
             for key in controls:
                 if key.startswith("custom:"):
                     if custom_control_ids is None:
@@ -415,7 +464,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
                         raise config_invalid(
                             f"Unknown custom control ID in security.controls: '{key}'"
                         )
-                elif key not in VALID_CONTROL_IDS:
+                elif key not in valid_control_ids:
                     raise config_invalid(f"Unknown control ID in security.controls: '{key}'")
 
     # Validate my_agent_handles types
@@ -527,6 +576,14 @@ def resolve_config(
     all_dc_codes: set[str] = set()
     for codes in result.data_classifications.values():
         all_dc_codes.update(codes)
+
+    _activate_extension_controls(
+        result,
+        control_defs,
+        data_classifications=all_dc_codes,
+        certification_targets=config.certification_targets,
+        config=config,
+    )
 
     # Build classification-to-overlay lookup from taxonomy
     classification_lookup: dict[str, list[str]] = {}

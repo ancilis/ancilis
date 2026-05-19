@@ -18,6 +18,7 @@ export interface EvaluationResult {
   timestamp: string;
   agentId: string;
   sourceType: string;
+  frameworkVersion?: string;
   mode: "audit" | "enforce";
   controlResults: ControlResult[];
   decision: "ALLOW" | "BLOCK" | "FLAG";

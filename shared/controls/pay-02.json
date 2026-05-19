@@ -1,0 +1,52 @@
+{
+  "id": "PAY-02",
+  "product_control_id": "AKSI-PAY-02",
+  "framework_version": "0.6",
+  "framework_source_commit": "aeda1839054090a8384f3d9d2700a656fab519a2",
+  "name": "Payment Settlement Reconciliation & Irreversibility Control",
+  "function": "PAYMENT",
+  "csf_mapping": "",
+  "description": "Agent-payment settlement is reconciled with receipts, ledger state, irreversibility risk, and reversal/escalation policy.",
+  "effort_level": "long",
+  "common": false,
+  "trigger_classifications": [
+    "DC-PAY"
+  ],
+  "trigger_certification_targets": [
+    "AGENT_PAYMENTS",
+    "X402"
+  ],
+  "evidence_sources": [
+    "sdk_direct",
+    "aws_cloudtrail",
+    "otel",
+    "attestation",
+    "jira"
+  ],
+  "evidence_keywords": [
+    "settlement",
+    "reconciliation",
+    "receipt",
+    "irreversible"
+  ],
+  "overlays": [
+    "agent-payments"
+  ],
+  "support_level": "attestation",
+  "default_enabled": false,
+  "baseline": false,
+  "security_outcome": {
+    "pass": "Current evidence supports AKSI v0.6 PAY-02: Payment Settlement Reconciliation & Irreversibility Control.",
+    "fail": "Required evidence for AKSI v0.6 PAY-02: Payment Settlement Reconciliation & Irreversibility Control is missing, stale, or contradictory."
+  },
+  "evidence_fields": [
+    "settlement",
+    "reconciliation",
+    "receipt",
+    "irreversible"
+  ],
+  "regulatory_mappings": {},
+  "display_name": "Payment Settlement Reconciliation and Irreversibility Control",
+  "display_detail": "Agent-payment settlement is reconciled with receipts, ledger state, irreversibility risk, and reversal/escalation policy.",
+  "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PAY-02 (Payment Settlement Reconciliation & Irreversibility Control) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
+}

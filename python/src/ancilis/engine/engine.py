@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Protocol
 
+from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
 from ancilis.config import ResolvedConfig, load_control_definitions
 from ancilis.controls.custom import CustomControlEvaluator
 from ancilis.engine.action import Action
@@ -221,6 +222,7 @@ class Engine:
             timestamp=datetime.now(timezone.utc).isoformat(),
             agent_id=action.agent_id,
             source_type=action.source_type,
+            framework_version=getattr(action, "framework_version", None) or AKSI_FRAMEWORK_VERSION,
             mode=self.config.mode,
             control_results=control_results,
             decision=decision,

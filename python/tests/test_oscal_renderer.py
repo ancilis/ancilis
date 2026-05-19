@@ -76,6 +76,7 @@ def test_render_oscal_includes_integrity_metadata_props() -> None:
     record.tenant_id = "tenant-1"
     record.detected_data_types = ["DC-PII"]
     record.sdk_version = "0.1.0"
+    record.framework_version = "0.6"
     record.classification_context = {"llm_provider": "openai"}
 
     output = render_oscal([record])
@@ -91,6 +92,7 @@ def test_render_oscal_includes_integrity_metadata_props() -> None:
     assert props["evidence-tenant-id"] == "tenant-1"
     assert props["detected-data-types"] == '["DC-PII"]'
     assert props["sdk-version"] == "0.1.0"
+    assert props["aksi-framework-version"] == "0.6"
     assert props["classification-context"] == '{"llm_provider": "openai"}'
 
 
