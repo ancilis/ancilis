@@ -7,6 +7,7 @@ Runnable examples showing how to integrate Ancilis SDK in common AI agent patter
 | [minimal-quickstart](./minimal-quickstart/) | Python | Fastest path to first scan — 10 lines | Beginner |
 | [certification-driven](./certification-driven/) | Python | One config line to AIUC-1 readiness | Beginner |
 | [data-classification](./data-classification/) | Python | Declare data types, get HIPAA/GDPR/SOC 2 controls | Beginner |
+| [cover-mcp-gap-assessment](./cover-mcp-gap-assessment/) | MCP | Map business language to Ancilis setup and evidence gaps | Beginner |
 | [auto-register](./auto-register/) | Any | `auto_register` — instantiate one producer per installed SDK | Beginner |
 | [openai-assistant](./openai-assistant/) | OpenAI | Wrap `chat.completions.create` with `OpenAIActionProducer.wrap_create` | Intermediate |
 | [langchain-chatbot](./langchain-chatbot/) | LangChain / LangGraph | Drop-in `LangChainCallbackHandler` for any Runnable, Chain, or LLM | Intermediate |

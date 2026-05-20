@@ -80,6 +80,30 @@ async with AncilisMiddleware(mcp_session, config_path="ancilis.yaml") as middlew
 
 Works with any MCP server. Supports audit mode (log everything) and enforce mode (block policy violations before they reach the server). See [examples/mcp-middleware/](examples/mcp-middleware/) for a full walkthrough.
 
+## Cover MCP server
+
+`ancilis-cover` is the unified local MCP server for onboarding, gap assessment, and runtime posture inspection. It is read-only: no network calls, no LLM calls, no MCP sampling, and no file writes.
+
+```bash
+pip install "ancilis[mcp]"
+ancilis-cover
+```
+
+Configure an MCP host to launch it over stdio:
+
+```json
+{
+  "mcpServers": {
+    "ancilis-cover": {
+      "command": "ancilis-cover",
+      "args": []
+    }
+  }
+}
+```
+
+The `ancilis_assess_gap` tool accepts business language such as "we handle patient records and need HIPAA" and deterministically maps it to Ancilis targets like `health_records` and `hipaa`, then reports missing config, instrumentation, and evidence coverage. See [examples/cover-mcp-gap-assessment/](examples/cover-mcp-gap-assessment/) for a runnable demo.
+
 ## CLI agents
 
 If your agent runs shell commands — `kubectl`, `curl`, database queries, file operations — the CLI producer wraps subprocess execution with the same policy evaluation:
@@ -227,6 +251,7 @@ Declare what data your agent handles. The right regulatory overlays activate aut
 ## CLI
 
 ```
+ancilis-cover                     Local MCP server for onboarding and gap assessment
 ancilis status                    Current posture
 ancilis status --verbose          Per-control detail
 ancilis report                    Terminal report
@@ -312,7 +337,7 @@ LLM SDK + framework producers also ship in the TypeScript package — `Anthropic
 
 ## Links
 
-- [Examples](examples/) — certification-driven, data-classification, MCP middleware, CLI agent
+- [Examples](examples/) — Cover MCP gap assessment, certification-driven, data-classification, MCP middleware, CLI agent
 - [Configuration reference](docs/configuration.md)
 - [Security policy](SECURITY.md) — security@ancilis.ai
 - [Contributing](CONTRIBUTING.md)
