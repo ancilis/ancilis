@@ -214,6 +214,14 @@ def _evidence_gap(
         session_id=selected_session_id,
         limit=None,
     )
+    if not records:
+        return EvidenceGap(
+            session_id=None,
+            requested_overlays=requested_overlays,
+            controls_total=len(controls),
+            missing_controls=controls,
+        )
+
     evidenced_controls = {
         control_id
         for record in records

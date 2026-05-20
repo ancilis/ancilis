@@ -146,3 +146,26 @@ def test_assess_gap_ignores_session_id_without_runtime_context(tmp_path: Path) -
     assert result.evidence_gap.controls_total > 0
     assert result.evidence_gap.missing_controls
     assert "Run ancilis doctor and ancilis scan after setup to collect evidence." in result.next_steps
+
+
+def test_assess_gap_ignores_empty_explicit_evidence_session(tmp_path: Path) -> None:
+    context = _context(
+        {
+            "agent": {"name": "therapy"},
+            "my_agent_handles": ["health_records"],
+            "compliance": {"overlays": ["hipaa"]},
+        }
+    )
+
+    result = assess_gap(
+        root=tmp_path,
+        business_context="Patient records need HIPAA.",
+        runtime_context=context,
+        session_id="missing-session",
+    )
+
+    assert result.mode == "setup_gap"
+    assert result.evidence_gap.session_id is None
+    assert result.evidence_gap.controls_with_evidence == 0
+    assert result.evidence_gap.missing_controls
+    assert "Run ancilis doctor and ancilis scan after setup to collect evidence." in result.next_steps
