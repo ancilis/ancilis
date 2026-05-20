@@ -9,6 +9,31 @@ ancilis --help
 
 ---
 
+## `ancilis-cover`
+
+Start the local deterministic Ancilis Cover MCP onboarding server.
+
+```bash
+ancilis-cover
+```
+
+Configure an MCP host to launch it over stdio:
+
+```json
+{
+  "mcpServers": {
+    "ancilis-cover": {
+      "command": "ancilis-cover",
+      "args": []
+    }
+  }
+}
+```
+
+Cover exposes project inspection, classification, setup recommendation, explicit code review, and onboarding report tools. It is read-only in this first iteration: no network calls, no LLM calls, no MCP sampling, and no file writes.
+
+---
+
 ## `ancilis shell`
 
 Start a read-only interactive shell for inspecting local SDK state.
