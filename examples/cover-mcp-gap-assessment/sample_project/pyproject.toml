@@ -1,0 +1,6 @@
+[project]
+name = "cover-gap-demo-healthcare-agent"
+version = "0.1.0"
+dependencies = [
+    "openai",
+]
