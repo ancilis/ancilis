@@ -82,3 +82,77 @@ class CodeReviewResult(BaseModel):
     suggested_config_changes: list[str] = Field(default_factory=list)
     reviewed_files: list[str] = Field(default_factory=list)
     skipped_files: list[SkippedFile] = Field(default_factory=list)
+
+
+class NormalizationSignal(BaseModel):
+    """A deterministic mapping from user language to an Ancilis target."""
+
+    source: str
+    phrase: str
+    mapped_to: str
+    target_type: str
+    confidence: str
+
+
+class GapReviewItem(BaseModel):
+    """A low-confidence or unsupported target phrase requiring user review."""
+
+    source: str
+    value: str
+    reason: str
+
+
+class GapTarget(BaseModel):
+    """Normalized target state for a gap assessment."""
+
+    my_agent_handles: list[str] = Field(default_factory=list)
+    active_overlays: list[str] = Field(default_factory=list)
+    certification_targets: list[str] = Field(default_factory=list)
+
+
+class ConfigGap(BaseModel):
+    """Delta between requested target and current Ancilis config."""
+
+    missing_my_agent_handles: list[str] = Field(default_factory=list)
+    present_my_agent_handles: list[str] = Field(default_factory=list)
+    missing_overlays: list[str] = Field(default_factory=list)
+    present_overlays: list[str] = Field(default_factory=list)
+    missing_certification_targets: list[str] = Field(default_factory=list)
+    present_certification_targets: list[str] = Field(default_factory=list)
+
+
+class InstrumentationGap(BaseModel):
+    """Producer instrumentation recommendations for the requested target."""
+
+    recommended_producers: list[str] = Field(default_factory=list)
+    present_producers: list[str] = Field(default_factory=list)
+    missing_producers: list[str] = Field(default_factory=list)
+    review_items: list[GapReviewItem] = Field(default_factory=list)
+
+
+class EvidenceGap(BaseModel):
+    """Evidence coverage for requested overlays and certifications."""
+
+    session_id: str | None = None
+    requested_overlays: list[str] = Field(default_factory=list)
+    controls_total: int = 0
+    controls_with_evidence: int = 0
+    missing_controls: list[str] = Field(default_factory=list)
+    evidenced_controls: list[str] = Field(default_factory=list)
+
+
+class GapAssessmentResult(BaseModel):
+    """Structured deterministic gap assessment response."""
+
+    mode: str
+    target: GapTarget
+    normalization_signals: list[NormalizationSignal] = Field(default_factory=list)
+    review_items: list[GapReviewItem] = Field(default_factory=list)
+    project: dict[str, object] = Field(default_factory=dict)
+    config_gap: ConfigGap
+    instrumentation_gap: InstrumentationGap
+    evidence_gap: EvidenceGap
+    next_steps: list[str] = Field(default_factory=list)
+    confidence: str = "low"
+    assumptions: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
