@@ -55,6 +55,7 @@ _PHRASE_RULES: tuple[_PhraseRule, ...] = (
             r"\btherapy\b",
             r"\btherap(?:y|ist|ists)\b",
             r"\behrs?\b",
+            r"\bmrn\b",
             r"\bphi\b",
             r"\bprotected health information\b",
         ),
@@ -103,7 +104,12 @@ _PHRASE_RULES: tuple[_PhraseRule, ...] = (
     _PhraseRule(
         _OVERLAY_TARGET,
         "soc2",
-        (r"\bsoc\s*2\b", r"\bsoc2\b", r"\bservice organization control\b"),
+        (
+            r"\bsoc\s*2\b",
+            r"\bsoc2\b",
+            r"\bservice organization control\b",
+            r"\btrust services\b",
+        ),
     ),
     _PhraseRule(
         _DATA_TARGET,
@@ -125,7 +131,7 @@ _PHRASE_RULES: tuple[_PhraseRule, ...] = (
 )
 
 _UNKNOWN_COMPLIANCE_RE = re.compile(
-    r"\b((?:soc\s*2|pci(?:[-\s]?dss)?|hipaa|gdpr|[a-z][a-z0-9-]*)\s+compliance)\b",
+    r"\b((?:[a-z][a-z0-9-]*|\d{2,5})(?:\s+(?:[a-z][a-z0-9-]*|\d{2,5})){0,3}\s+compliance)\b",
     re.IGNORECASE,
 )
 
@@ -304,10 +310,19 @@ def _add_explicit_certifications(
 def _unknown_compliance_phrases(text: str) -> list[str]:
     phrases: list[str] = []
     for match in _UNKNOWN_COMPLIANCE_RE.finditer(text):
-        phrase = match.group(1).strip().lower()
+        phrase = _trim_compliance_phrase(match.group(1).strip().lower())
         if phrase not in {"hipaa compliance", "pci compliance", "gdpr compliance", "soc2 compliance"}:
             phrases.append(phrase)
     return phrases
+
+
+def _trim_compliance_phrase(phrase: str) -> str:
+    tokens = phrase.split()
+    while len(tokens) > 2 and tokens[0] in {"and", "for", "need", "needs", "require", "requires", "we"}:
+        tokens.pop(0)
+    if "and" in tokens[:-2]:
+        tokens = tokens[tokens.index("and") + 1 :]
+    return " ".join(tokens)
 
 
 def _compliance_phrase_already_mapped(

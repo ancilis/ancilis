@@ -80,3 +80,27 @@ def test_review_items_lower_confidence_even_with_high_signals() -> None:
     assert result.target.active_overlays == ["hipaa"]
     assert result.review_items[0].value == "banana compliance"
     assert result.confidence == "low"
+
+
+def test_mrn_maps_to_health_records() -> None:
+    result = normalize_gap_target(
+        business_context="Clinical workflow stores MRN values."
+    )
+
+    assert result.target.my_agent_handles == ["health_records"]
+
+
+def test_trust_services_maps_to_soc2() -> None:
+    result = normalize_gap_target(
+        business_context="The platform needs trust services coverage."
+    )
+
+    assert result.target.active_overlays == ["soc2"]
+
+
+def test_short_multi_token_unknown_compliance_phrase_becomes_review_item() -> None:
+    result = normalize_gap_target(business_context="We need ISO 27001 compliance.")
+
+    assert result.review_items[0].value == "iso 27001 compliance"
+    assert result.review_items[0].reason == "unmapped_compliance_phrase"
+    assert result.confidence == "low"
