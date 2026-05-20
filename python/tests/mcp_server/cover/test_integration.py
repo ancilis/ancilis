@@ -59,6 +59,8 @@ async def test_cover_stdio_server_lists_and_calls_tools(tmp_path: Path) -> None:
 
     assert "ancilis_inspect_project" in tool_names
     assert "ancilis_onboarding_report" in tool_names
+    assert "ancilis_check_posture" in tool_names
+    assert "ancilis_assess_gap" in tool_names
     structured = _structured(result)
     assert "python" in structured["languages"]
     assert "langchain" in structured["frameworks"]
