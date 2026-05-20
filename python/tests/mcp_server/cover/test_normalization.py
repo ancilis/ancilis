@@ -49,7 +49,7 @@ def test_normalize_checkout_and_pci() -> None:
 
 def test_explicit_targets_merge_with_business_context() -> None:
     result = normalize_gap_target(
-        business_context="Customer support bot stores emails.",
+        business_context="Customer support bot stores emails for EU users.",
         target_data_types=["health_records"],
         target_overlays=["hipaa"],
         target_certifications=["aiuc-1"],
@@ -59,6 +59,36 @@ def test_explicit_targets_merge_with_business_context() -> None:
     assert result.target.active_overlays == ["gdpr", "hipaa"]
     assert result.target.certification_targets == ["aiuc-1"]
     assert any(signal.source == "explicit_input" for signal in result.signals)
+
+
+def test_personal_info_terms_do_not_imply_gdpr() -> None:
+    result = normalize_gap_target(
+        business_context="Customer support bot stores emails and account profiles."
+    )
+
+    assert result.target.my_agent_handles == ["personal_info"]
+    assert result.target.active_overlays == []
+
+
+def test_customer_email_with_soc2_maps_personal_info_and_soc2() -> None:
+    result = normalize_gap_target(
+        business_context="Customer agent handles email and needs SOC 2."
+    )
+
+    assert result.target.my_agent_handles == ["personal_info"]
+    assert result.target.active_overlays == ["soc2"]
+
+
+def test_gdpr_language_maps_to_gdpr() -> None:
+    gdpr_result = normalize_gap_target(
+        business_context="Customer support needs GDPR coverage."
+    )
+    eu_result = normalize_gap_target(
+        business_context="Customer support serves European Union data subjects."
+    )
+
+    assert gdpr_result.target.active_overlays == ["gdpr"]
+    assert eu_result.target.active_overlays == ["gdpr"]
 
 
 def test_unknown_compliance_phrase_becomes_review_item() -> None:

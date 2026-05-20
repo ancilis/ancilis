@@ -169,9 +169,6 @@ def normalize_gap_target(
                 )
             )
 
-    if "personal_info" in handles:
-        overlays.add("gdpr")
-
     _add_explicit_targets(
         target_data_types,
         target_type=_DATA_TARGET,

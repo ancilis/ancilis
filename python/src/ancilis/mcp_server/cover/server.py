@@ -27,18 +27,6 @@ def _json_response(model: BaseModel) -> dict[str, Any]:
     return model.model_dump(mode="json")
 
 
-def _soc2_only_business_target(
-    business_context: str | None,
-    target_overlays: list[str] | None,
-) -> bool:
-    if target_overlays is not None or business_context is None:
-        return False
-    context = business_context.lower()
-    if "gdpr" in context or "european union" in context or "data subject" in context:
-        return False
-    return "soc2" in context or "soc 2" in context
-
-
 def register_cover_tools(
     server: FastMCP,
     *,
@@ -163,30 +151,18 @@ def register_cover_tools(
         paths: list[str] | None = None,
     ) -> dict[str, Any]:
         """Assess setup and evidence gaps for a business compliance target."""
-        result = assess_gap(
-            root,
-            business_context=business_context,
-            target_data_types=target_data_types,
-            target_overlays=target_overlays,
-            target_certifications=target_certifications,
-            session_id=session_id,
-            include_code_review=include_code_review,
-            paths=paths,
-            runtime_context=runtime_context,
-        )
-        if _soc2_only_business_target(business_context, target_overlays):
-            result = assess_gap(
+        return _json_response(
+            assess_gap(
                 root,
-                target_data_types=result.target.my_agent_handles,
-                target_overlays=["soc2"],
-                target_certifications=result.target.certification_targets,
+                business_context=business_context,
+                target_data_types=target_data_types,
+                target_overlays=target_overlays,
+                target_certifications=target_certifications,
                 session_id=session_id,
                 include_code_review=include_code_review,
                 paths=paths,
                 runtime_context=runtime_context,
             )
-        return _json_response(
-            result
         )
 
 
