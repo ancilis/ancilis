@@ -56,9 +56,21 @@ async def test_cover_stdio_server_lists_and_calls_tools(tmp_path: Path) -> None:
             "ancilis_inspect_project",
             {"root": str(tmp_path)},
         )
+        gap_result = await session.call_tool(
+            "ancilis_assess_gap",
+            {
+                "root": str(tmp_path),
+                "business_context": "Customer agent handles email and needs SOC 2.",
+            },
+        )
 
     assert "ancilis_inspect_project" in tool_names
     assert "ancilis_onboarding_report" in tool_names
+    assert "ancilis_check_posture" in tool_names
+    assert "ancilis_assess_gap" in tool_names
     structured = _structured(result)
     assert "python" in structured["languages"]
     assert "langchain" in structured["frameworks"]
+    gap = _structured(gap_result)
+    assert gap["target"]["my_agent_handles"] == ["personal_info"]
+    assert gap["target"]["active_overlays"] == ["soc2"]

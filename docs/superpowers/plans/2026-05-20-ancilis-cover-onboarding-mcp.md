@@ -41,7 +41,7 @@ Add tests that create a temporary project with `pyproject.toml`, `package.json`,
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_project.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_project.py -q
 ```
 
 Expected: fail with `ModuleNotFoundError` for missing Cover implementation modules.
@@ -55,7 +55,7 @@ Implement Pydantic models for signals and project inspection output. Implement `
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_project.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_project.py -q
 ```
 
 Expected: all tests in `test_project.py` pass.
@@ -79,7 +79,7 @@ Add tests for deterministic mappings:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_classification.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_classification.py -q
 ```
 
 Expected: fail because classification and recommendation modules do not exist.
@@ -97,7 +97,7 @@ Generate deterministic install commands, minimal `ancilis.yaml`, Python and Type
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_classification.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_classification.py -q
 ```
 
 Expected: all tests in `test_classification.py` pass.
@@ -123,7 +123,7 @@ Add tests for:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_code_review.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_code_review.py -q
 ```
 
 Expected: fail because code review module does not exist.
@@ -141,7 +141,7 @@ Render a concise Markdown report from inspection, classification, setup, and opt
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_code_review.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_code_review.py -q
 ```
 
 Expected: all tests in `test_code_review.py` pass.
@@ -166,7 +166,7 @@ Add tests that:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_server.py python/tests/mcp_server/cover/test_integration.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_server.py python/tests/mcp_server/cover/test_integration.py -q
 ```
 
 Expected: fail because `server.py` and console script wiring are missing.
@@ -196,7 +196,7 @@ ancilis-cover = "ancilis.mcp_server.cover.server:main"
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_server.py python/tests/mcp_server/cover/test_integration.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_server.py python/tests/mcp_server/cover/test_integration.py -q
 ```
 
 Expected: all tests in `test_server.py` and `test_integration.py` pass.
@@ -216,7 +216,7 @@ Document local stdio usage, host configuration, tool list, read-only/privacy gua
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover -q
 ```
 
 Expected: all Cover tests pass.
@@ -226,7 +226,7 @@ Expected: all Cover tests pass.
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/test_mcp_server.py python/tests/test_mcp_server_integration.py -q
+PYTHONPATH=python/src python -m pytest python/tests/test_mcp_server.py python/tests/test_mcp_server_integration.py -q
 ```
 
 Expected: all existing MCP server tests pass.
@@ -236,7 +236,7 @@ Expected: all existing MCP server tests pass.
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m ruff check python/src/ancilis/mcp_server/cover python/tests/mcp_server/cover
+PYTHONPATH=python/src python -m ruff check python/src/ancilis/mcp_server/cover python/tests/mcp_server/cover
 git diff --check
 ```
 

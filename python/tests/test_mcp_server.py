@@ -26,6 +26,12 @@ EXPECTED_TOOL_NAMES = {
     "ancilis_get_evidence",
     "ancilis_report",
     "ancilis_list_overlays",
+    "ancilis_inspect_project",
+    "ancilis_classify_project",
+    "ancilis_recommend_setup",
+    "ancilis_review_code",
+    "ancilis_onboarding_report",
+    "ancilis_assess_gap",
 }
 
 
