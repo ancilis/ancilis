@@ -175,6 +175,23 @@ print(json.dumps(payload, separators=(",", ":")))
 ' "${agent_name}" "${db_path}"
 }
 
+build_discovery_integration_reconcile_payload() {
+    local agent_name="$1"
+    local db_path="$2"
+    python3 -c '
+import json
+import sys
+
+from ancilis.demo_orchestration import build_demo_integration_reconcile_payload
+
+payload = build_demo_integration_reconcile_payload(
+    sys.argv[2],
+    name=f"Discovery Demo SDK - {sys.argv[1]}",
+)
+print(json.dumps(payload, separators=(",", ":")))
+' "${agent_name}" "${db_path}"
+}
+
 build_discovery_agent_payload() {
     local integration_id="$1"
     python3 -c '
@@ -314,6 +331,15 @@ while IFS= read -r agent_json; do
                 "${BACKEND_URL}/v1/integrations"
         )"
         integration_id="$(printf '%s' "${create_response}" | extract_json_field id)"
+    else
+        reconcile_payload="$(build_discovery_integration_reconcile_payload "${agent_name}" "${db_path}")"
+        curl -fsS \
+            -X PATCH \
+            -H "Authorization: Bearer ${AUTH_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "${reconcile_payload}" \
+            "${BACKEND_URL}/v1/integrations/${integration_id}" \
+            >/dev/null
     fi
 
     [ -n "${integration_id}" ] || fail "Could not determine the integration id for ${agent_name}."

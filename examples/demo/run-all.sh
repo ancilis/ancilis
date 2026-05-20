@@ -157,6 +157,19 @@ print(json.dumps(payload, separators=(",", ":")))
 ' "${db_path}"
 }
 
+build_integration_reconcile_payload() {
+    local db_path="$1"
+    python3 -c '
+import json
+import sys
+
+from ancilis.demo_orchestration import build_demo_integration_reconcile_payload
+
+payload = build_demo_integration_reconcile_payload(sys.argv[1])
+print(json.dumps(payload, separators=(",", ":")))
+' "${db_path}"
+}
+
 maybe_open_browser() {
     if [ "${ANCILIS_DEMO_OPEN_BROWSER:-1}" != "1" ]; then
         return
@@ -262,6 +275,15 @@ if [ -z "${INTEGRATION_ID}" ]; then
             "${BACKEND_URL}/v1/integrations"
     )"
     INTEGRATION_ID="$(printf '%s' "${CREATE_RESPONSE}" | extract_json_field id)"
+else
+    RECONCILE_PAYLOAD="$(build_integration_reconcile_payload "${DEMO_DB_PATH}")"
+    curl -fsS \
+        -X PATCH \
+        -H "Authorization: Bearer ${AUTH_TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "${RECONCILE_PAYLOAD}" \
+        "${BACKEND_URL}/v1/integrations/${INTEGRATION_ID}" \
+        >/dev/null
 fi
 
 [ -n "${INTEGRATION_ID}" ] || fail "Could not determine the demo integration id."
