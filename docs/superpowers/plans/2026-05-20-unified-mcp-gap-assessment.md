@@ -107,7 +107,7 @@ In `python/tests/mcp_server/cover/test_integration.py`, extend the assertions af
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/test_mcp_server.py::test_create_mcp_server_registers_tools python/tests/mcp_server/cover/test_server.py::test_create_cover_mcp_server_registers_tools python/tests/mcp_server/cover/test_server.py::test_create_cover_mcp_server_accepts_config_path -q
+PYTHONPATH=python/src python -m pytest python/tests/test_mcp_server.py::test_create_mcp_server_registers_tools python/tests/mcp_server/cover/test_server.py::test_create_cover_mcp_server_registers_tools python/tests/mcp_server/cover/test_server.py::test_create_cover_mcp_server_accepts_config_path -q
 ```
 
 Expected: fail because runtime tools are not registered on Cover, Cover tools are not registered on `create_mcp_server`, and `ancilis_assess_gap` is not registered.
@@ -251,7 +251,7 @@ def create_mcp_server(
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/test_mcp_server.py -q
+PYTHONPATH=python/src python -m pytest python/tests/test_mcp_server.py -q
 ```
 
 Expected: runtime tests pass except failures tied to the absent `ancilis_assess_gap` tool.
@@ -360,7 +360,7 @@ def main(config_path: str | None, transport: str) -> None:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_server.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_server.py -q
 ```
 
 Expected: Cover registration tests pass except failures tied to the absent `ancilis_assess_gap` tool.
@@ -417,7 +417,7 @@ def test_normalization_signal_serializes() -> None:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_normalization.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_normalization.py -q
 ```
 
 Expected: fail because `GapTarget` and `NormalizationSignal` do not exist.
@@ -506,7 +506,7 @@ class GapAssessmentResult(BaseModel):
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_normalization.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_normalization.py -q
 ```
 
 Expected: pass.
@@ -585,7 +585,7 @@ def test_unknown_compliance_phrase_becomes_review_item() -> None:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_normalization.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_normalization.py -q
 ```
 
 Expected: fail because `normalization.py` does not exist.
@@ -758,7 +758,7 @@ def normalize_gap_target(
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_normalization.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_normalization.py -q
 ```
 
 Expected: pass.
@@ -854,7 +854,7 @@ def test_assess_gap_reports_present_config_items(tmp_path: Path) -> None:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_gap_assessment.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_gap_assessment.py -q
 ```
 
 Expected: fail because `gap_assessment.py` does not exist.
@@ -998,7 +998,7 @@ def assess_gap(
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_gap_assessment.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_gap_assessment.py -q
 ```
 
 Expected: pass for setup gap tests.
@@ -1069,7 +1069,7 @@ def test_assess_gap_reports_evidence_gap_from_runtime_context(tmp_path: Path) ->
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_gap_assessment.py::test_assess_gap_reports_evidence_gap_from_runtime_context -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_gap_assessment.py::test_assess_gap_reports_evidence_gap_from_runtime_context -q
 ```
 
 Expected: fail because evidence coverage is not implemented.
@@ -1176,7 +1176,7 @@ Replace the `next_steps` call with:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/mcp_server/cover/test_gap_assessment.py -q
+PYTHONPATH=python/src python -m pytest python/tests/mcp_server/cover/test_gap_assessment.py -q
 ```
 
 Expected: pass.
@@ -1251,7 +1251,7 @@ Then assert:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/test_mcp_server.py::test_create_mcp_server_registers_tools python/tests/mcp_server/cover/test_server.py::test_assess_gap_tool_returns_structured_content -q
+PYTHONPATH=python/src python -m pytest python/tests/test_mcp_server.py::test_create_mcp_server_registers_tools python/tests/mcp_server/cover/test_server.py::test_assess_gap_tool_returns_structured_content -q
 ```
 
 Expected: fail until the tool is registered.
@@ -1299,7 +1299,7 @@ Inside `register_cover_tools`, add:
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/test_mcp_server.py python/tests/mcp_server/cover -q
+PYTHONPATH=python/src python -m pytest python/tests/test_mcp_server.py python/tests/mcp_server/cover -q
 ```
 
 Expected: pass.
@@ -1417,7 +1417,7 @@ If `docs/cli/serve.mdx` does not exist, omit it from `git add`.
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/test_mcp_server.py python/tests/test_mcp_server_integration.py python/tests/mcp_server/cover -q
+PYTHONPATH=python/src python -m pytest python/tests/test_mcp_server.py python/tests/test_mcp_server_integration.py python/tests/mcp_server/cover -q
 ```
 
 Expected: all tests pass.
@@ -1427,7 +1427,7 @@ Expected: all tests pass.
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m mypy python/src/ancilis --ignore-missing-imports
+PYTHONPATH=python/src python -m mypy python/src/ancilis --ignore-missing-imports
 ```
 
 Expected: success.
@@ -1437,7 +1437,7 @@ Expected: success.
 Run:
 
 ```bash
-PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m ruff check python/src/ancilis/mcp_server python/tests/mcp_server python/tests/test_mcp_server.py python/tests/test_mcp_server_integration.py
+PYTHONPATH=python/src python -m ruff check python/src/ancilis/mcp_server python/tests/mcp_server python/tests/test_mcp_server.py python/tests/test_mcp_server_integration.py
 ```
 
 Expected: success.

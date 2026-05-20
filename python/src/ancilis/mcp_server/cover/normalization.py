@@ -158,6 +158,20 @@ def normalize_gap_target(
     context = business_context or ""
     for rule in _PHRASE_RULES:
         for phrase in _matching_phrases(context, rule.patterns):
+            if not _target_is_valid(
+                rule.target_type,
+                rule.mapped_to,
+                valid_data_types=valid_data_types,
+                valid_overlays=valid_overlays,
+            ):
+                review_items.append(
+                    GapReviewItem(
+                        source="business_context",
+                        value=phrase,
+                        reason=f"unknown_{rule.target_type}",
+                    )
+                )
+                continue
             _add_target(rule.target_type, rule.mapped_to, handles, overlays, certifications)
             signals.append(
                 NormalizationSignal(
@@ -238,6 +252,22 @@ def _add_target(
         overlays.add(value)
     elif target_type == _CERT_TARGET:
         certifications.add(value)
+
+
+def _target_is_valid(
+    target_type: str,
+    value: str,
+    *,
+    valid_data_types: set[str],
+    valid_overlays: set[str],
+) -> bool:
+    if target_type == _DATA_TARGET:
+        return value in valid_data_types
+    if target_type == _OVERLAY_TARGET:
+        return value in valid_overlays
+    if target_type == _CERT_TARGET:
+        return load_certification_profile(value) is not None
+    return False
 
 
 def _add_explicit_targets(

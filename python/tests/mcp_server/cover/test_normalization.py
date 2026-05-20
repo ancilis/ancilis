@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from pytest import MonkeyPatch
+
+from ancilis.mcp_server.cover import normalization as normalization_module
 from ancilis.mcp_server.cover.models import GapTarget, NormalizationSignal
 from ancilis.mcp_server.cover.normalization import normalize_gap_target
 
@@ -89,6 +92,29 @@ def test_gdpr_language_maps_to_gdpr() -> None:
 
     assert gdpr_result.target.active_overlays == ["gdpr"]
     assert eu_result.target.active_overlays == ["gdpr"]
+
+
+def test_business_context_targets_validate_against_catalogs(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        normalization_module,
+        "load_taxonomy",
+        lambda: {"developer_type_mapping": {}},
+    )
+    monkeypatch.setattr(normalization_module, "load_overlay_profiles", lambda: {})
+
+    result = normalize_gap_target(business_context="We store MRN and need HIPAA.")
+
+    assert result.target.my_agent_handles == []
+    assert result.target.active_overlays == []
+    assert {
+        (item.source, item.value.lower(), item.reason)
+        for item in result.review_items
+    } == {
+        ("business_context", "mrn", "unknown_my_agent_handles"),
+        ("business_context", "hipaa", "unknown_active_overlays"),
+    }
 
 
 def test_unknown_compliance_phrase_becomes_review_item() -> None:

@@ -304,7 +304,7 @@ Add focused tests for:
 
 Baseline checks from the feature worktree:
 
-- `PYTHONPATH=python/src /Users/hellohelloalbus/projects/ancilis/.venv/bin/python -m pytest python/tests/test_mcp_server.py python/tests/mcp_server/cover -q`
+- `PYTHONPATH=python/src python -m pytest python/tests/test_mcp_server.py python/tests/mcp_server/cover -q`
 - `npm run typecheck`
 
 ## Migration Plan
