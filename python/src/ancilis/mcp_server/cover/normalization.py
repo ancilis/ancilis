@@ -131,9 +131,11 @@ _PHRASE_RULES: tuple[_PhraseRule, ...] = (
 )
 
 _UNKNOWN_COMPLIANCE_RE = re.compile(
-    r"\b((?:[a-z][a-z0-9-]*|\d{2,5})(?:\s+(?:[a-z][a-z0-9-]*|\d{2,5})){0,3}\s+compliance)\b",
+    r"\b((?:[a-z][a-z0-9-]*|\d{1,5})(?:\s+(?:[a-z][a-z0-9-]*|\d{1,5})){0,5}\s+compliance)\b",
     re.IGNORECASE,
 )
+_COMPLIANCE_LEADERS = {"and", "for", "need", "needs", "require", "requires", "we"}
+_GENERIC_COMPLIANCE_SUBJECTS = {"need", "needs", "require", "requires"}
 
 
 def normalize_gap_target(
@@ -310,18 +312,31 @@ def _add_explicit_certifications(
 def _unknown_compliance_phrases(text: str) -> list[str]:
     phrases: list[str] = []
     for match in _UNKNOWN_COMPLIANCE_RE.finditer(text):
-        phrase = _trim_compliance_phrase(match.group(1).strip().lower())
-        if phrase not in {"hipaa compliance", "pci compliance", "gdpr compliance", "soc2 compliance"}:
+        for phrase in _candidate_compliance_phrases(match.group(1).strip().lower()):
+            if phrase in {"hipaa compliance", "pci compliance", "gdpr compliance", "soc2 compliance"}:
+                continue
             phrases.append(phrase)
     return phrases
 
 
+def _candidate_compliance_phrases(phrase: str) -> list[str]:
+    phrase = _trim_compliance_phrase(phrase)
+    subject = phrase.removesuffix(" compliance").strip()
+    if not subject or subject in _GENERIC_COMPLIANCE_SUBJECTS:
+        return []
+    if " and " not in subject:
+        return [phrase]
+    return [
+        f"{part.strip()} compliance"
+        for part in subject.split(" and ")
+        if part.strip() and part.strip() not in _GENERIC_COMPLIANCE_SUBJECTS
+    ]
+
+
 def _trim_compliance_phrase(phrase: str) -> str:
     tokens = phrase.split()
-    while len(tokens) > 2 and tokens[0] in {"and", "for", "need", "needs", "require", "requires", "we"}:
+    while len(tokens) > 2 and tokens[0] in _COMPLIANCE_LEADERS:
         tokens.pop(0)
-    if "and" in tokens[:-2]:
-        tokens = tokens[tokens.index("and") + 1 :]
     return " ".join(tokens)
 
 

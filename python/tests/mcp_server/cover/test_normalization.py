@@ -104,3 +104,21 @@ def test_short_multi_token_unknown_compliance_phrase_becomes_review_item() -> No
     assert result.review_items[0].value == "iso 27001 compliance"
     assert result.review_items[0].reason == "unmapped_compliance_phrase"
     assert result.confidence == "low"
+
+
+def test_unknown_framework_before_mapped_compliance_is_reviewed() -> None:
+    result = normalize_gap_target(
+        business_context="We need ISO 27001 and SOC 2 compliance."
+    )
+
+    assert result.target.active_overlays == ["soc2"]
+    assert any(item.value == "iso 27001 compliance" for item in result.review_items)
+    assert result.confidence == "low"
+
+
+def test_generic_compliance_phrases_are_not_review_items() -> None:
+    need_result = normalize_gap_target(business_context="We need compliance.")
+    require_result = normalize_gap_target(business_context="We require compliance.")
+
+    assert {item.value for item in need_result.review_items} == set()
+    assert {item.value for item in require_result.review_items} == set()
