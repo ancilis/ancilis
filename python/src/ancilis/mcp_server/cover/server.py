@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 import click
 from mcp.server.fastmcp import FastMCP
@@ -151,10 +151,11 @@ def create_cover_mcp_server(
     context: MCPServerContext | None = None,
 ) -> FastMCP:
     """Create the official Ancilis Cover local MCP server."""
+    default_raw_config = _default_cover_config() if config_path is None else None
     runtime_context = build_mcp_context(
         config_path=config_path,
         context=context,
-        default_raw_config=_default_cover_config(),
+        default_raw_config=default_raw_config,
     )
     server = FastMCP(name="ancilis-cover")
     register_cover_tools(server, runtime_context=runtime_context)
@@ -202,7 +203,8 @@ def _report_summary(
 )
 def main(config_path: str | None, transport: str) -> None:
     """Run the Ancilis Cover MCP server over stdio."""
-    create_cover_mcp_server(config_path=config_path).run(transport=transport)
+    stdio_transport = cast(Literal["stdio"], transport)
+    create_cover_mcp_server(config_path=config_path).run(transport=stdio_transport)
 
 
 if __name__ == "__main__":
