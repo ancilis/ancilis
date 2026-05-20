@@ -360,10 +360,10 @@ def _overall_confidence(
     signals: list[NormalizationSignal],
     review_items: list[GapReviewItem],
 ) -> str:
+    if review_items:
+        return "low"
     if any(signal.confidence == "high" for signal in signals):
         return "high"
     if any(signal.confidence == "medium" for signal in signals):
         return "medium"
-    if review_items:
-        return "low"
     return "low"

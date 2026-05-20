@@ -70,3 +70,13 @@ def test_unknown_compliance_phrase_becomes_review_item() -> None:
     assert result.target.active_overlays == []
     assert result.review_items[0].value == "banana compliance"
     assert result.confidence == "low"
+
+
+def test_review_items_lower_confidence_even_with_high_signals() -> None:
+    result = normalize_gap_target(
+        business_context="We need HIPAA and banana compliance for this assistant."
+    )
+
+    assert result.target.active_overlays == ["hipaa"]
+    assert result.review_items[0].value == "banana compliance"
+    assert result.confidence == "low"
