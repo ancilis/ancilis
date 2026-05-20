@@ -461,29 +461,41 @@ def _build_report_response(
     )
 
 
-def create_mcp_server(
+def build_mcp_context(
     config_path: str | None = None,
     context: MCPServerContext | None = None,
-) -> FastMCP:
-    """Create an Ancilis MCP server."""
-    if context is None:
-        config = load_config(path=config_path) if config_path is not None else load_config()
-        evidence_store = EvidenceStore(config)
-        engine = Engine(config, evidence_store=evidence_store)
-        action_producer = ToolActionProducer(
-            config,
-            engine,
-            registry=engine.registry,
-            evidence_store=evidence_store,
-        )
-        context = MCPServerContext(
-            config=config,
-            engine=engine,
-            evidence_store=evidence_store,
-            action_producer=action_producer,
-        )
+    *,
+    default_raw_config: dict[str, Any] | None = None,
+) -> MCPServerContext:
+    """Build a runtime MCP context, optionally falling back to a default config."""
+    if context is not None:
+        return context
 
-    server = FastMCP(name="ancilis")
+    try:
+        config = load_config(path=config_path) if config_path is not None else load_config()
+    except FileNotFoundError:
+        if default_raw_config is None:
+            raise
+        config = load_config(raw=default_raw_config)
+
+    evidence_store = EvidenceStore(config)
+    engine = Engine(config, evidence_store=evidence_store)
+    action_producer = ToolActionProducer(
+        config,
+        engine,
+        registry=engine.registry,
+        evidence_store=evidence_store,
+    )
+    return MCPServerContext(
+        config=config,
+        engine=engine,
+        evidence_store=evidence_store,
+        action_producer=action_producer,
+    )
+
+
+def register_runtime_tools(server: FastMCP, context: MCPServerContext) -> None:
+    """Register runtime posture and evidence MCP tools on an existing server."""
 
     @server.tool(name="ancilis_check_posture")
     async def ancilis_check_posture() -> dict[str, Any]:
@@ -537,4 +549,17 @@ def create_mcp_server(
         """List active overlays and evidence coverage percentages."""
         return _json_response(_build_overlay_list_response(context))
 
+
+def create_mcp_server(
+    config_path: str | None = None,
+    context: MCPServerContext | None = None,
+) -> FastMCP:
+    """Create the legacy Ancilis MCP server with the unified tool set."""
+    resolved_context = build_mcp_context(config_path=config_path, context=context)
+    server = FastMCP(name="ancilis")
+    register_runtime_tools(server, resolved_context)
+
+    from ancilis.mcp_server.cover.server import register_cover_tools
+
+    register_cover_tools(server, runtime_context=resolved_context)
     return server

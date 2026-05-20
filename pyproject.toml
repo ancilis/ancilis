@@ -66,6 +66,7 @@ dev = [
 
 [project.scripts]
 ancilis = "ancilis.cli.main:cli"
+ancilis-cover = "ancilis.mcp_server.cover.server:main"
 
 [project.entry-points."pytest11"]
 ancilis = "ancilis.testing.plugin"

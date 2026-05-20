@@ -9,6 +9,41 @@ ancilis --help
 
 ---
 
+## `ancilis-cover`
+
+`ancilis-cover` starts the official unified local MCP server for Cover onboarding, gap assessment, and runtime posture tools.
+
+```bash
+ancilis-cover
+```
+
+Configure an MCP host to launch it over stdio:
+
+```json
+{
+  "mcpServers": {
+    "ancilis-cover": {
+      "command": "ancilis-cover",
+      "args": []
+    }
+  }
+}
+```
+
+Cover exposes project inspection, classification, setup recommendation, explicit code review, onboarding report, gap assessment, and runtime posture tools. It is read-only: no network calls, no LLM calls, no MCP sampling, and no file writes.
+
+---
+
+## `ancilis serve`
+
+`ancilis serve` remains available as a compatibility MCP entry point for one release. New MCP host configs should prefer `ancilis-cover`.
+
+```bash
+ancilis serve
+```
+
+---
+
 ## `ancilis shell`
 
 Start a read-only interactive shell for inspecting local SDK state.
