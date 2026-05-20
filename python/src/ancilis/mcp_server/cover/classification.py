@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,7 +30,7 @@ def classify_project(
     root: str | Path | None = None,
     *,
     description: str | None = None,
-    signals: list[CoverSignal | dict[str, object]] | None = None,
+    signals: Sequence[CoverSignal | Mapping[str, object]] | None = None,
 ) -> ProjectClassification:
     """Classify likely data handled by a project using deterministic rules only."""
     collected_signals = _coerce_signals(signals)
@@ -65,7 +66,7 @@ def classify_project(
     )
 
 
-def _coerce_signals(signals: list[CoverSignal | dict[str, object]] | None) -> list[CoverSignal]:
+def _coerce_signals(signals: Sequence[CoverSignal | Mapping[str, object]] | None) -> list[CoverSignal]:
     if not signals:
         return []
     out: list[CoverSignal] = []
@@ -73,7 +74,7 @@ def _coerce_signals(signals: list[CoverSignal | dict[str, object]] | None) -> li
         if isinstance(signal, CoverSignal):
             out.append(signal)
         else:
-            out.append(CoverSignal.model_validate(signal))
+            out.append(CoverSignal.model_validate(dict(signal)))
     return out
 
 

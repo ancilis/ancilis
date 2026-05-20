@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 import re
 from pathlib import Path
-from typing import Any
 
 from ancilis.engine.patterns import scan_for_patterns
 from ancilis.mcp_server.cover.models import CodeFinding, CodeReviewResult, SkippedFile
@@ -21,8 +21,8 @@ _LLM_PATTERN = re.compile(r"\bopenai\.|\banthropic\.|\bChatOpenAI\b|\bmessages\.
 def review_code(
     root: str | Path | None = None,
     *,
-    paths: list[str | Path] | None = None,
-    snippets: list[dict[str, str]] | None = None,
+    paths: Sequence[str | Path] | None = None,
+    snippets: Sequence[Mapping[str, str]] | None = None,
     max_bytes_per_file: int = 60000,
 ) -> CodeReviewResult:
     """Review explicit files and snippets without traversing or mutating the project."""

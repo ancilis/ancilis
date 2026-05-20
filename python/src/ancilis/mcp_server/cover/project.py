@@ -10,7 +10,7 @@ from typing import Any
 try:
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
-    import tomli as tomllib  # type: ignore[no-redef]
+    import tomli as tomllib
 
 from ancilis.mcp_server.cover.models import CoverSignal, ProjectInspection
 
