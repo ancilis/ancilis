@@ -116,3 +116,24 @@ def test_cover_tools_return_structured_content(tmp_path: Path) -> None:
     assert "config_yaml" in setup
     assert review["findings"]
     assert "# Ancilis Cover Onboarding Report" in report["report_markdown"]
+
+
+def test_assess_gap_tool_returns_structured_content(tmp_path: Path) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        "[project]\ndependencies = ['openai']\n",
+        encoding="utf-8",
+    )
+    server = create_cover_mcp_server()
+
+    gap = _call_tool_structured(
+        server,
+        "ancilis_assess_gap",
+        {
+            "root": str(tmp_path),
+            "business_context": "We handle patient records and need HIPAA.",
+        },
+    )
+
+    assert gap["mode"] == "setup_gap"
+    assert gap["target"]["my_agent_handles"] == ["health_records"]
+    assert gap["target"]["active_overlays"] == ["hipaa"]

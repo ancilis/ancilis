@@ -554,8 +554,12 @@ def create_mcp_server(
     config_path: str | None = None,
     context: MCPServerContext | None = None,
 ) -> FastMCP:
-    """Create an Ancilis MCP server."""
+    """Create the legacy Ancilis MCP server with the unified tool set."""
     resolved_context = build_mcp_context(config_path=config_path, context=context)
     server = FastMCP(name="ancilis")
     register_runtime_tools(server, resolved_context)
+
+    from ancilis.mcp_server.cover.server import register_cover_tools
+
+    register_cover_tools(server, runtime_context=resolved_context)
     return server
