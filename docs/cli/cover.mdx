@@ -1,13 +1,13 @@
 ---
 title: "Ancilis Cover MCP"
-description: "Local deterministic MCP onboarding server for adding Ancilis to AI projects."
+description: "Official unified local MCP server for Cover onboarding, gap assessment, and runtime posture tools."
 ---
 
 # Ancilis Cover MCP
 
-Ancilis Cover is a local stdio MCP server for AI coding assistants. It helps an assistant inspect an uninstrumented AI project, classify likely regulated data, recommend Ancilis setup, review explicit files or snippets, and generate an onboarding report.
+Ancilis Cover is the official local stdio MCP server for AI coding assistants. It combines onboarding, gap assessment, and runtime posture tools in one read-only local server.
 
-Cover is read-only in this first iteration.
+Cover is read-only.
 
 ## Install
 
@@ -36,15 +36,34 @@ The server runs on the developer machine. Ancilis does not host this server.
 
 | Tool | Purpose |
 |------|---------|
+| `ancilis_check_posture` | Read current local Ancilis posture, active controls, overlays, and evidence status. |
+| `ancilis_evaluate_action` | Evaluate a proposed agent action against configured local controls. |
+| `ancilis_get_evidence` | Retrieve local evidence records for review and troubleshooting. |
+| `ancilis_report` | Generate a local posture report from current config and evidence. |
+| `ancilis_list_overlays` | List available and active Ancilis compliance overlays. |
 | `ancilis_inspect_project` | Detect project language, dependencies, frameworks, existing Ancilis config, and likely producers. |
 | `ancilis_classify_project` | Map deterministic project signals to `my_agent_handles`, classifications, and overlays. |
 | `ancilis_recommend_setup` | Return install commands, minimal `ancilis.yaml`, integration snippets, and validation commands. |
 | `ancilis_review_code` | Review explicit files or snippets for sensitive-data patterns and tool surfaces. |
 | `ancilis_onboarding_report` | Generate a short Markdown report with summary and next steps. |
+| `ancilis_assess_gap` | Convert business context such as "patient records and HIPAA" into Ancilis targets, then report setup, instrumentation, and evidence gaps. |
+
+## Gap Assessment
+
+Call `ancilis_assess_gap` with business context:
+
+```json
+{
+  "root": "/path/to/project",
+  "business_context": "We handle patient records and need HIPAA."
+}
+```
+
+The response includes normalized Ancilis targets, missing config, missing producer instrumentation, evidence coverage when available, and next steps.
 
 ## Privacy Guarantees
 
-The first iteration is deterministic and local:
+The server is deterministic and local:
 
 - No LLM calls.
 - No MCP sampling.
@@ -58,6 +77,8 @@ The first iteration is deterministic and local:
 
 1. Call `ancilis_inspect_project` for the repo root.
 2. Call `ancilis_classify_project` with the inspection signals and optional project description.
-3. Call `ancilis_recommend_setup` to get install commands, config, snippets, and validation commands.
-4. Optionally call `ancilis_review_code` on specific files before editing.
-5. Call `ancilis_onboarding_report` for a concise summary the coding assistant can act on.
+3. Call `ancilis_assess_gap` with business context such as compliance needs or regulated data.
+4. Call `ancilis_recommend_setup` to get install commands, config, snippets, and validation commands.
+5. Optionally call `ancilis_review_code` on specific files before editing.
+6. Use runtime posture tools such as `ancilis_check_posture`, `ancilis_get_evidence`, and `ancilis_report` after instrumentation is in place.
+7. Call `ancilis_onboarding_report` for a concise summary the coding assistant can act on.
