@@ -14,7 +14,7 @@ _SHELL_PATTERN = re.compile(
     re.I,
 )
 _HTTP_PATTERN = re.compile(r"\brequests\.(get|post|put|patch|delete)\(|\bhttpx\.|\bfetch\(", re.I)
-_DATABASE_PATTERN = re.compile(r"\bselect\s+.+\s+from\b|\bexecute\(|\bquery\(", re.I | re.S)
+_DATABASE_PATTERN = re.compile(r"\bselect\s+.+\s+from\b|\bexecute\(|\bquery\(", re.I)
 _LLM_PATTERN = re.compile(r"\bopenai\.|\banthropic\.|\bChatOpenAI\b|\bmessages\.create\(", re.I)
 
 

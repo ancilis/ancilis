@@ -45,6 +45,23 @@ def test_classify_project_keeps_weak_personal_info_signal_as_review_item() -> No
     assert result.confidence == "low"
 
 
+def test_classify_project_accepts_medium_non_description_signal() -> None:
+    result = classify_project(
+        signals=[
+            CoverSignal(
+                source="manifest",
+                value="billing workflow",
+                rule_id="manifest.billing",
+                confidence="medium",
+            )
+        ],
+    )
+
+    assert "credit_cards" in result.my_agent_handles
+    assert result.review_items == []
+    assert result.confidence == "medium"
+
+
 def test_recommend_setup_generates_config_and_python_snippet() -> None:
     classification = classify_project(
         description="Patient portal with medical records and therapist notes."

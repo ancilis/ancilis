@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
-from typing import Any
 
 try:
     import tomllib
@@ -143,16 +143,24 @@ def _bounded_files(
 ) -> tuple[list[Path], int]:
     files: list[Path] = []
     skipped = 0
-    for path in sorted(root.rglob("*")):
-        relative = path.relative_to(root)
-        if not include_hidden and any(part.startswith(".") for part in relative.parts):
-            continue
-        if not path.is_file():
-            continue
-        if len(files) >= max(max_files, 0):
-            skipped += 1
-            continue
-        files.append(path)
+    limit = max(max_files, 0)
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = sorted(dirnames)
+        if not include_hidden:
+            dirnames[:] = [name for name in dirnames if not name.startswith(".")]
+
+        current = Path(dirpath)
+        for filename in sorted(filenames):
+            path = current / filename
+            relative = path.relative_to(root)
+            if not include_hidden and any(part.startswith(".") for part in relative.parts):
+                continue
+            if not path.is_file():
+                continue
+            if len(files) >= limit:
+                skipped += 1
+                continue
+            files.append(path)
     return files, skipped
 
 

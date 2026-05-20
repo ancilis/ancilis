@@ -128,6 +128,8 @@ def _dedupe_signals(signals: list[CoverSignal]) -> list[CoverSignal]:
 def _confidence_for_matches(matches: list[CoverSignal]) -> str:
     if any(match.confidence == "high" for match in matches) or len(matches) >= 2:
         return "high"
+    if any(match.confidence == "medium" and match.source != "description" for match in matches):
+        return "medium"
     return "low"
 
 

@@ -67,6 +67,19 @@ def test_review_code_detects_shell_and_http_surfaces(tmp_path: Path) -> None:
     assert {"cli", "http"}.issubset(set(result.producer_recommendations))
 
 
+def test_review_code_does_not_match_database_select_across_lines() -> None:
+    result = review_code(
+        snippets=[
+            {
+                "name": "notes.py",
+                "text": "summary = 'select a field'\ncomment = 'from a product note'\n",
+            }
+        ]
+    )
+
+    assert not any(finding.category == "database_query" for finding in result.findings)
+
+
 def test_review_code_accepts_named_snippets() -> None:
     result = review_code(
         snippets=[
