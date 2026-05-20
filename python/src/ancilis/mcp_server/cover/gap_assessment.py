@@ -4,15 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
 
 from ancilis.config import ResolvedConfig, load_config
+from ancilis.mcp_server import MCPServerContext
 from ancilis.mcp_server.cover.code_review import review_code
 from ancilis.mcp_server.cover.models import (
     ConfigGap,
     EvidenceGap,
     GapAssessmentResult,
     GapReviewItem,
+    GapTarget,
     InstrumentationGap,
 )
 from ancilis.mcp_server.cover.normalization import normalize_gap_target
@@ -29,7 +30,7 @@ def assess_gap(
     session_id: str | None = None,
     include_code_review: bool = False,
     paths: Sequence[str | Path] | None = None,
-    runtime_context: Any | None = None,
+    runtime_context: MCPServerContext | None = None,
 ) -> GapAssessmentResult:
     """Compare normalized business targets to local project setup state."""
     root_path = (Path.cwd() if root is None else Path(root)).resolve()
@@ -92,7 +93,7 @@ def assess_gap(
 
 def _load_project_config(
     config_path: str | None,
-    runtime_context: Any | None,
+    runtime_context: MCPServerContext | None,
     warnings: list[str],
 ) -> ResolvedConfig | None:
     if config_path is not None:
@@ -100,22 +101,21 @@ def _load_project_config(
             config = load_config(path=config_path)
         except Exception as exc:
             warnings.append(f"config_load_error:{config_path}:{exc}")
+            return None
         else:
             warnings.extend(config.warnings)
             return config
 
     if runtime_context is not None:
-        config = getattr(runtime_context, "config", None)
+        config = runtime_context.config
         if config is not None:
             warnings.extend(getattr(config, "warnings", []) or [])
             return config
 
-    if config_path is None:
-        warnings.append("config_not_found:ancilis.yaml")
     return None
 
 
-def _config_gap(target: Any, config: ResolvedConfig | None) -> ConfigGap:
+def _config_gap(target: GapTarget, config: ResolvedConfig | None) -> ConfigGap:
     present_handles = set(getattr(config, "data_classifications", {}) or {})
     present_overlays = set(getattr(config, "active_overlays", {}) or {})
     present_certs = set(getattr(config, "active_certifications", []) or [])

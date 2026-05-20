@@ -50,6 +50,7 @@ def test_assess_gap_reports_setup_gap_without_config(tmp_path: Path) -> None:
     assert "openai" in result.instrumentation_gap.missing_producers
     assert result.evidence_gap.session_id is None
     assert result.next_steps[0].startswith("Create ancilis.yaml")
+    assert result.warnings == []
 
 
 def test_assess_gap_reports_present_config_items(tmp_path: Path) -> None:
@@ -67,3 +68,28 @@ def test_assess_gap_reports_present_config_items(tmp_path: Path) -> None:
     assert result.config_gap.missing_my_agent_handles == []
     assert result.config_gap.present_overlays == ["hipaa"]
     assert result.config_gap.missing_overlays == []
+
+
+def test_assess_gap_does_not_fall_back_when_project_config_is_invalid(
+    tmp_path: Path,
+) -> None:
+    _write(tmp_path / "ancilis.yaml", "my_agent_handles:\n  - not_a_real_type\n")
+    runtime_context = _context(
+        {
+            "agent": {"name": "runtime"},
+            "my_agent_handles": ["health_records"],
+            "compliance": {"overlays": ["hipaa"]},
+        }
+    )
+
+    result = assess_gap(
+        root=tmp_path,
+        business_context="Patient records and HIPAA.",
+        runtime_context=runtime_context,
+    )
+
+    assert any(warning.startswith("config_load_error:") for warning in result.warnings)
+    assert result.config_gap.missing_my_agent_handles == ["health_records"]
+    assert result.config_gap.present_my_agent_handles == []
+    assert result.config_gap.missing_overlays == ["hipaa"]
+    assert result.config_gap.present_overlays == []
