@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
+from ancilis.activation.loader import load_overlay_profiles
 from ancilis.config import ResolvedConfig, load_config
 from ancilis.mcp_server import MCPServerContext
 from ancilis.mcp_server.cover.code_review import review_code
@@ -63,9 +64,10 @@ def assess_gap(
             for finding in code_review.findings
         )
 
-    evidence_gap = EvidenceGap(
-        session_id=session_id,
+    evidence_gap = _evidence_gap(
+        runtime_context,
         requested_overlays=list(normalization.target.active_overlays),
+        session_id=session_id,
     )
     return GapAssessmentResult(
         mode="evidence_gap" if evidence_gap.session_id else "setup_gap",
@@ -152,6 +154,8 @@ def _next_steps(
         steps.append(f"Wrap recommended producer surfaces with Ancilis instrumentation: {producers}.")
     if evidence_gap.session_id is None:
         steps.append("Run ancilis doctor and ancilis scan after setup to collect evidence.")
+    else:
+        steps.append("Review missing evidence controls and run targeted agent flows.")
     return steps
 
 
@@ -160,4 +164,71 @@ def _has_config_gap(config_gap: ConfigGap) -> bool:
         config_gap.missing_my_agent_handles
         or config_gap.missing_overlays
         or config_gap.missing_certification_targets
+    )
+
+
+def _overlay_controls(overlays: list[str]) -> list[str]:
+    overlay_profiles = load_overlay_profiles()
+    controls: set[str] = set()
+    for overlay_id in overlays:
+        profile = overlay_profiles.get(overlay_id)
+        if profile is None:
+            continue
+        overlay_controls = {
+            control_id
+            for control_id, control_data in profile.get("controls", {}).items()
+            if control_data.get("applicable", True)
+        }
+        if not overlay_controls:
+            overlay_controls.update(profile.get("control_adjustments", {}).keys())
+            overlay_controls.update(profile.get("evidence_requirements", {}).keys())
+        controls.update(overlay_controls)
+    return sorted(controls)
+
+
+def _evidence_gap(
+    context: MCPServerContext | None,
+    *,
+    requested_overlays: list[str],
+    session_id: str | None,
+) -> EvidenceGap:
+    controls = _overlay_controls(requested_overlays)
+    if context is None:
+        return EvidenceGap(
+            session_id=session_id,
+            requested_overlays=requested_overlays,
+            controls_total=len(controls),
+            missing_controls=controls,
+        )
+
+    selected_session_id = session_id or context.evidence_store.latest_session_id()
+    if selected_session_id is None:
+        return EvidenceGap(
+            session_id=None,
+            requested_overlays=requested_overlays,
+            controls_total=len(controls),
+            missing_controls=controls,
+        )
+
+    records = context.evidence_store.get_records(
+        session_id=selected_session_id,
+        limit=None,
+    )
+    evidenced_controls = {
+        control_id
+        for record in records
+        for raw_result in record.control_results
+        if str(raw_result.get("result", "SKIP")).upper() != "SKIP"
+        for control_id in [raw_result.get("control_id")]
+        if isinstance(control_id, str)
+    }
+    evidenced_requested_controls = sorted(set(controls) & evidenced_controls)
+    missing_controls = sorted(set(controls) - evidenced_controls)
+    return EvidenceGap(
+        session_id=selected_session_id,
+        requested_overlays=requested_overlays,
+        controls_total=len(controls),
+        controls_with_evidence=len(evidenced_requested_controls),
+        missing_controls=missing_controls,
+        evidenced_controls=evidenced_requested_controls,
     )

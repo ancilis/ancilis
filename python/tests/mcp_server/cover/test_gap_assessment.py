@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ancilis.config import load_config
 from ancilis.engine.engine import Engine
+from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 from ancilis.mcp_server import MCPServerContext
 from ancilis.mcp_server.cover.gap_assessment import assess_gap
@@ -93,3 +94,41 @@ def test_assess_gap_does_not_fall_back_when_project_config_is_invalid(
     assert result.config_gap.present_my_agent_handles == []
     assert result.config_gap.missing_overlays == ["hipaa"]
     assert result.config_gap.present_overlays == []
+
+
+def test_assess_gap_reports_evidence_gap_from_runtime_context(tmp_path: Path) -> None:
+    context = _context(
+        {
+            "agent": {"name": "therapy"},
+            "my_agent_handles": ["health_records"],
+            "compliance": {"overlays": ["hipaa"]},
+        }
+    )
+    evaluation = EvaluationResult(
+        evaluation_id="eval-1",
+        action_id="action-1",
+        timestamp="2026-01-01T00:00:00+00:00",
+        agent_id="agent-1",
+        source_type="tool",
+        mode="audit",
+        control_results=[ControlResult("PR-01", "Tool Identity & Allowlist", "PASS", "ok")],
+        decision="ALLOW",
+        decision_reason="test",
+        active_overlays=["hipaa"],
+        data_classifications=["DC-PHI"],
+        total_duration_ms=1.0,
+        session_id="session-1",
+    )
+    context.evidence_store.store(evaluation, tool_name="agent")
+
+    result = assess_gap(
+        root=tmp_path,
+        business_context="Patient records need HIPAA.",
+        runtime_context=context,
+    )
+
+    assert result.mode == "evidence_gap"
+    assert result.evidence_gap.session_id == "session-1"
+    assert result.evidence_gap.controls_total > 0
+    assert "PR-01" in result.evidence_gap.evidenced_controls
+    assert "PR-01" not in result.evidence_gap.missing_controls
