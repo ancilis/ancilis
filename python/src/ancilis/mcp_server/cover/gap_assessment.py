@@ -195,7 +195,7 @@ def _evidence_gap(
     controls = _overlay_controls(requested_overlays)
     if context is None:
         return EvidenceGap(
-            session_id=session_id,
+            session_id=None,
             requested_overlays=requested_overlays,
             controls_total=len(controls),
             missing_controls=controls,

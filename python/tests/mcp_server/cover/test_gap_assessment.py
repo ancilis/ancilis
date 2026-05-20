@@ -132,3 +132,17 @@ def test_assess_gap_reports_evidence_gap_from_runtime_context(tmp_path: Path) ->
     assert result.evidence_gap.controls_total > 0
     assert "PR-01" in result.evidence_gap.evidenced_controls
     assert "PR-01" not in result.evidence_gap.missing_controls
+
+
+def test_assess_gap_ignores_session_id_without_runtime_context(tmp_path: Path) -> None:
+    result = assess_gap(
+        root=tmp_path,
+        business_context="Patient records need HIPAA.",
+        session_id="session-1",
+    )
+
+    assert result.mode == "setup_gap"
+    assert result.evidence_gap.session_id is None
+    assert result.evidence_gap.controls_total > 0
+    assert result.evidence_gap.missing_controls
+    assert "Run ancilis doctor and ancilis scan after setup to collect evidence." in result.next_steps
