@@ -5,9 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import click
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
 
+from ancilis.mcp_server import (
+    MCPServerContext,
+    build_mcp_context,
+    register_runtime_tools,
+)
 from ancilis.mcp_server.cover.classification import classify_project
 from ancilis.mcp_server.cover.code_review import review_code
 from ancilis.mcp_server.cover.models import ProjectClassification, ProjectInspection
@@ -20,10 +26,12 @@ def _json_response(model: BaseModel) -> dict[str, Any]:
     return model.model_dump(mode="json")
 
 
-def create_cover_mcp_server() -> FastMCP:
-    """Create the Ancilis Cover local onboarding MCP server."""
-    server = FastMCP(name="ancilis-cover")
-
+def register_cover_tools(
+    server: FastMCP,
+    *,
+    runtime_context: MCPServerContext | None = None,
+) -> None:
+    """Register deterministic Cover onboarding and gap tools on an existing server."""
     @server.tool(name="ancilis_inspect_project")
     async def ancilis_inspect_project(
         root: str | None = None,
@@ -130,6 +138,27 @@ def create_cover_mcp_server() -> FastMCP:
             "confidence": classification.confidence,
         }
 
+
+def _default_cover_config() -> dict[str, Any]:
+    return {
+        "agent": {"name": "ancilis-cover-preview"},
+        "security": {"mode": "audit"},
+    }
+
+
+def create_cover_mcp_server(
+    config_path: str | None = None,
+    context: MCPServerContext | None = None,
+) -> FastMCP:
+    """Create the official Ancilis Cover local MCP server."""
+    runtime_context = build_mcp_context(
+        config_path=config_path,
+        context=context,
+        default_raw_config=_default_cover_config(),
+    )
+    server = FastMCP(name="ancilis-cover")
+    register_cover_tools(server, runtime_context=runtime_context)
+    register_runtime_tools(server, runtime_context)
     return server
 
 
@@ -155,9 +184,25 @@ def _report_summary(
     )
 
 
-def main() -> None:
+@click.command()
+@click.option(
+    "--config",
+    "-c",
+    "config_path",
+    type=click.Path(dir_okay=False, path_type=str),
+    default=None,
+    help="Path to ancilis.yaml. Defaults to auto-discovery, then a read-only preview config.",
+)
+@click.option(
+    "--transport",
+    type=click.Choice(["stdio"]),
+    default="stdio",
+    show_default=True,
+    help="MCP transport to run.",
+)
+def main(config_path: str | None, transport: str) -> None:
     """Run the Ancilis Cover MCP server over stdio."""
-    create_cover_mcp_server().run(transport="stdio")
+    create_cover_mcp_server(config_path=config_path).run(transport=transport)
 
 
 if __name__ == "__main__":
