@@ -15,7 +15,15 @@ from ancilis.evidence.record import EvidenceRecord
 
 
 class AttestationEvidenceStore(Protocol):
-    def get_records(self, limit: int | None = 100) -> list[EvidenceRecord]: ...
+    def get_records(
+        self,
+        agent_id: str | None = None,
+        session_id: str | None = None,
+        tool_name: str | None = None,
+        decision: str | None = None,
+        since: str | None = None,
+        limit: int | None = 100,
+    ) -> list[EvidenceRecord]: ...
 
     def store(
         self,

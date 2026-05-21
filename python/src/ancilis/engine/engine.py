@@ -5,10 +5,10 @@ from __future__ import annotations
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import Protocol, cast
 
 from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
-from ancilis.config import ResolvedConfig, load_control_definitions
+from ancilis.config import ControlStatus, ResolvedConfig, load_control_definitions
 from ancilis.controls.custom import CustomControlEvaluator
 from ancilis.engine.action import Action
 from ancilis.engine.evaluators.attestation import (
@@ -36,6 +36,7 @@ from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
 from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
 from ancilis.engine.evaluators.pr09_sandbox import PR09SandboxEvaluator
 from ancilis.engine.evaluators.rs02_containment import RS02ContainmentEvaluator
+from ancilis.evidence.record import EvidenceRecord
 
 # Controls that have evaluators
 EVALUATOR_CONTROL_IDS = {
@@ -107,11 +108,37 @@ PATTERN_TO_DC: dict[str, str] = {
 
 
 class EvidenceIntegrityStore(Protocol):
-    def count(self) -> int: ...
+    def count(self, session_id: str | None = None) -> int: ...
 
-    def verify_chain(self) -> tuple[bool, list[str]]: ...
+    def verify_chain(self, session_id: str | None = None) -> tuple[bool, list[str]]: ...
 
-    def get_records(self, limit: int | None = 100): ...
+    def get_records(
+        self,
+        agent_id: str | None = None,
+        session_id: str | None = None,
+        tool_name: str | None = None,
+        decision: str | None = None,
+        since: str | None = None,
+        limit: int | None = 100,
+    ) -> list[EvidenceRecord]: ...
+
+    def store(
+        self,
+        evaluation: EvaluationResult,
+        tool_name: str,
+        output_summary: str | None = None,
+    ) -> EvidenceRecord: ...
+
+
+class PostEvaluationControlEvaluator(Protocol):
+    def evaluate(
+        self,
+        action: Action,
+        config: ResolvedConfig,
+        *,
+        prior_results: list[ControlResult] | None = None,
+        evidence_store: EvidenceIntegrityStore | None = None,
+    ) -> ControlResult: ...
 
 
 class Engine:
@@ -163,7 +190,7 @@ class Engine:
         """Evaluate an action against all active controls."""
         start = time.perf_counter()
         control_results: list[ControlResult] = []
-        post_controls: list[tuple[str, object]] = []
+        post_controls: list[tuple[str, ControlStatus]] = []
 
         for control_id, control_status in sorted(self.config.controls.items()):
             if not control_status.enabled:
@@ -271,7 +298,8 @@ class Engine:
                 continue
 
             try:
-                result = evaluator.evaluate(
+                post_evaluator = cast(PostEvaluationControlEvaluator, evaluator)
+                result = post_evaluator.evaluate(
                     action,
                     self.config,
                     prior_results=control_results,

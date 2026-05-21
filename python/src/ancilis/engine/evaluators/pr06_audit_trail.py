@@ -30,18 +30,14 @@ class PR06AuditTrailEvaluator:
         present_fields = [field_name for field_name in required_fields if getattr(action, field_name, None)]
         missing_fields = [field_name for field_name in required_fields if field_name not in present_fields]
         evaluation_chain = [
-            {
-                "control_id": result.control_id,
-                "result": result.result,
-                "detail_present": bool(result.detail),
-            }
+            (result.control_id, result.result, bool(result.detail))
             for result in (prior_results or [])
             if result.control_id != self.control_id
         ]
         incomplete_chain = [
-            item["control_id"]
-            for item in evaluation_chain
-            if not item["control_id"] or not item["result"] or not item["detail_present"]
+            control_id
+            for control_id, result, detail_present in evaluation_chain
+            if not control_id or not result or not detail_present
         ]
         evidence_store_configured = evidence_store is not None
 
@@ -53,7 +49,9 @@ class PR06AuditTrailEvaluator:
             "missing_fields": missing_fields,
             "sample_entry_field_count": len(present_fields),
             "control_results_present": bool(evaluation_chain),
-            "evaluation_chain_control_ids": [item["control_id"] for item in evaluation_chain],
+            "evaluation_chain_control_ids": [
+                control_id for control_id, _result, _detail_present in evaluation_chain
+            ],
             "incomplete_chain_control_ids": incomplete_chain,
             "evidence_store_configured": evidence_store_configured,
             "evidence_write_before_completion": evidence_store_configured,
