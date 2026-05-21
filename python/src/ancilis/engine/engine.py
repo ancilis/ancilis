@@ -271,8 +271,7 @@ class Engine:
                 continue
 
             try:
-                evaluate_with_context = getattr(evaluator, "evaluate")
-                result = evaluate_with_context(
+                result = evaluator.evaluate(
                     action,
                     self.config,
                     prior_results=control_results,
