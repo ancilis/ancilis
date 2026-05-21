@@ -14,7 +14,6 @@ from ancilis.engine.evaluators.attestation import (
     ATTESTATION_CONTROL_SPECS,
     get_attestation_state,
 )
-from ancilis.engine.evaluators.deferred import DEFERRED_CONTROL_SPECS
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.evidence.record import EvidenceRecord
 from ancilis.evidence.store import EvidenceStore
@@ -311,15 +310,6 @@ def certification_coverage(
                 coverage_status = "attestation_required"
                 latest_result = "SKIP"
                 detail = "MANUAL: attestation required"
-        elif control_id in DEFERRED_CONTROL_SPECS:
-            reason = DEFERRED_CONTROL_SPECS[control_id].reason
-            coverage_status = (
-                "deferred_cross_action"
-                if reason == "cross_action"
-                else "deferred_new_data"
-            )
-            latest_result = "SKIP"
-            detail = f"DEFERRED: {reason}"
         elif row["evidence_count"] > 0:
             coverage_status = _coverage_status_for_result(
                 str(row["latest_result"] or ""),
@@ -353,11 +343,6 @@ def certification_coverage(
 def _coverage_status_for_result(result: str, detail: str, control_id: str) -> str:
     if "not runtime-active under the explicit/certification policy gate" in detail:
         return "policy_gated"
-    if detail.startswith("DEFERRED:"):
-        reason = DEFERRED_CONTROL_SPECS.get(control_id)
-        if reason and reason.reason == "cross_action":
-            return "deferred_cross_action"
-        return "deferred_new_data"
     if detail == "MANUAL: attestation required":
         return "attestation_required"
     if result == "PASS":
@@ -380,8 +365,6 @@ def _action_required(control_id: str, coverage_status: str) -> str:
         "attestation_incomplete",
     }:
         return f"ancilis attest {control_id}"
-    if coverage_status in {"deferred_cross_action", "deferred_new_data"}:
-        return "v0.2 roadmap"
     if coverage_status == "policy_gated":
         return "enable in policy"
     return "remediate"

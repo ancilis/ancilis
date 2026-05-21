@@ -5,7 +5,9 @@ Ancilis evaluates agent actions against AKSI Framework v0.6.
 - 41 controls are defined in the shared catalog.
 - 39 common controls are enabled for every governed agent.
 - `PAY-01` and `PAY-02` are extension controls activated by `DC-PAY`, `AGENT_PAYMENTS`, or `X402`.
-- `support_level: runtime_evaluator` means the SDK has deterministic evaluator code today. `support_level: attestation` means the control is catalog-backed and expects imported or attached evidence.
+- `support_level: runtime_evaluator` means the Python SDK has direct deterministic evaluator code today; it is not a cross-language parity field.
+- `support_level: attestation` means the control is evidence-backed and requires attached, imported, or attested evidence when it cannot be proven from a single action alone.
+- The TypeScript SDK has direct evaluators for its core runtime controls and uses catalog-backed evaluators for the remaining AKSI controls; those catalog-backed controls return `FLAG` until explicit attestation is supplied.
 
 ## Control Table
 
@@ -13,18 +15,18 @@ Ancilis evaluates agent actions against AKSI Framework v0.6.
 |---------|--------|------|---------|---------|------------------|
 | DE-01 | DETECT | Behavioral Anomaly Detection | common | runtime_evaluator | sdk_direct, singulr, noma, otel, arize_phoenix, attestation |
 | DE-02 | DETECT | Classification Drift & Boundary Validation | common | runtime_evaluator | sdk_direct, openai, anthropic, singulr, noma, otel, attestation |
-| DE-03 | DETECT | Configuration/Dependency Drift Monitoring | common | attestation | sdk_direct, aws_cloudtrail, aws_bedrock, github, mcp_registry, singulr, noma, otel, attestation |
+| DE-03 | DETECT | Configuration/Dependency Drift Monitoring | common | runtime_evaluator | sdk_direct, aws_cloudtrail, aws_bedrock, github, mcp_registry, singulr, noma, otel, attestation |
 | DE-04 | DETECT | Evidence Integrity Monitoring | common | runtime_evaluator | sdk_direct, otel, attestation, github |
 | DE-05 | DETECT | AI Outcome Evaluation & Harm Monitoring | common | attestation | sdk_direct, openai, anthropic, otel, arize_phoenix, langfuse, langsmith, attestation, jira |
 | DE-06 | DETECT | Assurance Testing & Vulnerability Evidence Ingestion | common | attestation | sdk_direct, sarif_import, cyclonedx_import, github, otel, arize_phoenix, langfuse, langsmith, attestation, jira |
-| GOV-01 | GOVERN | Agent Identity & Authentication | common | attestation | sdk_direct, aws_cloudtrail, github, attestation |
+| GOV-01 | GOVERN | Agent Identity & Authentication | common | runtime_evaluator | sdk_direct, aws_cloudtrail, github, attestation |
 | GOV-02 | GOVERN | Ownership Accountability | common | runtime_evaluator | sdk_direct, github, jira, attestation |
-| GOV-03 | GOVERN | Risk Tolerance & Policy Baseline | common | attestation | sdk_direct, github, jira, attestation |
+| GOV-03 | GOVERN | Risk Tolerance & Policy Baseline | common | runtime_evaluator | sdk_direct, github, jira, attestation |
 | GOV-04 | GOVERN | Human Oversight & Decision Accountability | common | attestation | sdk_direct, github, jira, attestation |
 | GOV-05 | GOVERN | Purpose, Legal Basis & Data-Use Authority | common | attestation | sdk_direct, github, jira, attestation, singulr, noma |
 | GOV-06 | GOVERN | External Obligation Registry & Posture Reporting | common | attestation | sdk_direct, github, jira, attestation, servicenow_now_assist |
 | GOV-07 | GOVERN | Transparency, Instructions & Affected-Party Feedback | common | attestation | sdk_direct, github, jira, attestation, servicenow_now_assist, langfuse, langsmith |
-| ID-01 | IDENTIFY | Agent Inventory & Registry | common | attestation | sdk_direct, sarif_import, cyclonedx_import, aws_cloudtrail, aws_bedrock, azure_ai_foundry, openai, anthropic, openrouter, litellm, composio, github, mcp_registry, singulr, noma, servicenow_now_assist, salesforce_agentforce, google_a2a_protocol, vertex_ai_agent_builder, otel, arize_phoenix, attestation, jira, pinecone, langfuse, langsmith, databricks_mlflow, snowflake_cortex, databricks_agent_bricks_mlflow |
+| ID-01 | IDENTIFY | Agent Inventory & Registry | common | runtime_evaluator | sdk_direct, sarif_import, cyclonedx_import, aws_cloudtrail, aws_bedrock, azure_ai_foundry, openai, anthropic, openrouter, litellm, composio, github, mcp_registry, singulr, noma, servicenow_now_assist, salesforce_agentforce, google_a2a_protocol, vertex_ai_agent_builder, otel, arize_phoenix, attestation, jira, pinecone, langfuse, langsmith, databricks_mlflow, snowflake_cortex, databricks_agent_bricks_mlflow |
 | ID-02 | IDENTIFY | Tool, Model & Integration Registry | common | attestation | sdk_direct, aws_cloudtrail, aws_bedrock, openai, anthropic, github, mcp_registry, singulr, noma, otel, attestation |
 | ID-03 | IDENTIFY | Data Flow Mapping & Classification | common | attestation | sdk_direct, aws_bedrock, openai, anthropic, singulr, noma, otel, attestation |
 | ID-04 | IDENTIFY | Supply Chain & Dependency Risk | common | attestation | sdk_direct, github, sarif_import, cyclonedx_import, mcp_registry, attestation |
@@ -39,7 +41,7 @@ Ancilis evaluates agent actions against AKSI Framework v0.6.
 | PR-06 | PROTECT | Audit Trail Completeness | common | runtime_evaluator | sdk_direct, aws_cloudtrail, github, otel, jira, attestation |
 | PR-07 | PROTECT | Secure Communication & Agent Messaging | common | runtime_evaluator | sdk_direct, aws_cloudtrail, google_a2a_protocol, otel, attestation |
 | PR-08 | PROTECT | Input Validation & Injection Resistance | common | runtime_evaluator | sdk_direct, aws_bedrock, openai, anthropic, github, singulr, noma, otel, sarif_import |
-| PR-09 | PROTECT | Controlled Code Execution & Sandbox Enforcement | common | attestation | sdk_direct, aws_cloudtrail, github, otel, attestation, sarif_import |
+| PR-09 | PROTECT | Controlled Code Execution & Sandbox Enforcement | common | runtime_evaluator | sdk_direct, aws_cloudtrail, github, otel, attestation, sarif_import |
 | PR-10 | PROTECT | Memory & Context Integrity | common | attestation | sdk_direct, aws_bedrock, openai, anthropic, github, otel, pinecone, attestation |
 | PR-11 | PROTECT | Retention, Deletion & Memory Disposal | common | attestation | sdk_direct, aws_cloudtrail, github, otel, pinecone, attestation, jira |
 | PR-12 | PROTECT | Secrets, Credential & Wallet Key Custody | common | attestation | sdk_direct, aws_cloudtrail, github, composio, otel, attestation, jira, sarif_import |
@@ -47,7 +49,7 @@ Ancilis evaluates agent actions against AKSI Framework v0.6.
 | RC-02 | RECOVER | Post-Incident Review & Communications | common | attestation | sdk_direct, github, jira, attestation |
 | RC-03 | RECOVER | Resilience Exercise & Recovery Test Evidence | common | attestation | sdk_direct, github, jira, otel, attestation |
 | RS-01 | RESPOND | Automated Compliance Response | common | attestation | sdk_direct, otel, jira, attestation |
-| RS-02 | RESPOND | Containment, Quarantine & Kill Switch | common | attestation | sdk_direct, aws_cloudtrail, otel, jira, attestation |
+| RS-02 | RESPOND | Containment, Quarantine & Kill Switch | common | runtime_evaluator | sdk_direct, aws_cloudtrail, otel, jira, attestation |
 | RS-03 | RESPOND | Human Escalation & Incident Reporting | common | attestation | sdk_direct, otel, jira, attestation |
 | RS-04 | RESPOND | Cascade Containment & Blast-Radius Control | common | attestation | sdk_direct, otel, jira, attestation |
 | RS-05 | RESPOND | Regulated Notification Clock & Authority Routing | common | attestation | sdk_direct, otel, jira, attestation, servicenow_now_assist |
@@ -88,7 +90,7 @@ Meaningful drift in configuration, dependencies, tools, models, or policy baseli
 
 - Function: `DETECT`
 - Effort level: `long`
-- Support level: `attestation`
+- Support level: `runtime_evaluator`
 - Product ID: `AKSI-DE-03`
 - Evidence keywords: drift, configuration, dependency, evidence
 
@@ -128,7 +130,7 @@ Every governed AI action is attributable to a verifiable runtime identity and au
 
 - Function: `GOVERN`
 - Effort level: `medium`
-- Support level: `attestation`
+- Support level: `runtime_evaluator`
 - Product ID: `AKSI-GOV-01`
 - Evidence keywords: identity, authentication, agent, iam
 
@@ -148,7 +150,7 @@ Risk tolerance, autonomy limits, and escalation thresholds are defined in policy
 
 - Function: `GOVERN`
 - Effort level: `medium`
-- Support level: `attestation`
+- Support level: `runtime_evaluator`
 - Product ID: `AKSI-GOV-03`
 - Evidence keywords: risk, tolerance, threshold, policy
 
@@ -198,7 +200,7 @@ The organization maintains a complete, current registry of governed AI systems a
 
 - Function: `IDENTIFY`
 - Effort level: `quick`
-- Support level: `attestation`
+- Support level: `runtime_evaluator`
 - Product ID: `AKSI-ID-01`
 - Evidence keywords: inventory, registry, system, identity
 
@@ -348,7 +350,7 @@ Generated code, shell commands, and dynamic execution artifacts run only inside 
 
 - Function: `PROTECT`
 - Effort level: `long`
-- Support level: `attestation`
+- Support level: `runtime_evaluator`
 - Product ID: `AKSI-PR-09`
 - Evidence keywords: sandbox, code, command, execution
 
@@ -428,7 +430,7 @@ Agents, tools, memory, credentials, and actions can be blocked, quarantined, deg
 
 - Function: `RESPOND`
 - Effort level: `long`
-- Support level: `attestation`
+- Support level: `runtime_evaluator`
 - Product ID: `AKSI-RS-02`
 - Evidence keywords: containment, quarantine, block, kill_switch
 

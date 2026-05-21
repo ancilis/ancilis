@@ -18,7 +18,7 @@ class DeferredSpec:
     todo_block: str
 
 
-DEFERRED_CONTROL_SPECS: dict[str, DeferredSpec] = {
+LEGACY_DEFERRED_CONTROL_SPECS: dict[str, DeferredSpec] = {
     "DE-05": DeferredSpec(
         control_id="DE-05",
         control_name="AI Outcome Evaluation and Harm Monitoring",
@@ -170,6 +170,8 @@ DEFERRED_CONTROL_SPECS: dict[str, DeferredSpec] = {
     ),
 }
 
+DEFERRED_CONTROL_SPECS: dict[str, DeferredSpec] = {}
+
 
 class DeferredEvaluator:
     """Evaluator that records an honest architecture blocker for a control."""
@@ -189,7 +191,7 @@ class DeferredEvaluator:
             control_id=self.control_id,
             control_name=self.control_name,
             result="SKIP",
-            detail=f"DEFERRED: {self.reason}",
+            detail=f"Legacy architecture blocker: {self.reason}",
             evidence_data={
                 "todo": self.todo_block,
                 "blocking_capability": self.reason,

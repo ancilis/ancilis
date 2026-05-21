@@ -100,8 +100,9 @@ def test_certify_empty_store_lists_honest_statuses_for_target_controls(tmp_path:
     assert "PR-01" in result.output
     assert "CC6.1" in result.output
     assert "attestation_required" in result.output
-    assert "deferred_cross_action" in result.output
-    assert "deferred_new_data" in result.output
+    assert "deferred_cross_action" not in result.output
+    assert "deferred_new_data" not in result.output
+    assert "v0.2 roadmap" not in result.output
     assert "No evaluator implemented" not in result.output
 
 
@@ -309,7 +310,7 @@ def test_certify_integration_reads_engine_written_evidence(tmp_path: Path) -> No
     assert "PR-01" in result.output
 
 
-def test_certify_empty_json_reports_attestation_deferred_and_policy_actions(tmp_path: Path) -> None:
+def test_certify_empty_json_reports_attestation_and_policy_actions(tmp_path: Path) -> None:
     cfg_path = _write_config(tmp_path)
     db_path = tmp_path / "evidence.duckdb"
 
@@ -333,8 +334,11 @@ def test_certify_empty_json_reports_attestation_deferred_and_policy_actions(tmp_
     by_id = {row["control_id"]: row for row in payload["controls"]}
     assert by_id["GOV-04"]["coverage_status"] == "attestation_required"
     assert by_id["GOV-04"]["action_required"] == "ancilis attest GOV-04"
-    assert by_id["ID-03"]["coverage_status"] == "deferred_cross_action"
-    assert by_id["ID-03"]["action_required"] == "v0.2 roadmap"
-    assert by_id["ID-04"]["coverage_status"] == "deferred_new_data"
+    assert by_id["ID-03"]["coverage_status"] == "attestation_required"
+    assert by_id["ID-03"]["action_required"] == "ancilis attest ID-03"
+    assert by_id["ID-04"]["coverage_status"] == "attestation_required"
+    assert by_id["ID-04"]["action_required"] == "ancilis attest ID-04"
+    assert by_id["RS-01"]["coverage_status"] == "attestation_required"
+    assert by_id["RS-01"]["action_required"] == "ancilis attest RS-01"
     assert by_id["GOV-02"]["coverage_status"] == "policy_gated"
     assert by_id["GOV-02"]["action_required"] == "enable in policy"

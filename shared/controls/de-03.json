@@ -65,7 +65,7 @@
     "securities-mnpi",
     "soc2"
   ],
-  "support_level": "attestation",
+  "support_level": "runtime_evaluator",
   "default_enabled": true,
   "baseline": true,
   "security_outcome": {

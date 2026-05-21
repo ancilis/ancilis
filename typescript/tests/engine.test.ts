@@ -575,13 +575,13 @@ describe("DE-04 Integrity Runtime Policy", () => {
     expect(config.controlActivationSources.get("DE-04")).toContain("certification_targets:gov-contractor");
   });
 
-  it("keeps governance and inventory evaluators out of the runtime engine", () => {
+  it("runs governance and inventory evaluators when policy activated", () => {
     const config = makeConfig({ certification_targets: ["gov-contractor"] });
     const engine = new Engine(config, { registry: makeRegistry(["test-tool"]) });
     const result = engine.evaluate(makeAction());
 
-    expect(getControlResult(result.controlResults, "GOV-01").result).toBe("SKIP");
-    expect(getControlResult(result.controlResults, "ID-01").result).toBe("SKIP");
+    expect(getControlResult(result.controlResults, "GOV-01").result).toBe("FLAG");
+    expect(getControlResult(result.controlResults, "ID-01").result).toBe("FLAG");
   });
 });
 

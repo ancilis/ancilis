@@ -306,6 +306,18 @@ def generate_controls() -> list[str]:
     graph = read_json(GRAPH_PATH)
     effort_levels = load_effort_levels()
     control_ids = list(read_json(CONTROL_SCHEMA_PATH)["enum"])
+    control_id_set = set(control_ids)
+    partition = RUNTIME_EVALUATOR_CONTROL_IDS | ATTESTATION_BACKED_CONTROL_IDS
+    overlap = RUNTIME_EVALUATOR_CONTROL_IDS & ATTESTATION_BACKED_CONTROL_IDS
+    if overlap:
+        raise ValueError(f"Control support sets overlap: {sorted(overlap)}")
+    if partition != control_id_set:
+        missing = control_id_set - partition
+        extra = partition - control_id_set
+        raise ValueError(
+            "Control support sets do not match catalog; "
+            f"missing={sorted(missing)} extra={sorted(extra)}"
+        )
 
     for control_id in control_ids:
         source = graph["controls"][control_id]
@@ -328,7 +340,7 @@ def generate_controls() -> list[str]:
             "evidence_sources": source["evidence_sources"],
             "evidence_keywords": source["evidence_keywords"],
             "overlays": [normalize_overlay_id(overlay) for overlay in source["overlays"]],
-            "support_level": "runtime_evaluator" if control_id in RUNTIME_EVALUATOR_CONTROL_IDS else "attestation",
+            "support_level": support_level_for_control(control_id),
             "default_enabled": common,
             "baseline": common,
             "security_outcome": {
@@ -346,11 +358,23 @@ def generate_controls() -> list[str]:
     return control_ids
 
 
+def support_level_for_control(control_id: str) -> str:
+    if control_id in RUNTIME_EVALUATOR_CONTROL_IDS:
+        return "runtime_evaluator"
+    if control_id in ATTESTATION_BACKED_CONTROL_IDS:
+        return "attestation"
+    raise ValueError(f"Unknown control support level for {control_id}")
+
+
 RUNTIME_EVALUATOR_CONTROL_IDS = {
     "DE-01",
     "DE-02",
+    "DE-03",
     "DE-04",
+    "GOV-01",
     "GOV-02",
+    "GOV-03",
+    "ID-01",
     "PR-01",
     "PR-02",
     "PR-03",
@@ -359,6 +383,34 @@ RUNTIME_EVALUATOR_CONTROL_IDS = {
     "PR-06",
     "PR-07",
     "PR-08",
+    "PR-09",
+    "RS-02",
+}
+
+ATTESTATION_BACKED_CONTROL_IDS = {
+    "DE-05",
+    "DE-06",
+    "GOV-04",
+    "GOV-05",
+    "GOV-06",
+    "GOV-07",
+    "ID-02",
+    "ID-03",
+    "ID-04",
+    "ID-05",
+    "PAY-01",
+    "PAY-02",
+    "PR-10",
+    "PR-11",
+    "PR-12",
+    "RC-01",
+    "RC-02",
+    "RC-03",
+    "RS-01",
+    "RS-03",
+    "RS-04",
+    "RS-05",
+    "RS-06",
 }
 
 OSCAL_SP80053_MAPPINGS = {
@@ -548,7 +600,11 @@ def generate_controls_reference() -> None:
         "- 41 controls are defined in the shared catalog.",
         "- 39 common controls are enabled for every governed agent.",
         "- `PAY-01` and `PAY-02` are extension controls activated by `DC-PAY`, `AGENT_PAYMENTS`, or `X402`.",
-        "- `support_level: runtime_evaluator` means the SDK has deterministic evaluator code today. `support_level: attestation` means the control is catalog-backed and expects imported or attached evidence.",
+        "- `support_level: runtime_evaluator` means the Python SDK has direct deterministic evaluator code today; it is not a cross-language parity field.",
+        "- `support_level: attestation` means the control is evidence-backed and requires attached, imported, or attested evidence when it cannot be proven from a single action alone.",
+        "- The TypeScript SDK has direct evaluators for its core runtime controls and uses "
+        "catalog-backed evaluators for the remaining AKSI controls; those catalog-backed "
+        "controls return `FLAG` until explicit attestation is supplied.",
         "",
         "## Control Table",
         "",
