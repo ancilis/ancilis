@@ -254,6 +254,8 @@ Declare what data your agent handles. The right regulatory overlays activate aut
 
 23 canonical data classes are supported across 19 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
 
+The DORA-RES operational resilience overlay is specified as the architectural anchor for v0.2 function-classification activation. It coexists with the existing `DC-FIN` DORA overlay: the existing overlay covers financial-data handling evidence, while DORA-RES covers AI workload resilience evidence for agents supporting critical or important functions. See [shared/overlays/dora-res/dora_res_overlay_spec.md](shared/overlays/dora-res/dora_res_overlay_spec.md).
+
 > **Roadmap: runtime classification.** Today you declare what data your agent handles in config. We are building runtime classification that detects data types from tool call payloads and responses using regex patterns, Luhn checksums, and co-occurrence analysis. When the SDK detects health records flowing through an agent you declared as general-purpose, it will surface the finding for you to confirm. Confirmed findings will activate the right overlays without config changes. Declaration gets you started; future classification keeps you accurate.
 
 ## How It Works
@@ -369,6 +371,7 @@ LLM SDK and framework producers also ship in the TypeScript package: `AnthropicA
 - [Quickstart](docs/quickstart.md)
 - [Configuration reference](docs/configuration.md)
 - [Controls reference](docs/controls-reference.md)
+- [DORA-RES overlay specification](shared/overlays/dora-res/dora_res_overlay_spec.md)
 - [Producers](docs/producers.md)
 - [Security policy](SECURITY.md) - security@ancilis.ai
 - [Contributing](CONTRIBUTING.md)
