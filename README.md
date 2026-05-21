@@ -375,4 +375,4 @@ LLM SDK and framework producers also ship in the TypeScript package: `AnthropicA
 - [Producers](docs/producers.md)
 - [Security policy](SECURITY.md) - security@ancilis.ai
 - [Contributing](CONTRIBUTING.md)
-- [License](LICENSE) — GNU Affero General Public License v3.0 or later. Commercial licensing available; contact licensing@ancilis.ai.
+- [License](LICENSE) - GNU Affero General Public License v3.0 or later. Commercial licensing available; contact licensing@ancilis.ai.

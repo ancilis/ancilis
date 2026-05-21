@@ -16,7 +16,7 @@ from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.engine import Engine
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.store import EvidenceStore
-from ancilis.mcp_server import MCPServerContext, create_mcp_server
+from ancilis.mcp_server import MCPServerContext, _active_runtime_evaluator_ids, create_mcp_server
 from ancilis.producers.tool import ToolActionProducer
 
 
@@ -202,7 +202,7 @@ def test_check_posture_returns_latest_session_active_evaluator_results() -> None
     structured = _call_tool_structured(server, "ancilis_check_posture")
 
     assert structured["session_id"] == "latest-session"
-    assert structured["posture_score"] == 0.1
+    assert structured["posture_score"] == round(1 / len(_active_runtime_evaluator_ids(context)), 4)
     assert structured["active_overlays"] == ["glba", "soc2"]
     assert structured["evaluated_at"]
     assert [control["id"] for control in structured["controls"]] == ["PR-01", "PR-02"]

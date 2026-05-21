@@ -5,34 +5,61 @@ from __future__ import annotations
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import Protocol, cast
 
 from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
-from ancilis.config import ResolvedConfig, load_control_definitions
+from ancilis.config import ControlStatus, ResolvedConfig, load_control_definitions
 from ancilis.controls.custom import CustomControlEvaluator
 from ancilis.engine.action import Action
+from ancilis.engine.evaluators.attestation import (
+    ATTESTATION_CONTROL_SPECS,
+    make_attestation_evaluators,
+)
+from ancilis.engine.evaluators.de02_classification_drift import DE02ClassificationDriftEvaluator
+from ancilis.engine.evaluators.de03_config_drift import DE03ConfigDriftEvaluator
 from ancilis.engine.evaluators.de04_integrity import DE04IntegrityEvaluator
 from ancilis.engine.evaluators.base import ControlEvaluator
+from ancilis.engine.evaluators.gov01_identity_auth import GOV01IdentityAuthEvaluator
 from ancilis.engine.evaluators.gov02_ownership import GOV02OwnershipEvaluator
-from ancilis.engine.evaluators.pr01_identity import PR01IdentityEvaluator
+from ancilis.engine.evaluators.gov03_risk_tolerance import GOV03RiskToleranceEvaluator
+from ancilis.engine.evaluators.id01_inventory import ID01InventoryEvaluator
+from ancilis.engine.evaluators.pr01_action_auth import PR01ActionAuthorizationEvaluator
 from ancilis.engine.evaluators.pr02_scope import PR02ScopeEvaluator, RateTracker
 from ancilis.engine.evaluators.pr03_provenance import PR03ProvenanceEvaluator
 from ancilis.engine.evaluators.pr04_exposure import PR04ExposureEvaluator
+from ancilis.engine.evaluators.pr05_isolation import PR05IsolationEvaluator
 from ancilis.engine.registry import ToolRegistry
 from ancilis.engine.result import ControlResult, EvaluationResult
-from ancilis.controls.pr05_audit import PR05AuditEvaluator
 from ancilis.controls.de01_baseline import DE01BaselineEvaluator, BaselineWindow
-from ancilis.engine.evaluators.de02_config_drift import DE02ConfigDriftEvaluator
-from ancilis.engine.evaluators.pr06_config_baseline import PR06ConfigBaselineEvaluator
+from ancilis.engine.evaluators.pr06_audit_trail import PR06AuditTrailEvaluator
 from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
 from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
+from ancilis.engine.evaluators.pr09_sandbox import PR09SandboxEvaluator
+from ancilis.engine.evaluators.rs02_containment import RS02ContainmentEvaluator
+from ancilis.evidence.record import EvidenceRecord
 
 # Controls that have evaluators
 EVALUATOR_CONTROL_IDS = {
     "DE-01",
     "DE-02",
+    "DE-03",
     "DE-04",
+    "DE-05",
+    "DE-06",
+    "GOV-01",
     "GOV-02",
+    "GOV-03",
+    "GOV-04",
+    "GOV-05",
+    "GOV-06",
+    "GOV-07",
+    "ID-01",
+    "ID-02",
+    "ID-03",
+    "ID-04",
+    "ID-05",
+    "PAY-01",
+    "PAY-02",
     "PR-01",
     "PR-02",
     "PR-03",
@@ -41,6 +68,19 @@ EVALUATOR_CONTROL_IDS = {
     "PR-06",
     "PR-07",
     "PR-08",
+    "PR-09",
+    "PR-10",
+    "PR-11",
+    "PR-12",
+    "RC-01",
+    "RC-02",
+    "RC-03",
+    "RS-01",
+    "RS-02",
+    "RS-03",
+    "RS-04",
+    "RS-05",
+    "RS-06",
 }
 
 POLICY_SENSITIVE_EVALUATOR_CONTROL_IDS = {
@@ -54,6 +94,7 @@ RUNTIME_POLICY_GATE_SOURCES = (
     "explicit:security.controls",
     "certification_targets:",
 )
+POST_EVALUATION_CONTROL_IDS = {"PR-06", "RS-02"}
 
 # Maps PR-04 pattern types to data classification DC codes
 PATTERN_TO_DC: dict[str, str] = {
@@ -67,9 +108,37 @@ PATTERN_TO_DC: dict[str, str] = {
 
 
 class EvidenceIntegrityStore(Protocol):
-    def count(self) -> int: ...
+    def count(self, session_id: str | None = None) -> int: ...
 
-    def verify_chain(self) -> tuple[bool, list[str]]: ...
+    def verify_chain(self, session_id: str | None = None) -> tuple[bool, list[str]]: ...
+
+    def get_records(
+        self,
+        agent_id: str | None = None,
+        session_id: str | None = None,
+        tool_name: str | None = None,
+        decision: str | None = None,
+        since: str | None = None,
+        limit: int | None = 100,
+    ) -> list[EvidenceRecord]: ...
+
+    def store(
+        self,
+        evaluation: EvaluationResult,
+        tool_name: str,
+        output_summary: str | None = None,
+    ) -> EvidenceRecord: ...
+
+
+class PostEvaluationControlEvaluator(Protocol):
+    def evaluate(
+        self,
+        action: Action,
+        config: ResolvedConfig,
+        *,
+        prior_results: list[ControlResult] | None = None,
+        evidence_store: EvidenceIntegrityStore | None = None,
+    ) -> ControlResult: ...
 
 
 class Engine:
@@ -85,21 +154,35 @@ class Engine:
     ) -> None:
         self.config = config
         self.registry = registry or ToolRegistry()
+        self._evidence_store = evidence_store
         self._control_defs = load_control_definitions()
         self._evaluators: dict[str, ControlEvaluator] = {
-            "PR-01": PR01IdentityEvaluator(),
+            "GOV-01": GOV01IdentityAuthEvaluator(),
+            "GOV-03": GOV03RiskToleranceEvaluator(),
+            "ID-01": ID01InventoryEvaluator(),
+            "PR-01": PR01ActionAuthorizationEvaluator(),
             "PR-02": PR02ScopeEvaluator(rate_tracker=rate_tracker),
             "PR-03": PR03ProvenanceEvaluator(registry=self.registry),
             "PR-04": PR04ExposureEvaluator(),
-            "PR-05": PR05AuditEvaluator(),
-            "PR-06": PR06ConfigBaselineEvaluator(),
+            "PR-05": PR05IsolationEvaluator(),
+            "PR-06": PR06AuditTrailEvaluator(),
             "PR-07": PR07TransportEvaluator(),
             "PR-08": PR08InputEvaluator(),
+            "PR-09": PR09SandboxEvaluator(),
             "DE-01": DE01BaselineEvaluator(baseline_window=baseline_window),
-            "DE-02": DE02ConfigDriftEvaluator(),
+            "DE-02": DE02ClassificationDriftEvaluator(),
+            "DE-03": DE03ConfigDriftEvaluator(),
             "DE-04": DE04IntegrityEvaluator(evidence_store=evidence_store),
             "GOV-02": GOV02OwnershipEvaluator(),
+            "RS-02": RS02ContainmentEvaluator(),
         }
+        self._evaluators.update(make_attestation_evaluators(evidence_store))
+        missing_attestation_defs = set(ATTESTATION_CONTROL_SPECS) - set(self._control_defs)
+        if missing_attestation_defs:
+            raise ValueError(
+                "Attestation evaluators registered for unknown AKSI controls: "
+                + ", ".join(sorted(missing_attestation_defs))
+            )
         for control_id, definition in getattr(self.config, "custom_controls", {}).items():
             self._evaluators[control_id] = CustomControlEvaluator(definition)
 
@@ -107,6 +190,7 @@ class Engine:
         """Evaluate an action against all active controls."""
         start = time.perf_counter()
         control_results: list[ControlResult] = []
+        post_controls: list[tuple[str, ControlStatus]] = []
 
         for control_id, control_status in sorted(self.config.controls.items()):
             if not control_status.enabled:
@@ -120,6 +204,10 @@ class Engine:
                         duration_ms=0.0,
                     )
                 )
+                continue
+
+            if control_id in POST_EVALUATION_CONTROL_IDS:
+                post_controls.append((control_id, control_status))
                 continue
 
             if self._is_policy_gated(control_id):
@@ -151,7 +239,7 @@ class Engine:
                         control_id=control_id,
                         control_name=control_status.name,
                         result="SKIP",
-                        detail="No evaluator implemented for this control.",
+                        detail="Evaluator is not registered for this control.",
                         evidence_data={},
                         duration_ms=0.0,
                     )
@@ -160,6 +248,63 @@ class Engine:
 
             try:
                 result = evaluator.evaluate(action, self.config)
+                control_results.append(result)
+            except Exception as e:
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=control_status.name,
+                        result="ERROR",
+                        detail=f"Evaluator error: {e}",
+                        evidence_data={"error": str(e)},
+                        duration_ms=0.0,
+                    )
+                )
+
+        for control_id, control_status in post_controls:
+            if self._is_policy_gated(control_id):
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=control_status.name,
+                        result="SKIP",
+                        detail=(
+                            "Control is not runtime-active under the explicit/certification "
+                            "policy gate."
+                        ),
+                        evidence_data={
+                            "activation_sources": sorted(
+                                self.config.control_activation_sources.get(control_id, set())
+                            ),
+                            "required_activation_sources": list(RUNTIME_POLICY_GATE_SOURCES),
+                        },
+                        duration_ms=0.0,
+                    )
+                )
+                continue
+
+            evaluator = self._evaluators.get(control_id)
+            if evaluator is None:
+                control_results.append(
+                    ControlResult(
+                        control_id=control_id,
+                        control_name=control_status.name,
+                        result="SKIP",
+                        detail="Evaluator is not registered for this control.",
+                        evidence_data={},
+                        duration_ms=0.0,
+                    )
+                )
+                continue
+
+            try:
+                post_evaluator = cast(PostEvaluationControlEvaluator, evaluator)
+                result = post_evaluator.evaluate(
+                    action,
+                    self.config,
+                    prior_results=control_results,
+                    evidence_store=self._evidence_store,
+                )
                 control_results.append(result)
             except Exception as e:
                 control_results.append(
@@ -184,6 +329,13 @@ class Engine:
         # Decision logic
         has_failure = any(r.result in ("FAIL", "ERROR") for r in control_results)
 
+        def summarize_control_ids(control_ids: list[str]) -> str:
+            shown = ", ".join(control_ids[:8])
+            remaining = len(control_ids) - 8
+            if remaining > 0:
+                return f"{shown}, +{remaining} more"
+            return shown
+
         if self.config.mode == "enforce" and has_failure:
             failed = [r.control_id for r in control_results if r.result in ("FAIL", "ERROR")]
             decision = "BLOCK"
@@ -194,7 +346,17 @@ class Engine:
                 failed = [r.control_id for r in control_results if r.result in ("FAIL", "ERROR")]
                 decision_reason = f"Audit mode — failures logged but allowed: {', '.join(failed)}"
             else:
-                decision_reason = "All controls passed."
+                flagged = [r.control_id for r in control_results if r.result == "FLAG"]
+                skipped = [r.control_id for r in control_results if r.result == "SKIP"]
+                findings = []
+                if flagged:
+                    findings.append(f"Flagged controls: {summarize_control_ids(flagged)}")
+                if skipped:
+                    findings.append(f"Skipped controls: {summarize_control_ids(skipped)}")
+                if findings:
+                    decision_reason = f"Allowed with review findings - {'; '.join(findings)}."
+                else:
+                    decision_reason = "All controls passed."
 
         total_ms = (time.perf_counter() - start) * 1000
 

@@ -9,11 +9,11 @@ Sample output from `make run && make scan`.
   Agent: crewai-research-crew
   Mode: audit
   Activation:
-    certification_targets: [aiuc-1] → AIUC-1 active, 26 controls
+    certification_targets: [aiuc-1] → AIUC-1 active with the v1 common control set
     CCPA/CPRA overlay active (triggered by DC-PII via personal_info)
     GDPR overlay active (triggered by DC-PII via personal_info)
     SOC 2 Type II overlay active (triggered by DC-PII via personal_info)
-  Controls: 26 active
+  Controls: v1 common control set active
 ```
 
 ## Execution output (`make run`)
@@ -86,7 +86,7 @@ Ancilis scan — crewai-research-crew
     ✓ No known vulnerabilities in 0 dependencies
 ```
 
-**Score: 24/26 controls passing (92.3%)**
+**Score:** legacy demo excerpt shows 24 of 26 rows passing; rerun `make scan` for the current v1 control set.
 
 ## Notes on failures
 

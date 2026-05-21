@@ -35,6 +35,8 @@ Decision logic:
 - In **audit** mode: ALLOW always, log everything
 - In **enforce** mode: BLOCK if any control FAILs, ALLOW otherwise
 
+`decision_reason` / `decisionReason` is a human-readable summary and may truncate long control-ID lists. Consumers that need complete control-level status should read the structured `control_results` / `controlResults` array.
+
 ### Evidence Store
 
 DuckDB-backed with SHA-256 hash chain integrity. Each record links to the previous record's hash, creating a tamper-evident chain from a fixed genesis seed.

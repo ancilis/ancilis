@@ -64,7 +64,7 @@ def certify(
     config = _load_certify_config(config_path, db_path)
     store = EvidenceStore(config, db_path=db_path)
     try:
-        resolved_target, rows = certification_coverage(store, target=target)
+        resolved_target, rows = certification_coverage(store, target=target, config=config)
     finally:
         store.close()
 
@@ -85,12 +85,13 @@ def certify(
         return
 
     click.echo(
-        f"{'control_id':<10}  {'framework_ref':<36}  {'coverage_status':<15}  "
-        f"{'evidence_count':<14}  {'last_evidence_at':<25}"
+        f"{'control_id':<10}  {'framework_ref':<36}  {'coverage_status':<24}  "
+        f"{'action_required':<24}  {'evidence_count':<14}  {'last_evidence_at':<25}"
     )
-    click.echo("-" * 112)
+    click.echo("-" * 146)
     for row in rows:
         click.echo(
-            f"{row.control_id:<10}  {row.framework_ref:<36}  {row.coverage_status:<15}  "
-            f"{row.evidence_count:<14}  {row.last_evidence_at or '-':<25}"
+            f"{row.control_id:<10}  {row.framework_ref:<36}  {row.coverage_status:<24}  "
+            f"{row.action_required:<24}  {row.evidence_count:<14}  "
+            f"{row.last_evidence_at or '-':<25}"
         )

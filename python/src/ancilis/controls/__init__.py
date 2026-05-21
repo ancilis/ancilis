@@ -19,7 +19,6 @@ if TYPE_CHECKING:
         DE01BaselineEvaluator,
         DeviationFlag,
     )
-    from ancilis.controls.pr05_audit import PR05AuditEvaluator
 
 _EXPORTS: dict[str, tuple[str, str]] = {
     "BaselineWindow": ("ancilis.controls.de01_baseline", "BaselineWindow"),
@@ -33,7 +32,6 @@ _EXPORTS: dict[str, tuple[str, str]] = {
         "DE01BaselineEvaluator",
     ),
     "DeviationFlag": ("ancilis.controls.de01_baseline", "DeviationFlag"),
-    "PR05AuditEvaluator": ("ancilis.controls.pr05_audit", "PR05AuditEvaluator"),
     "clear_custom_controls": ("ancilis.controls.custom", "clear_custom_controls"),
     "list_custom_controls": ("ancilis.controls.custom", "list_custom_controls"),
     "load_custom_controls_from_directory": (

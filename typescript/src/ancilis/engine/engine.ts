@@ -13,6 +13,7 @@ import { PR02ScopeEvaluator } from "./evaluators/pr02-scope.js";
 import type { RateTracker } from "./evaluators/pr02-scope.js";
 import { PR03ProvenanceEvaluator } from "./evaluators/pr03-provenance.js";
 import { PR04ExposureEvaluator } from "./evaluators/pr04-exposure.js";
+import { CatalogBackedEvaluator } from "./evaluators/catalog-backed.js";
 import { PR05AuditEvaluator } from "../controls/pr05Audit.js";
 import { PR06ConfigBaselineEvaluator } from "../controls/pr06ConfigBaseline.js";
 import { PR07TransportEvaluator } from "../controls/pr07Transport.js";
@@ -21,7 +22,9 @@ import { DE01BaselineEvaluator } from "../controls/de01Baseline.js";
 import type { BaselineWindow } from "../controls/de01Baseline.js";
 import { DE02ConfigDriftEvaluator } from "./evaluators/de02-config-drift.js";
 import { DE04IntegrityEvaluator } from "./evaluators/de04-integrity.js";
+import { GOV01PolicyEvaluator } from "./evaluators/gov01-policy.js";
 import { GOV02OwnershipEvaluator } from "./evaluators/gov02-ownership.js";
+import { ID01InventoryEvaluator } from "./evaluators/id01-inventory.js";
 import type { DE04StoreAdapter } from "./evaluators/de04-integrity.js";
 import { ToolRegistry } from "./registry.js";
 import type { ControlResult, EvaluationResult } from "./result.js";
@@ -61,6 +64,8 @@ export class Engine {
     this.registry = options?.registry ?? new ToolRegistry();
     this.controlDefs = loadControlDefs();
     this.evaluators = new Map<string, ControlEvaluator>([
+      ["GOV-01", new GOV01PolicyEvaluator()],
+      ["ID-01", new ID01InventoryEvaluator()],
       ["PR-01", new PR01IdentityEvaluator()],
       ["PR-02", new PR02ScopeEvaluator(options?.rateTracker)],
       ["PR-03", new PR03ProvenanceEvaluator(this.registry)],
@@ -74,6 +79,17 @@ export class Engine {
       ["DE-04", new DE04IntegrityEvaluator(options?.evidenceStore ?? null)],
       ["GOV-02", new GOV02OwnershipEvaluator()],
     ]);
+    for (const [controlId, definition] of this.controlDefs) {
+      if (this.evaluators.has(controlId)) continue;
+      this.evaluators.set(
+        controlId,
+        new CatalogBackedEvaluator(
+          controlId,
+          (definition.name as string | undefined) ?? controlId,
+          (definition.evidence_keywords as string[] | undefined) ?? [],
+        ),
+      );
+    }
   }
 
   evaluate(action: Action): EvaluationResult {
@@ -114,7 +130,7 @@ export class Engine {
           controlId,
           controlName: controlStatus.name,
           result: "SKIP",
-          detail: "No evaluator implemented for this control.",
+          detail: "Evaluator is not registered for this control.",
           evidenceData: {},
           durationMs: 0,
         });
@@ -148,6 +164,11 @@ export class Engine {
 
     // Decision logic
     const hasFailure = controlResults.some(r => r.result === "FAIL" || r.result === "ERROR");
+    const summarizeControlIds = (ids: string[]): string => {
+      const shown = ids.slice(0, 8).join(", ");
+      const remaining = ids.length - 8;
+      return remaining > 0 ? `${shown}, +${remaining} more` : shown;
+    };
 
     let decision: "ALLOW" | "BLOCK" | "FLAG";
     let decisionReason: string;
@@ -166,7 +187,19 @@ export class Engine {
           .map(r => r.controlId);
         decisionReason = `Audit mode — failures logged but allowed: ${failed.join(", ")}`;
       } else {
-        decisionReason = "All controls passed.";
+        const flagged = controlResults
+          .filter(r => r.result === "FLAG")
+          .map(r => r.controlId);
+        const skipped = controlResults
+          .filter(r => r.result === "SKIP")
+          .map(r => r.controlId);
+        const findings = [
+          flagged.length > 0 ? `Flagged controls: ${summarizeControlIds(flagged)}` : "",
+          skipped.length > 0 ? `Skipped controls: ${summarizeControlIds(skipped)}` : "",
+        ].filter(Boolean);
+        decisionReason = findings.length > 0
+          ? `Allowed with review findings - ${findings.join("; ")}.`
+          : "All controls passed.";
       }
     }
 

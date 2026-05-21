@@ -26,6 +26,9 @@ class ActionParameters:
 class ActionContext:
     session_id: str | None = None
     parent_action_id: str | None = None
+    tenant_id: str | None = None
+    user_id: str | None = None
+    jurisdiction: str | None = None
     data_classifications: list[str] = field(default_factory=list)
     active_overlays: list[str] = field(default_factory=list)
 
@@ -44,3 +47,5 @@ class Action:
     framework_version: str = AKSI_FRAMEWORK_VERSION
     producer_type: str = "mcp"  # default preserves backward compat
     producer_version: str = "0.1.0"
+    destination: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
