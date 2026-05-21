@@ -7,24 +7,31 @@
 [![npm](https://img.shields.io/npm/v/ancilis.svg)](https://www.npmjs.com/package/ancilis)
 [![python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 
-Runtime security decisions and audit-ready evidence for AI agents.
+Classification-driven controls, runtime security decisions, and audit-ready evidence for AI agents.
 
-AI agents do real work now: they call tools, run shell commands, invoke MCP servers, and send requests to LLM providers. Ancilis gives those actions a policy decision before they become invisible operational risk. It evaluates each action against deterministic AKSI controls, records the result in a local tamper-evident evidence store, and turns the same evidence into compliance posture reports.
+AKSI is Ancilis's common-control model for agents: a harmonized catalog of agent controls drawn from industry and regulatory frameworks, expressed as runtime checks, evidence requirements, and compliance overlays.
+
+Ancilis starts from the two things compliance and security teams already care about: what data your agent handles, and which certification or regulatory targets it needs to support. Declare classifications such as `health_records`, `credit_cards`, or `personal_info`; add certification targets such as `soc2`; Ancilis activates the right AKSI controls and reporting overlays without manual framework crosswalking.
+
+AI agents do real work now: they call tools, run shell commands, invoke MCP servers, and send requests to LLM providers. Ancilis gives those actions a policy decision before they become invisible operational risk. It evaluates each action against the active AKSI controls, records the result in a local tamper-evident evidence store, and turns the same evidence into compliance posture reports.
 
 Use it when you need to answer:
 
 - What did this agent do?
 - Was the action allowed by policy?
-- Which controls passed, failed, or need attestation?
-- What evidence can we show for SOC 2, HIPAA, PCI-DSS, EU AI Act, and other readiness work?
+- Which data classes or certification targets drove the controls?
+- Which AKSI controls passed, failed, or need attestation?
+- What evidence can we show for SOC 2, HIPAA, PCI-DSS, EU AI Act, DORA, and other readiness work?
 
 Ancilis runs locally. Core evaluation does not require a hosted service, network calls, or sending agent payloads to Ancilis.
 
-What you get:
+What AKSI gives you:
 
+- **Classification-driven control activation**: data declarations such as `health_records` and `credit_cards` activate the controls and overlays that matter for that agent.
+- **Certification-driven readiness**: targets such as `soc2` add framework-specific posture reporting without hand-maintained crosswalks.
 - **Policy decisions at runtime**: audit mode observes every action; enforce mode blocks violations before execution.
 - **Tamper-evident evidence**: each record is written to DuckDB with a SHA-256 hash chain.
-- **Compliance posture from the same data**: data declarations and certification targets activate framework overlays without manual crosswalking.
+- **Compliance posture from runtime evidence**: the same evaluated Actions feed security review, trust review, and audit-readiness reports.
 - **Honest coverage**: direct evaluators, attestation-backed controls, and current TypeScript preview limits are called out below.
 
 ## See Value In 30 Seconds

@@ -9,7 +9,28 @@ description = "Python-first runtime evaluation and policy enforcement for AI age
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
-keywords = ["ai", "agent", "security", "policy", "compliance", "evidence", "mcp", "runtime"]
+keywords = [
+    "ai",
+    "agents",
+    "ai-agents",
+    "agent-security",
+    "agent-compliance",
+    "ai-security",
+    "ai-compliance",
+    "runtime-security",
+    "compliance-automation",
+    "audit-evidence",
+    "soc2",
+    "hipaa",
+    "pci-dss",
+    "gdpr",
+    "mcp",
+    "model-context-protocol",
+    "llmops",
+    "ai-governance",
+    "data-classification",
+    "risk-management",
+]
 authors = [
     { name = "Kevin Bauer", email = "kevin@ancilis.ai" },
 ]
