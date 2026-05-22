@@ -1,7 +1,9 @@
 .PHONY: setup run scan
 
+PYTHON ?= python3
+
 setup:
-	python -m venv .venv
+	$(PYTHON) -m venv .venv
 	.venv/bin/pip install -q -e ../..
 	.venv/bin/pip install -q -r requirements.txt
 
