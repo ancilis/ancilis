@@ -32,11 +32,16 @@ The project follows a conservative pre-1.0 release posture:
 ### Changed
 - AKSI v0.6 catalog support is split honestly between 18 direct runtime evaluator controls and 23 attestation-backed controls. Python attestation-backed controls return `SKIP` until evidence is recorded with `ancilis attest <CTRL>`; TypeScript catalog-backed controls return `FLAG` until explicit manual attestation is supplied.
 - Removed the legacy `deferred_cross_action` and `deferred_new_data` certification coverage statuses in favor of `attestation_required`. The affected controls are `DE-05`, `DE-06`, `ID-03`, `ID-04`, `PAY-01`, `PAY-02`, `PR-10`, `PR-12`, `RS-01`, and `RS-04`; their action is now `ancilis attest <CTRL>` instead of `v0.2 roadmap`.
+- Python example Makefiles now default to `python3` for `make setup` while still allowing `PYTHON=/path/to/python` overrides.
 
 ### Documentation
 - README: new "LLM SDKs and agent frameworks" section with auto-register example, explicit-wiring example, LangChain handler example, and supported-producers reference table. TypeScript section updated to mention LLM/framework producer parity.
 - `docs/producers.md`: reference table extended to 16 producers; new sections for LLM SDK producers, agent framework producers (LangChain / CrewAI / AutoGen / Semantic Kernel), and auto-detection.
 - `docs/sdk/typescript.mdx`: new sections for TS LLM producers, agent framework producers, and auto-detection (`autoRegister`, `detectInstalledSdks`, `installedProviderSlugs`).
+- `examples/crewai-research-crew/COMPLIANCE_RESULTS.md`: refreshed with current 39-control v1 common-control scan output.
+
+### Security
+- Raised the Starlette dependency floor to `>=1.0.1` and refreshed the Python lockfile to clear `PYSEC-2026-161`.
 
 ## [0.1.0] - 2026-04-02
 

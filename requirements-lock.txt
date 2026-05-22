@@ -58,7 +58,7 @@ rpds-py==0.30.0
 ruff==0.15.5
 sortedcontainers==2.4.0
 sse-starlette==3.3.2
-starlette==0.52.1
+starlette==1.0.1
 tomli==2.4.0
 tomli_w==1.2.0
 typing-inspection==0.4.2
