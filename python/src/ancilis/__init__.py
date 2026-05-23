@@ -59,6 +59,7 @@ if TYPE_CHECKING:
         ReplicateInvocation,
         ReplicateObservation,
     )
+    from ancilis.aksi import AKSI_FRAMEWORK_VERSION
     from ancilis.baselines import BaselineManager, DriftReport
     from ancilis.config import load_config
     from ancilis.controls.custom import CustomControlDefinition, register_control
@@ -125,6 +126,7 @@ except PackageNotFoundError:
     __version__ = "0.0.0+dev"
 
 _EXPORTS: dict[str, tuple[str, str]] = {
+    "AKSI_FRAMEWORK_VERSION": ("ancilis.aksi", "AKSI_FRAMEWORK_VERSION"),
     "ActionProducer": ("ancilis.producers.protocol", "ActionProducer"),
     "AncilisMiddleware": ("ancilis.middleware.middleware", "AncilisMiddleware"),
     "AnthropicActionProducer": ("ancilis.adapters.anthropic", "AnthropicActionProducer"),

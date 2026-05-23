@@ -9,7 +9,28 @@ description = "Python-first runtime evaluation and policy enforcement for AI age
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
-keywords = ["ai", "agent", "security", "policy", "compliance", "evidence", "mcp", "runtime"]
+keywords = [
+    "ai",
+    "agents",
+    "ai-agents",
+    "agent-security",
+    "agent-compliance",
+    "ai-security",
+    "ai-compliance",
+    "runtime-security",
+    "compliance-automation",
+    "audit-evidence",
+    "soc2",
+    "hipaa",
+    "pci-dss",
+    "gdpr",
+    "mcp",
+    "model-context-protocol",
+    "llmops",
+    "ai-governance",
+    "data-classification",
+    "risk-management",
+]
 authors = [
     { name = "Kevin Bauer", email = "kevin@ancilis.ai" },
 ]
@@ -34,6 +55,7 @@ dependencies = [
     "rich>=13.0",
     "click>=8.0",
     "mcp>=1.0.0",
+    "starlette>=1.0.1",
     "packaging>=23.0",
     "jsonschema>=4.0",
     "tomli>=2.0; python_version < '3.11'",
@@ -66,6 +88,7 @@ dev = [
 
 [project.scripts]
 ancilis = "ancilis.cli.main:cli"
+ancilis-cover = "ancilis.mcp_server.cover.server:main"
 
 [project.entry-points."pytest11"]
 ancilis = "ancilis.testing.plugin"

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+import ancilis.activation.resolver as resolver_module
 from ancilis.activation.advisory import (
     CertificationUpgradeAdvisory,
     ClassificationAdvisory,
@@ -23,10 +24,11 @@ from ancilis.activation.resolver import (
 )
 from ancilis.config import load_config
 from ancilis.controls.de01_baseline import BaselineWindow, DE01BaselineEvaluator
-from ancilis.controls.pr05_audit import PR05AuditEvaluator
+from ancilis.engine.evaluators.pr06_audit_trail import PR06AuditTrailEvaluator
 from ancilis.engine.action import Action, ActionParameters, ToolInfo
 from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry
+from ancilis.engine.result import ControlResult
 
 
 def make_action(
@@ -110,6 +112,26 @@ class TestPath2CertificationIntent:
         assert profile is not None
         assert "version" in profile
 
+    def test_certification_required_controls_all_receive_standard_threshold(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(
+            resolver_module,
+            "load_certification_profiles",
+            lambda _: {
+                "future-cert": {
+                    "required_aksi_controls": ["FUT-01", "FUT-02"],
+                    "evidence_packaging": {},
+                }
+            },
+        )
+
+        spec = ActivationResolver().resolve(certification_targets=["future-cert"])
+
+        assert spec.control_thresholds["FUT-01"] == "standard"
+        assert spec.control_thresholds["FUT-02"] == "standard"
+
 
 # --- Both Paths Composing ---
 
@@ -123,7 +145,7 @@ class TestBothPaths:
         )
         assert "hipaa" in spec.active_overlays
         assert "aiuc-1" in spec.active_certifications
-        assert len(spec.active_controls) == 26
+        assert len(spec.active_controls) == 39
 
     def test_conflict_strictest_wins(self):
         resolver = ActivationResolver()
@@ -241,9 +263,14 @@ class TestCertificationProfile:
 class TestPR05Evaluator:
     def test_logging_enabled_pass(self):
         config = load_config(raw={"agent": {"name": "test-agent"}})
-        evaluator = PR05AuditEvaluator()
+        evaluator = PR06AuditTrailEvaluator()
         action = make_action()
-        result = evaluator.evaluate(action, config)
+        result = evaluator.evaluate(
+            action,
+            config,
+            prior_results=[ControlResult("PR-01", "Action Authorization", "PASS", "ok")],
+            evidence_store=object(),
+        )
         assert result.result == "PASS"
         assert result.evidence_data["logging_enabled"] is True
         assert result.evidence_data["log_format"] == "json"
@@ -251,16 +278,26 @@ class TestPR05Evaluator:
     def test_logging_disabled_fail(self):
         config = load_config(raw={"agent": {"name": "test-agent"}})
         config.evidence_retention_days = 0
-        evaluator = PR05AuditEvaluator()
+        evaluator = PR06AuditTrailEvaluator()
         action = make_action()
-        result = evaluator.evaluate(action, config)
+        result = evaluator.evaluate(
+            action,
+            config,
+            prior_results=[ControlResult("PR-01", "Action Authorization", "PASS", "ok")],
+            evidence_store=object(),
+        )
         assert result.result == "FAIL"
 
     def test_evidence_no_raw_logs(self):
         config = load_config(raw={"agent": {"name": "test-agent"}})
-        evaluator = PR05AuditEvaluator()
+        evaluator = PR06AuditTrailEvaluator()
         action = make_action()
-        result = evaluator.evaluate(action, config)
+        result = evaluator.evaluate(
+            action,
+            config,
+            prior_results=[ControlResult("PR-01", "Action Authorization", "PASS", "ok")],
+            evidence_store=object(),
+        )
         # Evidence should contain structural metadata, not raw log content
         assert "log_format" in result.evidence_data
         assert "sample_entry_field_count" in result.evidence_data

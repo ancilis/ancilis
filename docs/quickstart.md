@@ -72,6 +72,9 @@ evidence.close()
 ```bash
 ancilis doctor            # verify config and assets loaded correctly
 ancilis status            # current posture — controls active, calls evaluated, violations
+ancilis evidence list     # recent evidence records
+ancilis evidence show <id-prefix>
+ancilis certify --target soc2
 ancilis report            # 30-day posture report in terminal format
 ancilis report --format markdown --output report.md
 ```
@@ -79,7 +82,7 @@ ancilis report --format markdown --output report.md
 ## Next steps
 
 - [Configuration reference](configuration.md) — every config field documented
-- [Controls reference](controls-reference.md) — all 26 AKSI controls with regulatory mappings
+- [Controls reference](controls-reference.md) — all 41 AKSI v0.6 controls and support levels
 - [Data classification guide](data-classification.md) — declare `my_agent_handles`, get HIPAA/GDPR/SOC 2 overlays automatically
 - [Producers](producers.md) — MCP, CLI, and HTTP integration paths
 - [Examples](../examples/) — runnable examples for each integration path

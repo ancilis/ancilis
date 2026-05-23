@@ -1,10 +1,44 @@
 {
-  "version": "0.2",
+  "version": "0.6",
+  "framework_source_commit": "aeda1839054090a8384f3d9d2700a656fab519a2",
   "classifications": [
+    {
+      "code": "DC-PHI",
+      "name": "Protected Health Information",
+      "description": "Health data and individually identifiable health information that activates healthcare privacy and security overlays.",
+      "overlays": [
+        "hipaa"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": true,
+        "patterns": [
+          {
+            "type": "icd10",
+            "regex": "[A-Z][0-9]{2}(\\.[0-9]{1,4})?",
+            "description": "ICD-10 diagnostic code"
+          },
+          {
+            "type": "npi",
+            "regex": "[0-9]{10}",
+            "description": "National Provider Identifier"
+          },
+          {
+            "type": "mrn",
+            "regex": "MRN[\\s:-]?[0-9]+",
+            "description": "Medical record number"
+          },
+          {
+            "type": "clinical_terminology",
+            "description": "Clinical terms, drug names, and procedure codes"
+          }
+        ]
+      }
+    },
     {
       "code": "DC-CHD",
       "name": "Cardholder Data",
-      "description": "Payment card data subject to PCI-DSS v4.0. Includes primary account numbers (PAN), cardholder name, expiration date, service code, and sensitive authentication data (CVV, PIN).",
+      "description": "Payment cardholder data, including primary account numbers and cardholder account attributes.",
       "overlays": [
         "pci-dss-v4"
       ],
@@ -29,28 +63,90 @@
           {
             "type": "card_number_amex",
             "regex": "3[47][0-9]{13}",
-            "description": "American Express number format"
+            "description": "American Express card number format"
           },
           {
             "type": "cvv",
             "regex": "[0-9]{3,4}",
-            "description": "Card verification value (context-dependent)"
+            "description": "Card verification value, context-dependent"
           },
           {
             "type": "expiration_date",
             "regex": "(0[1-9]|1[0-2])/([0-9]{2}|[0-9]{4})",
-            "description": "Card expiration date MM/YY or MM/YYYY"
+            "description": "Card expiration date"
           }
         ]
       }
     },
     {
+      "code": "DC-SAD",
+      "name": "Sensitive Authentication Data",
+      "description": "Sensitive payment authentication data such as card verification values, PIN data, and equivalent authentication material.",
+      "overlays": [
+        "pci-dss-v4"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": true,
+        "patterns": [
+          {
+            "type": "cvv",
+            "regex": "[0-9]{3,4}",
+            "description": "Card verification value, context-dependent"
+          },
+          {
+            "type": "pin_block",
+            "description": "PIN or PIN-block indicators, context-dependent"
+          }
+        ]
+      }
+    },
+    {
+      "code": "DC-CUI",
+      "name": "Controlled Unclassified Information",
+      "description": "Controlled Unclassified Information requiring safeguarding or dissemination controls.",
+      "overlays": [
+        "cmmc-l2"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
+      "code": "DC-FCI",
+      "name": "Federal Contract Information",
+      "description": "Non-public federal contract information provided by or generated for government contracts.",
+      "overlays": [
+        "fedramp"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
+      "code": "DC-MNPI",
+      "name": "Material Non-Public Information",
+      "description": "Material non-public information that could influence investment decisions.",
+      "overlays": [
+        "securities-mnpi"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
       "code": "DC-PII",
       "name": "Personally Identifiable Information",
-      "description": "Personal data subject to GDPR, CCPA/CPRA. Includes names, addresses, identifiers, and any data that can directly or indirectly identify a natural person.",
+      "description": "Personal data that can identify or relate to a natural person.",
       "overlays": [
-        "gdpr",
         "ccpa",
+        "gdpr",
         "soc2"
       ],
       "overlay_status": "active",
@@ -79,7 +175,7 @@
           },
           {
             "type": "name_address_cooccurrence",
-            "description": "Name and address appearing together in the same context"
+            "description": "Name and address appearing together"
           }
         ]
       }
@@ -87,7 +183,7 @@
     {
       "code": "DC-FIN",
       "name": "Financial Services Data",
-      "description": "Financial data subject to GLBA, BSA/AML, SOX, DORA. Includes account numbers, transaction records, and financial instruments data.",
+      "description": "Financial account, transaction, institution, or financial-services operational data.",
       "overlays": [
         "glba",
         "soc2"
@@ -99,7 +195,7 @@
           {
             "type": "account_number",
             "regex": "[0-9]{8,17}",
-            "description": "Bank account number (context-dependent)"
+            "description": "Bank account number, context-dependent"
           },
           {
             "type": "routing_number",
@@ -114,101 +210,40 @@
           {
             "type": "iban",
             "regex": "[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}",
-            "description": "International Bank Account Number"
+            "description": "International bank account number"
           }
         ]
       }
     },
     {
-      "code": "DC-PHI",
-      "name": "Protected Health Information",
-      "description": "Health data subject to HIPAA Security Rule, HITECH. Includes medical records, diagnoses, treatment information, and any individually identifiable health information.",
+      "code": "DC-NPI",
+      "name": "Nonpublic Personal Information",
+      "description": "Nonpublic personal information used by financial institutions and privacy programs.",
       "overlays": [
-        "hipaa",
-        "gdpr"
-      ],
-      "overlay_status": "roadmap",
-      "pattern_detection": {
-        "enabled": true,
-        "patterns": [
-          {
-            "type": "icd10",
-            "regex": "[A-Z][0-9]{2}(\\.[0-9]{1,4})?",
-            "description": "ICD-10 diagnostic code"
-          },
-          {
-            "type": "npi",
-            "regex": "[0-9]{10}",
-            "description": "National Provider Identifier"
-          },
-          {
-            "type": "mrn",
-            "regex": "MRN[\\s:-]?[0-9]+",
-            "description": "Medical Record Number"
-          },
-          {
-            "type": "clinical_terminology",
-            "description": "Clinical terms, drug names, procedure codes"
-          }
-        ]
-      }
-    },
-    {
-      "code": "DC-CUI",
-      "name": "Controlled Unclassified Information",
-      "description": "Government data subject to CMMC Level 2, NIST 800-171r3. Information that requires safeguarding or dissemination controls pursuant to federal law, regulation, or government-wide policy.",
-      "overlays": [
-        "cmmc-l2"
-      ],
-      "overlay_status": "active",
-      "pattern_detection": {
-        "enabled": false,
-        "note": "Requires declared classification. CUI markings are organizational, not pattern-detectable."
-      }
-    },
-    {
-      "code": "DC-MNPI",
-      "name": "Material Non-Public Information",
-      "description": "Securities data subject to SEC Reg FD, SOX. Non-public information that could influence investment decisions.",
-      "overlays": [
-        "securities-mnpi"
-      ],
-      "overlay_status": "active",
-      "pattern_detection": {
-        "enabled": false,
-        "note": "Requires declared classification. MNPI is contextual, not pattern-detectable."
-      }
-    },
-    {
-      "code": "DC-FCI",
-      "name": "Federal Contract Information",
-      "description": "Non-public federal contract data subject to CMMC Level 1, FedRAMP Rev 5 Moderate. Information provided by or generated for the government under contract.",
-      "overlays": [
-        "fedramp"
-      ],
-      "overlay_status": "active",
-      "pattern_detection": {
-        "enabled": false,
-        "note": "Requires declared classification."
-      }
-    },
-    {
-      "code": "DC-GEN",
-      "name": "General Business Data",
-      "description": "Non-sensitive business data. Baseline controls apply. SOC 2 provides the universal enterprise compliance foundation.",
-      "overlays": [
+        "glba",
         "soc2"
       ],
       "overlay_status": "active",
       "pattern_detection": {
-        "enabled": false,
-        "note": "General data \u2014 no specific patterns to detect."
+        "enabled": true,
+        "patterns": [
+          {
+            "type": "account_number",
+            "regex": "[0-9]{8,17}",
+            "description": "Financial account number, context-dependent"
+          },
+          {
+            "type": "tax_id",
+            "regex": "[0-9]{2}-[0-9]{7}",
+            "description": "US employer identification number"
+          }
+        ]
       }
     },
     {
       "code": "DC-GOV",
       "name": "Government System Data",
-      "description": "Federal system data subject to FedRAMP, FISMA. Data processed, stored, or transmitted by federal information systems.",
+      "description": "Government system, federal environment, or public-sector operational data.",
       "overlays": [
         "cmmc-l2",
         "fedramp"
@@ -216,89 +251,181 @@
       "overlay_status": "active",
       "pattern_detection": {
         "enabled": false,
-        "note": "Requires declared classification."
+        "note": "Requires declared classification or domain-specific detector evidence."
       }
     },
     {
       "code": "DC-AI",
-      "name": "AI Training / Model Data",
-      "description": "AI system data subject to EU AI Act, NIST AI RMF. Includes training datasets, model weights, evaluation data, and AI system operational parameters.",
+      "name": "AI System, Model, Prompt, and Training Data",
+      "description": "AI model, prompt, training, evaluation, agent behavior, or system metadata.",
       "overlays": [
+        "agent-runtime-threats",
+        "aiuc-1",
+        "csa_aicm",
         "eu-ai-act",
-        "iso-42001"
+        "eu_gpai_code",
+        "fda_ai_device_pccp",
+        "hitrust_ai_security",
+        "iso-23894",
+        "iso-42001",
+        "nist_ai_600_1_genai_profile",
+        "nist-ai-rmf"
       ],
       "overlay_status": "active",
       "pattern_detection": {
         "enabled": false,
-        "note": "Requires declared classification. AI data is domain-specific, not pattern-detectable."
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
+      "code": "DC-GEN",
+      "name": "General Business Data",
+      "description": "General business data without a more specific AKSI v0.6 classification.",
+      "overlays": [],
+      "overlay_status": "roadmap",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
       }
     },
     {
       "code": "DC-ITAR",
-      "name": "Export-Controlled Data",
-      "description": "Defense and dual-use data subject to ITAR, EAR. Technical data and defense articles controlled under export regulations.",
+      "name": "ITAR-Controlled Technical Data",
+      "description": "Technical data or defense articles controlled under ITAR.",
       "overlays": [],
       "overlay_status": "roadmap",
       "pattern_detection": {
         "enabled": false,
-        "note": "Requires declared classification."
+        "note": "Requires declared classification or domain-specific detector evidence."
       }
     },
     {
       "code": "DC-CRIT",
-      "name": "Critical Infrastructure OT Data",
-      "description": "SCADA/ICS data subject to NERC CIP, NIS2. Operational technology data from critical infrastructure sectors.",
-      "overlays": [],
-      "overlay_status": "roadmap",
+      "name": "Critical Infrastructure Data",
+      "description": "Operational or service data tied to critical infrastructure or essential services.",
+      "overlays": [
+        "dora",
+        "nis2"
+      ],
+      "overlay_status": "active",
       "pattern_detection": {
         "enabled": false,
-        "note": "Requires declared classification."
+        "note": "Requires declared classification or domain-specific detector evidence."
       }
     },
     {
       "code": "DC-MINOR",
       "name": "Children's Data",
-      "description": "Data from minors subject to COPPA, GDPR Art. 8, FERPA. Personal information collected from children under 13 (COPPA) or 16 (GDPR).",
-      "overlays": [],
-      "overlay_status": "roadmap",
+      "description": "Personal data about children or minors.",
+      "overlays": [
+        "gdpr",
+        "iso-27701",
+        "nist_privacy_framework"
+      ],
+      "overlay_status": "active",
       "pattern_detection": {
         "enabled": false,
-        "note": "Requires declared classification. Age determination is contextual."
+        "note": "Requires declared classification or domain-specific detector evidence."
       }
     },
     {
       "code": "DC-BIO",
       "name": "Biometric Data",
-      "description": "Biometric identifiers subject to BIPA, GDPR Art. 9, EU AI Act. Fingerprints, facial geometry, voiceprints, retinal scans, and other biometric identifiers.",
+      "description": "Biometric identifiers, measurements, templates, or authentication factors.",
       "overlays": [
         "eu-ai-act"
       ],
-      "overlay_status": "roadmap",
+      "overlay_status": "active",
       "pattern_detection": {
         "enabled": false,
-        "note": "Requires declared classification. Biometric data formats are domain-specific."
+        "note": "Requires declared classification or domain-specific detector evidence."
       }
     },
     {
       "code": "DC-LEGAL",
       "name": "Legal Privileged Data",
-      "description": "Attorney-client privileged communications, work product. Data protected by legal privilege doctrines.",
+      "description": "Attorney-client privileged, work-product, or legal matter data.",
       "overlays": [],
       "overlay_status": "roadmap",
       "pattern_detection": {
         "enabled": false,
-        "note": "Requires declared classification. Legal privilege is contextual."
+        "note": "Requires declared classification or domain-specific detector evidence."
       }
     },
     {
       "code": "DC-IP",
-      "name": "Trade Secrets & Proprietary Data",
-      "description": "Trade secrets, proprietary algorithms, competitive intelligence. Commercially valuable information deriving value from secrecy.",
+      "name": "Intellectual Property and Trade Secrets",
+      "description": "Source code, trade secrets, proprietary designs, inventions, or confidential intellectual property.",
       "overlays": [],
       "overlay_status": "roadmap",
       "pattern_detection": {
         "enabled": false,
-        "note": "Requires declared classification. Trade secret identification is organizational."
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
+      "code": "DC-PAY",
+      "name": "Agent Payment Data",
+      "description": "Agent payment instructions, payment credentials, settlement artifacts, and x402-style payment context.",
+      "overlays": [
+        "agent-payments"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
+      "code": "DC-EDU",
+      "name": "Education Records",
+      "description": "Student data and education records.",
+      "overlays": [
+        "iso-27701",
+        "nist_privacy_framework"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
+      "code": "DC-CJI",
+      "name": "Criminal Justice Information",
+      "description": "Criminal justice information.",
+      "overlays": [],
+      "overlay_status": "roadmap",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
+      "code": "DC-EAR",
+      "name": "EAR-Controlled Dual-Use Technology",
+      "description": "Dual-use technology and export-controlled data governed by EAR.",
+      "overlays": [
+        "itar-ear"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
+      }
+    },
+    {
+      "code": "DC-MEDDEV",
+      "name": "Medical Device Data",
+      "description": "Medical device, AI/ML device, and medical-device cybersecurity data.",
+      "overlays": [
+        "fda_ai_device_pccp",
+        "fda_medical_device_cybersecurity"
+      ],
+      "overlay_status": "active",
+      "pattern_detection": {
+        "enabled": false,
+        "note": "Requires declared classification or domain-specific detector evidence."
       }
     }
   ],
@@ -317,11 +444,26 @@
     "credit_cards": [
       "DC-CHD"
     ],
+    "payment_cards": [
+      "DC-CHD"
+    ],
+    "sensitive_authentication_data": [
+      "DC-SAD"
+    ],
+    "card_security_codes": [
+      "DC-SAD"
+    ],
     "financial_data": [
       "DC-FIN"
     ],
     "financial_records": [
       "DC-FIN"
+    ],
+    "nonpublic_personal_info": [
+      "DC-NPI"
+    ],
+    "npi": [
+      "DC-NPI"
     ],
     "controlled_unclassified": [
       "DC-CUI"
@@ -334,20 +476,37 @@
       "DC-GOV",
       "DC-CUI"
     ],
+    "government_system": [
+      "DC-GOV"
+    ],
+    "federal_cloud": [
+      "DC-FCI",
+      "DC-GOV"
+    ],
+    "fedramp_system": [
+      "DC-FCI",
+      "DC-GOV"
+    ],
     "material_nonpublic": [
+      "DC-MNPI"
+    ],
+    "mnpi": [
       "DC-MNPI"
     ],
     "federal_contract": [
       "DC-FCI"
     ],
+    "federal_contract_info": [
+      "DC-FCI"
+    ],
     "general": [
+      "DC-GEN"
+    ],
+    "public_data": [
       "DC-GEN"
     ],
     "childrens_data": [
       "DC-MINOR"
-    ],
-    "public_data": [
-      "DC-GEN"
     ],
     "biometric_data": [
       "DC-BIO"
@@ -364,28 +523,46 @@
     "export_controlled": [
       "DC-ITAR"
     ],
+    "dual_use_technology": [
+      "DC-EAR"
+    ],
+    "ear_controlled": [
+      "DC-EAR"
+    ],
     "critical_infrastructure": [
       "DC-CRIT"
     ],
     "ai_training_data": [
       "DC-AI"
     ],
-    "federal_contract_info": [
-      "DC-FCI"
+    "agent_payments": [
+      "DC-PAY"
     ],
-    "mnpi": [
-      "DC-MNPI"
+    "payment_data": [
+      "DC-PAY"
     ],
-    "government_system": [
-      "DC-GOV"
+    "education_records": [
+      "DC-EDU"
     ],
-    "federal_cloud": [
-      "DC-FCI",
-      "DC-GOV"
+    "student_data": [
+      "DC-EDU"
     ],
-    "fedramp_system": [
-      "DC-FCI",
-      "DC-GOV"
+    "criminal_justice_information": [
+      "DC-CJI"
+    ],
+    "cji": [
+      "DC-CJI"
+    ],
+    "medical_device_data": [
+      "DC-MEDDEV"
+    ],
+    "medical_device": [
+      "DC-MEDDEV"
     ]
+  },
+  "control_detection_signals": {
+    "DC-Code-Execution": "PR-09",
+    "DC-External-API": "ID-02 or PR-03",
+    "DC-Credentials": "PR-04"
   }
 }

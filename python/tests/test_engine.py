@@ -105,45 +105,69 @@ class TestAction:
         assert a.agent_id == ""
 
 
-# --- PR-01 Identity Tests ---
+# --- GOV-01 Identity and PR-01 Authorization Tests ---
 
 
-class TestPR01Identity:
+class TestGOV01Identity:
     def test_matching_agent_id_passes(self):
-        config = _make_config()
+        config = _make_config(security={"controls": {"GOV-01": {"enabled": True}}})
         action = _make_action(agent_id="test-agent")
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        gov01 = next(r for r in result.control_results if r.control_id == "GOV-01")
+        assert gov01.result == "PASS"
+
+    def test_missing_agent_id_fails(self):
+        config = _make_config(security={"controls": {"GOV-01": {"enabled": True}}})
+        action = _make_action(agent_id="")
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        gov01 = next(r for r in result.control_results if r.control_id == "GOV-01")
+        assert gov01.result == "FAIL"
+
+    def test_mismatched_agent_id_fails(self):
+        config = _make_config(security={"controls": {"GOV-01": {"enabled": True}}})
+        action = _make_action(agent_id="wrong-agent")
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        gov01 = next(r for r in result.control_results if r.control_id == "GOV-01")
+        assert gov01.result == "FAIL"
+
+    def test_matching_owner_passes(self):
+        config = _make_config(
+            agent={"name": "test-agent", "owner": "alice"},
+            security={"controls": {"GOV-01": {"enabled": True}}},
+        )
+        action = _make_action(agent_id="test-agent", agent_owner="alice")
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        gov01 = next(r for r in result.control_results if r.control_id == "GOV-01")
+        assert gov01.result == "PASS"
+
+    def test_mismatched_owner_fails(self):
+        config = _make_config(
+            agent={"name": "test-agent", "owner": "alice"},
+            security={"controls": {"GOV-01": {"enabled": True}}},
+        )
+        action = _make_action(agent_id="test-agent", agent_owner="bob")
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        gov01 = next(r for r in result.control_results if r.control_id == "GOV-01")
+        assert gov01.result == "FAIL"
+
+
+class TestPR01Authorization:
+    def test_matching_agent_id_and_target_passes(self):
+        config = _make_config(security={"scope": {"allowed_destinations": ["safe.com"]}})
+        action = _make_action(agent_id="test-agent", params={"destination": "safe.com"})
         engine = Engine(config, registry=_make_registry(("test-tool",)))
         result = engine.evaluate(action)
         pr01 = next(r for r in result.control_results if r.control_id == "PR-01")
         assert pr01.result == "PASS"
-
-    def test_missing_agent_id_fails(self):
-        config = _make_config()
-        action = _make_action(agent_id="")
-        engine = Engine(config, registry=_make_registry(("test-tool",)))
-        result = engine.evaluate(action)
-        pr01 = next(r for r in result.control_results if r.control_id == "PR-01")
-        assert pr01.result == "FAIL"
 
     def test_mismatched_agent_id_fails(self):
         config = _make_config()
         action = _make_action(agent_id="wrong-agent")
-        engine = Engine(config, registry=_make_registry(("test-tool",)))
-        result = engine.evaluate(action)
-        pr01 = next(r for r in result.control_results if r.control_id == "PR-01")
-        assert pr01.result == "FAIL"
-
-    def test_matching_owner_passes(self):
-        config = _make_config(agent={"name": "test-agent", "owner": "alice"})
-        action = _make_action(agent_id="test-agent", agent_owner="alice")
-        engine = Engine(config, registry=_make_registry(("test-tool",)))
-        result = engine.evaluate(action)
-        pr01 = next(r for r in result.control_results if r.control_id == "PR-01")
-        assert pr01.result == "PASS"
-
-    def test_mismatched_owner_fails(self):
-        config = _make_config(agent={"name": "test-agent", "owner": "alice"})
-        action = _make_action(agent_id="test-agent", agent_owner="bob")
         engine = Engine(config, registry=_make_registry(("test-tool",)))
         result = engine.evaluate(action)
         pr01 = next(r for r in result.control_results if r.control_id == "PR-01")
@@ -325,47 +349,47 @@ class TestPR04Exposure:
         assert "no data classifications" in pr04.detail.lower()
 
 
-# --- DE-02 Configuration Drift Tests ---
+# --- DE-03 Configuration Drift Tests ---
 
 
-class TestDE02ConfigDriftEngine:
-    def test_de02_evaluator_is_active_when_control_enabled(self):
+class TestDE03ConfigDriftEngine:
+    def test_de03_evaluator_is_active_when_control_enabled(self):
         config = _make_config()
         action = _make_action(description_hash="hash-v1")
         engine = Engine(config, registry=_make_registry(("test-tool",)))
 
-        assert "DE-02" in engine._evaluators
+        assert "DE-03" in engine._evaluators
 
         result = engine.evaluate(action)
-        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
+        de03 = next(r for r in result.control_results if r.control_id == "DE-03")
 
-        assert de02.result == "PASS"
-        assert de02.evidence_data["first_observation"] is True
-        assert de02.evidence_data["drift_detected"] is False
+        assert de03.result == "PASS"
+        assert de03.evidence_data["baseline_established"] is True
+        assert de03.evidence_data["hash_match"] is True
 
-    def test_de02_detects_description_hash_drift_on_same_engine_instance(self):
+    def test_de03_detects_description_hash_drift_on_same_engine_instance(self):
         config = _make_config()
         engine = Engine(config, registry=_make_registry(("test-tool",)))
 
         engine.evaluate(_make_action(description_hash="hash-v1"))
         result = engine.evaluate(_make_action(description_hash="hash-v2"))
 
-        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
-        assert de02.result == "FAIL"
-        assert de02.evidence_data["drift_detected"] is True
-        assert "previous_fingerprint" in de02.evidence_data
+        de03 = next(r for r in result.control_results if r.control_id == "DE-03")
+        assert de03.result == "FAIL"
+        assert de03.evidence_data["hash_match"] is False
+        assert "baseline_hash" in de03.evidence_data
 
-    def test_de02_missing_description_hash_skips_without_false_drift(self):
+    def test_de03_missing_description_hash_skips_without_false_drift(self):
         config = _make_config()
         action = _make_action(description_hash=None)
         engine = Engine(config, registry=_make_registry(("test-tool",)))
 
         result = engine.evaluate(action)
 
-        de02 = next(r for r in result.control_results if r.control_id == "DE-02")
-        assert de02.result == "SKIP"
-        assert de02.evidence_data.get("drift_detected") is False
-        assert "cannot compute fingerprint" in de02.detail.lower()
+        de03 = next(r for r in result.control_results if r.control_id == "DE-03")
+        assert de03.result == "SKIP"
+        assert de03.evidence_data["baseline_established"] is False
+        assert "cannot compute" in de03.detail.lower()
 
 
 # --- DE-04 Integrity Runtime Policy Tests ---
@@ -460,13 +484,13 @@ class TestDE04IntegrityEngine:
         assert gov02.result == "PASS"
         assert "certification_targets:gov-contractor" in config.control_activation_sources["GOV-02"]
 
-    def test_governance_policy_sensitive_evaluators_remain_unregistered(self):
+    def test_policy_sensitive_evaluators_are_registered_but_still_policy_gated(self):
         config = _make_config(certification_targets=["gov-contractor"])
         engine = Engine(config, registry=_make_registry(("test-tool",)))
 
-        assert "GOV-01" not in engine._evaluators
-        assert "GOV-03" not in engine._evaluators
-        assert "ID-01" not in engine._evaluators
+        assert "GOV-01" in engine._evaluators
+        assert "GOV-03" in engine._evaluators
+        assert "ID-01" in engine._evaluators
 
 
 # --- Decision Engine Tests ---

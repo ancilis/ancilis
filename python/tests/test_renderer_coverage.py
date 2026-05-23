@@ -553,6 +553,7 @@ def test_render_ndjson_includes_integrity_metadata_fields() -> None:
         detected_data_types=["DC-PII"],
         tenant_id="tenant-1",
         sdk_version="0.1.0",
+        framework_version="0.6",
         classification_context={"llm_provider": "openai"},
     )
 
@@ -564,6 +565,7 @@ def test_render_ndjson_includes_integrity_metadata_fields() -> None:
     assert payload["tenant_id"] == "tenant-1"
     assert payload["detected_data_types"] == ["DC-PII"]
     assert payload["sdk_version"] == "0.1.0"
+    assert payload["framework_version"] == "0.6"
     assert payload["classification_context"] == {"llm_provider": "openai"}
 
 
@@ -587,6 +589,7 @@ def test_render_csv_includes_integrity_metadata_fields() -> None:
         detected_data_types=["DC-PII"],
         tenant_id="tenant-1",
         sdk_version="0.1.0",
+        framework_version="0.6",
         classification_context={"llm_provider": "openai"},
     )
 
@@ -596,4 +599,5 @@ def test_render_csv_includes_integrity_metadata_fields() -> None:
     assert rows[0]["tenant_id"] == "tenant-1"
     assert rows[0]["detected_data_types"] == '["DC-PII"]'
     assert rows[0]["sdk_version"] == "0.1.0"
+    assert rows[0]["framework_version"] == "0.6"
     assert rows[0]["classification_context"] == '{"llm_provider": "openai"}'

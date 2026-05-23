@@ -9,6 +9,41 @@ ancilis --help
 
 ---
 
+## `ancilis-cover`
+
+`ancilis-cover` starts the official unified local MCP server for Cover onboarding, gap assessment, and runtime posture tools.
+
+```bash
+ancilis-cover
+```
+
+Configure an MCP host to launch it over stdio:
+
+```json
+{
+  "mcpServers": {
+    "ancilis-cover": {
+      "command": "ancilis-cover",
+      "args": []
+    }
+  }
+}
+```
+
+Cover exposes project inspection, classification, setup recommendation, explicit code review, onboarding report, gap assessment, and runtime posture tools. It is read-only: no network calls, no LLM calls, no MCP sampling, and no file writes.
+
+---
+
+## `ancilis serve`
+
+`ancilis serve` remains available as a compatibility MCP entry point for one release. New MCP host configs should prefer `ancilis-cover`.
+
+```bash
+ancilis serve
+```
+
+---
+
 ## `ancilis shell`
 
 Start a read-only interactive shell for inspecting local SDK state.
@@ -325,6 +360,60 @@ Checks: Python version, config validity, evidence store path, CLI dependencies (
 
 Evidence store management commands.
 
+### `ancilis evidence list`
+
+List evidence records from the configured evidence store, newest first.
+
+```bash
+ancilis evidence list [OPTIONS]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+| `--limit INTEGER` | Maximum records to return (default: `20`) |
+| `--since TEXT` | Only include records at or after this ISO-8601 timestamp |
+| `--agent-id TEXT` | Filter to a single agent ID |
+| `--classification TEXT` | Filter by data classification code, such as `DC-PII` |
+| `--control-id TEXT` | Filter by AKSI control ID, such as `PR-05` |
+| `--format json\|table` | Output format (default: `table`) |
+
+**Examples:**
+
+```bash
+ancilis evidence list --limit 10
+ancilis evidence list --classification DC-PII --control-id PR-05
+ancilis evidence list --since 2026-05-19T00:00:00+00:00 --format json
+```
+
+If no records match, the command prints `No evidence records found.` and exits successfully.
+
+### `ancilis evidence show`
+
+Show a full evidence record by exact ID or by a short prefix of at least seven
+characters.
+
+```bash
+ancilis evidence show [OPTIONS] EVIDENCE_ID
+```
+
+| Option | Description |
+|--------|-------------|
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+| `--format json\|pretty` | Output format (default: `pretty`) |
+
+**Examples:**
+
+```bash
+ancilis evidence show 9f2a4c1
+ancilis evidence show 9f2a4c1 --format json
+```
+
+If a short prefix matches multiple records, the command exits non-zero and lists
+the matching evidence IDs.
+
 ### `ancilis evidence sessions`
 
 List known evidence sessions with record counts and time ranges.
@@ -363,6 +452,36 @@ ancilis evidence reset [OPTIONS]
 
 !!! warning
     This operation is irreversible. All evidence records are permanently deleted.
+
+---
+
+## `ancilis certify`
+
+Report dry-run framework coverage from local evidence. In v0.1 this command
+does not generate certification artifacts; it computes covered, partial, and
+gap controls for the selected target.
+
+```bash
+ancilis certify --target TARGET [OPTIONS]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--target soc2\|hipaa\|pci\|aiuc1\|eu_ai_act` | Framework or certification target to evaluate |
+| `--dry-run` | Accepted as a no-op; dry-run coverage is the v0.1 behavior |
+| `--format json\|table` | Output format (default: `table`) |
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
+
+**Examples:**
+
+```bash
+ancilis certify --target soc2
+ancilis certify --target pci --format json --dry-run
+```
+
+If no evidence exists, `certify` lists all in-scope AKSI controls for the target
+as gaps and exits successfully.
 
 ---
 

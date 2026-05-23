@@ -240,6 +240,7 @@ def serialize_evidence_record(record: EvidenceRecord) -> dict[str, Any]:
         "session": record.session_id,
         "tenant": record.tenant_id,
         "sdk_version": record.sdk_version,
+        "framework_version": record.framework_version,
         "classification_context": record.classification_context,
         "detected_data_types": record.detected_data_types,
         "total_duration_ms": record.total_duration_ms,

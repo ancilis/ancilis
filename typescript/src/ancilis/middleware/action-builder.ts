@@ -1,6 +1,7 @@
 /** Translates MCP tool calls into framework-agnostic Action objects. */
 
 import { createHash, randomUUID } from "node:crypto";
+import { AKSI_FRAMEWORK_VERSION } from "../aksi/version.js";
 import type { ResolvedConfig } from "../config/index.js";
 import type { Action } from "../engine/action.js";
 import type { ToolRegistry } from "../engine/registry.js";
@@ -32,6 +33,7 @@ export function buildAction(
     timestamp: new Date().toISOString(),
     agentId: config.agentName,
     sourceType: "mcp",
+    frameworkVersion: AKSI_FRAMEWORK_VERSION,
     producerType: "mcp",
     producerVersion: "0.1.0",
     agentOwner: config.agentOwner || null,

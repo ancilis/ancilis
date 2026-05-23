@@ -25,6 +25,8 @@ from ancilis.cli.shell import shell
 from ancilis.cli.serve import serve
 from ancilis.cli.sync import sync
 from ancilis.cli.telemetry import telemetry
+from ancilis.cli.certify import certify
+from ancilis.cli.attest import attest
 
 
 def _top_level_command(argv: list[str]) -> str:
@@ -102,6 +104,8 @@ cli.add_command(shell)
 cli.add_command(serve)
 cli.add_command(sync)
 cli.add_command(telemetry)
+cli.add_command(certify)
+cli.add_command(attest)
 
 
 @cli.group(name="config")

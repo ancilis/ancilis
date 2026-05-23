@@ -26,6 +26,24 @@ def build_demo_integration_name(
     return f"{base_name} ({fingerprint})"
 
 
+def _build_demo_integration_config(normalized_path: str) -> dict[str, Any]:
+    return {
+        "api_key_hint": "demo-local",
+        "transport": {
+            "mode": "local_file",
+            "paths": [normalized_path],
+            "scan_home_dir": False,
+        },
+        "sync": {
+            "mode": "incremental",
+            "batch_size": 500,
+            "scope": {
+                "mode": "latest_session",
+            },
+        },
+    }
+
+
 def build_demo_integration_payload(
     db_path: str | Path,
     *,
@@ -36,16 +54,18 @@ def build_demo_integration_payload(
     return {
         "name": name or build_demo_integration_name(normalized_path),
         "source_type": "sdk_direct",
-        "config": {
-            "api_key_hint": "demo-local",
-            "transport": {
-                "mode": "local_file",
-                "paths": [normalized_path],
-                "scan_home_dir": False,
-            },
-            "sync": {
-                "mode": "incremental",
-                "batch_size": 500,
-            },
-        },
+        "config": _build_demo_integration_config(normalized_path),
+    }
+
+
+def build_demo_integration_reconcile_payload(
+    db_path: str | Path,
+    *,
+    name: str | None = None,
+) -> dict[str, Any]:
+    """Build the integration PATCH payload for the current demo evidence store."""
+    normalized_path = _normalize_demo_db_path(db_path)
+    return {
+        "name": name or build_demo_integration_name(normalized_path),
+        "config": _build_demo_integration_config(normalized_path),
     }

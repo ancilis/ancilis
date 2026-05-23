@@ -30,7 +30,7 @@ Release verification fails closed on dependency advisories. These checks use the
 
 - Root TypeScript SDK: `npm ci --include=dev`, then `npm run security:audit:npm`. The threshold is `high` and includes development dependencies because SDK build/test tooling is part of the release decision.
 - GitHub scan action: from `scan-action/`, run `npm ci --include=dev`, then `npm run security:audit`. The threshold is `moderate` so the `undici` class of action-runtime findings is caught.
-- Python lockfile: after installing `pip-audit`, run `npm run security:audit:python-lock`. This audits `requirements-lock.txt` and keeps the existing `CVE-2026-4539` ignore visible in one command.
+- Python lockfile: after installing `pip-audit`, run `npm run security:audit:python-lock`. This audits `requirements-lock.txt` and keeps the existing disputed advisory ignores (`CVE-2026-4539`, `PYSEC-2025-183`) visible in one command.
 
 Emergency direct-main merges, such as the path used during [ANC-1028](/ANC/issues/ANC-1028), are exception handling only. They do not replace the release gates above, and the next release candidate must rerun the full dependency-security checklist before publishing.
 

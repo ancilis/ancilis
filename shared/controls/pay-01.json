@@ -1,0 +1,54 @@
+{
+  "id": "PAY-01",
+  "product_control_id": "AKSI-PAY-01",
+  "framework_version": "0.6",
+  "framework_source_commit": "aeda1839054090a8384f3d9d2700a656fab519a2",
+  "name": "Agent Payment Authorization & Sanctions Screening",
+  "function": "PAYMENT",
+  "csf_mapping": "",
+  "description": "Agent-initiated payments are authorized against spend policy, recipient trust, sanctions, and approval requirements.",
+  "effort_level": "long",
+  "common": false,
+  "trigger_classifications": [
+    "DC-PAY"
+  ],
+  "trigger_certification_targets": [
+    "AGENT_PAYMENTS",
+    "X402"
+  ],
+  "evidence_sources": [
+    "sdk_direct",
+    "aws_cloudtrail",
+    "openai",
+    "anthropic",
+    "otel",
+    "attestation",
+    "jira"
+  ],
+  "evidence_keywords": [
+    "payment",
+    "authorization",
+    "sanctions",
+    "spend"
+  ],
+  "overlays": [
+    "agent-payments"
+  ],
+  "support_level": "attestation",
+  "default_enabled": false,
+  "baseline": false,
+  "security_outcome": {
+    "pass": "Current evidence supports AKSI v0.6 PAY-01: Agent Payment Authorization & Sanctions Screening.",
+    "fail": "Required evidence for AKSI v0.6 PAY-01: Agent Payment Authorization & Sanctions Screening is missing, stale, or contradictory."
+  },
+  "evidence_fields": [
+    "payment",
+    "authorization",
+    "sanctions",
+    "spend"
+  ],
+  "regulatory_mappings": {},
+  "display_name": "Agent Payment Authorization and Sanctions Screening",
+  "display_detail": "Agent-initiated payments are authorized against spend policy, recipient trust, sanctions, and approval requirements.",
+  "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PAY-01 (Agent Payment Authorization & Sanctions Screening) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
+}

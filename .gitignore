@@ -98,6 +98,7 @@ workspace/
 .grepai/
 
 # Agent / tooling state — not source code
+.worktrees/
 .claude/worktrees/
 .serena/
 

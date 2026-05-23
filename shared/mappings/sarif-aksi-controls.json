@@ -1,39 +1,71 @@
 {
-  "_version": "1.0.0",
-  "_description": "SARIF rule ID pattern → AKSI control ID mapping. Patterns are matched in order; first match wins. Glob-style prefix matching is supported (e.g. 'js/sql-*' matches any rule starting with 'js/sql-').",
-  "mappings": {
-    "js/sql-injection": "PR-03",
-    "py/sql-injection": "PR-03",
-    "cs/sql-injection": "PR-03",
-    "java/sql-injection": "PR-03",
-    "js/sql-*": "PR-03",
-    "py/sql-*": "PR-03",
-    "js/xss": "PR-03",
-    "py/reflected-xss": "PR-03",
-    "js/xss-*": "PR-03",
-    "py/xss-*": "PR-03",
-    "js/hardcoded-credentials": "PR-05",
-    "py/hardcoded-credentials": "PR-05",
-    "cs/hardcoded-credentials": "PR-05",
-    "java/hardcoded-credentials": "PR-05",
-    "js/hardcoded-*": "PR-05",
-    "py/hardcoded-*": "PR-05",
-    "js/insecure-randomness": "PR-04",
-    "py/insecure-randomness": "PR-04",
-    "js/weak-cryptographic-algorithm": "PR-04",
-    "py/weak-cryptographic-algorithm": "PR-04",
-    "js/missing-rate-limiting": "PR-02",
-    "py/missing-rate-limiting": "PR-02",
-    "js/path-injection": "PR-03",
-    "py/path-injection": "PR-03",
-    "js/command-line-injection": "PR-03",
-    "py/code-injection": "PR-03",
-    "java/command-injection": "PR-03",
-    "js/prototype-polluting-assignment": "PR-03",
-    "js/prototype-pollution-*": "PR-03",
-    "js/server-side-request-forgery": "PR-01",
-    "py/server-side-request-forgery": "PR-01",
-    "js/missing-token-validation": "PR-01",
-    "py/incomplete-url-scheme-check": "PR-01"
-  }
+  "version": 1,
+  "mappings": [
+    {
+      "rule_id": "PR-03",
+      "control_id": "PR-03",
+      "match": "exact",
+      "description": "SDK SARIF control identifier for provenance and tool integrity findings."
+    },
+    {
+      "rule_id": "AKSI-PR-03",
+      "control_id": "PR-03",
+      "match": "exact",
+      "description": "Platform-prefixed provenance and tool integrity control identifier."
+    },
+    {
+      "rule_id": "semgrep.lang.security.*",
+      "control_id": "PR-08",
+      "match": "glob",
+      "description": "Semgrep security rules generally map to input validation."
+    },
+    {
+      "rule_id": "cwe-89",
+      "control_id": "PR-08",
+      "match": "exact",
+      "description": "SQL injection findings map to input validation."
+    },
+    {
+      "rule_id": "bandit.B6*",
+      "control_id": "PR-09",
+      "match": "glob",
+      "description": "Bandit shell and subprocess execution findings map to sandbox enforcement."
+    },
+    {
+      "rule_id": "js/sql-injection",
+      "control_id": "PR-08",
+      "match": "exact",
+      "description": "CodeQL JavaScript SQL injection findings map to input validation and sanitization."
+    },
+    {
+      "rule_id": "js/sql-*",
+      "control_id": "PR-08",
+      "match": "glob",
+      "description": "CodeQL JavaScript SQL injection-family findings map to input validation and sanitization."
+    },
+    {
+      "rule_id": "js/xss",
+      "control_id": "PR-08",
+      "match": "exact",
+      "description": "CodeQL JavaScript XSS findings map to input validation and sanitization."
+    },
+    {
+      "rule_id": "js/hardcoded-credentials",
+      "control_id": "PR-04",
+      "match": "exact",
+      "description": "Hard-coded credential findings map to data exposure prevention."
+    },
+    {
+      "rule_id": "js/missing-rate-limiting",
+      "control_id": "PR-02",
+      "match": "exact",
+      "description": "Missing rate limiting findings map to permission scope enforcement."
+    },
+    {
+      "rule_id": "cwe-798",
+      "control_id": "PR-04",
+      "match": "exact",
+      "description": "Hard-coded credential findings map to data exposure prevention."
+    }
+  ]
 }

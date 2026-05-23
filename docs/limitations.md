@@ -13,26 +13,39 @@ Ancilis evaluates actions that flow through its explicit producers and middlewar
 
 ## Control evaluator coverage
 
-26 controls are defined in the AKSI taxonomy. 9 have runtime evaluators today:
+41 controls are defined in the AKSI v0.6 taxonomy. 39 common controls are active for every governed agent; `PAY-01` and `PAY-02` activate only for `DC-PAY`, `AGENT_PAYMENTS`, or `X402`.
+
+Python has 18 direct runtime evaluators and 23 attestation-backed evaluators. TypeScript has direct evaluators for its core runtime controls and catalog-backed evaluators for the remaining AKSI controls. Catalog-backed TypeScript controls return `FLAG` until explicit manual attestation is supplied; keyword matches are hints, not proof.
+
+Direct runtime evaluator controls:
 
 | Control | Evaluator | What it checks |
 |---------|-----------|---------------|
+| DE-01 | Behavioral anomaly detection | Activity against established behavioral baselines |
+| DE-02 | Classification drift | Declared-vs-observed data classification and boundary drift |
+| DE-03 | Configuration/dependency drift | Tool, dependency, and policy baseline drift |
+| DE-04 | Evidence integrity | Evidence chain and missing telemetry checks |
+| GOV-01 | Agent identity authentication | Verifiable runtime identity and authentication signals |
+| GOV-02 | Ownership accountability | Named owner and accountability metadata |
+| GOV-03 | Risk tolerance baseline | Policy thresholds, autonomy limits, and escalation requirements |
+| ID-01 | Agent inventory | Registry metadata for governed agents and tool surfaces |
 | PR-01 | Identity verification | Agent identity present and valid |
 | PR-02 | Scope enforcement | Tool in allowed list, not in blocked list, rate limits |
 | PR-03 | Tool provenance | Tool registered and hash-verified |
 | PR-04 | Data exposure scan | Sensitive data patterns in parameters |
-| PR-05 | Audit trail | Evidence record written for this evaluation |
-| PR-06 | Config integrity baseline | Hashes tool config on first call, detects drift on subsequent calls |
+| PR-05 | Context isolation | Tenant and context-boundary isolation signals |
+| PR-06 | Audit trail | Evidence record written for this evaluation |
 | PR-07 | Transport security | Verifies tool endpoint URLs use HTTPS (localhost exempt) |
 | PR-08 | Input validation | Detects SQL injection, command injection, path traversal in parameters |
-| DE-01 | Baseline detection | Behavioral anomaly detection against established baseline |
+| PR-09 | Sandbox enforcement | Controlled code execution and approved sandbox signals |
+| RS-02 | Containment | Quarantine, block, or kill-switch signals |
 
-The remaining 17 controls (GOV-01 through RC-02) are defined in the control taxonomy, appear in reports with regulatory citations, and produce `SKIP` results. Their evaluators are not yet implemented.
+The remaining 23 controls are evidence-backed and require attached, imported, or attested evidence when they cannot be proven from a single action alone.
 
 This means:
-- Reports show all 26 controls with regulatory mapping
-- Only 9 controls produce PASS/FAIL/FLAG results
-- Compliance posture for controls without evaluators shows "no evaluations" rather than false positives
+- Reports show all 41 catalog controls, with 39 common controls active by default
+- Every control has an honest evaluation path: direct runtime evaluation or attestation-backed review
+- Compliance posture for attestation-backed controls shows required evidence rather than false positives
 
 ## TypeScript SDK
 
@@ -48,15 +61,15 @@ Overlay profiles vary in how many controls they map:
 
 | Overlay | Controls mapped | Controls with adjustments |
 |---------|----------------|--------------------------|
-| SOC 2 Type II | 26 | 6 |
-| PCI-DSS v4 | 26 | 6 |
-| HIPAA | 26 | 4 |
-| GDPR | 26 | 4 |
-| EU AI Act | 26 | 4 |
-| ISO 42001 | 26 | 0 (alignment-based) |
-| NIST CSF 2.0 | 26 | 0 (alignment-based) |
+| SOC 2 Type II | legacy baseline mapping | 6 |
+| PCI-DSS v4 | legacy baseline mapping | 6 |
+| HIPAA | legacy baseline mapping | 4 |
+| GDPR | legacy baseline mapping | 4 |
+| EU AI Act | legacy baseline mapping | 4 |
+| ISO 42001 | legacy baseline mapping | 0 (alignment-based) |
+| NIST CSF 2.0 | legacy baseline mapping | 0 (alignment-based) |
 
-All overlays map all 26 controls and produce compliance posture reports. Controls with adjustments have framework-specific thresholds or evidence requirements. Controls without adjustments use the base AKSI definitions.
+Overlays produce compliance posture reports and only reference known AKSI v0.6 controls. Some overlay profiles still reflect the pre-v0.6 baseline depth; controls without adjustments use the base AKSI definitions.
 
 ## Evidence trust boundary
 

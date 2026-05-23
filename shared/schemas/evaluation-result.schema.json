@@ -3,7 +3,17 @@
   "title": "Ancilis Evaluation Result",
   "description": "Structured result from control engine evaluation of an action",
   "type": "object",
-  "required": ["evaluation_id", "action_id", "timestamp", "agent_id", "mode", "control_results", "decision", "decision_reason", "total_duration_ms"],
+  "required": [
+    "evaluation_id",
+    "action_id",
+    "timestamp",
+    "agent_id",
+    "mode",
+    "control_results",
+    "decision",
+    "decision_reason",
+    "total_duration_ms"
+  ],
   "additionalProperties": false,
   "properties": {
     "evaluation_id": {
@@ -27,14 +37,24 @@
     },
     "mode": {
       "type": "string",
-      "enum": ["audit", "enforce"],
+      "enum": [
+        "audit",
+        "enforce"
+      ],
       "description": "Security mode during evaluation"
     },
     "control_results": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["control_id", "control_name", "result", "detail", "evidence_data", "duration_ms"],
+        "required": [
+          "control_id",
+          "control_name",
+          "result",
+          "detail",
+          "evidence_data",
+          "duration_ms"
+        ],
         "additionalProperties": false,
         "properties": {
           "control_id": {
@@ -47,7 +67,13 @@
           },
           "result": {
             "type": "string",
-            "enum": ["PASS", "FAIL", "SKIP", "ERROR"],
+            "enum": [
+              "PASS",
+              "FAIL",
+              "FLAG",
+              "SKIP",
+              "ERROR"
+            ],
             "description": "Evaluation result"
           },
           "detail": {
@@ -67,7 +93,11 @@
     },
     "decision": {
       "type": "string",
-      "enum": ["ALLOW", "BLOCK", "FLAG"],
+      "enum": [
+        "ALLOW",
+        "BLOCK",
+        "FLAG"
+      ],
       "description": "Final decision"
     },
     "decision_reason": {
@@ -76,19 +106,31 @@
     },
     "active_overlays": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "default": [],
       "description": "Overlay IDs active during evaluation"
     },
     "data_classifications": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "default": [],
       "description": "DC codes active during evaluation"
     },
     "total_duration_ms": {
       "type": "number",
       "description": "Total evaluation time in milliseconds"
+    },
+    "framework_version": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": "0.6",
+      "description": "AKSI framework version used to produce this record."
     }
   }
 }

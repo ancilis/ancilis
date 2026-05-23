@@ -78,6 +78,47 @@ With `--verbose`, shows per-control breakdown and activation details.
 
 On empty store: `"No evaluations recorded yet. Run your agent with Ancilis to start collecting evidence."`
 
+### `ancilis evidence list`
+
+Lists recent evidence records directly from the local DuckDB store.
+
+```bash
+ancilis evidence list --limit 10
+ancilis evidence list --classification DC-PII --control-id PR-05
+ancilis evidence list --format json
+```
+
+The table view includes timestamp, short evidence ID, agent ID, source type,
+classification, control ID, and status. JSON output returns full evidence
+records.
+
+### `ancilis evidence show`
+
+Shows the full evidence record by exact ID or a short prefix of at least seven
+characters.
+
+```bash
+ancilis evidence show 9f2a4c1
+ancilis evidence show 9f2a4c1 --format json
+```
+
+Pretty output includes classification metadata, control results, source
+provenance when present, and framework mappings derived from active overlays and
+certification targets.
+
+### `ancilis certify`
+
+Computes v0.1 dry-run framework coverage from local evidence.
+
+```bash
+ancilis certify --target soc2
+ancilis certify --target pci --format json --dry-run
+```
+
+The command reports each in-scope AKSI control as `covered`, `partial`, or
+`gap`, with evidence counts and the latest evidence timestamp. If no evidence
+exists, all in-scope controls are listed as gaps.
+
 ### `ancilis report`
 
 Generates posture reports with framework-by-framework compliance coverage.

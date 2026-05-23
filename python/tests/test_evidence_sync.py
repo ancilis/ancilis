@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 
 from ancilis.config import ResolvedConfig, load_config
+from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 from ancilis.evidence.sync import SyncEngine
@@ -177,6 +178,7 @@ def test_sync_success_batches_and_marks_records_synced() -> None:
     assert client.batches[0][0]["classifications"] == ["personal_info"]
     assert client.batches[0][0]["certifications"] == []
     assert client.batches[0][0]["session"] == "session-1"
+    assert client.batches[0][0]["framework_version"] == AKSI_FRAMEWORK_VERSION
     assert client.batches[0][0]["classification_context"] == {"llm_provider": "openai"}
     assert store.get_pending_sync_records() == []
     assert all(
