@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,6 +14,7 @@ from click.testing import CliRunner
 from ancilis.cli.init import detect_framework, sanitize_name, Framework
 from ancilis.cli.main import cli
 from ancilis.config import load_config
+from ancilis.evidence.store import EvidenceStore
 
 
 # ---------------------------------------------------------------------------
@@ -270,6 +275,91 @@ def test_init_generated_yaml_valid(tmp_path: Path) -> None:
         assert result.exit_code == 0, result.output
         config = load_config(path=str(td_path / "ancilis.yaml"))
         assert config.agent_name == "my-agent"
+
+
+def test_init_generated_sample_runs_and_records_evidence(tmp_path: Path) -> None:
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        td_path = Path(td)
+        result = runner.invoke(
+            cli,
+            [
+                "init",
+                "--framework",
+                "generic",
+                "--overlay",
+                "soc2",
+                "--agent-name",
+                "sample-agent",
+                "--dir",
+                str(td_path),
+            ],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0, result.output
+
+        home = td_path / "home"
+        home.mkdir()
+        env = os.environ.copy()
+        env["HOME"] = str(home)
+        existing_pythonpath = env.get("PYTHONPATH")
+        repo_python = str(Path(__file__).resolve().parents[2] / "src")
+        env["PYTHONPATH"] = (
+            repo_python
+            if not existing_pythonpath
+            else os.pathsep.join([repo_python, existing_pythonpath])
+        )
+
+        run = subprocess.run(
+            [sys.executable, "ancilis_scan.py"],
+            cwd=td_path,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        assert run.returncode == 0, run.stderr
+        assert "search_docs ->" in run.stdout
+        assert "send_reply ->" in run.stdout
+        assert "Evidence: 2 records this run, chain intact" in run.stdout
+        assert "ancilis status --config ancilis.yaml" in run.stdout
+
+        cwd_hash = hashlib.sha256(str(td_path).encode()).hexdigest()[:8]
+        db_path = home / ".ancilis" / f"sample-agent-{cwd_hash}" / "evidence.duckdb"
+        config = load_config(path=str(td_path / "ancilis.yaml"))
+        store = EvidenceStore(config, db_path=db_path)
+        try:
+            records = store.get_records(limit=None)
+        finally:
+            store.close()
+
+        assert len(records) == 2
+        assert {record.agent_id for record in records} == {"sample-agent"}
+        assert {record.source_type for record in records} == {"framework"}
+        assert {record.tool_name for record in records} == {"search_docs", "send_reply"}
+
+        (td_path / "ancilis_scan.py").unlink()
+        scan = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "ancilis.cli.main",
+                "--no-update-check",
+                "scan",
+                "--config",
+                "ancilis.yaml",
+            ],
+            cwd=td_path,
+            env={**env, "DNT": "1"},
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        assert scan.returncode == 0, scan.stderr
+        assert "tool not found" not in scan.stdout.lower()
+        assert "tool not found" not in scan.stderr.lower()
 
 
 # ---------------------------------------------------------------------------

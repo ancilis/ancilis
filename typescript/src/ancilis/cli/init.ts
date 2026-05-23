@@ -247,10 +247,10 @@ export async function runInit(
     created.push("ancilis.yaml");
 
     if (!options.noSample) {
-      const scanScript = join(targetDir, "ancilis_scan.ts");
+      const scanScript = join(targetDir, "ancilis_scan.mjs");
       if (!existsSync(scanScript)) {
         writeFileSync(scanScript, getScanScript(framework), "utf-8");
-        created.push("ancilis_scan.ts");
+        created.push("ancilis_scan.mjs");
       }
     }
 
@@ -268,9 +268,16 @@ export async function runInit(
     out("");
     out("Next steps:");
     out("  1. Review ancilis.yaml and adjust settings");
-    out("  2. Run: ancilis doctor       — verify your setup");
-    out("  3. Run: ancilis scan          — run your first compliance scan");
-    out("  4. Visit https://docs.ancilis.dev/quickstart for the full guide");
+    if (!options.noSample) {
+      out("  2. Run: node ancilis_scan.mjs — create your first evidence records");
+      out("  3. Run: ancilis status         — inspect local posture");
+      out("  4. Run: ancilis scan           — run your first compliance scan");
+    } else {
+      out("  2. Run: ancilis doctor        — verify your setup");
+      out("  3. Add Ancilis to your agent and run it");
+      out("  4. Run: ancilis scan           — run your first compliance scan");
+    }
+    out("  5. Visit https://docs.ancilis.dev/quickstart for the full guide");
 
     return { ok: true, output: "" };
   } finally {

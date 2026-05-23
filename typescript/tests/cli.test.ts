@@ -1291,6 +1291,34 @@ describe("Report Renderer UX", () => {
 });
 
 describe("runCli", () => {
+  it("init uses the shared implementation and creates the first-evidence sample", async () => {
+    const dir = tmpDir();
+    const { io, stdout, stderr } = captureIo();
+
+    const exitCode = await runCli(
+      [
+        "init",
+        "--framework",
+        "generic",
+        "--overlay",
+        "soc2",
+        "--agent-name",
+        "sample-agent",
+        "--dir",
+        dir,
+        "--detect",
+      ],
+      io,
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stderr()).toBe("");
+    expect(stdout()).toContain("node ancilis_scan.mjs");
+    expect(existsSync(join(dir, "ancilis_scan.mjs"))).toBe(true);
+    expect(existsSync(join(dir, "ancilis_sample.py"))).toBe(false);
+    expect(readFileSync(join(dir, "ancilis.yaml"), "utf-8")).toContain("allowed:");
+  });
+
   it("accepts report generate as an alias for the report command", async () => {
     const dir = tmpDir();
     const configPath = writeConfig(dir, fullConfig());

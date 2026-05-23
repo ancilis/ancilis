@@ -181,9 +181,15 @@ def _print_next_steps(
     click.echo("")
     click.echo("Next steps:")
     click.echo("  1. Review ancilis.yaml and adjust settings")
-    click.echo("  2. Run: ancilis doctor       — verify your setup")
-    click.echo("  3. Run: ancilis scan          — run your first compliance scan")
-    click.echo("  4. Visit https://docs.ancilis.dev/quickstart for the full guide")
+    if not skipped_sample:
+        click.echo("  2. Run: python ancilis_scan.py — create your first evidence records")
+        click.echo("  3. Run: ancilis status        — inspect local posture")
+        click.echo("  4. Run: ancilis scan          — run your first compliance scan")
+    else:
+        click.echo("  2. Run: ancilis doctor       — verify your setup")
+        click.echo("  3. Add Ancilis to your agent and run it")
+        click.echo("  4. Run: ancilis scan          — run your first compliance scan")
+    click.echo("  5. Visit https://docs.ancilis.dev/quickstart for the full guide")
 
 
 # ---------------------------------------------------------------------------

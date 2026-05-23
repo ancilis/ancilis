@@ -185,13 +185,34 @@ describe("runInit non-interactive", () => {
   it("creates sample scan script when noSample is false", async () => {
     const { io } = captureIo();
     await runInit({ framework: "openai", overlay: "soc2", detect: true, dir }, io);
-    expect(existsSync(join(dir, "ancilis_scan.ts"))).toBe(true);
+    expect(existsSync(join(dir, "ancilis_scan.mjs"))).toBe(true);
+  });
+
+  it("generated sample script shows the first evidence loop", async () => {
+    const { io } = captureIo();
+    await runInit({ framework: "generic", overlay: "soc2", agentName: "sample-agent", detect: true, dir }, io);
+
+    const yaml = readFileSync(join(dir, "ancilis.yaml"), "utf-8");
+    expect(yaml).toContain("allowed:");
+    expect(yaml).toContain("- search_docs");
+    expect(yaml).toContain("- send_reply");
+
+    const script = readFileSync(join(dir, "ancilis_scan.mjs"), "utf-8");
+    expect(script).toContain("ToolActionProducer");
+    expect(script).toContain("EvidenceStore");
+    expect(script).toContain("node ancilis_scan.mjs");
+    expect(script).toContain("search_docs ->");
+    expect(script).toContain("Evidence:");
+    expect(script).toContain("ancilis status --config ancilis.yaml");
+    expect(script).not.toContain("engine.evaluate()");
+    expect(script).not.toContain("tsx");
+    expect(script).not.toContain(": unknown");
   });
 
   it("skips scan script when noSample is true", async () => {
     const { io } = captureIo();
     await runInit({ framework: "openai", overlay: "soc2", detect: true, noSample: true, dir }, io);
-    expect(existsSync(join(dir, "ancilis_scan.ts"))).toBe(false);
+    expect(existsSync(join(dir, "ancilis_scan.mjs"))).toBe(false);
   });
 
   it("updates .gitignore to include .ancilis/", async () => {
