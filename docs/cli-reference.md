@@ -36,11 +36,80 @@ Cover exposes project inspection, classification, setup recommendation, explicit
 
 ## `ancilis serve`
 
-`ancilis serve` remains available as a compatibility MCP entry point for one release. New MCP host configs should prefer `ancilis-cover`.
+Start the Ancilis runtime MCP server so MCP clients (Claude Desktop, Cursor, etc.) can inspect posture, evaluate a proposed action, and read evidence without mutating policy or writing evidence records.
+
+Only `stdio` transport is supported in this release.
 
 ```bash
-ancilis serve
+ancilis serve [OPTIONS]
 ```
+
+| Option | Description |
+|--------|-------------|
+| `-c, --config FILE` | Path to `ancilis.yaml`. Defaults to auto-discovery in the current directory. |
+| `--transport [stdio\|sse]` | MCP transport. Only `stdio` is supported. Default: `stdio`. |
+
+**Examples:**
+
+```bash
+# Start with default transport (stdio)
+ancilis serve --config /absolute/path/to/ancilis.yaml
+
+# Explicit stdio transport
+ancilis serve --transport stdio --config /absolute/path/to/ancilis.yaml
+```
+
+**Claude Desktop config example** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "ancilis": {
+      "command": "ancilis",
+      "args": [
+        "serve",
+        "--transport",
+        "stdio",
+        "--config",
+        "/absolute/path/to/ancilis.yaml"
+      ]
+    }
+  }
+}
+```
+
+**Cursor config example** (`.cursor/mcp.json` in your project root):
+
+```json
+{
+  "mcpServers": {
+    "ancilis": {
+      "command": "ancilis",
+      "args": [
+        "serve",
+        "--transport",
+        "stdio",
+        "--config",
+        "/absolute/path/to/ancilis.yaml"
+      ]
+    }
+  }
+}
+```
+
+The runtime server exposes five read-only MCP tools:
+
+| Tool | Description |
+|------|-------------|
+| `ancilis_check_posture` | Current session posture, active control status, and overlays |
+| `ancilis_evaluate_action` | Evaluate a proposed tool call without writing evidence |
+| `ancilis_get_evidence` | Recent evidence records for the selected or latest session |
+| `ancilis_report` | Posture report for the selected or latest session |
+| `ancilis_list_overlays` | Active overlays and evidence coverage percentages |
+
+Use this mode for local agent self-inspection only. It does not execute customer tools, upload evidence, mutate policy, or expose HTTP/SSE transports.
+
+> **Note:** For Cover onboarding, gap assessment, and setup recommendation tools, use [`ancilis-cover`](#ancilis-cover) instead.
 
 ---
 
