@@ -48,7 +48,7 @@ Two products:
 - Ancilis Platform: hosted SaaS, assessment-first (not enforcement). FastAPI + PostgreSQL + Alembic + React + shadcn/ui.
 - Ancilis SDK: open source (AGPL-3.0-or-later, dual-licensed commercial), pip/npm installable. Python + TypeScript. DuckDB evidence store.
 
-AKSI Framework: 26 controls, 16-type data classification taxonomy, 3-layer architecture.
+AKSI Framework: 41 shared controls, 23 canonical data classifications, and 39 common controls plus 2 payment-conditional controls. Python support is split between 18 direct runtime evaluators and 23 attestation-backed controls.
 Key patterns: AOA (Action Object Abstraction), ADR-005 producer protocol, data-classification-driven auto-scoping.
 Platform connects via API integrations only — no customer-side deployment.
 Security tools (Singulr, Noma) are input integration partners — their findings become compliance evidence.
