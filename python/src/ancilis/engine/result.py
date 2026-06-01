@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
+
 
 @dataclass
 class ControlResult:
@@ -26,6 +28,7 @@ class EvaluationResult:
     timestamp: str
     agent_id: str
     source_type: str = "agent"
+    framework_version: str = AKSI_FRAMEWORK_VERSION
     mode: str = "audit"  # "audit" | "enforce"
     control_results: list[ControlResult] = field(default_factory=list)
     decision: str = "ALLOW"  # "ALLOW" | "BLOCK" | "FLAG"

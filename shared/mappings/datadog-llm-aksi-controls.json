@@ -1,0 +1,51 @@
+{
+  "_version": "1.0.0",
+  "_description": "Datadog LLM Observability span event → AKSI control ID mapping. Each span's 'kind' selects a baseline control; status=error overrides to DE-01 FAIL; security-critical annotations (prompt_injection, pii_detected, hallucination, faithfulness) and cost-threshold signals layer in additional control results.",
+  "_metadata": {
+    "source_format": "datadog_llm",
+    "schema": "datadog-llm-obs-spans-v2",
+    "owner": "ancilis-importers",
+    "default_cost_threshold_usd": 1.0,
+    "faithfulness_threshold": 0.8,
+    "hallucination_score_threshold": 0.5,
+    "signal_priority": [
+      "prompt_injection",
+      "status_error",
+      "pii_detected",
+      "hallucination",
+      "low_faithfulness",
+      "cost_threshold_exceeded",
+      "kind_default"
+    ],
+    "result_levels": {
+      "kind_llm": "PASS",
+      "kind_workflow": "PASS",
+      "kind_tool": "PASS",
+      "kind_embedding": "PASS",
+      "kind_retrieval": "PASS",
+      "kind_task": "PASS",
+      "kind_agent": "PASS",
+      "status_error": "FAIL",
+      "prompt_injection": "FAIL",
+      "pii_detected": "FLAG",
+      "hallucination": "FLAG",
+      "low_faithfulness": "FLAG",
+      "cost_threshold_exceeded": "FLAG"
+    }
+  },
+  "mappings": {
+    "kind_llm": "PR-01",
+    "kind_workflow": "PR-01",
+    "kind_tool": "PR-02",
+    "kind_embedding": "PR-04",
+    "kind_retrieval": "PR-04",
+    "kind_task": "PR-05",
+    "kind_agent": "PR-05",
+    "status_error": "DE-01",
+    "prompt_injection": "PR-01",
+    "pii_detected": "PR-04",
+    "hallucination": "PR-03",
+    "low_faithfulness": "PR-03",
+    "cost_threshold_exceeded": "PR-04"
+  }
+}

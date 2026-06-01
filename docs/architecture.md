@@ -7,7 +7,7 @@ Producers (MCP, CLI, HTTP, Tool wrapper)
     ↓
 Action Objects (protocol-agnostic)
     ↓
-Engine (26 AKSI controls, deterministic evaluation)
+Engine (AKSI v0.6 controls, deterministic evaluation)
     ↓
 Evidence Store (DuckDB, SHA-256 hash chain)
     ↓
@@ -35,6 +35,8 @@ Decision logic:
 - In **audit** mode: ALLOW always, log everything
 - In **enforce** mode: BLOCK if any control FAILs, ALLOW otherwise
 
+`decision_reason` / `decisionReason` is a human-readable summary and may truncate long control-ID lists. Consumers that need complete control-level status should read the structured `control_results` / `controlResults` array.
+
 ### Evidence Store
 
 DuckDB-backed with SHA-256 hash chain integrity. Each record links to the previous record's hash, creating a tamper-evident chain from a fixed genesis seed.
@@ -57,7 +59,7 @@ Both compose. The strictest threshold and longest retention always win.
 python/src/ancilis/
 ├── activation/      # Overlay and certification resolution
 ├── cli/             # Click CLI commands
-├── controls/        # PR-05, DE-01 evaluators
+├── controls/        # Shared evaluator implementations
 ├── engine/          # Core evaluation engine
 │   └── evaluators/  # PR-01 through PR-04
 ├── evidence/        # DuckDB store, hash chain, record schema
@@ -67,8 +69,8 @@ python/src/ancilis/
 
 shared/
 ├── classifications/ # Data classification taxonomy
-├── controls/        # 26 AKSI control definitions (JSON)
-├── overlays/        # 8 regulatory overlay profiles + certifications
+├── controls/        # 41 AKSI v0.6 control definitions (JSON)
+├── overlays/        # Regulatory overlay profiles + certifications
 └── schemas/         # JSON schemas for Action, EvaluationResult, EvidenceRecord
 ```
 

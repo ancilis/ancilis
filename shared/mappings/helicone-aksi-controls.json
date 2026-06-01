@@ -1,0 +1,31 @@
+{
+  "_version": "1.0.0",
+  "_description": "Helicone request/log export → AKSI control ID mapping. Status codes and signal types are evaluated in priority order; the first matching signal determines the control. Cost-threshold and feedback signals are evaluated in addition to status-code signals and may produce additional control results.",
+  "_metadata": {
+    "source_format": "helicone",
+    "schema": "helicone-request-export-v1",
+    "owner": "ancilis-importers",
+    "default_cost_threshold_usd": 1.0,
+    "signal_priority": [
+      "status_5xx",
+      "status_4xx",
+      "negative_feedback",
+      "cost_threshold_exceeded",
+      "status_2xx"
+    ],
+    "result_levels": {
+      "status_2xx": "PASS",
+      "status_4xx": "FLAG",
+      "status_5xx": "FLAG",
+      "negative_feedback": "FLAG",
+      "cost_threshold_exceeded": "FLAG"
+    }
+  },
+  "mappings": {
+    "status_2xx": "PR-01",
+    "status_4xx": "PR-02",
+    "status_5xx": "DE-01",
+    "negative_feedback": "PR-05",
+    "cost_threshold_exceeded": "PR-04"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "_version": "1.0.0",
+  "_description": "OpenRouter generation log → AKSI control ID mapping. OpenRouter is a multi-provider LLM router; each generation record represents one upstream LLM call routed to a downstream provider (Anthropic, OpenAI, Mistral, etc.). The finish_reason drives the primary control result; cancelled, is_byok, and usage cost produce additive flags. Provider routing (provider_name) is captured in evidence_data.provider_routed_to to surface the actual upstream provider for posture/lineage analysis.",
+  "_metadata": {
+    "source_format": "openrouter",
+    "schema": "openrouter-generation-export-v1",
+    "owner": "ancilis-importers",
+    "default_cost_threshold_usd": 1.0,
+    "signal_priority": [
+      "finish_reason_error",
+      "finish_reason_content_filter",
+      "cancelled",
+      "is_byok",
+      "cost_threshold_exceeded",
+      "finish_reason_length",
+      "finish_reason_stop"
+    ],
+    "result_levels": {
+      "finish_reason_stop": "PASS",
+      "finish_reason_length": "PASS",
+      "finish_reason_content_filter": "FLAG",
+      "finish_reason_error": "FAIL",
+      "cancelled": "FLAG",
+      "is_byok": "FLAG",
+      "cost_threshold_exceeded": "FLAG"
+    }
+  },
+  "mappings": {
+    "finish_reason_stop": "PR-01",
+    "finish_reason_length": "PR-01",
+    "finish_reason_content_filter": "PR-02",
+    "finish_reason_error": "DE-01",
+    "cancelled": "PR-05",
+    "is_byok": "PR-04",
+    "cost_threshold_exceeded": "PR-04"
+  }
+}

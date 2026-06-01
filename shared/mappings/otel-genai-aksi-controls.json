@@ -1,0 +1,36 @@
+{
+  "_version": "1.0.0",
+  "_description": "OpenTelemetry GenAI semantic-convention operation → AKSI control mapping. Operation values follow the gen_ai.operation.name attribute defined in https://opentelemetry.io/docs/specs/semconv/gen-ai/. Span status drives PASS/FAIL; absence of gen_ai.* attributes filters the span out entirely.",
+  "_metadata": {
+    "source_format": "otel-genai",
+    "schema": "otlp-json",
+    "owner": "ancilis-importers",
+    "spec_url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "status_to_result": {
+      "STATUS_CODE_OK": "PASS",
+      "STATUS_CODE_UNSET": "PASS",
+      "STATUS_CODE_ERROR": "FAIL"
+    },
+    "default_control": "PR-03",
+    "supported_systems": [
+      "openai",
+      "anthropic",
+      "vertex_ai",
+      "aws.bedrock",
+      "azure.ai.openai",
+      "cohere",
+      "groq",
+      "mistral_ai",
+      "ibm.watsonx.ai"
+    ]
+  },
+  "mappings": {
+    "chat": "PR-01",
+    "text_completion": "PR-01",
+    "completion": "PR-01",
+    "embeddings": "PR-04",
+    "embedding": "PR-04",
+    "execute_tool": "PR-02",
+    "tool_use": "PR-02"
+  }
+}

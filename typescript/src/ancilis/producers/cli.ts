@@ -104,6 +104,7 @@ export class CLIActionProducer {
       },
       parameters: { raw, parameterHash: paramHash },
       context: {
+        sessionId: this._sessionId,
         dataClassifications: this._buildDcCodes(),
         activeOverlays: [...this._config.activeOverlays.keys()],
       },

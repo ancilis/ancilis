@@ -1,0 +1,48 @@
+{
+  "_version": "1.0.0",
+  "_description": "Snyk REST `/orgs/{org}/issues` finding → AKSI control mapping. Combines status, severity, type and exploit_maturity into one of {PASS, FLAG, FAIL} verdicts. Open critical/high → PR-03 FAIL. Open medium with mature exploit → PR-03 FAIL (treat as high). Open medium → PR-03 FLAG. Open low → PR-03 PASS (captured, non-blocking). Resolved → PR-05 PASS (audit trail of fix). Ignored without reason → PR-02 FAIL (governance violation). Ignored with reason at critical/high → PR-02 FLAG (re-review required). License high/medium → PR-04 FAIL/FLAG. Container critical → PR-03 FAIL. Unfixable critical/high → PR-03 FLAG (accept-risk). Disregarded → PR-02 FAIL (Snyk bypass = compliance violation).",
+  "_metadata": {
+    "source_format": "snyk",
+    "schema": "snyk-issues-v1",
+    "owner": "ancilis-importers",
+    "spec_url": "https://apidocs.snyk.io/",
+    "high_density_threshold": 10,
+    "ai_assisted_concentration_threshold": 5,
+    "cross_project_threshold": 3,
+    "signal_priority": [
+      "disregarded",
+      "ignored_no_reason",
+      "container_critical",
+      "license_high",
+      "license_medium",
+      "status_open_critical",
+      "status_open_high",
+      "status_open_medium_mature",
+      "ignored_with_reason_high",
+      "unfixable_critical",
+      "status_open_medium",
+      "status_open_low",
+      "status_resolved"
+    ]
+  },
+  "mappings": {
+    "status_open_critical":         {"control": "PR-03", "result": "FAIL"},
+    "status_open_high":             {"control": "PR-03", "result": "FAIL"},
+    "status_open_medium_mature":    {"control": "PR-03", "result": "FAIL"},
+    "status_open_medium":           {"control": "PR-03", "result": "FLAG"},
+    "status_open_low":              {"control": "PR-03", "result": "PASS"},
+    "status_resolved":              {"control": "PR-05", "result": "PASS"},
+    "ignored_no_reason":            {"control": "PR-02", "result": "FAIL"},
+    "ignored_with_reason_high":     {"control": "PR-02", "result": "FLAG"},
+    "license_high":                 {"control": "PR-04", "result": "FAIL"},
+    "license_medium":               {"control": "PR-04", "result": "FLAG"},
+    "container_critical":           {"control": "PR-03", "result": "FAIL"},
+    "unfixable_critical":           {"control": "PR-03", "result": "FLAG"},
+    "disregarded":                  {"control": "PR-02", "result": "FAIL"}
+  },
+  "synthetics": {
+    "high_density":                 {"control": "DE-01", "result": "FAIL", "description": "More than high_density_threshold critical+high open issues in the same project (broken-windows signal)"},
+    "ai_assisted_concentration":    {"control": "PR-03", "result": "FLAG", "description": "More than ai_assisted_concentration_threshold AI-introduced findings in same scan (agent quality drift)"},
+    "cross_project_pattern":        {"control": "PR-03", "result": "FLAG", "description": "Same package_name+package_version with critical issue across more than cross_project_threshold projects (organization-wide exposure)"}
+  }
+}

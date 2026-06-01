@@ -1,6 +1,7 @@
 /** Internal helpers shared across the ancilis/testing module. */
 
 import { createHash, randomUUID } from "node:crypto";
+import { AKSI_FRAMEWORK_VERSION } from "../aksi/version.js";
 import { loadConfig } from "../config/index.js";
 import type { ResolvedConfig } from "../config/index.js";
 import type { Action, ActionContext, ActionParameters, ToolInfo } from "../engine/action.js";
@@ -30,6 +31,7 @@ export interface MakeActionOptions {
   toolName?: string;
   agentId?: string;
   agentOwner?: string | null;
+  frameworkVersion?: string;
   parameters?: Record<string, unknown>;
   sessionId?: string | null;
   dataClassifications?: string[];
@@ -42,6 +44,7 @@ export function makeAction(options: MakeActionOptions = {}): Action {
     toolName = "test_tool",
     agentId = "test-agent",
     agentOwner = null,
+    frameworkVersion = AKSI_FRAMEWORK_VERSION,
     parameters = {},
     sessionId = null,
     dataClassifications = [],
@@ -66,6 +69,7 @@ export function makeAction(options: MakeActionOptions = {}): Action {
     agentOwner,
     actionType: "tool_call",
     sourceType,
+    frameworkVersion,
     tool,
     parameters: actionParameters,
     context,

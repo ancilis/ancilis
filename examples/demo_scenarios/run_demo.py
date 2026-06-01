@@ -25,7 +25,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ancilis.cli.export import export_records
 from ancilis.config import load_config
-from ancilis.demo_orchestration import build_demo_integration_payload
+from ancilis.demo_orchestration import (
+    build_demo_integration_payload,
+    build_demo_integration_reconcile_payload,
+)
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
 from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
@@ -258,6 +261,19 @@ def _push_to_platform(db_path: Path) -> dict[str, Any]:
     if integration_id is None:
         created = _read_json(_build_push_request(f"{base}/v1/integrations", token, method="POST", payload=payload))
         integration_id = created["id"]
+    else:
+        reconcile_payload = build_demo_integration_reconcile_payload(
+            db_path,
+            name="Acquirer Demo SDK Scenarios",
+        )
+        _read_json(
+            _build_push_request(
+                f"{base}/v1/integrations/{integration_id}",
+                token,
+                method="PATCH",
+                payload=reconcile_payload,
+            )
+        )
 
     sync = _read_json(_build_push_request(f"{base}/v1/integrations/{integration_id}/sync", token, method="POST"))
     return {"integration_id": integration_id, "sync": sync}

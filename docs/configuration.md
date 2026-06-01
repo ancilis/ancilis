@@ -11,7 +11,7 @@ agent:
   name: my-agent
 ```
 
-This activates 26 baseline security controls in audit mode. Every tool call is evaluated and evidence-recorded.
+This activates the 39 common AKSI v0.6 controls in audit mode. Every tool call is evaluated and evidence-recorded.
 
 ## Full config structure
 

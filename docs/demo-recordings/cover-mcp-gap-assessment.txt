@@ -1,0 +1,46 @@
+Ancilis Cover MCP demo
+server: ancilis-cover
+tools: 11 registered
+contains ancilis_assess_gap: True
+
+{
+  "mode": "setup_gap",
+  "confidence": "high",
+  "target": {
+    "my_agent_handles": [
+      "health_records"
+    ],
+    "active_overlays": [
+      "hipaa"
+    ],
+    "certification_targets": []
+  },
+  "config_gap": {
+    "missing_my_agent_handles": [
+      "health_records"
+    ],
+    "present_my_agent_handles": [],
+    "missing_overlays": [
+      "hipaa"
+    ],
+    "present_overlays": [],
+    "missing_certification_targets": [],
+    "present_certification_targets": []
+  },
+  "missing_producers": [
+    "openai"
+  ],
+  "evidence_gap": {
+    "session_id": null,
+    "requested_overlays": [
+      "hipaa"
+    ],
+    "controls_total": 26,
+    "controls_with_evidence": 0
+  },
+  "next_steps": [
+    "Create ancilis.yaml with the requested data, overlay, and certification targets.",
+    "Wrap recommended producer surfaces with Ancilis instrumentation: openai.",
+    "Run ancilis doctor and ancilis scan after setup to collect evidence."
+  ]
+}

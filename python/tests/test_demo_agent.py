@@ -27,7 +27,10 @@ DEMO_COMPAT_PATH = ROOT / "examples" / "demo" / "run-demo.py"
 DEMO_CONFIG_PATH = ROOT / "examples" / "demo" / "ancilis.yaml"
 DEMO_SETUP_PATH = ROOT / "examples" / "demo" / "setup.sh"
 DEMO_RUN_ALL_PATH = ROOT / "examples" / "demo" / "run-all.sh"
+DEMO_RUN_DISCOVERY_PATH = ROOT / "examples" / "demo" / "run-discovery.sh"
+DEMO_SCENARIOS_RUN_PATH = ROOT / "examples" / "demo_scenarios" / "run_demo.py"
 DEMO_README_PATH = ROOT / "examples" / "demo" / "README.md"
+DEMO_WALKTHROUGH_PATH = ROOT / "docs" / "demo-walkthrough.md"
 
 
 def _load_demo_module():
@@ -48,6 +51,21 @@ def _run_demo(tmp_path: Path):
     result = module.main(db_path=db_path, stream=stream)
 
     return module, result, db_path, stream.getvalue()
+
+
+def _load_demo_scenarios_module():
+    assert DEMO_SCENARIOS_RUN_PATH.exists(), f"Scenario demo script missing: {DEMO_SCENARIOS_RUN_PATH}"
+    sys.modules.pop("examples.demo_scenarios.run_demo", None)
+    sys.modules.pop("ancilis.demo_orchestration", None)
+    spec = importlib.util.spec_from_file_location(
+        "examples.demo_scenarios.run_demo",
+        DEMO_SCENARIOS_RUN_PATH,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def _extract_evidence_path(output: str) -> Path:
@@ -345,6 +363,7 @@ def test_demo_integration_payload_points_to_current_db_path() -> None:
     assert payload["config"]["transport"]["paths"] == [str(db_path)]
     assert payload["config"]["transport"]["scan_home_dir"] is False
     assert payload["config"]["sync"]["mode"] == "incremental"
+    assert payload["config"]["sync"].get("scope") == {"mode": "latest_session"}
 
 
 def test_demo_integration_helpers_canonicalize_equivalent_paths() -> None:
@@ -369,6 +388,86 @@ def test_run_all_uses_workspace_scoped_demo_name_helper() -> None:
 
     assert 'DEMO_NAME="Finance Demo SDK"' not in script
     assert "build_demo_integration_name" in script
+
+
+def test_run_all_reconciles_existing_integration_before_sync() -> None:
+    script = DEMO_RUN_ALL_PATH.read_text(encoding="utf-8")
+
+    assert "build_demo_integration_reconcile_payload" in script
+    assert '-X PATCH \\' in script
+    assert '"${BACKEND_URL}/v1/integrations/${INTEGRATION_ID}"' in script
+    assert script.index("${BACKEND_URL}/v1/integrations/${INTEGRATION_ID}") < script.index(
+        "${BACKEND_URL}/v1/integrations/${INTEGRATION_ID}/sync"
+    )
+
+
+def test_run_discovery_reconciles_existing_integrations_before_sync() -> None:
+    script = DEMO_RUN_DISCOVERY_PATH.read_text(encoding="utf-8")
+
+    assert "build_demo_integration_reconcile_payload" in script
+    assert '-X PATCH \\' in script
+    assert '"${BACKEND_URL}/v1/integrations/${integration_id}"' in script
+    assert script.index("${BACKEND_URL}/v1/integrations/${integration_id}") < script.index(
+        "${BACKEND_URL}/v1/integrations/${integration_id}/sync"
+    )
+
+
+def test_demo_scenarios_push_reconciles_existing_integration_before_sync(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    module = _load_demo_scenarios_module()
+    db_path = tmp_path / "scenario-evidence.duckdb"
+    monkeypatch.setenv("ANCILIS_PLATFORM_URL", "http://platform.test")
+    monkeypatch.setenv("ANCILIS_API_KEY", "demo-token")
+
+    requests: list[tuple[str, str, str, dict[str, object] | None]] = []
+
+    def _fake_build_push_request(
+        url: str,
+        token: str,
+        *,
+        method: str = "GET",
+        payload: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        requests.append((url, token, method, payload))
+        return {"url": url, "method": method, "payload": payload}
+
+    responses = iter(
+        (
+            {
+                "items": [
+                    {
+                        "id": "integration-123",
+                        "name": "Acquirer Demo SDK Scenarios",
+                        "source_type": "sdk_direct",
+                    }
+                ]
+            },
+            {"id": "integration-123"},
+            {"evidence_created": 6, "evidence_deduplicated": 0},
+        )
+    )
+
+    monkeypatch.setattr(module, "_build_push_request", _fake_build_push_request)
+    monkeypatch.setattr(module, "_read_json", lambda _request: next(responses))
+
+    result = module._push_to_platform(db_path)
+
+    assert result["integration_id"] == "integration-123"
+    assert requests[0] == ("http://platform.test/v1/integrations", "demo-token", "GET", None)
+    assert requests[1][0] == "http://platform.test/v1/integrations/integration-123"
+    assert requests[1][2] == "PATCH"
+    assert requests[1][3] is not None
+    assert requests[1][3]["name"] == "Acquirer Demo SDK Scenarios"
+    assert requests[1][3]["config"]["transport"]["paths"] == [str(db_path.resolve())]
+    assert requests[1][3]["config"]["sync"].get("scope") == {"mode": "latest_session"}
+    assert requests[2] == (
+        "http://platform.test/v1/integrations/integration-123/sync",
+        "demo-token",
+        "POST",
+        None,
+    )
 
 
 def test_run_all_can_reuse_an_existing_platform_stack() -> None:
@@ -401,11 +500,20 @@ def test_demo_readme_surfaces_end_to_end_walkthrough() -> None:
     assert "admin@ancilis.demo" in readme
     assert "ancilis-one-shot" in readme
     assert "when you want `run-all.sh` to start the Platform stack locally" in readme
+    assert "latest-session" in readme
+    assert "append-only" in readme
     assert "ALLOW/BLOCK counts" not in readme
     assert "tool registry" in readme
     assert "summary block" in readme
     assert "MCP, Bedrock, CLI, Framework, and HTTP" in readme
     assert "ancilis report generate" in readme
+
+
+def test_demo_walkthrough_documents_latest_session_scoping() -> None:
+    walkthrough = DEMO_WALKTHROUGH_PATH.read_text(encoding="utf-8")
+
+    assert "latest-session" in walkthrough
+    assert "append-only" in walkthrough
 
 
 # ---------------------------------------------------------------------------

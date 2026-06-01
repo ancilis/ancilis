@@ -262,6 +262,7 @@ function sampleEvidenceRecord(overrides: Partial<EvidenceRecord> = {}): Evidence
     tenantId: "tenant-1",
     detectedDataTypes: ["DC-PII"],
     sdkVersion: "0.1.0",
+    frameworkVersion: "0.6",
     classificationContext: { llm_provider: "openai" },
     ...overrides,
   };
@@ -695,6 +696,7 @@ describe("runReport", () => {
     expect(props.find((prop) => prop.name === "evidence-previous-hash")?.value).toBeTruthy();
     expect(props.find((prop) => prop.name === "evidence-session-id")?.value).toBe("session-oscal");
     expect(props.find((prop) => prop.name === "detected-data-types")?.value).toContain("DC-PII");
+    expect(props.find((prop) => prop.name === "aksi-framework-version")?.value).toBe("0.6");
     expect(props.find((prop) => prop.name === "classification-context")?.value).toContain("openai");
   });
 
@@ -862,7 +864,7 @@ describe("Report — Baseline", () => {
     const report = gen.generate("30d", "markdown");
     const md = renderMarkdown(report);
 
-    expect(md).toContain("| Identity verification | 100.0% | 1 | Pass |");
+    expect(md).toContain("| Action Authorization | 100.0% | 1 | Pass |");
   });
 });
 
@@ -1144,6 +1146,7 @@ describe("Output Formats", () => {
     expect(rows[0]?.tenant_id).toBe("tenant-1");
     expect(rows[0]?.detected_data_types).toEqual(["DC-PII"]);
     expect(rows[0]?.sdk_version).toBe("0.1.0");
+    expect(rows[0]?.framework_version).toBe("0.6");
     expect(rows[0]?.classification_context).toEqual({ llm_provider: "openai" });
     expect(rows[1]?.output_summary).toBe("second-output");
   });
@@ -1153,7 +1156,7 @@ describe("Output Formats", () => {
 
     expect(rows[0]).toContain("record_id,evaluation_id,timestamp,agent_id,session_id,source_type,tool_name,decision,mode");
     expect(rows[0]).toContain("control_results,active_overlays,data_classifications,active_certifications");
-    expect(rows[0]).toContain("record_hash,previous_hash,total_duration_ms,output_summary,tenant_id,detected_data_types,sdk_version,classification_context");
+    expect(rows[0]).toContain("record_hash,previous_hash,total_duration_ms,output_summary,tenant_id,detected_data_types,sdk_version,framework_version,classification_context");
     expect(rows[1]).toContain("record-1");
     expect(rows[1]).toContain("test-agent");
     expect(rows[1]).toContain("session-1");

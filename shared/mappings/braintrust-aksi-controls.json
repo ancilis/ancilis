@@ -1,0 +1,42 @@
+{
+  "_version": "1.0.0",
+  "_description": "Braintrust eval scorecard → AKSI control ID mapping. Braintrust experiments evaluate agent outputs with named scorers (faithfulness, factuality, hallucination_rate, safety, toxicity, bias, relevance, accuracy, etc.). Each named scorer maps to an AKSI control category, and per-event score values are bucketed by threshold into PASS / FLAG / FAIL. Inverted scorers (where lower is better — hallucination_rate, toxicity, bias) are interpreted in reverse against the same threshold band.",
+  "_metadata": {
+    "source_format": "braintrust",
+    "schema": "braintrust-experiment-events-v1",
+    "owner": "ancilis-importers",
+    "thresholds": {
+      "pass_min": 0.9,
+      "flag_min": 0.7
+    },
+    "inverted_thresholds": {
+      "pass_max": 0.05,
+      "flag_max": 0.3
+    },
+    "inverted_scores": [
+      "hallucination_rate",
+      "hallucination",
+      "toxicity",
+      "bias"
+    ],
+    "default_unmapped_control": "PR-03",
+    "score_aliases": {
+      "hallucination": "hallucination_rate"
+    }
+  },
+  "mappings": {
+    "faithfulness": "PR-03",
+    "factuality": "PR-03",
+    "hallucination_rate": "PR-03",
+    "hallucination": "PR-03",
+    "groundedness": "PR-03",
+    "safety": "DE-01",
+    "toxicity": "DE-01",
+    "bias": "DE-01",
+    "harm": "DE-01",
+    "harmfulness": "DE-01",
+    "relevance": "PR-04",
+    "accuracy": "PR-04",
+    "answer_relevance": "PR-04"
+  }
+}

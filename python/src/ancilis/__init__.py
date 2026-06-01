@@ -5,11 +5,41 @@ from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ancilis.adapters.anthropic import (
+        AnthropicActionProducer,
+        AnthropicAdapter,
+        AnthropicInvocation,
+        AnthropicObservation,
+    )
     from ancilis.adapters.azure_openai import (
         AzureOpenAIActionProducer,
         AzureOpenAIAdapter,
         AzureOpenAIInvocation,
         AzureOpenAIObservation,
+    )
+    from ancilis.adapters.cloudflare_workers_ai import (
+        CloudflareWorkersAIActionProducer,
+        CloudflareWorkersAIAdapter,
+        CloudflareWorkersAIInvocation,
+        CloudflareWorkersAIObservation,
+    )
+    from ancilis.adapters.huggingface import (
+        HuggingFaceActionProducer,
+        HuggingFaceAdapter,
+        HuggingFaceInvocation,
+        HuggingFaceObservation,
+    )
+    from ancilis.adapters.openai_assistants import (
+        OpenAIAssistantsActionProducer,
+        OpenAIAssistantsAdapter,
+        OpenAIAssistantsInvocation,
+        OpenAIAssistantsObservation,
+    )
+    from ancilis.adapters.openai_realtime import (
+        OpenAIRealtimeActionProducer,
+        OpenAIRealtimeAdapter,
+        OpenAIRealtimeInvocation,
+        OpenAIRealtimeObservation,
     )
     from ancilis.adapters.bedrock import (
         BedrockActionProducer,
@@ -23,6 +53,13 @@ if TYPE_CHECKING:
         VertexAIInvocation,
         VertexAIObservation,
     )
+    from ancilis.adapters.replicate import (
+        ReplicateActionProducer,
+        ReplicateAdapter,
+        ReplicateInvocation,
+        ReplicateObservation,
+    )
+    from ancilis.aksi import AKSI_FRAMEWORK_VERSION
     from ancilis.baselines import BaselineManager, DriftReport
     from ancilis.config import load_config
     from ancilis.controls.custom import CustomControlDefinition, register_control
@@ -89,21 +126,94 @@ except PackageNotFoundError:
     __version__ = "0.0.0+dev"
 
 _EXPORTS: dict[str, tuple[str, str]] = {
+    "AKSI_FRAMEWORK_VERSION": ("ancilis.aksi", "AKSI_FRAMEWORK_VERSION"),
     "ActionProducer": ("ancilis.producers.protocol", "ActionProducer"),
     "AncilisMiddleware": ("ancilis.middleware.middleware", "AncilisMiddleware"),
+    "AnthropicActionProducer": ("ancilis.adapters.anthropic", "AnthropicActionProducer"),
+    "AnthropicAdapter": ("ancilis.adapters.anthropic", "AnthropicAdapter"),
+    "AnthropicInvocation": ("ancilis.adapters.anthropic", "AnthropicInvocation"),
+    "AnthropicObservation": ("ancilis.adapters.anthropic", "AnthropicObservation"),
     "AzureOpenAIActionProducer": ("ancilis.adapters.azure_openai", "AzureOpenAIActionProducer"),
     "AzureOpenAIAdapter": ("ancilis.adapters.azure_openai", "AzureOpenAIAdapter"),
     "AzureOpenAIInvocation": ("ancilis.adapters.azure_openai", "AzureOpenAIInvocation"),
     "AzureOpenAIObservation": ("ancilis.adapters.azure_openai", "AzureOpenAIObservation"),
+    "CloudflareWorkersAIActionProducer": (
+        "ancilis.adapters.cloudflare_workers_ai",
+        "CloudflareWorkersAIActionProducer",
+    ),
+    "CloudflareWorkersAIAdapter": (
+        "ancilis.adapters.cloudflare_workers_ai",
+        "CloudflareWorkersAIAdapter",
+    ),
+    "CloudflareWorkersAIInvocation": (
+        "ancilis.adapters.cloudflare_workers_ai",
+        "CloudflareWorkersAIInvocation",
+    ),
+    "CloudflareWorkersAIObservation": (
+        "ancilis.adapters.cloudflare_workers_ai",
+        "CloudflareWorkersAIObservation",
+    ),
+    "HuggingFaceActionProducer": (
+        "ancilis.adapters.huggingface",
+        "HuggingFaceActionProducer",
+    ),
+    "HuggingFaceAdapter": (
+        "ancilis.adapters.huggingface",
+        "HuggingFaceAdapter",
+    ),
+    "HuggingFaceInvocation": (
+        "ancilis.adapters.huggingface",
+        "HuggingFaceInvocation",
+    ),
+    "HuggingFaceObservation": (
+        "ancilis.adapters.huggingface",
+        "HuggingFaceObservation",
+    ),
     "BaselineManager": ("ancilis.baselines", "BaselineManager"),
     "BedrockActionProducer": ("ancilis.adapters.bedrock", "BedrockActionProducer"),
     "BedrockAdapter": ("ancilis.adapters.bedrock", "BedrockAdapter"),
     "BedrockInvocation": ("ancilis.adapters.bedrock", "BedrockInvocation"),
     "BedrockObservation": ("ancilis.adapters.bedrock", "BedrockObservation"),
+    "OpenAIAssistantsActionProducer": (
+        "ancilis.adapters.openai_assistants",
+        "OpenAIAssistantsActionProducer",
+    ),
+    "OpenAIAssistantsAdapter": (
+        "ancilis.adapters.openai_assistants",
+        "OpenAIAssistantsAdapter",
+    ),
+    "OpenAIAssistantsInvocation": (
+        "ancilis.adapters.openai_assistants",
+        "OpenAIAssistantsInvocation",
+    ),
+    "OpenAIAssistantsObservation": (
+        "ancilis.adapters.openai_assistants",
+        "OpenAIAssistantsObservation",
+    ),
+    "OpenAIRealtimeActionProducer": (
+        "ancilis.adapters.openai_realtime",
+        "OpenAIRealtimeActionProducer",
+    ),
+    "OpenAIRealtimeAdapter": (
+        "ancilis.adapters.openai_realtime",
+        "OpenAIRealtimeAdapter",
+    ),
+    "OpenAIRealtimeInvocation": (
+        "ancilis.adapters.openai_realtime",
+        "OpenAIRealtimeInvocation",
+    ),
+    "OpenAIRealtimeObservation": (
+        "ancilis.adapters.openai_realtime",
+        "OpenAIRealtimeObservation",
+    ),
     "VertexAIActionProducer": ("ancilis.adapters.vertex_ai", "VertexAIActionProducer"),
     "VertexAIAdapter": ("ancilis.adapters.vertex_ai", "VertexAIAdapter"),
     "VertexAIInvocation": ("ancilis.adapters.vertex_ai", "VertexAIInvocation"),
     "VertexAIObservation": ("ancilis.adapters.vertex_ai", "VertexAIObservation"),
+    "ReplicateActionProducer": ("ancilis.adapters.replicate", "ReplicateActionProducer"),
+    "ReplicateAdapter": ("ancilis.adapters.replicate", "ReplicateAdapter"),
+    "ReplicateInvocation": ("ancilis.adapters.replicate", "ReplicateInvocation"),
+    "ReplicateObservation": ("ancilis.adapters.replicate", "ReplicateObservation"),
     "BlockedActionError": ("ancilis.producers.tool", "BlockedActionError"),
     "DependencyScanner": ("ancilis.deps.scanner", "DependencyScanner"),
     "DriftReport": ("ancilis.baselines", "DriftReport"),

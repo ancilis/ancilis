@@ -19,10 +19,16 @@ const DEMO_CONFIG_PATH = join(__dirname, "../../examples/demo/ancilis.yaml");
 
 // Implemented evaluator control IDs that must appear in every evaluation
 const EVALUATOR_CONTROL_IDS = new Set([
-  "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06", "PR-07", "PR-08",
-  "DE-01", "DE-02", "DE-04",
+  "DE-01", "DE-02", "DE-03", "DE-04", "DE-05", "DE-06",
+  "GOV-01", "GOV-02", "GOV-03", "GOV-04", "GOV-05", "GOV-06", "GOV-07",
+  "ID-01", "ID-02", "ID-03", "ID-04", "ID-05",
+  "PAY-01", "PAY-02",
+  "PR-01", "PR-02", "PR-03", "PR-04", "PR-05", "PR-06",
+  "PR-07", "PR-08", "PR-09", "PR-10", "PR-11", "PR-12",
+  "RC-01", "RC-02", "RC-03",
+  "RS-01", "RS-02", "RS-03", "RS-04", "RS-05", "RS-06",
 ]);
-const VALID_RESULTS = new Set(["PASS", "FAIL", "SKIP", "ERROR"]);
+const VALID_RESULTS = new Set(["PASS", "FAIL", "SKIP", "ERROR", "FLAG"]);
 
 function makeAction(
   toolName: string = "check_balance",
@@ -93,7 +99,7 @@ describe("TestProgrammaticEngineInvocation", () => {
     expect(evaluators.DE04IntegrityEvaluator).toBeDefined();
   });
 
-  it("every ControlResult has a valid result value (PASS/FAIL/SKIP/ERROR)", () => {
+  it("every ControlResult has a valid result value (PASS/FAIL/SKIP/ERROR/FLAG)", () => {
     const config = loadConfig({ path: DEMO_CONFIG_PATH });
     const engine = new Engine(config);
     const action = makeAction();

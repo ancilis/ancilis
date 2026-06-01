@@ -1,0 +1,20 @@
+{
+  "_version": "1.0.0",
+  "_description": "Langfuse observation type → AKSI control ID mapping. Observations of the listed types are routed to the corresponding AKSI control. Level (DEFAULT/WARNING/ERROR) determines PASS/FLAG/FAIL.",
+  "_metadata": {
+    "source_format": "langfuse",
+    "schema": "langfuse-trace-export",
+    "owner": "ancilis-importers",
+    "level_to_result": {
+      "DEFAULT": "PASS",
+      "DEBUG": "PASS",
+      "WARNING": "FLAG",
+      "ERROR": "FAIL"
+    }
+  },
+  "mappings": {
+    "GENERATION": "PR-01",
+    "SPAN": "PR-05",
+    "EVENT": "PR-03"
+  }
+}

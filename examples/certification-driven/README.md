@@ -89,7 +89,7 @@ Done. One config line. AIUC-1 readiness assessment from real tool call evidence.
 
 ## What happened
 
-- 26 baseline security controls activated (these are always on)
+- 39 common AKSI v0.6 controls activated (these are always on)
 - AIUC-1 maps 6 of those controls to 20 certification requirements
 - 17 requirements are automated — Ancilis evaluates them from tool call evidence
 - 3 requirements need operator action (governance documentation your team writes)

@@ -1,0 +1,54 @@
+{
+  "_version": "1.0.0",
+  "_description": "Weights & Biases Weave call/eval export → AKSI control ID mapping. Weave (https://weave.wandb.ai) instruments LLM and agent code, exporting per-call records via /api/v2/calls/stream_query. Each call has an `op_name` (e.g. 'openai.ChatCompletion.create', 'weave.Evaluation.summarize', or user-defined ops) plus an optional `summary.scores` block with named evaluator outputs. Op-name patterns map to AKSI controls; score-name → control + threshold mapping mirrors the Braintrust importer. Score values may be aggregate dicts ({mean, stderr, ...}) or scalars; both are handled. Inverted scores (lower-is-better) are mapped against an inverted threshold band.",
+  "_metadata": {
+    "source_format": "wandb_weave",
+    "schema": "weave-calls-stream-query-v2",
+    "owner": "ancilis-importers",
+    "thresholds": {
+      "pass_threshold": 0.9,
+      "flag_threshold": 0.7
+    },
+    "inverted_thresholds": {
+      "inverted_pass_threshold": 0.05,
+      "inverted_flag_threshold": 0.3
+    },
+    "inverted_scores": [
+      "hallucination",
+      "hallucination_rate",
+      "toxicity",
+      "bias",
+      "harm",
+      "harmfulness"
+    ],
+    "default_unmapped_control": "PR-05",
+    "score_aliases": {
+      "hallucination_rate": "hallucination"
+    },
+    "op_patterns": [
+      {"pattern": "*.ChatCompletion.*", "control": "PR-01"},
+      {"pattern": "*.Messages.*", "control": "PR-01"},
+      {"pattern": "llm.*", "control": "PR-01"},
+      {"pattern": "*.Evaluation.*", "control": "PR-03"},
+      {"pattern": "weave.summarize", "control": "PR-03"},
+      {"pattern": "weave.Evaluation.*", "control": "PR-03"},
+      {"pattern": "tool.*", "control": "PR-02"},
+      {"pattern": "embedding.*", "control": "PR-04"},
+      {"pattern": "*.embeddings.*", "control": "PR-04"}
+    ]
+  },
+  "score_mappings": {
+    "faithfulness": "PR-03",
+    "factuality": "PR-03",
+    "groundedness": "PR-03",
+    "hallucination": "PR-03",
+    "hallucination_rate": "PR-03",
+    "toxicity": "PR-03",
+    "bias": "PR-03",
+    "harm": "DE-01",
+    "harmfulness": "DE-01",
+    "safety": "DE-01",
+    "relevance": "PR-04",
+    "answer_relevance": "PR-04"
+  }
+}

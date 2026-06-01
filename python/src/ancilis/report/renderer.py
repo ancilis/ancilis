@@ -46,6 +46,7 @@ EXPORT_FIELDNAMES = [
     "tenant_id",
     "detected_data_types",
     "sdk_version",
+    "framework_version",
     "classification_context",
 ]
 
@@ -225,6 +226,7 @@ def _record_to_export_dict(record: EvidenceRecord) -> dict[str, Any]:
         "tenant_id": record.tenant_id,
         "detected_data_types": record.detected_data_types,
         "sdk_version": record.sdk_version,
+        "framework_version": record.framework_version,
         "classification_context": record.classification_context,
     }
 

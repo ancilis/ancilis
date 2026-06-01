@@ -1,0 +1,61 @@
+{
+  "_version": "1.0.0",
+  "_description": "Weaviate vector search audit log → AKSI control ID mapping. Weaviate is an open-source vector search engine widely used in self-hosted RAG stacks; each entry in an audit log represents one REST or gRPC operation against a class (collection). Operation type, status code, RBAC role, consistency level, and query scope each contribute one or more control results. Synthetic findings (cross-tenant access patterns) are emitted at the importer level by correlating multiple entries.",
+  "_metadata": {
+    "source_format": "weaviate",
+    "schema": "weaviate-audit-log-v1",
+    "owner": "ancilis-importers",
+    "default_limit_threshold": 1000,
+    "signal_priority": [
+      "status_5xx",
+      "status_4xx",
+      "operation_backup",
+      "operation_restore",
+      "consistency_one_on_write",
+      "admin_on_read_op",
+      "unscoped_query",
+      "limit_above_threshold",
+      "operation_delete",
+      "operation_create",
+      "operation_update",
+      "operation_get",
+      "operation_aggregate",
+      "operation_explore",
+      "cross_tenant_access"
+    ],
+    "result_levels": {
+      "operation_get": "PASS",
+      "operation_aggregate": "PASS",
+      "operation_explore": "PASS",
+      "operation_create": "PASS",
+      "operation_update": "PASS",
+      "operation_delete": "PASS",
+      "operation_backup": "FLAG",
+      "operation_restore": "FLAG",
+      "status_4xx": "FLAG",
+      "status_5xx": "FAIL",
+      "limit_above_threshold": "FLAG",
+      "unscoped_query": "FLAG",
+      "admin_on_read_op": "FLAG",
+      "consistency_one_on_write": "FLAG",
+      "cross_tenant_access": "FLAG"
+    }
+  },
+  "mappings": {
+    "operation_get": "PR-04",
+    "operation_aggregate": "PR-04",
+    "operation_explore": "PR-04",
+    "operation_create": "PR-03",
+    "operation_update": "PR-03",
+    "operation_delete": "PR-05",
+    "operation_backup": "PR-05",
+    "operation_restore": "PR-05",
+    "status_4xx": "PR-02",
+    "status_5xx": "DE-01",
+    "limit_above_threshold": "PR-04",
+    "unscoped_query": "PR-04",
+    "admin_on_read_op": "PR-02",
+    "consistency_one_on_write": "PR-03",
+    "cross_tenant_access": "PR-02"
+  }
+}

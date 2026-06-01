@@ -10,7 +10,7 @@ from ancilis.config import load_config
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
 from ancilis.engine.evaluators.pr07_transport import PR07TransportEvaluator
 from ancilis.engine.evaluators.pr08_input import PR08InputEvaluator
-from ancilis.engine.evaluators.gov01_policy import GOV01PolicyEvaluator
+from ancilis.engine.evaluators.gov01_identity_auth import GOV01IdentityAuthEvaluator
 
 
 # --- Helpers ---
@@ -199,75 +199,66 @@ class TestPR08Input:
         assert result.result == "FAIL"
 
 
-# --- GOV-01 Governance Policy ---
+# --- GOV-01 Agent Identity and Authentication ---
 
 
-class TestGOV01Policy:
-    eval = GOV01PolicyEvaluator()
+class TestGOV01IdentityAuth:
+    eval = GOV01IdentityAuthEvaluator()
 
     def _full_config(self):
         return load_config(raw={
-            "agent": {"name": "production-agent"},
-            "security": {
-                "mode": "enforce",
-                "tools": {"allowed": ["read_file", "write_file"]},
+            "agent": {
+                "name": "production-agent",
+                "agent_id": "test-agent",
+                "owner": "security-team",
             },
-            "my_agent_handles": ["personal_info"],
         })
 
-    def test_full_config_passes(self):
+    def test_matching_agent_id_passes(self):
         config = self._full_config()
+        action = _make_action()
+        action.agent_owner = "security-team"
+        result = self.eval.evaluate(action, config)
+        assert result.result == "PASS"
+        assert result.evidence_data["verification_result"] == "verified"
+
+    def test_missing_agent_id_fails(self):
+        config = self._full_config()
+        action = _make_action()
+        action.agent_id = ""
+        result = self.eval.evaluate(action, config)
+        assert result.result == "FAIL"
+        assert result.evidence_data["failure_reason"] == "agent_id is empty or missing"
+
+    def test_mismatched_agent_id_fails(self):
+        config = self._full_config()
+        action = _make_action()
+        action.agent_id = "wrong-agent"
+        result = self.eval.evaluate(action, config)
+        assert result.result == "FAIL"
+        assert result.evidence_data["expected_agent_id"] == "test-agent"
+
+    def test_mismatched_owner_fails(self):
+        config = self._full_config()
+        action = _make_action()
+        action.agent_owner = "other-team"
+        result = self.eval.evaluate(action, config)
+        assert result.result == "FAIL"
+        assert result.evidence_data["failure_reason"] == "agent_owner does not match configured owner"
+
+    def test_falls_back_to_agent_name_when_agent_id_not_configured(self):
+        config = load_config(raw={"agent": {"name": "test-agent"}})
         action = _make_action()
         result = self.eval.evaluate(action, config)
         assert result.result == "PASS"
-        assert result.evidence_data["policy_completeness"] == "complete"
-        assert len(result.evidence_data["fields_missing"]) == 0
-
-    def test_partial_config_name_and_mode_only_flags(self):
-        config = load_config(raw={"agent": {"name": "my-agent"}, "security": {"mode": "audit"}})
-        action = _make_action()
-        result = self.eval.evaluate(action, config)
-        assert result.result == "FLAG"
-        assert result.evidence_data["policy_completeness"] == "partial"
-        assert "data_classifications" in result.evidence_data["fields_missing"]
-        assert "scope_constraints" in result.evidence_data["fields_missing"]
-
-    def test_empty_config_fails(self):
-        # Minimal config: name required but no mode override, no data, no tools
-        config = load_config(raw={"agent": {"name": "unnamed"}})
-        action = _make_action()
-        result = self.eval.evaluate(action, config)
-        # name present, mode defaults to "audit" (still present), no data_classifications, no tools
-        # That's 2 present, 2 missing → partial (FLAG)
-        assert result.result in ("FLAG", "FAIL")
-
-    def test_only_name_set_fails(self):
-        """Only 1 field present → FAIL (insufficient)."""
-        config = load_config(raw={"agent": {"name": "solo-agent"}})
-        action = _make_action()
-        # mode defaults to "audit" so it's present — we get 2 fields present (name + mode)
-        # which means FLAG, not FAIL. This is expected — mode always has a default.
-        result = self.eval.evaluate(action, config)
-        assert result.result in ("FLAG", "FAIL")
-
-    def test_config_with_data_classifications_but_no_scope_flags(self):
-        config = load_config(raw={
-            "agent": {"name": "data-agent"},
-            "security": {"mode": "audit"},
-            "my_agent_handles": ["personal_info"],
-        })
-        action = _make_action()
-        result = self.eval.evaluate(action, config)
-        # name + mode + data_classifications = 3 present, scope_constraints missing → FLAG
-        assert result.result == "FLAG"
-        assert "scope_constraints" in result.evidence_data["fields_missing"]
 
     def test_evidence_structure(self):
         config = self._full_config()
         action = _make_action()
+        action.agent_owner = "security-team"
         result = self.eval.evaluate(action, config)
-        assert "policy_completeness" in result.evidence_data
-        assert "fields_present" in result.evidence_data
-        assert "fields_missing" in result.evidence_data
+        assert "agent_id" in result.evidence_data
+        assert "expected_agent_id" in result.evidence_data
+        assert "verification_result" in result.evidence_data
         assert result.control_id == "GOV-01"
         assert result.duration_ms >= 0

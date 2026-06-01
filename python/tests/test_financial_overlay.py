@@ -9,7 +9,7 @@ import yaml
 from click.testing import CliRunner
 
 from ancilis.activation.loader import load_overlay_profiles, load_taxonomy
-from ancilis.activation.resolver import ALL_AKSI_CONTROLS, ActivationResolver
+from ancilis.activation.resolver import COMMON_AKSI_CONTROLS, ActivationResolver
 from ancilis.cli.main import cli
 from ancilis.config import load_config
 
@@ -47,7 +47,7 @@ class TestFinancialOverlayProfile:
     def test_glba_framework_mapping_covers_all_aksi_controls(self) -> None:
         profile = load_overlay_profiles()["glba"]
 
-        assert set(profile["framework_mapping"]) == ALL_AKSI_CONTROLS
+        assert set(profile["framework_mapping"]) == COMMON_AKSI_CONTROLS
 
     def test_glba_active_controls_reference_glba_sox_and_dora(self) -> None:
         profile = load_overlay_profiles()["glba"]

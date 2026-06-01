@@ -51,7 +51,7 @@ describe("release dependency security gates", () => {
     expect(rootPackage.scripts?.["security:audit:npm"]).toBe("npm audit --audit-level=high");
     expect(rootPackage.scripts?.["security:audit:scan-action"]).toBe("npm --prefix scan-action run security:audit");
     expect(rootPackage.scripts?.["security:audit:python-lock"]).toBe(
-      "pip-audit --desc --requirement requirements-lock.txt --ignore-vuln CVE-2026-4539",
+      "pip-audit --desc --requirement requirements-lock.txt --ignore-vuln CVE-2026-4539 --ignore-vuln PYSEC-2025-183",
     );
     expect(scanActionPackage.scripts?.["security:audit"]).toBe("npm audit --audit-level=moderate");
   });

@@ -1,0 +1,120 @@
+{
+  "_version": "1.0.0",
+  "_description": "ServiceNow sys_audit / sys_security_audit_history → AKSI control ID mapping. ServiceNow is the dominant ITSM platform and Now Assist (their AI agent surface) creates incidents, transitions change requests, drafts/publishes knowledge articles, and qualifies records. The ``reason`` column distinguishes web/api/workflow/now_assist/automation/system; ``is_now_assist`` and ``now_assist_capability`` identify AI-attributed mutations. Tables: incident, change_request, problem, sc_request, kb_knowledge, task, sys_user, sys_user_role, sys_security_acl. Now Assist creating an incident is a PR-01 FLAG (review). Now Assist transitioning an incident to Resolved/Closed is PR-02 FAIL (autonomous resolution). Change-request implementation by Now Assist with approval_state≠approved is PR-02 FAIL. Admin-role grants and ACL mutations are PR-02 FAIL. Now Assist editing a sensitive field is PR-04 FLAG. basic auth on production ServiceNow is PR-04 FAIL. workflow/automation reasons are PR-05 PASS. Synthetic findings: now-assist velocity (>50/h), cross-table (>5/h), and sensitive-field-burst (>20/h). All identifiers are stripped to last-8; old/new values are NEVER stored (length only). client_ip masked to /16. usernames are pseudonymous and stored verbatim.",
+  "_metadata": {
+    "source_format": "servicenow_audit",
+    "schema": "sys_audit-and-sys_security_audit_history",
+    "owner": "ancilis-importers",
+    "admin_role_patterns": [
+      "admin",
+      "admin_*",
+      "*_admin",
+      "*_admin_*",
+      "security_admin",
+      "user_admin",
+      "itil_admin",
+      "knowledge_admin"
+    ],
+    "sensitive_resolved_states": [
+      "Resolved",
+      "Closed",
+      "Closed Complete",
+      "Closed Incomplete",
+      "Solved"
+    ],
+    "implemented_states": [
+      "Implemented",
+      "Closed",
+      "Review",
+      "Closed Complete"
+    ],
+    "approval_states_ok": [
+      "approved"
+    ],
+    "weak_auth_methods": [
+      "basic"
+    ],
+    "now_assist_reason_value": "now_assist",
+    "automation_reason_values": [
+      "workflow",
+      "automation"
+    ],
+    "system_reason_values": [
+      "system"
+    ],
+    "threshold_metadata": {
+      "now_assist_velocity_threshold": 50,
+      "now_assist_velocity_window_seconds": 3600,
+      "cross_table_threshold": 5,
+      "cross_table_window_seconds": 3600,
+      "sensitive_field_burst_threshold": 20,
+      "sensitive_field_burst_window_seconds": 3600
+    },
+    "signal_priority": [
+      "now_assist_resolves_incident",
+      "now_assist_implements_change_unapproved",
+      "kb_published_by_now_assist",
+      "admin_role_grant",
+      "acl_modification",
+      "basic_auth",
+      "sensitive_field_burst",
+      "incident_deletion",
+      "now_assist_creates_incident",
+      "change_request_no_approval",
+      "kb_drafted_by_now_assist",
+      "sensitive_field_now_assist",
+      "now_assist_root_cause",
+      "user_provisioning",
+      "now_assist_velocity",
+      "cross_table_pattern",
+      "approval_rejected",
+      "automation_audit",
+      "workflow_audit",
+      "system_audit"
+    ],
+    "result_levels": {
+      "now_assist_creates_incident": "FLAG",
+      "now_assist_resolves_incident": "FAIL",
+      "incident_deletion": "FLAG",
+      "now_assist_implements_change_unapproved": "FAIL",
+      "change_request_no_approval": "FLAG",
+      "now_assist_root_cause": "FLAG",
+      "kb_drafted_by_now_assist": "FLAG",
+      "kb_published_by_now_assist": "FAIL",
+      "user_provisioning": "FLAG",
+      "admin_role_grant": "FAIL",
+      "acl_modification": "FAIL",
+      "sensitive_field_now_assist": "FLAG",
+      "workflow_audit": "PASS",
+      "automation_audit": "PASS",
+      "system_audit": "PASS",
+      "basic_auth": "FAIL",
+      "approval_rejected": "PASS",
+      "now_assist_velocity": "FLAG",
+      "cross_table_pattern": "FLAG",
+      "sensitive_field_burst": "FAIL"
+    }
+  },
+  "mappings": {
+    "now_assist_creates_incident": "PR-01",
+    "now_assist_resolves_incident": "PR-02",
+    "incident_deletion": "PR-02",
+    "now_assist_implements_change_unapproved": "PR-02",
+    "change_request_no_approval": "PR-02",
+    "now_assist_root_cause": "PR-05",
+    "kb_drafted_by_now_assist": "PR-04",
+    "kb_published_by_now_assist": "PR-04",
+    "user_provisioning": "PR-02",
+    "admin_role_grant": "PR-02",
+    "acl_modification": "PR-02",
+    "sensitive_field_now_assist": "PR-04",
+    "workflow_audit": "PR-05",
+    "automation_audit": "PR-05",
+    "system_audit": "PR-05",
+    "basic_auth": "PR-04",
+    "approval_rejected": "PR-05",
+    "now_assist_velocity": "PR-04",
+    "cross_table_pattern": "PR-05",
+    "sensitive_field_burst": "PR-04"
+  }
+}

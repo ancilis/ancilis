@@ -257,7 +257,7 @@ class TestDE01Coverage833:
         assert result.evidence_data["baseline_established"] is False
 
     def test_evaluate_with_rate_flags_new_tool(self) -> None:
-        baseline = BaselineWindow(tool_calls=["tool-a"], call_count=10, window_minutes=5)
+        baseline = BaselineWindow(tool_calls=["tool-a"], call_count=25, window_minutes=25)
         result = DE01BaselineEvaluator(baseline).evaluate_with_rate(
             _make_action("tool-b"),
             load_config(raw={"agent": {"name": "test-agent"}}),
@@ -268,7 +268,7 @@ class TestDE01Coverage833:
         assert result.evidence_data["new_tools_detected"] == ["tool-b"]
 
     def test_evaluate_with_rate_passes_for_known_tool_at_normal_rate(self) -> None:
-        baseline = BaselineWindow(tool_calls=["tool-a"], call_count=10, window_minutes=5)
+        baseline = BaselineWindow(tool_calls=["tool-a"], call_count=25, window_minutes=12.5)
         result = DE01BaselineEvaluator(baseline).evaluate_with_rate(
             _make_action("tool-a"),
             load_config(raw={"agent": {"name": "test-agent"}}),

@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
+import { AKSI_FRAMEWORK_VERSION } from "../aksi/version.js";
 import { packageRootFrom } from "../shared-path.js";
 import { DuckDBInstance, type DuckDBConnection, type DuckDBValue } from "@duckdb/node-api";
 import type { EvaluationResult } from "../engine/result.js";
@@ -44,7 +45,8 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     tenant_id VARCHAR,
     detected_data_types JSON NOT NULL DEFAULT '[]',
     sdk_version VARCHAR,
-    classification_context JSON NOT NULL DEFAULT '{}'
+    classification_context JSON NOT NULL DEFAULT '{}',
+    framework_version VARCHAR
 );
 `;
 
@@ -54,15 +56,15 @@ INSERT INTO evidence_records (
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
-    detected_data_types, sdk_version, classification_context
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    detected_data_types, sdk_version, classification_context, framework_version
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 `;
 
 const SELECT_COLUMNS = `
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
-detected_data_types, sdk_version, classification_context
+detected_data_types, sdk_version, classification_context, framework_version
 `;
 
 type DuckDBRow = Record<string, unknown>;
@@ -167,6 +169,9 @@ export class EvidenceStore {
       if (!names.has("classification_context")) {
         await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN classification_context JSON DEFAULT '{}'");
       }
+      if (!names.has("framework_version")) {
+        await execAsync(this._conn, "ALTER TABLE evidence_records ADD COLUMN framework_version VARCHAR");
+      }
     })();
 
     return this._initialized;
@@ -205,6 +210,7 @@ export class EvidenceStore {
     const sessionId = evaluation.context?.sessionId ?? null;
     const detectedDataTypes = [...(evaluation.detectedDataTypes ?? [])];
     const sdkVersion = _sdkVersion ?? null;
+    const frameworkVersion = evaluation.frameworkVersion ?? AKSI_FRAMEWORK_VERSION;
     const classificationContext: Record<string, unknown> = {};
     if (this._llmProvider) {
       classificationContext.llm_provider = this._llmProvider;
@@ -238,6 +244,7 @@ export class EvidenceStore {
       tenantId: this._tenantId,
       detectedDataTypes,
       sdkVersion,
+      frameworkVersion,
       classificationContext,
     });
     const recordHash = computeHash(canon);
@@ -263,6 +270,7 @@ export class EvidenceStore {
       tenantId: this._tenantId ?? null,
       detectedDataTypes,
       sdkVersion,
+      frameworkVersion,
       classificationContext,
     };
 
@@ -288,6 +296,7 @@ export class EvidenceStore {
       JSON.stringify(record.detectedDataTypes ?? []),
       record.sdkVersion ?? null,
       JSON.stringify(record.classificationContext ?? {}),
+      record.frameworkVersion ?? null,
     ]);
 
     return record;
@@ -412,11 +421,39 @@ export class EvidenceStore {
         tenantId: record.tenantId,
         detectedDataTypes: record.detectedDataTypes,
         sdkVersion: record.sdkVersion,
+        frameworkVersion: record.frameworkVersion,
         classificationContext: record.classificationContext,
       });
       const expectedHash = computeHash(canon);
 
       if (inScope && record.recordHash !== expectedHash) {
+        const preFrameworkCanon = canonicalPayload({
+          evaluationId: record.evaluationId,
+          timestamp: record.timestamp,
+          agentId: record.agentId,
+          sourceType: record.sourceType ?? "agent",
+          toolName: record.toolName,
+          decision: record.decision,
+          mode: record.mode,
+          controlResults: record.controlResults,
+          activeOverlays: record.activeOverlays,
+          dataClassifications: record.dataClassifications,
+          activeCertifications: record.activeCertifications,
+          totalDurationMs: record.totalDurationMs,
+          previousHash: record.previousHash,
+          outputSummary: record.outputSummary,
+          sessionId: record.sessionId,
+          tenantId: record.tenantId,
+          detectedDataTypes: record.detectedDataTypes,
+          sdkVersion: record.sdkVersion,
+          classificationContext: record.classificationContext,
+        });
+        const preFrameworkHash = computeHash(preFrameworkCanon);
+        if (record.recordHash === preFrameworkHash) {
+          expectedPrevious = record.recordHash;
+          continue;
+        }
+
         const legacyCanon = canonicalPayload({
           evaluationId: record.evaluationId,
           timestamp: record.timestamp,
@@ -669,6 +706,7 @@ export class EvidenceStore {
       tenantId: (row.tenant_id as string | null | undefined) ?? null,
       detectedDataTypes: (parseJson(row.detected_data_types) ?? []) as string[],
       sdkVersion: (row.sdk_version as string | null | undefined) ?? null,
+      frameworkVersion: (row.framework_version as string | null | undefined) ?? null,
       classificationContext: (parseJson(row.classification_context) ?? {}) as Record<string, unknown>,
     };
   }

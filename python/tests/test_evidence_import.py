@@ -132,7 +132,7 @@ class TestSarifImporter:
         assert ev.decision == "FLAG"
         assert len(ev.control_results) == 1
         cr = ev.control_results[0]
-        assert cr.control_id == "PR-03"  # sql-injection → PR-03
+        assert cr.control_id == "PR-08"  # sql-injection → input validation
         assert cr.result == "FAIL"
         assert "js/sql-injection" in cr.detail
         assert "src/db.js:42" in cr.detail
@@ -218,25 +218,27 @@ class TestSarifImporter:
 
 class TestSarifMapping:
     def test_exact_match(self):
-        mappings = {"js/sql-injection": "PR-03"}
-        assert _map_rule_to_control("js/sql-injection", mappings) == "PR-03"
+        mappings = [{"rule_id": "js/sql-injection", "control_id": "PR-08", "match": "exact"}]
+        assert _map_rule_to_control("js/sql-injection", mappings) == "PR-08"
 
     def test_glob_match(self):
-        mappings = {"js/sql-*": "PR-03"}
-        assert _map_rule_to_control("js/sql-union-injection", mappings) == "PR-03"
+        mappings = [{"rule_id": "js/sql-*", "control_id": "PR-08", "match": "glob"}]
+        assert _map_rule_to_control("js/sql-union-injection", mappings) == "PR-08"
 
     def test_exact_beats_glob(self):
-        mappings = {"js/xss": "PR-03", "js/xss-*": "PR-02"}
-        assert _map_rule_to_control("js/xss", mappings) == "PR-03"
+        mappings = [
+            {"rule_id": "js/xss", "control_id": "PR-08", "match": "exact"},
+            {"rule_id": "js/xss-*", "control_id": "PR-02", "match": "glob"},
+        ]
+        assert _map_rule_to_control("js/xss", mappings) == "PR-08"
 
     def test_unmapped_returns_default(self):
-        assert _map_rule_to_control("unknown/rule", {}) == "PR-03"
+        assert _map_rule_to_control("unknown/rule", []) == "PR-03"
 
-    def test_load_mappings_returns_dict(self):
+    def test_load_mappings_returns_entries(self):
         m = _load_mappings()
-        assert isinstance(m, dict)
-        # shared/mappings/sarif-aksi-controls.json has at least a few entries
-        # (gracefully handles if file is missing)
+        assert isinstance(m, list)
+        assert all({"rule_id", "control_id", "match"} <= set(entry) for entry in m)
 
 
 # ---------------------------------------------------------------------------

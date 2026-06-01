@@ -389,6 +389,12 @@ function loadValidCertTargets(): Set<string> {
       targets.add(file.replace(".json", ""));
     }
   } catch { /* dir may not exist */ }
+  for (const controlDef of loadControlDefinitions().values()) {
+    if (controlDef.common !== false) continue;
+    for (const target of ((controlDef.trigger_certification_targets as string[] | undefined) ?? [])) {
+      targets.add(target);
+    }
+  }
   return targets;
 }
 
@@ -528,6 +534,52 @@ function validateConfig(raw: Record<string, unknown>, context: ValidationContext
   return { config, warnings };
 }
 
+function normalizeCertificationTarget(target: string): string {
+  return target.toUpperCase().replaceAll("-", "_");
+}
+
+function firstOriginalCertificationTarget(targets: string[], normalizedTarget: string): string {
+  for (const target of targets) {
+    if (normalizeCertificationTarget(target) === normalizedTarget) {
+      return target;
+    }
+  }
+  return normalizedTarget;
+}
+
+function activateExtensionControls(
+  result: ResolvedConfig,
+  controlDefs: Map<string, ControlDefinition>,
+  scope: {
+    dataClassifications: Set<string>;
+    certificationTargets: string[];
+    config: AncilisConfig;
+  },
+): void {
+  const normalizedTargets = new Set(scope.certificationTargets.map(normalizeCertificationTarget));
+  for (const [cid, cdef] of [...controlDefs.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (cdef.common !== false) continue;
+    const override = scope.config.security.controls[cid];
+    if (override?.enabled === false) continue;
+    const triggerClasses = new Set((cdef.trigger_classifications as string[] | undefined) ?? []);
+    const triggerTargets = new Set((cdef.trigger_certification_targets as string[] | undefined) ?? []);
+    const classMatches = [...triggerClasses].filter(code => scope.dataClassifications.has(code)).sort();
+    const targetMatches = [...triggerTargets].filter(target => normalizedTargets.has(target)).sort();
+    if (classMatches.length === 0 && targetMatches.length === 0) continue;
+    const control = result.controls.get(cid);
+    if (!control) continue;
+    control.enabled = true;
+    const sources = result.controlActivationSources.get(cid) ?? new Set<string>();
+    if (classMatches.length > 0) {
+      sources.add(`classification:${classMatches[0]}`);
+    }
+    if (targetMatches.length > 0) {
+      sources.add(`certification_targets:${firstOriginalCertificationTarget(scope.certificationTargets, targetMatches[0]!)}`);
+    }
+    result.controlActivationSources.set(cid, sources);
+  }
+}
+
 // --- Config Resolution ---
 
 function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfig {
@@ -602,6 +654,12 @@ function resolveConfig(config: AncilisConfig, warnings: string[]): ResolvedConfi
       allDcCodes.add(code);
     }
   }
+
+  activateExtensionControls(result, controlDefs, {
+    dataClassifications: allDcCodes,
+    certificationTargets: config.certification_targets,
+    config,
+  });
 
   // Build classification-to-overlay lookup
   const classificationLookup = new Map<string, string[]>();

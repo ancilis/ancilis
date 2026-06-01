@@ -1,0 +1,91 @@
+{
+  "_version": "1.0.0",
+  "_description": "n8n workflow-execution log → AKSI control ID mapping. n8n is the leading open-source workflow automation platform with first-class AI agent support — agents are workflows that chain LLMs (LangChain Agent, OpenAI, Anthropic, etc.), HTTP requests, Code nodes (arbitrary JS), and database writes (postgres/mysql/s3/supabase/mongodb). Self-hosted n8n is widely used in regulated industries that cannot send data through SaaS, which makes runtime evidence from these workflows particularly load-bearing. The execution status drives the primary control; trigger mode, node-type fingerprints (Code/HTTP/DB/LLM/Agent), credential breadth, and external-call surface produce additive flags. Raw node input/output values, raw error messages, and credential VALUES are NEVER ingested — only structural metadata (top-level input/output keys, error length+sha256, credential names) is preserved.",
+  "_metadata": {
+    "source_format": "n8n",
+    "schema": "n8n-execution-export-v1",
+    "owner": "ancilis-importers",
+    "credentials_referenced_threshold": 5,
+    "external_calls_threshold": 20,
+    "db_write_nodes": [
+      "n8n-nodes-base.postgres",
+      "n8n-nodes-base.mysql",
+      "n8n-nodes-base.s3",
+      "n8n-nodes-base.awsS3",
+      "n8n-nodes-base.supabase",
+      "n8n-nodes-base.mongoDb",
+      "n8n-nodes-base.mongodb"
+    ],
+    "llm_nodes": [
+      "@n8n/n8n-nodes-langchain.openAi",
+      "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "@n8n/n8n-nodes-langchain.lmChatGoogle",
+      "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "@n8n/n8n-nodes-langchain.chainLlm",
+      "n8n-nodes-base.openAi",
+      "n8n-nodes-base.anthropic"
+    ],
+    "agent_nodes": [
+      "@n8n/n8n-nodes-langchain.agent"
+    ],
+    "code_nodes": [
+      "n8n-nodes-base.code",
+      "n8n-nodes-base.function",
+      "n8n-nodes-base.functionItem"
+    ],
+    "http_nodes": [
+      "n8n-nodes-base.httpRequest"
+    ],
+    "http_allowlist": [],
+    "signal_priority": [
+      "status_failed",
+      "status_success",
+      "status_canceled",
+      "status_waiting",
+      "trigger_webhook",
+      "mode_manual",
+      "code_node_used",
+      "http_external_host",
+      "credential_sprawl",
+      "retry_after_error",
+      "db_write_node",
+      "agent_node_used",
+      "llm_node_used",
+      "external_calls_high"
+    ],
+    "result_levels": {
+      "status_success": "PASS",
+      "status_failed": "FAIL",
+      "status_canceled": "PASS",
+      "status_waiting": "FLAG",
+      "trigger_webhook": "FLAG",
+      "mode_manual": "PASS",
+      "code_node_used": "FLAG",
+      "http_external_host": "FLAG",
+      "credential_sprawl": "FLAG",
+      "retry_after_error": "PASS",
+      "db_write_node": "FLAG",
+      "agent_node_used": "PASS",
+      "llm_node_used": "PASS",
+      "external_calls_high": "FLAG"
+    }
+  },
+  "mappings": {
+    "status_success": "PR-05",
+    "status_failed": "DE-01",
+    "status_canceled": "PR-05",
+    "status_waiting": "PR-02",
+    "trigger_webhook": "PR-01",
+    "mode_manual": "PR-05",
+    "code_node_used": "PR-03",
+    "http_external_host": "PR-04",
+    "credential_sprawl": "PR-02",
+    "retry_after_error": "PR-05",
+    "db_write_node": "PR-04",
+    "agent_node_used": "PR-01",
+    "llm_node_used": "PR-01",
+    "external_calls_high": "PR-04"
+  }
+}

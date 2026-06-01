@@ -1,0 +1,170 @@
+{
+  "_version": "1.1.0",
+  "_description": "PostHog product-analytics + LLM-observability export → AKSI control ID mapping. PostHog (https://posthog.com) is the leading open-source product-analytics platform with strong AI-native focus: $ai_generation / $ai_metric / $ai_trace / $ai_span / $ai_error events for LLM observability, plus session replay, feature flags, experiments, and surveys. Distinct from Mixpanel: PostHog ships its own AI Engineer features (LLM tracing with prompt + completion capture, hallucination/toxicity/safety metrics) AND session recordings — both are top-tier exfiltration surfaces. The importer maps $ai_generation events to PR-01 (PASS for successful LLM calls) or DE-01 (FAIL on $ai_is_error=true); $ai_metric events with high hallucination/toxicity to PR-03 FAIL; $ai_metric safety<floor to DE-01 FAIL; $ai_error events to DE-01 FAIL; $identify / $set / $set_once with sensitive keys (ssn, credit_card, full_name, ssn_last4, drivers_license) to PR-04 FAIL→BLOCK; sensitive_patterns_matched containing ssn_like/credit_card_like to PR-04 FAIL→BLOCK; session-recording events on EU users without consent to PR-04 FLAG; $ai_total_cost_usd>threshold to PR-04 FLAG. Audit log: insight_shared_publicly→PR-04 FAIL; recording_share_link_created→PR-04 FAIL→BLOCK (a session recording is a full-fidelity capture of a user's screen, public share = top-priority exfil); data_export→PR-04 FLAG; api_key_created/plugin_installed→PR-01 FLAG; webhook_url_changed (not in allowlist)→PR-04 FLAG; team_member_role_changed (admin)→PR-02 FLAG. Synthetic findings: PII concentration, AI-error-rate burst, autonomous recording-share burst.",
+  "_metadata": {
+    "source_format": "posthog",
+    "schema": "posthog-events-v1",
+    "owner": "ancilis-importers",
+    "high_volume_threshold": 100,
+    "high_volume_window_seconds": 3600,
+    "pii_concentration_threshold": 0.05,
+    "ai_error_rate_threshold": 0.10,
+    "ai_error_rate_min_events": 10,
+    "recording_share_burst_threshold": 3,
+    "recording_share_burst_window_seconds": 3600,
+    "ai_cost_threshold_usd": 1.0,
+    "ai_hallucination_threshold": 0.5,
+    "ai_toxicity_threshold": 0.5,
+    "ai_safety_floor": 0.5,
+    "sensitive_event_property_keys": [
+      "ssn",
+      "credit_card",
+      "full_name",
+      "ssn_last4",
+      "drivers_license",
+      "passport",
+      "tax_id",
+      "bank_account",
+      "date_of_birth",
+      "phone",
+      "full_address"
+    ],
+    "block_sensitive_pattern_kinds": [
+      "ssn_like",
+      "credit_card_like",
+      "ssn_like_pattern",
+      "credit_card_like_pattern"
+    ],
+    "flag_sensitive_pattern_kinds": [
+      "email"
+    ],
+    "ai_generation_events": [
+      "$ai_generation",
+      "$ai_span",
+      "$ai_trace"
+    ],
+    "ai_metric_events": [
+      "$ai_metric"
+    ],
+    "ai_error_events": [
+      "$ai_error"
+    ],
+    "identify_events": [
+      "$identify",
+      "$set",
+      "$set_once"
+    ],
+    "session_recording_events": [
+      "$session_recording_started",
+      "session_recording_started"
+    ],
+    "ai_high_severity_metrics": [
+      "hallucination",
+      "toxicity"
+    ],
+    "ai_safety_metrics": [
+      "safety"
+    ],
+    "eu_data_residency_regions": [
+      "EU",
+      "DE",
+      "FR",
+      "IE",
+      "NL",
+      "ES",
+      "IT",
+      "AT",
+      "BE",
+      "DK",
+      "FI",
+      "GR",
+      "PL",
+      "PT",
+      "SE"
+    ],
+    "webhook_allowlist": [],
+    "signal_priority": [
+      "audit_recording_share_link_created",
+      "sensitive_pattern_ssn",
+      "sensitive_pattern_credit_card",
+      "set_sensitive_property",
+      "audit_insight_shared_publicly",
+      "ai_metric_high_hallucination",
+      "ai_metric_high_toxicity",
+      "ai_metric_low_safety",
+      "ai_generation_error",
+      "ai_error_event",
+      "sensitive_pattern_generic",
+      "session_recording_eu_no_consent",
+      "pageview_eu_no_consent",
+      "ai_high_cost",
+      "audit_data_export",
+      "audit_api_key_created",
+      "audit_plugin_installed",
+      "audit_webhook_url_changed",
+      "audit_role_admin_changed",
+      "feature_flag_called",
+      "ai_generation_pass",
+      "high_volume_sensitive",
+      "pii_concentration",
+      "ai_error_rate_high",
+      "recording_share_burst"
+    ],
+    "result_levels": {
+      "ai_generation_pass": "PASS",
+      "ai_generation_error": "FAIL",
+      "ai_error_event": "FAIL",
+      "ai_metric_high_hallucination": "FAIL",
+      "ai_metric_high_toxicity": "FAIL",
+      "ai_metric_low_safety": "FAIL",
+      "ai_high_cost": "FLAG",
+      "set_sensitive_property": "FAIL",
+      "sensitive_pattern_ssn": "FAIL",
+      "sensitive_pattern_credit_card": "FAIL",
+      "sensitive_pattern_email": "FLAG",
+      "sensitive_pattern_generic": "FLAG",
+      "session_recording_eu_no_consent": "FLAG",
+      "pageview_eu_no_consent": "FLAG",
+      "feature_flag_called": "PASS",
+      "audit_insight_shared_publicly": "FAIL",
+      "audit_recording_share_link_created": "FAIL",
+      "audit_data_export": "FLAG",
+      "audit_api_key_created": "FLAG",
+      "audit_plugin_installed": "FLAG",
+      "audit_webhook_url_changed": "FLAG",
+      "audit_role_admin_changed": "FLAG",
+      "high_volume_sensitive": "FAIL",
+      "pii_concentration": "FAIL",
+      "ai_error_rate_high": "FAIL",
+      "recording_share_burst": "FAIL"
+    }
+  },
+  "mappings": {
+    "ai_generation_pass": "PR-01",
+    "ai_generation_error": "DE-01",
+    "ai_error_event": "DE-01",
+    "ai_metric_high_hallucination": "PR-03",
+    "ai_metric_high_toxicity": "PR-03",
+    "ai_metric_low_safety": "DE-01",
+    "ai_high_cost": "PR-04",
+    "set_sensitive_property": "PR-04",
+    "sensitive_pattern_ssn": "PR-04",
+    "sensitive_pattern_credit_card": "PR-04",
+    "sensitive_pattern_email": "PR-04",
+    "sensitive_pattern_generic": "PR-04",
+    "session_recording_eu_no_consent": "PR-04",
+    "pageview_eu_no_consent": "PR-04",
+    "feature_flag_called": "PR-05",
+    "audit_insight_shared_publicly": "PR-04",
+    "audit_recording_share_link_created": "PR-04",
+    "audit_data_export": "PR-04",
+    "audit_api_key_created": "PR-01",
+    "audit_plugin_installed": "PR-01",
+    "audit_webhook_url_changed": "PR-04",
+    "audit_role_admin_changed": "PR-02",
+    "high_volume_sensitive": "PR-04",
+    "pii_concentration": "PR-04",
+    "ai_error_rate_high": "DE-01",
+    "recording_share_burst": "PR-04"
+  }
+}

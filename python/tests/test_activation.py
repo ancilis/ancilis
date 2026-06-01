@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+import ancilis.activation.resolver as resolver_module
 from ancilis.activation.advisory import (
     CertificationUpgradeAdvisory,
     ClassificationAdvisory,
@@ -23,15 +24,17 @@ from ancilis.activation.resolver import (
 )
 from ancilis.config import load_config
 from ancilis.controls.de01_baseline import BaselineWindow, DE01BaselineEvaluator
-from ancilis.controls.pr05_audit import PR05AuditEvaluator
+from ancilis.engine.evaluators.pr06_audit_trail import PR06AuditTrailEvaluator
 from ancilis.engine.action import Action, ActionParameters, ToolInfo
 from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry
+from ancilis.engine.result import ControlResult
 
 
 def make_action(
     agent_id: str = "test-agent",
     tool_name: str = "my-tool",
+    parameter_hash: str = "param-hash",
 ) -> Action:
     return Action(
         action_id="act-001",
@@ -39,7 +42,7 @@ def make_action(
         agent_id=agent_id,
         action_type="tool_call",
         tool=ToolInfo(name=tool_name),
-        parameters=ActionParameters(raw={}),
+        parameters=ActionParameters(raw={}, parameter_hash=parameter_hash),
     )
 
 
@@ -109,6 +112,26 @@ class TestPath2CertificationIntent:
         assert profile is not None
         assert "version" in profile
 
+    def test_certification_required_controls_all_receive_standard_threshold(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(
+            resolver_module,
+            "load_certification_profiles",
+            lambda _: {
+                "future-cert": {
+                    "required_aksi_controls": ["FUT-01", "FUT-02"],
+                    "evidence_packaging": {},
+                }
+            },
+        )
+
+        spec = ActivationResolver().resolve(certification_targets=["future-cert"])
+
+        assert spec.control_thresholds["FUT-01"] == "standard"
+        assert spec.control_thresholds["FUT-02"] == "standard"
+
 
 # --- Both Paths Composing ---
 
@@ -122,7 +145,7 @@ class TestBothPaths:
         )
         assert "hipaa" in spec.active_overlays
         assert "aiuc-1" in spec.active_certifications
-        assert len(spec.active_controls) == 26
+        assert len(spec.active_controls) == 39
 
     def test_conflict_strictest_wins(self):
         resolver = ActivationResolver()
@@ -240,9 +263,14 @@ class TestCertificationProfile:
 class TestPR05Evaluator:
     def test_logging_enabled_pass(self):
         config = load_config(raw={"agent": {"name": "test-agent"}})
-        evaluator = PR05AuditEvaluator()
+        evaluator = PR06AuditTrailEvaluator()
         action = make_action()
-        result = evaluator.evaluate(action, config)
+        result = evaluator.evaluate(
+            action,
+            config,
+            prior_results=[ControlResult("PR-01", "Action Authorization", "PASS", "ok")],
+            evidence_store=object(),
+        )
         assert result.result == "PASS"
         assert result.evidence_data["logging_enabled"] is True
         assert result.evidence_data["log_format"] == "json"
@@ -250,16 +278,26 @@ class TestPR05Evaluator:
     def test_logging_disabled_fail(self):
         config = load_config(raw={"agent": {"name": "test-agent"}})
         config.evidence_retention_days = 0
-        evaluator = PR05AuditEvaluator()
+        evaluator = PR06AuditTrailEvaluator()
         action = make_action()
-        result = evaluator.evaluate(action, config)
+        result = evaluator.evaluate(
+            action,
+            config,
+            prior_results=[ControlResult("PR-01", "Action Authorization", "PASS", "ok")],
+            evidence_store=object(),
+        )
         assert result.result == "FAIL"
 
     def test_evidence_no_raw_logs(self):
         config = load_config(raw={"agent": {"name": "test-agent"}})
-        evaluator = PR05AuditEvaluator()
+        evaluator = PR06AuditTrailEvaluator()
         action = make_action()
-        result = evaluator.evaluate(action, config)
+        result = evaluator.evaluate(
+            action,
+            config,
+            prior_results=[ControlResult("PR-01", "Action Authorization", "PASS", "ok")],
+            evidence_store=object(),
+        )
         # Evidence should contain structural metadata, not raw log content
         assert "log_format" in result.evidence_data
         assert "sample_entry_field_count" in result.evidence_data
@@ -276,11 +314,18 @@ class TestDE01Evaluator:
         result = evaluator.evaluate(action, config)
         assert result.result == "PASS"
         assert "baseline not yet established" in result.detail.lower()
+        assert result.evidence_data["behavior_schema_version"] == 1
+        assert result.evidence_data["observation_type"] == "tool_call"
+        assert result.evidence_data["observed_tool_name"] == "my-tool"
+        assert result.evidence_data["observed_parameter_hash"] == "param-hash"
+        assert result.evidence_data["baseline_min_events"] == 25
+        assert result.evidence_data["window_event_count"] == 0
+        assert result.evidence_data["window_unique_tools"] == []
 
     def test_normal_behavior_pass(self):
         baseline = BaselineWindow(
             tool_calls=["tool-a", "tool-b", "tool-a"],
-            call_count=3,
+            call_count=25,
             window_minutes=5.0,
         )
         evaluator = DE01BaselineEvaluator(baseline_window=baseline)
@@ -288,11 +333,13 @@ class TestDE01Evaluator:
         action = make_action(tool_name="tool-a")
         result = evaluator.evaluate(action, config)
         assert result.result == "PASS"
+        assert result.evidence_data["baseline_established"] is True
+        assert result.evidence_data["new_tools_detected"] == []
 
     def test_new_tool_flag(self):
         baseline = BaselineWindow(
             tool_calls=["tool-a", "tool-b"],
-            call_count=10,
+            call_count=25,
             window_minutes=5.0,
         )
         evaluator = DE01BaselineEvaluator(baseline_window=baseline)
@@ -301,12 +348,13 @@ class TestDE01Evaluator:
         result = evaluator.evaluate(action, config)
         assert result.result == "FLAG"
         assert "unknown-tool" in result.evidence_data["new_tools_detected"]
+        assert result.evidence_data["baseline_established"] is True
 
     def test_frequency_spike_flag(self):
         baseline = BaselineWindow(
             tool_calls=["tool-a"] * 10,
-            call_count=10,
-            window_minutes=10.0,  # 1 call/min baseline
+            call_count=25,
+            window_minutes=25.0,  # 1 call/min baseline
         )
         evaluator = DE01BaselineEvaluator(baseline_window=baseline)
         config = load_config(raw={"agent": {"name": "test-agent"}})
@@ -321,7 +369,7 @@ class TestDE01Evaluator:
         """DE-01 should only produce PASS or FLAG, never BLOCK."""
         baseline = BaselineWindow(
             tool_calls=["tool-a"],
-            call_count=5,
+            call_count=25,
             window_minutes=5.0,
         )
         evaluator = DE01BaselineEvaluator(baseline_window=baseline)
@@ -334,13 +382,14 @@ class TestDE01Evaluator:
     def test_deviation_flags_are_objects(self):
         baseline = BaselineWindow(
             tool_calls=["tool-a"],
-            call_count=5,
+            call_count=25,
             window_minutes=5.0,
         )
         evaluator = DE01BaselineEvaluator(baseline_window=baseline)
         config = load_config(raw={"agent": {"name": "test-agent"}})
         action = make_action(tool_name="new-tool")
         result = evaluator.evaluate(action, config)
+        assert result.result == "FLAG"
         for flag in result.evidence_data["deviation_flags"]:
             assert "type" in flag
             assert "display_message" in flag

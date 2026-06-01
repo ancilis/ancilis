@@ -723,6 +723,32 @@ class TestCLIEvidencePersistence:
         records = evidence_store.get_records()
         assert records[0].decision == "BLOCK"
 
+    def test_de01_behavior_fields_persist_in_cli_evidence_after_warmup(self):
+        """CLI tool-call evidence carries the new DE-01 runtime behavior contract."""
+        config = _config()
+        engine = _make_engine(config)
+        evidence_store = EvidenceStore(config, in_memory=True)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            evidence_store=evidence_store,
+        )
+
+        for index in range(25):
+            producer.execute(command=["echo", f"warm-{index}"], agent_name="test-agent")
+
+        producer.execute(command=["echo", "steady-state"], agent_name="test-agent")
+
+        record = evidence_store.get_records()[-1]
+        de01 = next(item for item in record.control_results if item["control_id"] == "DE-01")
+
+        assert de01["result"] == "PASS"
+        assert de01["evidence_data"]["behavior_schema_version"] == 1
+        assert de01["evidence_data"]["observation_type"] == "tool_call"
+        assert de01["evidence_data"]["observed_tool_name"] == "cli:echo"
+        assert de01["evidence_data"]["observed_parameter_hash"]
+        assert de01["evidence_data"]["baseline_established"] is True
+
 
 # --- Fix Pass #2: CLI Trust Lifecycle Parity ---
 

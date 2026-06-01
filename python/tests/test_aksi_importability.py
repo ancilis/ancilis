@@ -95,7 +95,7 @@ class TestProgrammaticEngineInvocation:
     def test_de02_evaluator_exported_from_evaluators_package(self) -> None:
         """DE-02 evaluator is importable from the evaluators package."""
         evaluators = importlib.import_module("ancilis.engine.evaluators")
-        assert hasattr(evaluators, "DE02ConfigDriftEvaluator")
+        assert hasattr(evaluators, "DE02ClassificationDriftEvaluator")
 
     def test_de04_evaluator_exported_from_evaluators_package(self) -> None:
         """DE-04 evaluator is importable from the evaluators package."""
@@ -177,9 +177,9 @@ class TestEngineConstructorValidatesConfig:
 class TestEvaluatorRootImportability:
     """Verify all 9 new evaluators are importable from the root evaluators package."""
 
-    def test_pr06_config_baseline_importable(self) -> None:
-        from ancilis.engine.evaluators import PR06ConfigBaselineEvaluator  # noqa: F401
-        assert PR06ConfigBaselineEvaluator is not None
+    def test_de03_config_drift_importable(self) -> None:
+        from ancilis.engine.evaluators import DE03ConfigDriftEvaluator  # noqa: F401
+        assert DE03ConfigDriftEvaluator is not None
 
     def test_pr07_transport_importable(self) -> None:
         from ancilis.engine.evaluators import PR07TransportEvaluator  # noqa: F401
@@ -189,9 +189,9 @@ class TestEvaluatorRootImportability:
         from ancilis.engine.evaluators import PR08InputEvaluator  # noqa: F401
         assert PR08InputEvaluator is not None
 
-    def test_gov01_policy_importable(self) -> None:
-        from ancilis.engine.evaluators import GOV01PolicyEvaluator  # noqa: F401
-        assert GOV01PolicyEvaluator is not None
+    def test_gov01_identity_auth_importable(self) -> None:
+        from ancilis.engine.evaluators import GOV01IdentityAuthEvaluator  # noqa: F401
+        assert GOV01IdentityAuthEvaluator is not None
 
     def test_gov02_ownership_importable(self) -> None:
         from ancilis.engine.evaluators import GOV02OwnershipEvaluator  # noqa: F401
@@ -201,9 +201,9 @@ class TestEvaluatorRootImportability:
         from ancilis.engine.evaluators import GOV03RiskToleranceEvaluator  # noqa: F401
         assert GOV03RiskToleranceEvaluator is not None
 
-    def test_de02_config_drift_importable(self) -> None:
-        from ancilis.engine.evaluators import DE02ConfigDriftEvaluator  # noqa: F401
-        assert DE02ConfigDriftEvaluator is not None
+    def test_de02_classification_drift_importable(self) -> None:
+        from ancilis.engine.evaluators import DE02ClassificationDriftEvaluator  # noqa: F401
+        assert DE02ClassificationDriftEvaluator is not None
 
     def test_de04_integrity_importable(self) -> None:
         from ancilis.engine.evaluators import DE04IntegrityEvaluator  # noqa: F401
@@ -217,13 +217,16 @@ class TestEvaluatorRootImportability:
         """__all__ in evaluators package lists all 9 new evaluators."""
         import ancilis.engine.evaluators as evs
         new_evaluators = [
-            "PR06ConfigBaselineEvaluator",
+            "PR01ActionAuthorizationEvaluator",
+            "PR05IsolationEvaluator",
+            "PR06AuditTrailEvaluator",
             "PR07TransportEvaluator",
             "PR08InputEvaluator",
-            "GOV01PolicyEvaluator",
+            "GOV01IdentityAuthEvaluator",
             "GOV02OwnershipEvaluator",
             "GOV03RiskToleranceEvaluator",
-            "DE02ConfigDriftEvaluator",
+            "DE02ClassificationDriftEvaluator",
+            "DE03ConfigDriftEvaluator",
             "DE04IntegrityEvaluator",
             "ID01InventoryEvaluator",
         ]

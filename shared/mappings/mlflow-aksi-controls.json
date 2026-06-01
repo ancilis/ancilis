@@ -1,0 +1,75 @@
+{
+  "_version": "1.0.0",
+  "_description": "MLflow runs / model registry / audit-log → AKSI control ID mapping. MLflow is the dominant open-source MLOps platform — it tracks model versions, runs experiments, manages a model registry, and deploys to production. For agent quality assurance and reproducibility, MLflow's run/model/audit trail is the canonical evidence source. Run records are evaluated by aggregated metrics (hallucination_rate, toxicity_score, accuracy, f1) AND by reproducibility signals (git commit pinned, dataset digest pinned, prompt template id pinned, source.type, lifecycle_stage). Registered-model records flag warning-stage productions and dual-Production-version inconsistencies. Audit-log records flag deletions and auto-promote-to-Production transitions without an approver.",
+  "_metadata": {
+    "source_format": "mlflow",
+    "schema": "mlflow-runs-registered-models-audit-v1",
+    "owner": "ancilis-importers",
+    "thresholds": {
+      "accuracy_pass_min": 0.9,
+      "accuracy_fail_max": 0.7,
+      "hallucination_pass_max": 0.05,
+      "hallucination_fail_min": 0.3,
+      "toxicity_pass_max": 0.05,
+      "toxicity_fail_min": 0.3
+    },
+    "well_known_tag_keys": [
+      "mlflow.source.git.commit",
+      "mlflow.source.type",
+      "mlflow.runName",
+      "mlflow.parentRunId",
+      "mlflow.user",
+      "deploy_to_production"
+    ],
+    "well_known_param_keys": [
+      "model_name",
+      "prompt_template_id"
+    ],
+    "bot_user_patterns": [
+      "*-svc",
+      "*-bot",
+      "*-agent",
+      "agent-*",
+      "bot-*",
+      "svc-*",
+      "*-automation",
+      "ci-*",
+      "*-ci"
+    ],
+    "default_unmapped_control": "PR-05"
+  },
+  "metric_mappings": {
+    "hallucination_rate": {"control": "PR-03", "inverted": true},
+    "hallucination": {"control": "PR-03", "inverted": true},
+    "toxicity_score": {"control": "DE-01", "inverted": true},
+    "toxicity": {"control": "DE-01", "inverted": true},
+    "accuracy": {"control": "PR-03", "inverted": false},
+    "f1": {"control": "PR-03", "inverted": false},
+    "f1_score": {"control": "PR-03", "inverted": false}
+  },
+  "audit_action_mappings": {
+    "run.delete": {"control": "PR-02", "result": "FLAG", "reason": "Run deletion — audit completeness risk"},
+    "experiment.delete": {"control": "PR-02", "result": "FAIL", "reason": "Experiment deletion = audit destruction"},
+    "model_version.archive": {"control": "PR-05", "result": "PASS", "reason": "Model version archived — lifecycle event"},
+    "permission.grant": {"control": "PR-02", "result": "FLAG", "reason": "Permission grant — review for least-privilege"},
+    "model_version.transition_stage": {"control": "PR-02", "result": "context_dependent", "reason": "See approval rules"}
+  },
+  "lifecycle_handling": {
+    "run_status_finished": {"control": "PR-03", "uses_metric_thresholds": true},
+    "run_status_failed": {"control": "DE-01", "result": "FAIL"},
+    "run_status_killed": {"control": "PR-05", "result": "FLAG"},
+    "run_lifecycle_deleted": {"control": "PR-05", "result": "PASS"}
+  },
+  "reproducibility_flags": {
+    "missing_git_commit": {"control": "PR-05", "result": "FLAG", "reason": "un-versioned source — un-reproducible"},
+    "missing_prompt_template_id": {"control": "PR-05", "result": "FLAG", "reason": "under-specified run config"},
+    "missing_model_name": {"control": "PR-05", "result": "FLAG", "reason": "under-specified run config"},
+    "missing_dataset_digest": {"control": "PR-05", "result": "FLAG", "reason": "un-pinned dataset = un-reproducible"},
+    "deploy_to_production_tag": {"control": "PR-05", "result": "FLAG", "reason": "production-deployment trigger; surface for review"},
+    "bot_user_local_source": {"control": "PR-05", "result": "FLAG", "reason": "agent running ad-hoc local — should use JOB/PIPELINE"}
+  },
+  "registered_model_rules": {
+    "production_with_warning_status": {"control": "PR-03", "result": "FLAG", "reason": "Production version with warning status_message"},
+    "multiple_production_versions": {"control": "PR-05", "result": "FAIL", "reason": "Model registry inconsistency — multiple Production versions for same model"}
+  }
+}

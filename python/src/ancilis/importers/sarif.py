@@ -10,49 +10,80 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from ancilis._shared import shared_path
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-# Path to the shared mapping table (relative to this file's package root)
-_MAPPING_PATH = (
-    Path(__file__).parent.parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "sarif-aksi-controls.json"
-)
+_MAPPING_PATH = shared_path("mappings", "sarif-aksi-controls.json")
 
 _CONTROL_NAMES: dict[str, str] = {
-    "PR-01": "Prompt Injection Prevention",
-    "PR-02": "Rate Limiting",
-    "PR-03": "Input Validation",
-    "PR-04": "Cryptographic Controls",
-    "PR-05": "Secret Detection",
-    "DE-01": "Data Exfiltration Prevention",
+    "PR-01": "Action Authorization",
+    "PR-02": "Permission Scope Enforcement",
+    "PR-03": "Tool/Model Integrity & Provenance",
+    "PR-04": "Data Exposure Prevention",
+    "PR-05": "Context & Tenant Isolation",
+    "PR-08": "Input Validation & Injection Resistance",
+    "PR-09": "Controlled Code Execution & Sandbox Enforcement",
+    "DE-01": "Behavioral Anomaly Detection",
 }
 
 _UNMAPPED_CONTROL = "PR-03"  # default fallback
 
 
-def _load_mappings() -> dict[str, str]:
+def _load_mappings() -> list[dict[str, str]]:
     """Load SARIF rule ID → AKSI control mapping from the shared table."""
     try:
         with open(_MAPPING_PATH) as f:
             data = json.load(f)
         mappings = data.get("mappings", {})
+        if isinstance(mappings, list):
+            return [
+                {
+                    "rule_id": str(entry["rule_id"]),
+                    "control_id": str(entry["control_id"]),
+                    "match": str(entry.get("match", "exact")),
+                }
+                for entry in mappings
+                if isinstance(entry, dict) and entry.get("rule_id") and entry.get("control_id")
+            ]
         if isinstance(mappings, dict):
-            return {str(k): str(v) for k, v in mappings.items()}
-        return {}
+            return [
+                {
+                    "rule_id": str(rule_id),
+                    "control_id": str(control_id),
+                    "match": "glob" if "*" in str(rule_id) or "?" in str(rule_id) else "exact",
+                }
+                for rule_id, control_id in mappings.items()
+            ]
+        return []
     except (FileNotFoundError, json.JSONDecodeError):
-        return {}
+        return []
 
 
-def _map_rule_to_control(rule_id: str, mappings: dict[str, str]) -> str:
+def _normalize_mapping_entries(
+    mappings: list[dict[str, str]] | dict[str, str],
+) -> list[dict[str, str]]:
+    if isinstance(mappings, dict):
+        return [
+            {
+                "rule_id": str(rule),
+                "control_id": str(control),
+                "match": "glob" if "*" in str(rule) or "?" in str(rule) else "exact",
+            }
+            for rule, control in mappings.items()
+        ]
+    return mappings
+
+
+def _map_rule_to_control(rule_id: str, mappings: list[dict[str, str]] | dict[str, str]) -> str:
     """Return the AKSI control ID for a SARIF rule ID (first match wins)."""
-    # Exact match first
-    if rule_id in mappings:
-        return mappings[rule_id]
-    # Glob/prefix match in declaration order
-    for pattern, control_id in mappings.items():
-        if fnmatch.fnmatch(rule_id, pattern):
-            return control_id
+    entries = _normalize_mapping_entries(mappings)
+    for entry in entries:
+        if entry.get("match", "exact") != "glob" and entry["rule_id"] == rule_id:
+            return entry["control_id"]
+    for entry in entries:
+        if entry.get("match", "exact") == "glob" and fnmatch.fnmatch(rule_id, entry["rule_id"]):
+            return entry["control_id"]
     return _UNMAPPED_CONTROL
 
 

@@ -1,0 +1,78 @@
+{
+  "_version": "1.0.0",
+  "_description": "Okta SystemLog event → AKSI control ID mapping. Okta is the dominant enterprise identity provider; the SystemLog API (/api/v1/logs) is the canonical evidence of who-logged-in, who-consented, who-escalated for any compliance audit. Mapping is eventType-glob driven (fnmatch) with overlays for outcome, securityContext (proxy/anonymizer detection), authenticationContext (SAML federation), and target context (admin-app surface). Cross-actor pattern (one actor.id touching > N geographic countries in an export) produces a synthetic PR-01 FLAG. PII redaction: actor.id is truncated to first-4/last-4 with middle redacted; actor.alternateId is reduced to its email-domain only; client.ipAddress is masked to /16; client.userAgent.rawUserAgent is truncated to first 80 chars + sha256.",
+  "_metadata": {
+    "source_format": "okta_systemlog",
+    "schema": "okta-systemlog-v1",
+    "owner": "ancilis-importers",
+    "cross_country_threshold": 3,
+    "anonymizer_patterns": ["*Tor*", "*VPN*", "*anonymous*", "*Anonymizer*", "*Proxy*"],
+    "admin_app_keywords": ["admin", "Admin", "ADMIN", "okta-admin", "AdminConsole"],
+    "event_patterns": [
+      {"event_type": "user.authentication.*", "outcome": "SUCCESS", "signal": "auth_success", "result": "PASS", "control": "PR-01"},
+      {"event_type": "user.authentication.*", "outcome": "FAILURE", "signal": "auth_failure", "result": "FLAG", "control": "PR-01"},
+      {"event_type": "user.authentication.*", "outcome": "CHALLENGE", "signal": "auth_mfa_challenge", "result": "PASS", "control": "PR-01"},
+      {"event_type": "user.session.start", "signal": "session_start", "result": "PASS", "control": "PR-01"},
+      {"event_type": "user.session.access_admin_app", "signal": "admin_app_access", "result": "FLAG", "control": "PR-02"},
+      {"event_type": "user.account.privilege.grant", "signal": "privilege_grant", "result": "FAIL", "control": "PR-02"},
+      {"event_type": "*.privilege.*", "signal": "privilege_change", "result": "FAIL", "control": "PR-02"},
+      {"event_type": "system.api_token.create", "signal": "api_token_create", "result": "FLAG", "control": "PR-01"},
+      {"event_type": "system.api_token.revoke", "signal": "api_token_revoke", "result": "PASS", "control": "PR-05"},
+      {"event_type": "application.user_membership.add", "signal": "app_membership_add", "result": "PASS", "control": "PR-02"},
+      {"event_type": "policy.lifecycle.deactivate", "signal": "policy_deactivate", "result": "FAIL", "control": "PR-02"},
+      {"event_type": "iwa.exempt.*", "signal": "iwa_exempt", "result": "FLAG", "control": "PR-01"},
+      {"event_type": "user.mfa.factor.deactivate", "signal": "mfa_factor_deactivate", "result": "FAIL", "control": "PR-01"}
+    ],
+    "outcome_signals": {
+      "DENY": {"signal": "outcome_deny", "result": "PASS", "control": "PR-02"}
+    },
+    "security_signals": {
+      "proxy_session": {"result": "FLAG", "control": "PR-01"},
+      "anonymizer_session": {"result": "FAIL", "control": "PR-01"},
+      "admin_app_membership": {"result": "FLAG", "control": "PR-02"},
+      "cross_country_pattern": {"result": "FLAG", "control": "PR-01"}
+    },
+    "result_levels": {
+      "auth_success": "PASS",
+      "auth_failure": "FLAG",
+      "auth_mfa_challenge": "PASS",
+      "session_start": "PASS",
+      "proxy_session": "FLAG",
+      "anonymizer_session": "FAIL",
+      "admin_app_access": "FLAG",
+      "privilege_grant": "FAIL",
+      "privilege_change": "FAIL",
+      "api_token_create": "FLAG",
+      "api_token_revoke": "PASS",
+      "app_membership_add": "PASS",
+      "admin_app_membership": "FLAG",
+      "policy_deactivate": "FAIL",
+      "iwa_exempt": "FLAG",
+      "mfa_factor_deactivate": "FAIL",
+      "outcome_deny": "PASS",
+      "cross_country_pattern": "FLAG",
+      "unknown_event": "FLAG"
+    }
+  },
+  "mappings": {
+    "auth_success": "PR-01",
+    "auth_failure": "PR-01",
+    "auth_mfa_challenge": "PR-01",
+    "session_start": "PR-01",
+    "proxy_session": "PR-01",
+    "anonymizer_session": "PR-01",
+    "admin_app_access": "PR-02",
+    "privilege_grant": "PR-02",
+    "privilege_change": "PR-02",
+    "api_token_create": "PR-01",
+    "api_token_revoke": "PR-05",
+    "app_membership_add": "PR-02",
+    "admin_app_membership": "PR-02",
+    "policy_deactivate": "PR-02",
+    "iwa_exempt": "PR-01",
+    "mfa_factor_deactivate": "PR-01",
+    "outcome_deny": "PR-02",
+    "cross_country_pattern": "PR-01",
+    "unknown_event": "PR-05"
+  }
+}
