@@ -453,5 +453,5 @@
   },
   "evidence_retention_minimum_days": 2190,
   "human_oversight_required": false,
-  "notes": "HIPAA Security Rule requires audit controls, access controls, transmission security, and integrity controls. This overlay tightens baseline thresholds and adds healthcare-specific evidence fields. All 26 AKSI controls mapped to HIPAA Security Rule provisions."
+  "notes": "HIPAA Security Rule requires audit controls, access controls, transmission security, and integrity controls. This overlay adds healthcare-specific evidence fields and threshold adjustments on top of the AKSI v0.6 common-control catalog; controls without overlay-specific adjustments inherit the base AKSI definitions."
 }

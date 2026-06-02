@@ -7,7 +7,7 @@
     "DC-FCI",
     "DC-GOV"
   ],
-  "description": "FedRAMP Moderate overlay for agents operating in or supporting federal cloud environments. Provides full 26-control AKSI coverage with NIST SP 800-53 Rev 5 control references aligned to the FedRAMP Moderate impact baseline. Covers all control domains: governance, identification, protection, detection, response, and recovery. Suitable for cloud service providers (CSPs) seeking or maintaining a FedRAMP authorization to operate (ATO), including continuous monitoring (ConMon) deliverables and 3PAO annual assessment preparation.",
+  "description": "FedRAMP Moderate overlay for agents operating in or supporting federal cloud environments. Provides AKSI v0.6 common-control framework mapping with NIST SP 800-53 Rev 5 control references aligned to the FedRAMP Moderate impact baseline. Covers all control domains: governance, identification, protection, detection, response, and recovery. Suitable for cloud service providers (CSPs) seeking or maintaining a FedRAMP authorization to operate (ATO), including continuous monitoring (ConMon) deliverables and 3PAO annual assessment preparation.",
   "jurisdiction": "us",
   "enforcement_date": "2024-05-01",
   "applicable_data_types": [

@@ -6,7 +6,7 @@
   "triggered_by": [
     "DC-MNPI"
   ],
-  "description": "Securities-market overlay for agents handling material non-public information (MNPI). Provides full 26-control AKSI coverage with citations to SEC Regulation FD, SOX §302/§404/§802, SEC Cybersecurity Disclosure Rules, and SEC Rule 17a-4. Covers all control domains: governance, identification, protection, detection, response, and recovery. Addresses AI agent-specific MNPI risks including selective disclosure, market manipulation, and insider information leakage through automated workflows.",
+  "description": "Securities-market overlay for agents handling material non-public information (MNPI). Provides AKSI v0.6 common-control framework mapping with citations to SEC Regulation FD, SOX §302/§404/§802, SEC Cybersecurity Disclosure Rules, and SEC Rule 17a-4. Covers all control domains: governance, identification, protection, detection, response, and recovery. Addresses AI agent-specific MNPI risks including selective disclosure, market manipulation, and insider information leakage through automated workflows.",
   "jurisdiction": "us",
   "enforcement_date": "2002-07-30",
   "applicable_data_types": [
