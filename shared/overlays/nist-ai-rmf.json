@@ -9,9 +9,8 @@
     "DC-AI",
     "DC-GEN",
     "DC-PII",
-    "DC-HEALTH",
+    "DC-PHI",
     "DC-FIN",
-    "DC-ENTERPRISE",
     "DC-FCI",
     "DC-GOV",
     "DC-CUI"
