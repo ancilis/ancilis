@@ -86,12 +86,24 @@
       "CRS §6-1-1702",
       "Developer and deployer accountability"
     ],
+    "csa_aicm": [
+      "GRC-06",
+      "STA-09"
+    ],
     "dora": [
       "DORA Art. 5(2)",
       "DORA Art. 5(4)"
     ],
     "eu-ai-act": [
       "Art.26"
+    ],
+    "eu_cra": [
+      "Art. 13",
+      "Annex I Part II(5)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(2)",
+      "PCCP-ModProtocol"
     ],
     "fedramp": [
       "NIST SP 800-53 Rev 5 CA-2, CA-5",
@@ -111,13 +123,23 @@
       "164.308(a)(3)",
       "164.308(a)(5)"
     ],
+    "hitrust_ai_security": [
+      "AISec.Governance-and-Oversight"
+    ],
     "imda-mgf": [
       "MGF Area 1 §2.2",
       "Accountability and Competence"
     ],
+    "iso-23894": [
+      "5.2",
+      "5.4.2"
+    ],
     "iso-27001": [
       "A.5.2",
       "A.5.3"
+    ],
+    "iso-27701": [
+      "A.7.2.1"
     ],
     "iso-42001": [
       "Clause 5.3",
@@ -141,9 +163,26 @@
       "GV.RR-01",
       "GV.RR-02"
     ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-2.1"
+    ],
+    "nist_privacy_framework": [
+      "ID.IM-P2",
+      "GV.PO-P3"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PO.2.1",
+      "PO.2.3"
+    ],
+    "nydfs-500": [
+      "500.4"
+    ],
     "pci-dss-v4": [
       "Req 12.1.2",
       "Req 12.4"
+    ],
+    "sec-cyber-disclosure": [
+      "Reg S-K Item 106(c)(2)"
     ],
     "securities-mnpi": [
       "SOX §302, §404",

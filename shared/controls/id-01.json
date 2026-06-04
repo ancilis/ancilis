@@ -111,12 +111,20 @@
       "CRS §6-1-1702(2)(e)",
       "Website disclosure (high-risk AI inventory)"
     ],
+    "csa_aicm": [
+      "GRC-08",
+      "STA-09"
+    ],
     "dora": [
       "DORA Art. 8(1)",
       "DORA Art. 8(4)"
     ],
     "eu-ai-act": [
       "Art.49"
+    ],
+    "fda_ai_device_pccp": [
+      "AI-LCM-Draft-TPLC",
+      "PCCP-DescMod"
     ],
     "fedramp": [
       "NIST SP 800-53 Rev 5 CM-8, CM-10",
@@ -134,9 +142,16 @@
       "164.308(a)(1)",
       "164.310(d)"
     ],
+    "hitrust_ai_security": [
+      "AISec.Documenting-and-Inventorying-AI-Systems"
+    ],
     "imda-mgf": [
       "MGF Area 1 (implied)",
       "Governance Accountability"
+    ],
+    "iso-23894": [
+      "6.3.3",
+      "Annex C"
     ],
     "iso-27001": [
       "A.5.9"
@@ -159,6 +174,19 @@
     "nist-csf": [
       "ID.AM-01",
       "ID.AM-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.6"
+    ],
+    "nist_privacy_framework": [
+      "ID.IM-P1",
+      "ID.IM-P2",
+      "ID.IM-P7",
+      "ID.BE-P3"
+    ],
+    "nydfs-500": [
+      "500.13(a)",
+      "500.9"
     ],
     "pci-dss-v4": [
       "Req 12.5.1",

@@ -91,6 +91,10 @@
       "§6-1-1702(2)(c)(II)",
       "Impact assessment data + consumer data correction"
     ],
+    "csa_aicm": [
+      "DSP-01",
+      "DSP-04"
+    ],
     "dora": [
       "DORA Art. 8(1)",
       "DORA Art. 8(4)",
@@ -116,16 +120,36 @@
       "164.310(d)(2)",
       "164.316(b)(2)"
     ],
+    "hitrust_ai_security": [
+      "AISec.Documenting-and-Inventorying-AI-Systems",
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs"
+    ],
     "imda-mgf": [
       "MGF Area 3 §4.1",
       "Data Governance"
+    ],
+    "iso-23894": [
+      "6.4.2",
+      "Annex A",
+      "Annex B"
     ],
     "iso-27001": [
       "A.5.12",
       "A.5.13"
     ],
+    "iso-27701": [
+      "A.7.2.8",
+      "A.7.4.1",
+      "A.7.5.2",
+      "B.8.2.6"
+    ],
     "iso-42001": [
       "MAP 1.5"
+    ],
+    "itar-ear": [
+      "22 CFR 120.33",
+      "22 CFR 120.50",
+      "15 CFR 734.13"
     ],
     "mas-trm": [
       "MAS TRM §13.1",
@@ -140,6 +164,25 @@
     "nist-csf": [
       "ID.AM-07",
       "ID.AM-08"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MP-4.1",
+      "MS-2.10",
+      "GV-1.2"
+    ],
+    "nist_privacy_framework": [
+      "ID.IM-P3",
+      "ID.IM-P4",
+      "ID.IM-P6",
+      "ID.IM-P8",
+      "CM.AW-P6"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PW.1.1"
+    ],
+    "nydfs-500": [
+      "500.13(a)",
+      "500.3(b)"
     ],
     "pci-dss-v4": [
       "Req 12.5.2.1",

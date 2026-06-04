@@ -77,6 +77,10 @@
     "boundary"
   ],
   "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "UUS-CHILD",
+      "AUG-MINORS"
+    ],
     "ccpa": [
       "§1798.130",
       "§1798.185(a)(15)"
@@ -88,6 +92,11 @@
     "colorado-ai-act": [
       "CRS §6-1-1702(2)",
       "Documentation and audit obligations"
+    ],
+    "csa_aicm": [
+      "AIS-11",
+      "DSP-01",
+      "IVS-01"
     ],
     "dora": [
       "DORA Art. 10",
@@ -113,6 +122,10 @@
       "164.312(b)",
       "164.316(b)(2)"
     ],
+    "hitrust_ai_security": [
+      "AISec.Access-to-the-AI-System",
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs"
+    ],
     "imda-mgf": [
       "MGF Areas 1+4",
       "Accountability Audit Trail"
@@ -121,9 +134,20 @@
       "A.8.15",
       "A.8.17"
     ],
+    "iso-27701": [
+      "A.7.5.2",
+      "B.8.5.2",
+      "B.8.5.3"
+    ],
     "iso-42001": [
       "Clause 7.5",
       "MEA 2.1"
+    ],
+    "itar-ear": [
+      "22 CFR 120.63",
+      "22 CFR 120.62",
+      "15 CFR 734.13",
+      "15 CFR 734.15"
     ],
     "mas-trm": [
       "MAS TRM §9.1"
@@ -138,6 +162,23 @@
     "nist-csf": [
       "DE.AE-02",
       "DE.AE-06"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.10",
+      "GV-1.1"
+    ],
+    "nist_privacy_framework": [
+      "PR.AC-P5",
+      "CT.DP-P1",
+      "CT.DP-P3",
+      "PR.DS-P7"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PO.5.1"
+    ],
+    "nydfs-500": [
+      "500.7(a)",
+      "500.15"
     ],
     "pci-dss-v4": [
       "Req 10.2.1",

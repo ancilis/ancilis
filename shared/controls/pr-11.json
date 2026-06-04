@@ -80,11 +80,50 @@
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
     ],
+    "csa_aicm": [
+      "DSP-01",
+      "DSP-04"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(m)",
+      "Annex I Part I(2)(g)"
+    ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Legal-and-Compliance",
+      "AISec.Documenting-and-Inventorying-AI-Systems"
+    ],
+    "iso-27701": [
+      "A.7.3.6",
+      "A.7.4.4",
+      "A.7.4.6",
+      "A.7.4.7",
+      "A.7.4.8",
+      "B.8.4.1",
+      "B.8.4.2"
+    ],
+    "itar-ear": [
+      "15 CFR 762.2",
+      "15 CFR 762.6"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.7",
+      "MG-2.4"
+    ],
+    "nist_privacy_framework": [
+      "CT.DM-P4",
+      "CT.DM-P5",
+      "PR.DS-P3",
+      "CT.PO-P2"
+    ],
+    "nydfs-500": [
+      "500.13(b)",
+      "500.3(b)"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"

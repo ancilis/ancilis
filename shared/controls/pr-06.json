@@ -76,6 +76,11 @@
     "chain"
   ],
   "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "HRUC-HITL",
+      "HRUC-DISC",
+      "AUG-AGENTIC"
+    ],
     "ccpa": [
       "§1798.150"
     ],
@@ -87,12 +92,26 @@
       "CRS §6-1-1702(2)(b)",
       "Material change re-assessment"
     ],
+    "csa_aicm": [
+      "LOG-01",
+      "LOG-03",
+      "A&A-01"
+    ],
     "dora": [
       "DORA Art. 9(4)(a)"
     ],
     "eu-ai-act": [
       "Art.11",
       "Annex IV"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(l)",
+      "Annex I Part II(3)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(2)",
+      "PCCP-ModProtocol",
+      "AI-LCM-Draft-TPLC"
     ],
     "fedramp": [
       "NIST SP 800-53 Rev 5 CM-7, CM-7(1)",
@@ -109,16 +128,32 @@
     "hipaa": [
       "164.308(a)(1)(ii)(B)"
     ],
+    "hitrust_ai_security": [
+      "AISec.Logging-and-Monitoring"
+    ],
     "imda-mgf": [
       "MGF Area 3",
       "Configuration Integrity"
+    ],
+    "iso-23894": [
+      "6.7"
     ],
     "iso-27001": [
       "A.8.9",
       "A.8.8"
     ],
+    "iso-27701": [
+      "A.7.2.8",
+      "A.7.5.3",
+      "A.7.5.4",
+      "B.8.2.6",
+      "B.8.5.4"
+    ],
     "iso-42001": [
       "Clause 8.1"
+    ],
+    "itar-ear": [
+      "15 CFR 762.2"
     ],
     "mas-trm": [
       "MAS TRM §6.1",
@@ -135,9 +170,28 @@
       "PR.PS-01",
       "PR.PS-02"
     ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-4.3",
+      "MG-4.1"
+    ],
+    "nist_privacy_framework": [
+      "CT.DM-P8",
+      "CM.AW-P4"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PO.3.3",
+      "PO.4.2"
+    ],
+    "nydfs-500": [
+      "500.6"
+    ],
     "pci-dss-v4": [
       "Req 2.2",
       "Req 2.2.1"
+    ],
+    "sec-cyber-disclosure": [
+      "Form 8-K Item 1.05(a)",
+      "Reg S-K Item 106(b)(1)"
     ],
     "securities-mnpi": [
       "SOX §404",

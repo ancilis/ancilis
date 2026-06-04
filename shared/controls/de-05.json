@@ -79,14 +79,57 @@
     "reliability"
   ],
   "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "UUS-VIOLENCE",
+      "UUS-PSYCH",
+      "UUS-MISINFO",
+      "UUS-SEXUAL",
+      "UUS-CHILD",
+      "AUG-AGENTIC"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "csa_aicm": [
+      "MDS-10",
+      "GRC-11",
+      "GRC-14",
+      "MDS-06"
+    ],
+    "fda_ai_device_pccp": [
+      "AI-LCM-Draft-PerfMonitoring",
+      "AI-LCM-Draft-Transparency",
+      "PCCP-ImpactAssessment",
+      "PCCP-ModProtocol"
     ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Model-Robustness",
+      "AISec.Resilience-of-the-AI-System"
+    ],
+    "iso-23894": [
+      "6.6",
+      "6.4.3",
+      "Annex A"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.3",
+      "MS-2.5",
+      "MS-2.6",
+      "MS-2.9",
+      "MS-2.11"
+    ],
+    "nist_privacy_framework": [
+      "ID.RA-P2",
+      "CT.DM-P10"
+    ],
+    "sec-cyber-disclosure": [
+      "Reg S-K Item 106(b)(1)"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"

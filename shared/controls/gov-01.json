@@ -86,6 +86,9 @@
       "CRS §6-1-1702(2)(a)",
       "Risk management policy"
     ],
+    "csa_aicm": [
+      "IAM-19"
+    ],
     "dora": [
       "DORA Art. 5(1)",
       "DORA Art. 6(1)",
@@ -124,6 +127,10 @@
       "5.2",
       "GOV 1.1"
     ],
+    "itar-ear": [
+      "22 CFR 120.63",
+      "15 CFR 734.13"
+    ],
     "mas-trm": [
       "MAS TRM §3.1",
       "§3.2",
@@ -142,6 +149,13 @@
     "nist-csf": [
       "GV.PO-01",
       "GV.PO-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.2"
+    ],
+    "nist_privacy_framework": [
+      "PR.AC-P1",
+      "PR.AC-P6"
     ],
     "pci-dss-v4": [
       "Req 12.1",

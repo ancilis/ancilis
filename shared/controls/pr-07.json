@@ -86,12 +86,21 @@
       "CRS §6-1-1702(2)(a)",
       "Risk management program"
     ],
+    "csa_aicm": [
+      "AIS-01",
+      "CEK-03",
+      "IVS-03"
+    ],
     "dora": [
       "DORA Art. 9(2)",
       "DORA Art. 9(4)(b)"
     ],
     "eu-ai-act": [
       "Art.15.4"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(e)",
+      "Annex I Part I(2)(f)"
     ],
     "fedramp": [
       "NIST SP 800-53 Rev 5 SC-5, SC-7",
@@ -117,6 +126,10 @@
       "A.8.24",
       "A.5.14"
     ],
+    "iso-27701": [
+      "A.7.4.9",
+      "B.8.4.3"
+    ],
     "iso-42001": [
       "Clause 8.1"
     ],
@@ -133,6 +146,10 @@
     "nist-csf": [
       "PR.DS-01",
       "PR.DS-02"
+    ],
+    "nist_privacy_framework": [
+      "PR.DS-P2",
+      "PR.PT-P3"
     ],
     "pci-dss-v4": [
       "Req 3.5.1",

@@ -88,6 +88,10 @@
       "CRS §6-1-1702(2)(b)",
       "Impact assessment (pre-deployment)"
     ],
+    "csa_aicm": [
+      "GRC-10",
+      "GRC-11"
+    ],
     "dora": [
       "DORA Art. 6(2)",
       "DORA Art. 6(5)",
@@ -97,6 +101,14 @@
       "Art.6",
       "Art.7",
       "Art.9.2"
+    ],
+    "eu_cra": [
+      "Annex I Part I(1)"
+    ],
+    "fda_ai_device_pccp": [
+      "AI-LCM-Draft-TPLC",
+      "PCCP-ImpactAssessment",
+      "Premarket-Cyber-SRM"
     ],
     "fedramp": [
       "NIST SP 800-53 Rev 5 RA-3, RA-5",
@@ -114,17 +126,33 @@
     "hipaa": [
       "164.308(a)(3)"
     ],
+    "hitrust_ai_security": [
+      "AISec.Threat-Management",
+      "AISec.Governance-and-Oversight"
+    ],
     "imda-mgf": [
       "MGF Areas 1+2",
       "Risk-Driven Oversight Selection"
+    ],
+    "iso-23894": [
+      "6.4.2",
+      "6.3.3",
+      "Annex B"
     ],
     "iso-27001": [
       "A.5.7",
       "A.8.8"
     ],
+    "iso-27701": [
+      "A.7.2.5"
+    ],
     "iso-42001": [
       "Clause 6.1",
       "MAP 1.1"
+    ],
+    "itar-ear": [
+      "22 CFR 120.33",
+      "15 CFR 734.13"
     ],
     "mas-trm": [
       "MAS TRM §5.1"
@@ -141,9 +169,31 @@
       "ID.RA-01",
       "ID.RA-02"
     ],
+    "nist_ai_600_1_genai_profile": [
+      "MP-1.1",
+      "MP-2.1",
+      "MP-5.1"
+    ],
+    "nist_privacy_framework": [
+      "ID.RA-P1",
+      "ID.RA-P3",
+      "ID.RA-P4",
+      "ID.RA-P5"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PW.1.1",
+      "PW.1.2"
+    ],
+    "nydfs-500": [
+      "500.9",
+      "500.2(a)"
+    ],
     "pci-dss-v4": [
       "Req 12.3.1",
       "Req 12.3.2"
+    ],
+    "sec-cyber-disclosure": [
+      "Reg S-K Item 106(b)(1)"
     ],
     "securities-mnpi": [
       "SOX §404",
