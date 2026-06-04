@@ -74,7 +74,20 @@
     "continuity",
     "failover"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ]
+  },
   "display_name": "Resilience Exercise and Recovery Test Evidence",
   "display_detail": "Recovery, rollback, failover, continuity, and agent-disablement procedures are periodically exercised and captured as evidence.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RC-03 (Resilience Exercise & Recovery Test Evidence) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

@@ -74,7 +74,20 @@
     "posture",
     "reporting"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
+    ]
+  },
   "display_name": "External Obligation Registry and Posture Reporting",
   "display_detail": "Framework, contractual, customer, and regulator-facing obligations are registered and linked to agent posture, evidence, and owner reporting.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-06 (External Obligation Registry & Posture Reporting) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

@@ -78,7 +78,20 @@
     "harm",
     "reliability"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ]
+  },
   "display_name": "AI Outcome Evaluation and Harm Monitoring",
   "display_detail": "Agent outputs and tool outcomes are evaluated for reliability, hallucination, harmful output, bias, clinical or safety drift, and out-of-scope behavior.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for DE-05 (AI Outcome Evaluation & Harm Monitoring) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

@@ -75,7 +75,84 @@
     "autonomy",
     "impact"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.115",
+      "§1798.120"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 RA.L2-3.11.1",
+      "NIST SP 800-171 Rev. 3 03.11.01, 03.11.05"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(b)",
+      "Impact assessment (pre-deployment)"
+    ],
+    "dora": [
+      "DORA Art. 6(2)",
+      "DORA Art. 6(5)",
+      "DORA Art. 8(3)"
+    ],
+    "eu-ai-act": [
+      "Art.6",
+      "Art.7",
+      "Art.9.2"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 RA-3, RA-5",
+      "FedRAMP Moderate RA-3, RA-5, RA-5(1)"
+    ],
+    "gdpr": [
+      "Art. 35",
+      "Art. 25"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(b)",
+      "SOX §404",
+      "DORA Art.6"
+    ],
+    "hipaa": [
+      "164.308(a)(3)"
+    ],
+    "imda-mgf": [
+      "MGF Areas 1+2",
+      "Risk-Driven Oversight Selection"
+    ],
+    "iso-27001": [
+      "A.5.7",
+      "A.8.8"
+    ],
+    "iso-42001": [
+      "Clause 6.1",
+      "MAP 1.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §5.1"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(1)",
+      "NIS2 Art. 21(2)(a)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 1.1",
+      "MAP 2.1"
+    ],
+    "nist-csf": [
+      "ID.RA-01",
+      "ID.RA-02"
+    ],
+    "pci-dss-v4": [
+      "Req 12.3.1",
+      "Req 12.3.2"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "soc2": [
+      "CC3.2"
+    ]
+  },
   "display_name": "Agent Risk Profiling and Purpose Scoping",
   "display_detail": "Agent purpose, autonomy, data sensitivity, action authority, and impact tier are profiled before use.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for ID-05 (Agent Risk Profiling & Purpose Scoping) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

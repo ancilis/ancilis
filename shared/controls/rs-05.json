@@ -74,7 +74,20 @@
     "authority",
     "regulated"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ]
+  },
   "display_name": "Regulated Notification Clock and Authority Routing",
   "display_detail": "Potentially regulated incidents start jurisdiction-specific notification clocks, preserve decision evidence, and route authority/customer notification tasks to accountable humans.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RS-05 (Regulated Notification Clock & Authority Routing) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

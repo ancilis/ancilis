@@ -73,7 +73,75 @@
     "restore",
     "plan"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.150"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 recovery planning expectation",
+      "NIST SP 800-171 Rev. 3 03.15.02, 03.15.03"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(a)",
+      "Risk management program (operational controls)"
+    ],
+    "dora": [
+      "DORA Art. 11",
+      "DORA Art. 12"
+    ],
+    "eu-ai-act": [
+      "Art.16g"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 CP-2, CP-9",
+      "FedRAMP Moderate CP-2, CP-9, CP-10"
+    ],
+    "gdpr": [
+      "Art. 32(1)(c)"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(h), 314.4(g)",
+      "SOX §404",
+      "DORA Art.12"
+    ],
+    "hipaa": [
+      "164.308(a)(7)"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 §4.4",
+      "Model Rollback"
+    ],
+    "iso-27001": [
+      "A.5.30",
+      "A.8.13"
+    ],
+    "iso-42001": [
+      "Clause 8.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §8.1"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(c)"
+    ],
+    "nist-ai-rmf": [
+      "MANAGE 4.4"
+    ],
+    "nist-csf": [
+      "RC.RP-01",
+      "RC.RP-02"
+    ],
+    "pci-dss-v4": [
+      "Req 12.10.1"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "soc2": [
+      "A1.2"
+    ]
+  },
   "display_name": "Rollback and Recovery Planning",
   "display_detail": "Recovery plans, rollback paths, and restoration dependencies are documented and tested for governed systems.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RC-01 (Rollback & Recovery Planning) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

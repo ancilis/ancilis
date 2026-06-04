@@ -79,7 +79,20 @@
     "red_team",
     "testing"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ]
+  },
   "display_name": "Assurance Testing and Vulnerability Evidence Ingestion",
   "display_detail": "Agent-specific vulnerability scans, adversarial tests, red-team exercises, resilience tests, clinical/safety validations, and third-party evaluations are ingested as control evidence with remediation state.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for DE-06 (Assurance Testing & Vulnerability Evidence Ingestion) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

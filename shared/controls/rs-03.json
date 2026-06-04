@@ -73,7 +73,79 @@
     "responder",
     "notification"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "Cal. Civ. Code §1798.82(d)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 IR.L2-3.6.3",
+      "NIST SP 800-171 Rev. 3 03.06.03, 03.06.06"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702",
+      "Evidence preservation obligations"
+    ],
+    "dora": [
+      "DORA Art. 17(4)",
+      "DORA Art. 19(3)(c)"
+    ],
+    "eu-ai-act": [
+      "Art.18",
+      "Art.73"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 IR-4, IR-8",
+      "FedRAMP Moderate IR-4, IR-8, IR-4(6)"
+    ],
+    "gdpr": [
+      "Art. 34"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(h)(5), 314.4(h)(6)",
+      "SOX §802",
+      "DORA Art.17"
+    ],
+    "hipaa": [
+      "164.402",
+      "164.404",
+      "164.408",
+      "164.414"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 §4.4",
+      "Incident Evidence"
+    ],
+    "iso-27001": [
+      "A.5.28",
+      "A.5.7"
+    ],
+    "iso-42001": [
+      "Clause 7.5"
+    ],
+    "mas-trm": [
+      "MAS TRM §10.1"
+    ],
+    "nis2": [
+      "NIS2 Art. 23(1)(d)"
+    ],
+    "nist-ai-rmf": [
+      "MANAGE 4.3"
+    ],
+    "nist-csf": [
+      "RS.AN-03",
+      "RS.AN-06"
+    ],
+    "pci-dss-v4": [
+      "Req 12.10.5"
+    ],
+    "securities-mnpi": [
+      "SOX §802",
+      "SEC Rule 17a-4"
+    ],
+    "soc2": [
+      "CC7.5"
+    ]
+  },
   "display_name": "Human Escalation and Incident Reporting",
   "display_detail": "Significant failures, exceptions, and regulated incidents route to the right responders with reporting context.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RS-03 (Human Escalation & Incident Reporting) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

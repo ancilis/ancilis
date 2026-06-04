@@ -78,7 +78,81 @@
     "output",
     "context"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.150",
+      "§1798.140(m)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 SC.L2-3.13.8, SC.L2-3.13.11, MP.L2-3.8.1",
+      "NIST SP 800-171 Rev. 3 03.13.08, 03.13.11, 03.08.01, 03.08.02"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(c)(II)",
+      "Consumer data correction right"
+    ],
+    "dora": [
+      "DORA Art. 9(2)"
+    ],
+    "eu-ai-act": [
+      "Art.10"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 SC-8, SC-13, SC-28, MP-2",
+      "FedRAMP Moderate SC-8, SC-13, SC-28, MP-2"
+    ],
+    "gdpr": [
+      "Art. 25",
+      "Art. 32(1)(a)"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(3)",
+      "SOX §404",
+      "DORA Art.9"
+    ],
+    "hipaa": [
+      "164.312(e)(1)",
+      "164.312(e)(2)"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 §4.1",
+      "PDPC Data Protection in AI"
+    ],
+    "iso-27001": [
+      "A.8.10",
+      "A.8.11"
+    ],
+    "iso-42001": [
+      "MAP 1.5"
+    ],
+    "mas-trm": [
+      "MAS TRM §13.2"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(h)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 2.2"
+    ],
+    "nist-csf": [
+      "PR.DS-01",
+      "PR.DS-02"
+    ],
+    "pci-dss-v4": [
+      "Req 3.3.1",
+      "Req 3.4",
+      "Req 4.2.1"
+    ],
+    "securities-mnpi": [
+      "SOX §302, §404",
+      "SEC Reg FD 17 CFR 243.100(a), 243.101(e)"
+    ],
+    "soc2": [
+      "CC6.7",
+      "C1.1",
+      "PI1.1"
+    ]
+  },
   "display_name": "Data Exposure Prevention",
   "display_detail": "Sensitive, regulated, and export-controlled data is inspected and constrained before entering context, leaving the system, or triggering actions.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-04 (Data Exposure Prevention) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

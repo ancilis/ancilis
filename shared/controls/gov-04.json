@@ -73,7 +73,90 @@
     "approval",
     "escalation"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§§1798.100–1798.135"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 governance documentation expectation",
+      "NIST SP 800-171 Rev. 3 03.15.02, 03.15.03"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(c)(I)",
+      "§6-1-1702(2)(e)",
+      "Consumer notice and website disclosure"
+    ],
+    "dora": [
+      "DORA Art. 5(2)(c)",
+      "DORA Art. 5(2)(d)",
+      "DORA Art. 15"
+    ],
+    "eu-ai-act": [
+      "Art.14"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 PL-1, PM-10",
+      "FedRAMP Moderate PL-1, AT-2, AT-3"
+    ],
+    "gdpr": [
+      "Art. 22",
+      "Art. 22(3)",
+      "Art. 35"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(g), 314.4(i)",
+      "SOX §302, §404",
+      "DORA Art.15"
+    ],
+    "hipaa": [
+      "164.308(a)(7)",
+      "164.308(a)(8)"
+    ],
+    "imda-mgf": [
+      "MGF Area 2 §3.1-3.3",
+      "Human Oversight Classification"
+    ],
+    "iso-27001": [
+      "A.5.35",
+      "A.5.36"
+    ],
+    "iso-42001": [
+      "Clause 8.4",
+      "9.3",
+      "GOV 1.3"
+    ],
+    "mas-trm": [
+      "MAS TRM §5",
+      "MAS FEAT Principles"
+    ],
+    "nis2": [
+      "NIS2 Art. 20(1)",
+      "NIS2 Art. 21(2)(b)"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 1.2",
+      "GOVERN 1.4",
+      "GOVERN 1.5",
+      "GOVERN 6.2"
+    ],
+    "nist-csf": [
+      "GV.OV-01",
+      "GV.OV-02"
+    ],
+    "pci-dss-v4": [
+      "Req 12.4",
+      "Req 12.6"
+    ],
+    "securities-mnpi": [
+      "SOX §302, §404",
+      "SEC Reg FD 17 CFR 243.101(e)"
+    ],
+    "soc2": [
+      "CC1.4",
+      "CC4.1",
+      "CC4.2"
+    ]
+  },
   "display_name": "Human Oversight and Decision Accountability",
   "display_detail": "Human review, approval context, and decision accountability are defined for sensitive actions and exceptions.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-04 (Human Oversight & Decision Accountability) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
