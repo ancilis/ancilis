@@ -14,133 +14,155 @@
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "5.2 Leadership and commitment and 5.4.2 Understanding the organization and its context assign roles/authorities/accountability for AI risk management. GOV-02 names an accountable owner per AI system for operation/risk/remediation — the agent-system slice of accountability assignment. Org-wide leader"
+      "framework_reference": "5.2 Leadership and commitment and 5.4.2 Understanding the organization and its context assign roles/authorities/accountability for AI risk management. GOV-02 names an accountable owner per AI system for operation/risk/remediation — the agent-system slice of accountability assignment. Org-wide leader",
+      "evidence_requirements": []
     },
     "GOV-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.3 Scope, context and criteria (incl. risk criteria/risk acceptance) and 5.4 Design require establishing risk tolerance/acceptance criteria before treating AI risk. GOV-03 encodes autonomy limits + escalation thresholds in policy before autonomous action — the runtime-enforceable slice of risk crit"
+      "framework_reference": "6.3 Scope, context and criteria (incl. risk criteria/risk acceptance) and 5.4 Design require establishing risk tolerance/acceptance criteria before treating AI risk. GOV-03 encodes autonomy limits + escalation thresholds in policy before autonomous action — the runtime-enforceable slice of risk crit",
+      "evidence_requirements": []
     },
     "GOV-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Annex A human oversight / level-of-automation objective and 6.5 Risk treatment (human-in-the-loop as a treatment option). GOV-04 provides human review/approval + decision accountability for sensitive actions/exceptions — the runtime mechanism implementing oversight-as-treatment. Not the org-wide des"
+      "framework_reference": "Annex A human oversight / level-of-automation objective and 6.5 Risk treatment (human-in-the-loop as a treatment option). GOV-04 provides human review/approval + decision accountability for sensitive actions/exceptions — the runtime mechanism implementing oversight-as-treatment. Not the org-wide des",
+      "evidence_requirements": []
     },
     "GOV-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.3.3 Defining the scope (intended purpose/use) and Annex A objectives (fairness, privacy) require purpose and lawful/intended-use framing of AI. GOV-05 binds actions/data-uses to declared purpose, legal basis, consent, prohibited-use policy — the runtime purpose-binding slice. Legal-basis determina"
+      "framework_reference": "6.3.3 Defining the scope (intended purpose/use) and Annex A objectives (fairness, privacy) require purpose and lawful/intended-use framing of AI. GOV-05 binds actions/data-uses to declared purpose, legal basis, consent, prohibited-use policy — the runtime purpose-binding slice. Legal-basis determina",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "5.4.2 Understanding context (incl. external context: legal, regulatory, stakeholder obligations) and 6.7 Recording and reporting. GOV-06 registers framework/contract/regulator obligations and links them to posture/evidence/owner reporting — the externally-facing reporting slice. ISO 23894 is guidanc"
+      "framework_reference": "5.4.2 Understanding context (incl. external context: legal, regulatory, stakeholder obligations) and 6.7 Recording and reporting. GOV-06 registers framework/contract/regulator obligations and links them to posture/evidence/owner reporting — the externally-facing reporting slice. ISO 23894 is guidanc",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Annex A transparency and explainability objective and 6.2 Communication and consultation with stakeholders. GOV-07 documents disclosures, affected-party feedback + intervention channels linked to runtime evidence — the stakeholder-communication/transparency slice. Annex A is an objectives list (guid"
+      "framework_reference": "Annex A transparency and explainability objective and 6.2 Communication and consultation with stakeholders. GOV-07 documents disclosures, affected-party feedback + intervention channels linked to runtime evidence — the stakeholder-communication/transparency slice. Annex A is an objectives list (guid",
+      "evidence_requirements": []
     },
     "ID-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.3.3 Defining scope and Annex C (mapping risk process across the AI system life cycle) presuppose knowing which AI systems exist and their life-cycle stage. ID-01 maintains a current registry of governed AI systems + operating context — the inventory enabling per-system risk management. ISO 23894 d"
+      "framework_reference": "6.3.3 Defining scope and Annex C (mapping risk process across the AI system life cycle) presuppose knowing which AI systems exist and their life-cycle stage. ID-01 maintains a current registry of governed AI systems + operating context — the inventory enabling per-system risk management. ISO 23894 d",
+      "evidence_requirements": []
     },
     "ID-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.4.2 risk identification and Annex A privacy + Annex B data-dependency risk sources require understanding AI data inputs/flows. ID-03 maps inputs/context stores/outputs/destinations + data classes per system. Partial: ISO 23894 frames this as input to risk identification rather than a standalone da"
+      "framework_reference": "6.4.2 risk identification and Annex A privacy + Annex B data-dependency risk sources require understanding AI data inputs/flows. ID-03 maps inputs/context stores/outputs/destinations + data classes per system. Partial: ISO 23894 frames this as input to risk identification rather than a standalone da",
+      "evidence_requirements": []
     },
     "ID-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Annex B risk sources include system life cycle issues, system hardware, technology readiness and ML data dependencies; 6.4.2 requires identifying these. ID-04 assesses models/tools/deps/prompts/orchestration for supply-chain risk (SBOM, provenance) — covers the dependency/provenance subset of Annex "
+      "framework_reference": "Annex B risk sources include system life cycle issues, system hardware, technology readiness and ML data dependencies; 6.4.2 requires identifying these. ID-04 assesses models/tools/deps/prompts/orchestration for supply-chain risk (SBOM, provenance) — covers the dependency/provenance subset of Annex ",
+      "evidence_requirements": []
     },
     "ID-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "6.4.2 Risk identification + 6.3.3 (External and internal context — NOT 'scope/intended-use', which is 6.3.2) + Annex B risk sources (level of automation, technology readiness). ID-05 profiles purpose/autonomy/data sensitivity/action authority/impact tier before use — the agent-runtime instantiation "
+      "framework_reference": "6.4.2 Risk identification + 6.3.3 (External and internal context — NOT 'scope/intended-use', which is 6.3.2) + Annex B risk sources (level of automation, technology readiness). ID-05 profiles purpose/autonomy/data sensitivity/action authority/impact tier before use — the agent-runtime instantiation ",
+      "evidence_requirements": []
     },
     "PR-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "Annex A privacy objective + 6.5 risk treatment. PR-04 inspects/constrains sensitive/regulated data before context-in, system-out, or action-trigger — a runtime treatment addressing the privacy risk objective. Partial and interpretive (Annex A is an objectives list)."
+      "framework_reference": "Annex A privacy objective + 6.5 risk treatment. PR-04 inspects/constrains sensitive/regulated data before context-in, system-out, or action-trigger — a runtime treatment addressing the privacy risk objective. Partial and interpretive (Annex A is an objectives list).",
+      "evidence_requirements": []
     },
     "PR-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.7 Recording and reporting requires the risk-management process and its outcomes to be recorded and reported (traceability of decisions). PR-06 records the full evaluation chain (who/why/under-which-controls), hash-chained, for every governed action — the agent-action recording slice supporting tra"
+      "framework_reference": "6.7 Recording and reporting requires the risk-management process and its outcomes to be recorded and reported (traceability of decisions). PR-06 records the full evaluation chain (who/why/under-which-controls), hash-chained, for every governed action — the agent-action recording slice supporting tra",
+      "evidence_requirements": []
     },
     "PR-08": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "Annex B includes security/ML-input risk sources and 6.5 risk treatment. PR-08 validates direct/indirect inputs, tool payloads, retrieved context before execution (prompt injection) — a runtime treatment for AI input-manipulation risk sources. Interpretive against guidance; ISO 23894 does not enumera"
+      "framework_reference": "Annex B includes security/ML-input risk sources and 6.5 risk treatment. PR-08 validates direct/indirect inputs, tool payloads, retrieved context before execution (prompt injection) — a runtime treatment for AI input-manipulation risk sources. Interpretive against guidance; ISO 23894 does not enumera",
+      "evidence_requirements": []
     },
     "PR-10": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "Annex B ML/data-dependency risk sources and Annex A robustness objective. PR-10 gives persistent memory/retrieved context provenance, integrity checks, quarantine (RAG/memory poisoning) — addresses data-integrity risk sources for AI robustness. Interpretive; not a named clause requirement, verified="
+      "framework_reference": "Annex B ML/data-dependency risk sources and Annex A robustness objective. PR-10 gives persistent memory/retrieved context provenance, integrity checks, quarantine (RAG/memory poisoning) — addresses data-integrity risk sources for AI robustness. Interpretive; not a named clause requirement, verified=",
+      "evidence_requirements": []
     },
     "DE-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.6 Monitoring and review requires monitoring AI systems and the effectiveness of risk treatments and detecting changes. DE-01 monitors agents vs expected behavioral baselines and flags deviations — the behavioral-monitoring slice of 6.6. Partial because 6.6 also covers review of the risk framework "
+      "framework_reference": "6.6 Monitoring and review requires monitoring AI systems and the effectiveness of risk treatments and detecting changes. DE-01 monitors agents vs expected behavioral baselines and flags deviations — the behavioral-monitoring slice of 6.6. Partial because 6.6 also covers review of the risk framework ",
+      "evidence_requirements": []
     },
     "DE-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.6 Monitoring and review (detecting changes in context/system) and Annex B 'system life cycle issues' risk source. DE-03 detects drift in config/deps/tools/models/policy baselines before it normalizes — runtime detection of life-cycle/configuration change as a risk source. Partial/interpretive agai"
+      "framework_reference": "6.6 Monitoring and review (detecting changes in context/system) and Annex B 'system life cycle issues' risk source. DE-03 detects drift in config/deps/tools/models/policy baselines before it normalizes — runtime detection of life-cycle/configuration change as a risk source. Partial/interpretive agai",
+      "evidence_requirements": []
     },
     "DE-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.6 Monitoring and review of risk + 6.4.3 risk analysis + Annex A objectives (robustness, safety, fairness/bias). DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias, safety drift, out-of-scope behavior — the runtime monitoring of AI-specific risk against Annex"
+      "framework_reference": "6.6 Monitoring and review of risk + 6.4.3 risk analysis + Annex A objectives (robustness, safety, fairness/bias). DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias, safety drift, out-of-scope behavior — the runtime monitoring of AI-specific risk against Annex",
+      "evidence_requirements": []
     },
     "DE-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.4.3 Risk analysis and 6.6 Monitoring and review benefit from test/assurance evidence about AI system behavior. DE-06 ingests vuln scans, adversarial/red-team, resilience tests, third-party evals as evidence with remediation state — feeds the analysis/monitoring loop. ISO 23894 references but does "
+      "framework_reference": "6.4.3 Risk analysis and 6.6 Monitoring and review benefit from test/assurance evidence about AI system behavior. DE-06 ingests vuln scans, adversarial/red-team, resilience tests, third-party evals as evidence with remediation state — feeds the analysis/monitoring loop. ISO 23894 references but does ",
+      "evidence_requirements": []
     },
     "RS-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.5 Risk treatment (selecting and implementing treatment options). RS-01 executes predefined policy responses when evidence crosses control/classification thresholds — the automated runtime implementation of risk-treatment actions. Partial: treatment-option selection/planning is a human/design activ"
+      "framework_reference": "6.5 Risk treatment (selecting and implementing treatment options). RS-01 executes predefined policy responses when evidence crosses control/classification thresholds — the automated runtime implementation of risk-treatment actions. Partial: treatment-option selection/planning is a human/design activ",
+      "evidence_requirements": []
     },
     "RS-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.5 Risk treatment includes risk-reduction/avoidance treatments. RS-02 (containment, quarantine, kill switch — block/degrade/halt agents/tools/memory/actions on risk conditions) is the agent-runtime enforcement of avoidance/reduction treatments. Partial against guidance framing."
+      "framework_reference": "6.5 Risk treatment includes risk-reduction/avoidance treatments. RS-02 (containment, quarantine, kill switch — block/degrade/halt agents/tools/memory/actions on risk conditions) is the agent-runtime enforcement of avoidance/reduction treatments. Partial against guidance framing.",
+      "evidence_requirements": []
     },
     "RS-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "6.2 Communication and consultation and 6.7 Recording and reporting cover escalation/reporting of risk information. RS-03 routes significant failures/exceptions/regulated incidents to responders with reporting context — the runtime escalation+reporting slice. Partial."
+      "framework_reference": "6.2 Communication and consultation and 6.7 Recording and reporting cover escalation/reporting of risk information. RS-03 routes significant failures/exceptions/regulated incidents to responders with reporting context — the runtime escalation+reporting slice. Partial.",
+      "evidence_requirements": []
     },
     "RC-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "5.7 Improvement (continual improvement of the framework) and 6.6 Monitoring and review feed lessons learned back into risk management. RC-02 provides post-incident review, corrective action, lessons-learned (repeatable) — the runtime/operational feedback into improvement. Partial; framework-level im"
+      "framework_reference": "5.7 Improvement (continual improvement of the framework) and 6.6 Monitoring and review feed lessons learned back into risk management. RC-02 provides post-incident review, corrective action, lessons-learned (repeatable) — the runtime/operational feedback into improvement. Partial; framework-level im",
+      "evidence_requirements": []
     }
   },
   "framework_mapping": {
@@ -235,5 +257,6 @@
       "6.6"
     ]
   },
-  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/iso-23894.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=medium, webVerified=True."
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/iso-23894.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=medium, webVerified=True.",
+  "evidence_requirements": {}
 }

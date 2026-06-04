@@ -17,103 +17,120 @@
       "applicable": true,
       "coverage": "inherited",
       "verified": false,
-      "framework_reference": "GOV-01 binds every governed action to a verifiable runtime identity + auth flow. Export control turns on WHO receives the data (foreign person 22 CFR 120.63 vs U.S. person), so a strong, attested identity for the human/agent principal in a session is foundational to deciding whether a release is a d"
+      "framework_reference": "GOV-01 binds every governed action to a verifiable runtime identity + auth flow. Export control turns on WHO receives the data (foreign person 22 CFR 120.63 vs U.S. person), so a strong, attested identity for the human/agent principal in a session is foundational to deciding whether a release is a d",
+      "evidence_requirements": []
     },
     "GOV-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GOV-03 sets autonomy limits and escalation thresholds in policy before autonomous action. For export-controlled contexts, policy should cap agent autonomy so that any action plausibly constituting an export/deemed export (15 CFR 736.2 / 22 CFR 120.50) requires human authorization rather than autonom"
+      "framework_reference": "GOV-03 sets autonomy limits and escalation thresholds in policy before autonomous action. For export-controlled contexts, policy should cap agent autonomy so that any action plausibly constituting an export/deemed export (15 CFR 736.2 / 22 CFR 120.50) requires human authorization rather than autonom",
+      "evidence_requirements": []
     },
     "GOV-04": {
       "applicable": true,
       "coverage": "inherited",
       "verified": true,
-      "framework_reference": "GOV-04 provides human review/approval and decision accountability for sensitive actions/exceptions. Export-license/exemption determinations (e.g., 22 CFR 125.4 ITAR technical-data exemptions; EAR licensing under 15 CFR 736.2) are inherently human compliance decisions; GOV-04 routes the runtime excep"
+      "framework_reference": "GOV-04 provides human review/approval and decision accountability for sensitive actions/exceptions. Export-license/exemption determinations (e.g., 22 CFR 125.4 ITAR technical-data exemptions; EAR licensing under 15 CFR 736.2) are inherently human compliance decisions; GOV-04 routes the runtime excep",
+      "evidence_requirements": []
     },
     "GOV-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GOV-05 binds actions/data-uses to declared purpose, legal basis, contract limits, and prohibited-use policy. Export controls are precisely a legal-basis/authority constraint: a transfer is lawful only under a license, license exception, or exemption (e.g., ITAR technical-data exemptions 22 CFR 125.4"
+      "framework_reference": "GOV-05 binds actions/data-uses to declared purpose, legal basis, contract limits, and prohibited-use policy. Export controls are precisely a legal-basis/authority constraint: a transfer is lawful only under a license, license exception, or exemption (e.g., ITAR technical-data exemptions 22 CFR 125.4",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "GOV-06 registers external framework/regulator obligations and links them to posture/evidence/owner reporting. ITAR registration of manufacturers/exporters/brokers (22 CFR 122.1) and EAR recordkeeping/reporting obligations (15 CFR 762.2) are external regulator obligations that belong in the obligatio"
+      "framework_reference": "GOV-06 registers external framework/regulator obligations and links them to posture/evidence/owner reporting. ITAR registration of manufacturers/exporters/brokers (22 CFR 122.1) and EAR recordkeeping/reporting obligations (15 CFR 762.2) are external regulator obligations that belong in the obligatio",
+      "evidence_requirements": []
     },
     "ID-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "ID-03 maps inputs/context stores/outputs/destinations and observed data classes per system. This is the prerequisite mapping that identifies where ITAR technical data (22 CFR 120.33) or EAR technology resides and which destinations/sessions could constitute an export or deemed export (22 CFR 120.50 "
+      "framework_reference": "ID-03 maps inputs/context stores/outputs/destinations and observed data classes per system. This is the prerequisite mapping that identifies where ITAR technical data (22 CFR 120.33) or EAR technology resides and which destinations/sessions could constitute an export or deemed export (22 CFR 120.50 ",
+      "evidence_requirements": []
     },
     "ID-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "ID-05 profiles purpose, data sensitivity, action authority, and impact tier before use. An agent that may touch export-controlled technical data (22 CFR 120.33) or EAR technology (15 CFR 734.13) should be profiled as high-impact / export-controlled at onboarding so the ITAR/EAR overlay (DC-ITAR/DC-E"
+      "framework_reference": "ID-05 profiles purpose, data sensitivity, action authority, and impact tier before use. An agent that may touch export-controlled technical data (22 CFR 120.33) or EAR technology (15 CFR 734.13) should be profiled as high-impact / export-controlled at onboarding so the ITAR/EAR overlay (DC-ITAR/DC-E",
+      "evidence_requirements": []
     },
     "PR-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR-01 evaluates sensitive actions against policy and allows them only when identity+context+target are authorized. An export/reexport/release is a 'sensitive action': PR-01 can require that an action which would transmit controlled technology out of the U.S. or to a foreign person (the export event "
+      "framework_reference": "PR-01 evaluates sensitive actions against policy and allows them only when identity+context+target are authorized. An export/reexport/release is a 'sensitive action': PR-01 can require that an action which would transmit controlled technology out of the U.S. or to a foreign person (the export event ",
+      "evidence_requirements": []
     },
     "PR-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR-02 enforces explicit least-privilege scopes per session/per action. Maps to the EAR General Prohibitions structure (15 CFR 736.2) and end-use/end-user license requirements (Part 744, anchor 15 CFR 744.1): an agent may be scoped so that a session lacking the required authorization cannot reach a c"
+      "framework_reference": "PR-02 enforces explicit least-privilege scopes per session/per action. Maps to the EAR General Prohibitions structure (15 CFR 736.2) and end-use/end-user license requirements (Part 744, anchor 15 CFR 744.1): an agent may be scoped so that a session lacking the required authorization cannot reach a c",
+      "evidence_requirements": []
     },
     "PR-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Core mapping. PR-04 inspects and constrains sensitive/export-controlled data before context-in, system-out, or action-trigger. This directly addresses the central export-control mechanism: a 'deemed export' is the release/transfer of ITAR technical data (22 CFR 120.50) or EAR technology/source code "
+      "framework_reference": "Core mapping. PR-04 inspects and constrains sensitive/export-controlled data before context-in, system-out, or action-trigger. This directly addresses the central export-control mechanism: a 'deemed export' is the release/transfer of ITAR technical data (22 CFR 120.50) or EAR technology/source code ",
+      "evidence_requirements": []
     },
     "PR-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR-05 isolates execution context so jurisdiction/foreign-person boundaries cannot silently leak. This is the agent-native heart of deemed-export control: the foreign person (22 CFR 120.63) vs U.S. person (22 CFR 120.62) boundary must hold within shared context, memory, and multi-tenant state so cont"
+      "framework_reference": "PR-05 isolates execution context so jurisdiction/foreign-person boundaries cannot silently leak. This is the agent-native heart of deemed-export control: the foreign person (22 CFR 120.63) vs U.S. person (22 CFR 120.62) boundary must hold within shared context, memory, and multi-tenant state so cont",
+      "evidence_requirements": []
     },
     "PR-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR-06 records the full evaluation chain (who/why/under-which-controls) for every governed action, hash-chained. This produces the export-decision audit evidence — what was released, to whom (person/jurisdiction), under what authorization — that supports the EAR recordkeeping obligation (15 CFR 762.2"
+      "framework_reference": "PR-06 records the full evaluation chain (who/why/under-which-controls) for every governed action, hash-chained. This produces the export-decision audit evidence — what was released, to whom (person/jurisdiction), under what authorization — that supports the EAR recordkeeping obligation (15 CFR 762.2",
+      "evidence_requirements": []
     },
     "PR-11": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "EAR requires records of regulated transactions be created (15 CFR 762.2) and retained for five years (15 CFR 762.6). PR-11 governs retention/deletion/disposal of agent-held data, memory, context, and evidence per legal obligation — it can enforce the 5-year minimum retention for export-transaction e"
+      "framework_reference": "EAR requires records of regulated transactions be created (15 CFR 762.2) and retained for five years (15 CFR 762.6). PR-11 governs retention/deletion/disposal of agent-held data, memory, context, and evidence per legal obligation — it can enforce the 5-year minimum retention for export-transaction e",
+      "evidence_requirements": []
     },
     "PR-12": {
       "applicable": true,
       "coverage": "inherited",
       "verified": true,
-      "framework_reference": "PR-12 vaults secrets/keys and keeps them out of prompts/untrusted tools. Where access credentials gate access to repositories of ITAR technical data (22 CFR 120.33) or controlled technology, protecting those secrets prevents an inadvertent release (15 CFR 734.15). This is generic credential-custody "
+      "framework_reference": "PR-12 vaults secrets/keys and keeps them out of prompts/untrusted tools. Where access credentials gate access to repositories of ITAR technical data (22 CFR 120.33) or controlled technology, protecting those secrets prevents an inadvertent release (15 CFR 734.15). This is generic credential-custody ",
+      "evidence_requirements": []
     },
     "DE-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "DE-02 continuously checks observed data handling against declared classifications and processing boundaries. For export controls this is drift detection on the export-controlled (DC-ITAR/DC-EAR) classification and the foreign-person boundary: detecting when controlled technical data begins flowing t"
+      "framework_reference": "DE-02 continuously checks observed data handling against declared classifications and processing boundaries. For export controls this is drift detection on the export-controlled (DC-ITAR/DC-EAR) classification and the foreign-person boundary: detecting when controlled technical data begins flowing t",
+      "evidence_requirements": []
     },
     "RS-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "RS-02 can block/quarantine/halt agents, tools, memory, or actions on risk conditions. If a potential unauthorized release/deemed export is detected (prohibited act under 15 CFR 764.2; export per 22 CFR 120.50), RS-02 is the kill-switch/containment that halts the offending action or quarantines the c"
+      "framework_reference": "RS-02 can block/quarantine/halt agents, tools, memory, or actions on risk conditions. If a potential unauthorized release/deemed export is detected (prohibited act under 15 CFR 764.2; export per 22 CFR 120.50), RS-02 is the kill-switch/containment that halts the offending action or quarantines the c",
+      "evidence_requirements": []
     },
     "RS-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "RS-03 routes significant failures/regulated incidents to responders with reporting context. A suspected export violation feeds the voluntary self-disclosure processes (EAR 15 CFR 764.5; ITAR voluntary disclosure 22 CFR 127.12) — RS-03 escalates the runtime-detected potential violation to the human c"
+      "framework_reference": "RS-03 routes significant failures/regulated incidents to responders with reporting context. A suspected export violation feeds the voluntary self-disclosure processes (EAR 15 CFR 764.5; ITAR voluntary disclosure 22 CFR 127.12) — RS-03 escalates the runtime-detected potential violation to the human c",
+      "evidence_requirements": []
     }
   },
   "framework_mapping": {
@@ -195,5 +212,6 @@
       "22 CFR 127.12"
     ]
   },
-  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/itar-ear.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=medium, webVerified=True."
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/itar-ear.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=medium, webVerified=True.",
+  "evidence_requirements": {}
 }

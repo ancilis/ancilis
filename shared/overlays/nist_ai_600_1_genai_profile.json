@@ -15,229 +15,267 @@
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-1.2 integrates trustworthy-AI characteristics into policies/processes and (GV-1.2-002) requires evaluating risk-relevant GAI capabilities and robustness of safety measures before and during deployment. AKSI GOV-01 binds each governed agent action to a verifiable runtime identity + auth flow, whic"
+      "framework_reference": "GV-1.2 integrates trustworthy-AI characteristics into policies/processes and (GV-1.2-002) requires evaluating risk-relevant GAI capabilities and robustness of safety measures before and during deployment. AKSI GOV-01 binds each governed agent action to a verifiable runtime identity + auth flow, whic",
+      "evidence_requirements": []
     },
     "GOV-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "GV-2.1 establishes roles, responsibilities, and lines of communication for mapping/measuring/managing AI risk (incident and performance communication to AI Actors). GOV-02 names an accountable owner per AI system for operation/risk/remediation — the agent-responsibility slice of GV-2.1's accountabil"
+      "framework_reference": "GV-2.1 establishes roles, responsibilities, and lines of communication for mapping/measuring/managing AI risk (incident and performance communication to AI Actors). GOV-02 names an accountable owner per AI system for operation/risk/remediation — the agent-responsibility slice of GV-2.1's accountabil",
+      "evidence_requirements": []
     },
     "GOV-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-1.3 sets risk-tiering, minimum performance/assurance go/no-go thresholds (GV-1.3-002), and a plan to halt unacceptable-risk systems (GV-1.3-007); GV-1.4 establishes the risk-management process through transparent policy. AKSI GOV-03 defines autonomy limits + escalation thresholds in policy before"
+      "framework_reference": "GV-1.3 sets risk-tiering, minimum performance/assurance go/no-go thresholds (GV-1.3-002), and a plan to halt unacceptable-risk systems (GV-1.3-007); GV-1.4 establishes the risk-management process through transparent policy. AKSI GOV-03 defines autonomy limits + escalation thresholds in policy before",
+      "evidence_requirements": []
     },
     "GOV-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-3.2 defines and differentiates roles/responsibilities for human-AI configurations (oversight, independent evaluation); MS-3.3 establishes end-user/community feedback and appeal of system outcomes; MP-2.2 documents how output is overseen by humans. AKSI GOV-04 supplies human review/approval contex"
+      "framework_reference": "GV-3.2 defines and differentiates roles/responsibilities for human-AI configurations (oversight, independent evaluation); MS-3.3 establishes end-user/community feedback and appeal of system outcomes; MP-2.2 documents how output is overseen by humans. AKSI GOV-04 supplies human review/approval contex",
+      "evidence_requirements": []
     },
     "GOV-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-1.1 aligns GAI development/use with applicable laws including data privacy, copyright and IP; MP-1.1 maps intended purposes and context-specific laws/norms; MP-4.1 monitors AI-generated content for privacy and IP-infringement risk. AKSI GOV-05 binds actions/data-uses to declared purpose, legal ba"
+      "framework_reference": "GV-1.1 aligns GAI development/use with applicable laws including data privacy, copyright and IP; MP-1.1 maps intended purposes and context-specific laws/norms; MP-4.1 monitors AI-generated content for privacy and IP-infringement risk. AKSI GOV-05 binds actions/data-uses to declared purpose, legal ba",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-1.1 requires understanding/managing/documenting legal-regulatory requirements; GV-4.2 documents risks and potential impacts of the AI technology; MS-4.2 reports measurement results on trustworthiness across the lifecycle. AKSI GOV-06 registers framework/contract/customer/regulator obligations and"
+      "framework_reference": "GV-1.1 requires understanding/managing/documenting legal-regulatory requirements; GV-4.2 documents risks and potential impacts of the AI technology; MS-4.2 reports measurement results on trustworthiness across the lifecycle. AKSI GOV-06 registers framework/contract/customer/regulator obligations and",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-1.2-001 establishes transparency policies for content/data provenance (digital content transparency); GV-5.1 collects/prioritizes/integrates feedback from impacted parties; MS-3.3 provides reporting and appeal channels for end users and impacted communities; MP-2.2 documents knowledge limits and "
+      "framework_reference": "GV-1.2-001 establishes transparency policies for content/data provenance (digital content transparency); GV-5.1 collects/prioritizes/integrates feedback from impacted parties; MS-3.3 provides reporting and appeal channels for end users and impacted communities; MP-2.2 documents knowledge limits and ",
+      "evidence_requirements": []
     },
     "ID-01": {
       "applicable": true,
       "coverage": "full",
       "verified": true,
-      "framework_reference": "GV-1.6 requires mechanisms to inventory AI systems; GV-1.6-001 specifically directs enumerating organizational GAI systems into the AI system inventory and adjusting inventory requirements for GAI risks. AKSI ID-01 maintains a complete current registry of governed AI systems + operating context — di"
+      "framework_reference": "GV-1.6 requires mechanisms to inventory AI systems; GV-1.6-001 specifically directs enumerating organizational GAI systems into the AI system inventory and adjusting inventory requirements for GAI risks. AKSI ID-01 maintains a complete current registry of governed AI systems + operating context — di",
+      "evidence_requirements": []
     },
     "ID-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-6.1 addresses third-party AI risk and provenance of acquired components; MP-4.1 maps third-party data/software components; MG-3.2 monitors pre-trained models used for development. AKSI ID-02 registers tools/MCP surfaces/models/prompt packs/integrations with provenance + approval metadata and stor"
+      "framework_reference": "GV-6.1 addresses third-party AI risk and provenance of acquired components; MP-4.1 maps third-party data/software components; MG-3.2 monitors pre-trained models used for development. AKSI ID-02 registers tools/MCP surfaces/models/prompt packs/integrations with provenance + approval metadata and stor",
+      "evidence_requirements": []
     },
     "ID-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MP-4.1 monitors AI-generated content for PII/sensitive-data exposure; MS-2.10 examines privacy risk including training-data leakage/extraction; GV-1.2-001 documents origin/history of training and generated data. AKSI ID-03 maps inputs/context stores/outputs/destinations and observed data classes per"
+      "framework_reference": "MP-4.1 monitors AI-generated content for PII/sensitive-data exposure; MS-2.10 examines privacy risk including training-data leakage/extraction; GV-1.2-001 documents origin/history of training and generated data. AKSI ID-03 maps inputs/context stores/outputs/destinations and observed data classes per",
+      "evidence_requirements": []
     },
     "ID-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-6.1 addresses third-party value-chain risks (data, models, components); MP-4.1 maps legal risks of third-party components; MS-2.7-001 assesses vulnerabilities/threats from compromised dependencies and supply-chain integration. AKSI ID-04 assesses models/tools/deps/prompts/orchestration for supply"
+      "framework_reference": "GV-6.1 addresses third-party value-chain risks (data, models, components); MP-4.1 maps legal risks of third-party components; MS-2.7-001 assesses vulnerabilities/threats from compromised dependencies and supply-chain integration. AKSI ID-04 assesses models/tools/deps/prompts/orchestration for supply",
+      "evidence_requirements": []
     },
     "ID-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MP-1.1 maps intended purposes and prospective settings; MP-2.1 defines the specific tasks/methods the AI system supports; MP-5.1 assesses likelihood and magnitude of each identified impact. AKSI ID-05 profiles purpose/autonomy/data sensitivity/action authority/impact tier before use — the agent risk"
+      "framework_reference": "MP-1.1 maps intended purposes and prospective settings; MP-2.1 defines the specific tasks/methods the AI system supports; MP-5.1 assesses likelihood and magnitude of each identified impact. AKSI ID-05 profiles purpose/autonomy/data sensitivity/action authority/impact tier before use — the agent risk",
+      "evidence_requirements": []
     },
     "PR-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MG-1.3 develops and plans responses to high-priority AI risks; GV-1.3-002 embeds go/no-go (deployment-approval) thresholds. AKSI PR-01 evaluates sensitive actions against policy and allows them only when identity+context+target are authorized — the runtime action-authorization enforcement slice that"
+      "framework_reference": "MG-1.3 develops and plans responses to high-priority AI risks; GV-1.3-002 embeds go/no-go (deployment-approval) thresholds. AKSI PR-01 evaluates sensitive actions against policy and allows them only when identity+context+target are authorized — the runtime action-authorization enforcement slice that",
+      "evidence_requirements": []
     },
     "PR-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MG-1.3 plans risk responses including controls on system capability/exposure; MS-2.7 evaluates security/resilience including attack surface. AKSI PR-02 enforces explicit least-privilege scopes per session/per action — a least-privilege control that reduces the GAI information-security attack surface"
+      "framework_reference": "MG-1.3 plans risk responses including controls on system capability/exposure; MS-2.7 evaluates security/resilience including attack surface. AKSI PR-02 enforces explicit least-privilege scopes per session/per action — a least-privilege control that reduces the GAI information-security attack surface",
+      "evidence_requirements": []
     },
     "PR-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.7-001 assesses backdoors, compromised dependencies and model-integrity threats; GV-6.1 addresses third-party component provenance; MG-3.2 monitors pre-trained models. AKSI PR-03 verifies tool descriptors/model artifacts/execution surfaces against trusted baselines (hash vs ID-02) — the runtime "
+      "framework_reference": "MS-2.7-001 assesses backdoors, compromised dependencies and model-integrity threats; GV-6.1 addresses third-party component provenance; MG-3.2 monitors pre-trained models. AKSI PR-03 verifies tool descriptors/model artifacts/execution surfaces against trusted baselines (hash vs ID-02) — the runtime ",
+      "evidence_requirements": []
     },
     "PR-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.10 examines privacy risk including data leakage/extraction; MP-4.1 monitors AI-generated content for PII/sensitive-data exposure; GV-1.1 aligns use with data-privacy and IP law. AKSI PR-04 inspects and constrains sensitive/regulated/export-controlled data before context-in, system-out, or actio"
+      "framework_reference": "MS-2.10 examines privacy risk including data leakage/extraction; MP-4.1 monitors AI-generated content for PII/sensitive-data exposure; GV-1.1 aligns use with data-privacy and IP law. AKSI PR-04 inspects and constrains sensitive/regulated/export-controlled data before context-in, system-out, or actio",
+      "evidence_requirements": []
     },
     "PR-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.10 examines and documents privacy risk; GV-1.1 aligns GAI use with data-privacy law. AKSI PR-05 isolates execution context so system/task/tenant/user/jurisdiction/foreign-person boundaries cannot silently leak — a privacy/isolation control supporting the Data Privacy risk category. NIST does no"
+      "framework_reference": "MS-2.10 examines and documents privacy risk; GV-1.1 aligns GAI use with data-privacy law. AKSI PR-05 isolates execution context so system/task/tenant/user/jurisdiction/foreign-person boundaries cannot silently leak — a privacy/isolation control supporting the Data Privacy risk category. NIST does no",
+      "evidence_requirements": []
     },
     "PR-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-4.3 enables AI testing, identification of incidents, and information sharing (requires records); MG-4.1 implements post-deployment monitoring with capture/evaluation of system behavior. AKSI PR-06 records the full evaluation chain (who/why/under-which-controls) hash-chained for every governed act"
+      "framework_reference": "GV-4.3 enables AI testing, identification of incidents, and information sharing (requires records); MG-4.1 implements post-deployment monitoring with capture/evaluation of system behavior. AKSI PR-06 records the full evaluation chain (who/why/under-which-controls) hash-chained for every governed act",
+      "evidence_requirements": []
     },
     "PR-08": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.7 evaluates security/resilience including prompt-injection-class threats and adversarial inputs to GAI systems; MS-2.6 evaluates safety risks of outputs. AKSI PR-08 validates direct inputs, indirect content, tool payloads, and retrieved context before execution (prompt-injection resistance) — t"
+      "framework_reference": "MS-2.7 evaluates security/resilience including prompt-injection-class threats and adversarial inputs to GAI systems; MS-2.6 evaluates safety risks of outputs. AKSI PR-08 validates direct inputs, indirect content, tool payloads, and retrieved context before execution (prompt-injection resistance) — t",
+      "evidence_requirements": []
     },
     "PR-09": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.7 evaluates AI system security/resilience including offensive-cyber/code-execution exposure; GV-1.3 risk-tiering flags systems that introduce significant new security vulnerabilities. AKSI PR-09 confines generated code/shell/dynamic execution to approved sandbox classes — a sandboxing control d"
+      "framework_reference": "MS-2.7 evaluates AI system security/resilience including offensive-cyber/code-execution exposure; GV-1.3 risk-tiering flags systems that introduce significant new security vulnerabilities. AKSI PR-09 confines generated code/shell/dynamic execution to approved sandbox classes — a sandboxing control d",
+      "evidence_requirements": []
     },
     "PR-10": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.7-001 explicitly addresses data poisoning and compromised inputs to GAI systems; MP-4.1 covers content/data integrity monitoring. AKSI PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks, and quarantine (RAG/memory poisoning) — the agent-native defense"
+      "framework_reference": "MS-2.7-001 explicitly addresses data poisoning and compromised inputs to GAI systems; MP-4.1 covers content/data integrity monitoring. AKSI PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks, and quarantine (RAG/memory poisoning) — the agent-native defense",
+      "evidence_requirements": []
     },
     "PR-11": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-1.7 covers decommissioning/phasing out AI systems safely (which entails disposing of held data); MG-2.4 supersedes/disengages/deactivates systems. AKSI PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy and legal obligation — the agent data-disposal slice. NI"
+      "framework_reference": "GV-1.7 covers decommissioning/phasing out AI systems safely (which entails disposing of held data); MG-2.4 supersedes/disengages/deactivates systems. AKSI PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy and legal obligation — the agent data-disposal slice. NI",
+      "evidence_requirements": []
     },
     "PR-12": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.7-001 lists backdoors, compromised dependencies, and credential/key exposure among the security threats GAI systems must be assessed against. AKSI PR-12 vaults, scopes, and rotates secrets/API keys/signing keys/wallet material and keeps them out of prompts/untrusted tools — the agent secrets-cu"
+      "framework_reference": "MS-2.7-001 lists backdoors, compromised dependencies, and credential/key exposure among the security threats GAI systems must be assessed against. AKSI PR-12 vaults, scopes, and rotates secrets/API keys/signing keys/wallet material and keeps them out of prompts/untrusted tools — the agent secrets-cu",
+      "evidence_requirements": []
     },
     "DE-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MG-4.1 implements post-deployment monitoring with mechanisms for capturing/evaluating system behavior; MS-2.6 evaluates the system regularly for safety risks. AKSI DE-01 monitors agents against expected behavioral baselines and detects suspicious deviations — the runtime behavioral-anomaly slice of "
+      "framework_reference": "MG-4.1 implements post-deployment monitoring with mechanisms for capturing/evaluating system behavior; MS-2.6 evaluates the system regularly for safety risks. AKSI DE-01 monitors agents against expected behavioral baselines and detects suspicious deviations — the runtime behavioral-anomaly slice of ",
+      "evidence_requirements": []
     },
     "DE-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.10 examines/documents privacy risk; MP-4.1 monitors generated content for PII/sensitive-data and IP exposure. AKSI DE-02 continuously checks observed data handling against declared classifications + processing boundaries — the runtime classification-drift/boundary-validation slice supporting Da"
+      "framework_reference": "MS-2.10 examines/documents privacy risk; MP-4.1 monitors generated content for PII/sensitive-data and IP exposure. AKSI DE-02 continuously checks observed data handling against declared classifications + processing boundaries — the runtime classification-drift/boundary-validation slice supporting Da",
+      "evidence_requirements": []
     },
     "DE-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MG-3.2 monitors pre-trained models as part of regular system monitoring (detecting drift in model behavior); MG-4.2 integrates continual-improvement activities into system updates; MS-2.13 evaluates effectiveness of TEVV processes over time. AKSI DE-03 detects drift in config/deps/tools/models/polic"
+      "framework_reference": "MG-3.2 monitors pre-trained models as part of regular system monitoring (detecting drift in model behavior); MG-4.2 integrates continual-improvement activities into system updates; MS-2.13 evaluates effectiveness of TEVV processes over time. AKSI DE-03 detects drift in config/deps/tools/models/polic",
+      "evidence_requirements": []
     },
     "DE-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-4.3 enables incident identification and information sharing (presumes intact evidence); MG-4.1 captures and evaluates post-deployment behavior. AKSI DE-04 monitors evidence chains, missing telemetry, and tamper signals — the evidence-integrity-monitoring slice that protects the records NIST monit"
+      "framework_reference": "GV-4.3 enables incident identification and information sharing (presumes intact evidence); MG-4.1 captures and evaluates post-deployment behavior. AKSI DE-04 monitors evidence chains, missing telemetry, and tamper signals — the evidence-integrity-monitoring slice that protects the records NIST monit",
+      "evidence_requirements": []
     },
     "DE-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "MS-2.3 measures performance/assurance criteria; MS-2.5 demonstrates validity/reliability; MS-2.6 evaluates safety risks; MS-2.9 explains/validates output within context (confabulation/hallucination); MS-2.11 evaluates fairness and bias. AKSI DE-05 evaluates outputs/tool outcomes for reliability, hal"
+      "framework_reference": "MS-2.3 measures performance/assurance criteria; MS-2.5 demonstrates validity/reliability; MS-2.6 evaluates safety risks; MS-2.9 explains/validates output within context (confabulation/hallucination); MS-2.11 evaluates fairness and bias. AKSI DE-05 evaluates outputs/tool outcomes for reliability, hal",
+      "evidence_requirements": []
     },
     "DE-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "MS-1.1 selects measurement approaches/metrics; MS-1.3 uses internal experts/independent assessors; MS-2.6 evaluates safety risks; MS-2.7 evaluates security/resilience (including AI red-teaming); GV-4.3 enables AI testing and information sharing. AKSI DE-06 ingests agent vuln scans, adversarial/red-t"
+      "framework_reference": "MS-1.1 selects measurement approaches/metrics; MS-1.3 uses internal experts/independent assessors; MS-2.6 evaluates safety risks; MS-2.7 evaluates security/resilience (including AI red-teaming); GV-4.3 enables AI testing and information sharing. AKSI DE-06 ingests agent vuln scans, adversarial/red-t",
+      "evidence_requirements": []
     },
     "RS-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MG-1.3 develops/plans responses to high-priority AI risks; MG-2.3 follows procedures to respond to and recover from a newly identified risk. AKSI RS-01 executes predefined policy responses when evidence crosses control/classification/overlay thresholds — the automated-response slice. NIST describes "
+      "framework_reference": "MG-1.3 develops/plans responses to high-priority AI risks; MG-2.3 follows procedures to respond to and recover from a newly identified risk. AKSI RS-01 executes predefined policy responses when evidence crosses control/classification/overlay thresholds — the automated-response slice. NIST describes ",
+      "evidence_requirements": []
     },
     "RS-02": {
       "applicable": true,
       "coverage": "full",
       "verified": true,
-      "framework_reference": "MG-2.4 establishes mechanisms to supersede, disengage, or deactivate AI systems that demonstrate unacceptable performance; GV-1.7-001 requires protocols to deactivate GAI systems when necessary; GV-1.3-007 plans to halt unacceptable-risk systems. AKSI RS-02 can block/quarantine/degrade/halt agents/t"
+      "framework_reference": "MG-2.4 establishes mechanisms to supersede, disengage, or deactivate AI systems that demonstrate unacceptable performance; GV-1.7-001 requires protocols to deactivate GAI systems when necessary; GV-1.3-007 plans to halt unacceptable-risk systems. AKSI RS-02 can block/quarantine/degrade/halt agents/t",
+      "evidence_requirements": []
     },
     "RS-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "GV-4.3 enables incident identification and information sharing; MG-4.3 communicates incidents/errors to relevant AI Actors and affected communities with tracking/response processes; GV-2.1 establishes roles for communicating incidents and performance to AI Actors and downstream stakeholders. AKSI RS"
+      "framework_reference": "GV-4.3 enables incident identification and information sharing; MG-4.3 communicates incidents/errors to relevant AI Actors and affected communities with tracking/response processes; GV-2.1 establishes roles for communicating incidents and performance to AI Actors and downstream stakeholders. AKSI RS",
+      "evidence_requirements": []
     },
     "RS-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MG-2.4 enables disengaging/deactivating systems on unacceptable behavior; GV-6.2 establishes contingency processes for failures in third-party data/AI systems (fallbacks, over-reliance). AKSI RS-04 provides multi-agent failure-domain isolation, circuit breakers, and coordinated kill-switch — the bla"
+      "framework_reference": "MG-2.4 enables disengaging/deactivating systems on unacceptable behavior; GV-6.2 establishes contingency processes for failures in third-party data/AI systems (fallbacks, over-reliance). AKSI RS-04 provides multi-agent failure-domain isolation, circuit breakers, and coordinated kill-switch — the bla",
+      "evidence_requirements": []
     },
     "RS-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "GV-1.1 requires legal/regulatory alignment (which can carry breach/incident-notification duties); GV-2.1 establishes roles for communicating incidents to AI Actors and downstream stakeholders. AKSI RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence, and routes author"
+      "framework_reference": "GV-1.1 requires legal/regulatory alignment (which can carry breach/incident-notification duties); GV-2.1 establishes roles for communicating incidents to AI Actors and downstream stakeholders. AKSI RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence, and routes author",
+      "evidence_requirements": []
     },
     "RS-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "MS-2.7 evaluates security/resilience including vulnerabilities/threats in dependencies; GV-6.1 addresses third-party AI/component risk; MG-3.1 monitors and applies controls to third-party resources. AKSI RS-06 handles vuln intake, coordinated disclosure, secure-update handling, support-period tracki"
+      "framework_reference": "MS-2.7 evaluates security/resilience including vulnerabilities/threats in dependencies; GV-6.1 addresses third-party AI/component risk; MG-3.1 monitors and applies controls to third-party resources. AKSI RS-06 handles vuln intake, coordinated disclosure, secure-update handling, support-period tracki",
+      "evidence_requirements": []
     },
     "RC-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MG-2.3 follows procedures to respond to and recover from a previously unknown risk; GV-6.2 establishes contingency processes and fallbacks for third-party failures. AKSI RC-01 documents and tests recovery plans/rollback paths/restoration dependencies — the recovery-planning slice. NIST states recove"
+      "framework_reference": "MG-2.3 follows procedures to respond to and recover from a previously unknown risk; GV-6.2 establishes contingency processes and fallbacks for third-party failures. AKSI RC-01 documents and tests recovery plans/rollback paths/restoration dependencies — the recovery-planning slice. NIST states recove",
+      "evidence_requirements": []
     },
     "RC-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "MG-4.3-001 conducts after-action assessments for GAI incidents to verify response/recovery effectiveness; GV-1.5 plans ongoing monitoring and periodic review of the risk-management process (with incident-disclosure/after-action review per the profile); MG-4.2 integrates continual-improvement activit"
+      "framework_reference": "MG-4.3-001 conducts after-action assessments for GAI incidents to verify response/recovery effectiveness; GV-1.5 plans ongoing monitoring and periodic review of the risk-management process (with incident-disclosure/after-action review per the profile); MG-4.2 integrates continual-improvement activit",
+      "evidence_requirements": []
     },
     "RC-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "MS-2.6/MS-2.7 require regular evaluation of safety and security/resilience (including via red-teaming/exercises); MG-2.3 requires recovery procedures for newly identified risks. AKSI RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedures and captures evidence"
+      "framework_reference": "MS-2.6/MS-2.7 require regular evaluation of safety and security/resilience (including via red-teaming/exercises); MG-2.3 requires recovery procedures for newly identified risks. AKSI RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedures and captures evidence",
+      "evidence_requirements": []
     }
   },
   "framework_mapping": {
@@ -413,5 +451,6 @@
       "MG-2.3"
     ]
   },
-  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/nist-ai-600-1.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True."
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/nist-ai-600-1.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True.",
+  "evidence_requirements": {}
 }

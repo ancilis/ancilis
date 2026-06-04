@@ -16,139 +16,162 @@
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "524B(b)(2) requires the manufacturer (a single accountable sponsor) to design, develop and MAINTAIN processes giving reasonable assurance the device and related systems are cybersecure across the lifecycle; the PCCP Modification Protocol presupposes a named manufacturer accountable for executing the"
+      "framework_reference": "524B(b)(2) requires the manufacturer (a single accountable sponsor) to design, develop and MAINTAIN processes giving reasonable assurance the device and related systems are cybersecure across the lifecycle; the PCCP Modification Protocol presupposes a named manufacturer accountable for executing the",
+      "evidence_requirements": []
     },
     "GOV-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PCCP Description of Modifications must be 'detailed, specific, and limited in scope' and stay 'within intended use boundaries'; the Impact Assessment evaluates the benefit-risk of permitted changes. GOV-03 (autonomy limits + escalation thresholds in policy before autonomous action) encodes the runti"
+      "framework_reference": "PCCP Description of Modifications must be 'detailed, specific, and limited in scope' and stay 'within intended use boundaries'; the Impact Assessment evaluates the benefit-risk of permitted changes. GOV-03 (autonomy limits + escalation thresholds in policy before autonomous action) encodes the runti",
+      "evidence_requirements": []
     },
     "GOV-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "FDA expects human review/approval context for modifications that fall outside the PCCP envelope (which require a new marketing submission) and for benefit-risk decisions; the AI Lifecycle draft guidance frames human oversight across the TPLC. GOV-04 provides human review/approval and decision accoun"
+      "framework_reference": "FDA expects human review/approval context for modifications that fall outside the PCCP envelope (which require a new marketing submission) and for benefit-risk decisions; the AI Lifecycle draft guidance frames human oversight across the TPLC. GOV-04 provides human review/approval and decision accoun",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The regime imposes multiple registrable external obligations (a 524B(b)(1) postmarket vulnerability-management plan submitted to FDA, the PCCP commitments, security labeling/transparency to FDA and users). GOV-06 registers framework/contract/regulator obligations and links them to posture/evidence/o"
+      "framework_reference": "The regime imposes multiple registrable external obligations (a 524B(b)(1) postmarket vulnerability-management plan submitted to FDA, the PCCP commitments, security labeling/transparency to FDA and users). GOV-06 registers framework/contract/regulator obligations and links them to posture/evidence/o",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The PCCP final guidance newly recommends manufacturers update labeling and public-facing documents as the device is modified (when/how implemented, how users were informed); the AI Lifecycle draft guidance centers transparency to users; the cybersecurity guidance requires security labeling. GOV-07 d"
+      "framework_reference": "The PCCP final guidance newly recommends manufacturers update labeling and public-facing documents as the device is modified (when/how implemented, how users were informed); the AI Lifecycle draft guidance centers transparency to users; the cybersecurity guidance requires security labeling. GOV-07 d",
+      "evidence_requirements": []
     },
     "ID-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "TPLC management and a PCCP presuppose an authoritative inventory of the AI-enabled device software function(s), versions, and operating context being governed. ID-01 maintains a complete current registry of governed AI systems + operating context. Partial: the device-identity/UDI and FDA listing dim"
+      "framework_reference": "TPLC management and a PCCP presuppose an authoritative inventory of the AI-enabled device software function(s), versions, and operating context being governed. ID-01 maintains a complete current registry of governed AI systems + operating context. Partial: the device-identity/UDI and FDA listing dim",
+      "evidence_requirements": []
     },
     "ID-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "524B(b)(3) requires an SBOM including commercial, open-source and off-the-shelf software components; the premarket cyber guidance requires the SBOM to identify components with support/EOL info. ID-02 registers tools/models/integrations with provenance + approval metadata and stores a descriptor hash"
+      "framework_reference": "524B(b)(3) requires an SBOM including commercial, open-source and off-the-shelf software components; the premarket cyber guidance requires the SBOM to identify components with support/EOL info. ID-02 registers tools/models/integrations with provenance + approval metadata and stores a descriptor hash",
+      "evidence_requirements": []
     },
     "ID-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The premarket cyber guidance requires assessing third-party/open-source software risk and a threat model; 524B(b)(3) SBOM exists to enable component-level vulnerability and supply-chain risk assessment. ID-04 assesses models/tools/deps/prompts/orchestration for supply-chain risk (SBOM, provenance). "
+      "framework_reference": "The premarket cyber guidance requires assessing third-party/open-source software risk and a threat model; 524B(b)(3) SBOM exists to enable component-level vulnerability and supply-chain risk assessment. ID-04 assesses models/tools/deps/prompts/orchestration for supply-chain risk (SBOM, provenance). ",
+      "evidence_requirements": []
     },
     "ID-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "FDA risk-management expectations (AI Lifecycle draft) and the PCCP Impact Assessment require profiling intended use, intended-use population, risk tier, and benefit-risk before deployment; the cyber guidance requires security risk management. ID-05 profiles purpose/autonomy/data sensitivity/action a"
+      "framework_reference": "FDA risk-management expectations (AI Lifecycle draft) and the PCCP Impact Assessment require profiling intended use, intended-use population, risk tier, and benefit-risk before deployment; the cyber guidance requires security risk management. ID-05 profiles purpose/autonomy/data sensitivity/action a",
+      "evidence_requirements": []
     },
     "PR-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The cyber guidance requires a security architecture covering updateability/patchability and integrity of components, and 524B(b)(2) requires maintaining device security. PR-03 verifies tool descriptors/model artifacts/execution surfaces against trusted baselines (hash vs ID-02), giving integrity/pro"
+      "framework_reference": "The cyber guidance requires a security architecture covering updateability/patchability and integrity of components, and 524B(b)(2) requires maintaining device security. PR-03 verifies tool descriptors/model artifacts/execution surfaces against trusted baselines (hash vs ID-02), giving integrity/pro",
+      "evidence_requirements": []
     },
     "PR-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Maintaining device security under 524B(b)(2), executing the PCCP Modification Protocol, and TPLC oversight all depend on a complete, tamper-evident record of what the device/model did and which version/controls were in effect. PR-06 records the full evaluation chain per governed action, hash-chained"
+      "framework_reference": "Maintaining device security under 524B(b)(2), executing the PCCP Modification Protocol, and TPLC oversight all depend on a complete, tamper-evident record of what the device/model did and which version/controls were in effect. PR-06 records the full evaluation chain per governed action, hash-chained",
+      "evidence_requirements": []
     },
     "PR-08": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Threat modeling and security testing (incl. fuzz/penetration) under the premarket cyber guidance must address malicious or malformed inputs to the device, and 524B(b)(2) requires reasonable assurance the device is cybersecure. PR-08 validates direct inputs, indirect content, tool payloads and retrie"
+      "framework_reference": "Threat modeling and security testing (incl. fuzz/penetration) under the premarket cyber guidance must address malicious or malformed inputs to the device, and 524B(b)(2) requires reasonable assurance the device is cybersecure. PR-08 validates direct inputs, indirect content, tool payloads and retrie",
+      "evidence_requirements": []
     },
     "PR-12": {
       "applicable": true,
       "coverage": "inherited",
       "verified": true,
-      "framework_reference": "524B(b)(2)/secure architecture imply protection of cryptographic keys, signing material and credentials used by the device. PR-12 vaults/scopes/rotates secrets and keeps them out of prompts/untrusted tools. Marked inherited because secrets/key-custody is generic security hygiene already owned by SOC"
+      "framework_reference": "524B(b)(2)/secure architecture imply protection of cryptographic keys, signing material and credentials used by the device. PR-12 vaults/scopes/rotates secrets and keeps them out of prompts/untrusted tools. Marked inherited because secrets/key-custody is generic security hygiene already owned by SOC",
+      "evidence_requirements": []
     },
     "DE-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The PCCP Modification Protocol controls which configuration/model changes are permitted, and 524B(b)(1) requires identifying postmarket changes/vulnerabilities; FDA expects detection of unauthorized or out-of-envelope configuration/model drift. DE-03 detects drift in config/deps/tools/models/policy "
+      "framework_reference": "The PCCP Modification Protocol controls which configuration/model changes are permitted, and 524B(b)(1) requires identifying postmarket changes/vulnerabilities; FDA expects detection of unauthorized or out-of-envelope configuration/model drift. DE-03 detects drift in config/deps/tools/models/policy ",
+      "evidence_requirements": []
     },
     "DE-04": {
       "applicable": true,
       "coverage": "inherited",
       "verified": true,
-      "framework_reference": "Maintaining device security and demonstrating PCCP adherence depend on intact telemetry/evidence. DE-04 monitors evidence chains, missing telemetry and tamper signals. Inherited: evidence-integrity monitoring is general assurance hygiene supporting many regimes rather than an FDA-AI-device-native re"
+      "framework_reference": "Maintaining device security and demonstrating PCCP adherence depend on intact telemetry/evidence. DE-04 monitors evidence chains, missing telemetry and tamper signals. Inherited: evidence-integrity monitoring is general assurance hygiene supporting many regimes rather than an FDA-AI-device-native re",
+      "evidence_requirements": []
     },
     "DE-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "This is a core AI-device requirement: FDA recommends performance-monitoring plans to detect changes/causes in model performance across the TPLC, address bias across demographic groups, and trigger updates/mitigations; the PCCP Modification Protocol requires pre-defined acceptance criteria and contin"
+      "framework_reference": "This is a core AI-device requirement: FDA recommends performance-monitoring plans to detect changes/causes in model performance across the TPLC, address bias across demographic groups, and trigger updates/mitigations; the PCCP Modification Protocol requires pre-defined acceptance criteria and contin",
+      "evidence_requirements": []
     },
     "DE-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The premarket cyber guidance requires security testing evidence (penetration testing, fuzz testing, static/dynamic code analysis, security risk management report); the PCCP requires verification/validation activities; the AI guidance requires clinical/performance validation. DE-06 ingests vuln scans"
+      "framework_reference": "The premarket cyber guidance requires security testing evidence (penetration testing, fuzz testing, static/dynamic code analysis, security risk management report); the PCCP requires verification/validation activities; the AI guidance requires clinical/performance validation. DE-06 ingests vuln scans",
+      "evidence_requirements": []
     },
     "RS-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "524B(b)(2)(B) requires addressing critical vulnerabilities that could cause uncontrolled risks 'as soon as possible out of cycle'; FDA expects mitigations/corrective actions when model performance degrades. RS-02 can block/quarantine/degrade/halt agents/tools/memory/actions on risk conditions, provi"
+      "framework_reference": "524B(b)(2)(B) requires addressing critical vulnerabilities that could cause uncontrolled risks 'as soon as possible out of cycle'; FDA expects mitigations/corrective actions when model performance degrades. RS-02 can block/quarantine/degrade/halt agents/tools/memory/actions on risk conditions, provi",
+      "evidence_requirements": []
     },
     "RS-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The 524B(b)(1) postmarket plan and the cyber guidance vulnerability-management plan require routing significant cybersecurity events to responders; performance-monitoring corrective-action plans require escalation of safety-relevant degradations. RS-03 routes significant failures/exceptions/regulate"
+      "framework_reference": "The 524B(b)(1) postmarket plan and the cyber guidance vulnerability-management plan require routing significant cybersecurity events to responders; performance-monitoring corrective-action plans require escalation of safety-relevant degradations. RS-03 routes significant failures/exceptions/regulate",
+      "evidence_requirements": []
     },
     "RS-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Cybersecurity incidents in medical devices can trigger Medical Device Reporting (MDR, 21 CFR 803) and FDA/coordinating-authority notification timelines; the 524B(b)(1) plan must address postmarket exploits in a reasonable time. RS-05 starts jurisdiction-specific notification clocks, preserves decisi"
+      "framework_reference": "Cybersecurity incidents in medical devices can trigger Medical Device Reporting (MDR, 21 CFR 803) and FDA/coordinating-authority notification timelines; the 524B(b)(1) plan must address postmarket exploits in a reasonable time. RS-05 starts jurisdiction-specific notification clocks, preserves decisi",
+      "evidence_requirements": []
     },
     "RS-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "This is the strongest, most direct mapping. 524B(b)(1) mandates a plan to monitor/identify/address postmarket vulnerabilities INCLUDING coordinated vulnerability disclosure and related procedures; 524B(b)(2)(A)/(B) require security updates/patches on a regular cycle and out-of-cycle for critical vul"
+      "framework_reference": "This is the strongest, most direct mapping. 524B(b)(1) mandates a plan to monitor/identify/address postmarket vulnerabilities INCLUDING coordinated vulnerability disclosure and related procedures; 524B(b)(2)(A)/(B) require security updates/patches on a regular cycle and out-of-cycle for critical vul",
+      "evidence_requirements": []
     },
     "RC-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The PCCP Modification Protocol must include update procedures and (implicitly) the ability to revert a modification that fails acceptance criteria; rapid out-of-cycle remediation under 524B(b)(2)(B) benefits from tested rollback paths. RC-01 documents and tests recovery plans/rollback paths/restorat"
+      "framework_reference": "The PCCP Modification Protocol must include update procedures and (implicitly) the ability to revert a modification that fails acceptance criteria; rapid out-of-cycle remediation under 524B(b)(2)(B) benefits from tested rollback paths. RC-01 documents and tests recovery plans/rollback paths/restorat",
+      "evidence_requirements": []
     },
     "RC-03": {
       "applicable": true,
       "coverage": "inherited",
       "verified": true,
-      "framework_reference": "Maintaining cyber-resilience and demonstrating that update/rollback procedures actually work supports 524B(b)(2) and security testing expectations. RC-03 periodically exercises recovery/rollback/failover/agent-disablement procedures and captures evidence. Inherited: resilience-exercise discipline is"
+      "framework_reference": "Maintaining cyber-resilience and demonstrating that update/rollback procedures actually work supports 524B(b)(2) and security testing expectations. RC-03 periodically exercises recovery/rollback/failover/agent-disablement procedures and captures evidence. Inherited: resilience-exercise discipline is",
+      "evidence_requirements": []
     }
   },
   "framework_mapping": {
@@ -264,5 +287,6 @@
       "PCCP-ModProtocol"
     ]
   },
-  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/fda-ai-device.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True."
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/fda-ai-device.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True.",
+  "evidence_requirements": {}
 }

@@ -313,77 +313,88 @@
       "coverage": "partial",
       "verified": true,
       "framework_reference": "MGF Dimension 2 (Data) addresses data quality and 'potentially contentious' (e.g., copyrighted/personal) training data and privacy-law compliance; AI Verify 'Data Governance' covers data source and quality. AKSI GOV-05 binds actions/data-uses to declared purpose, legal basis, consent and prohibited-",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "Dimension 1 expects documented allocation of responsibility and disclosure to downstream parties; Dimension 5 (Testing and Assurance) envisions third-party testing against common standards reported to stakeholders. AKSI GOV-06 registers framework/contract/customer/regulator obligations and links the",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "Dimension 3 enhances transparency around safety/hygiene measures and disclosure (e.g., model/safety 'food-label' style disclosures); Dimension 6 (Content Provenance) introduces labelling/watermarking/metadata so users know content is AI-generated; AI Verify 'Transparency' requires appropriate inform",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-09": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
       "framework_reference": "The Agentic AI MGF technical-controls pillar covers tool guardrails and operational boundaries on autonomous execution; Dimension 6 Security covers adversarial misuse. AKSI PR-09 confines generated code/shell/dynamic execution to approved sandbox classes — the controlled-execution slice for agents t",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-10": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "Dimension 6 (Security) names data poisoning; Dimension 8 (Safety and Alignment Research) concerns systems behaving as intended. AKSI PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks and quarantine (RAG/memory poisoning) — the memory/context-integrity sli",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-11": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
       "framework_reference": "Dimension 2 / AI Verify Data Governance imply lawful data handling including retention/disposal consistent with privacy obligations (PDPA context). AKSI PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation — the agent-held-data lifecycle slice. ",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-12": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
       "framework_reference": "Dimension 6 (Security) covers protection against adversarial extraction; the Agentic AI MGF technical-controls pillar covers least-privilege access. AKSI PR-12 vaults/scopes/rotates secrets, API keys and signing keys and keeps them out of prompts/untrusted tools — the credential-custody slice protec",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "DE-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "Dimension 5 (Testing and Assurance) and Dimension 8 (Safety and Alignment Research) plus AI Verify Safety/Robustness require evaluating output reliability, harmful output and alignment. AKSI DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias and out-of-scope b",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "DE-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "Dimension 5 promotes third-party testing on common standards (AI Verify provides the technical tests and process checks); Dimension 3 promotes safety testing/red-teaming before production. AKSI DE-06 ingests vuln scans, adversarial/red-team, resilience tests and third-party evals as evidence with re",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "RS-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
       "framework_reference": "Dimension 4 (Incident Reporting) envisions timely notification of AI incidents to relevant parties/authorities. AKSI RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence and routes authority/customer notification to humans — the notification-clock/evidence-preservation",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "RS-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
       "framework_reference": "Dimension 4 supports continuous improvement after incidents and Dimension 6 (Security) addresses vulnerabilities/adversarial attacks; together they support coordinated vulnerability handling for shipped AI products. AKSI RS-06 covers vuln intake, coordinated disclosure, secure-update handling and ad",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     }
   },
   "evidence_requirements": {
