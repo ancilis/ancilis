@@ -1,0 +1,345 @@
+{
+  "id": "hitrust_ai_security",
+  "name": "HITRUST CSF + AI Security Assessment and Certification (AI Security for Deployed AI Systems)",
+  "version": "0.1",
+  "trigger_type": "certification",
+  "triggered_by": [
+    "DC-AI",
+    "DC-PHI"
+  ],
+  "description": "HITRUST CSF v11.8.0 (current as of mid-2026) is a prescriptive, certifiable security/privacy control framework; its AI Security Assessment and Certification (introduced v11.4.0, available as ai1 paired with e1/i1 or ai2 paired with r2) adds up to 44 curated AI-specific requirement statements across 12 topic categories, harmonized to NIST, ISO, OWASP LLM Top 10 2025, and MITRE ATLAS mitigations, and requires the in-scope AI system to be in production deployment. AKSI maps strongly to the runtime-facing categories (access, logging/monitoring, filtering/sanitizing inputs-outputs, model robustness",
+  "jurisdiction": "United States / Global (private-sector certification regime; healthcare-origin, sector-agnostic). HITRUST Alliance.",
+  "regime_version": "HITRUST CSF v11.8.0 (effective May 7-8, 2026); AI Security Assessment introduced v11.4.0 (Dec 2024), refreshed through v11.8.0 with OWASP LLM Top 10 2025 + MITRE ATLAS mitigation mappings",
+  "controls": {
+    "GOV-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AI Security Governance and Oversight category (3 requirements) requires assigned accountability and oversight responsibilities for the AI system. GOV-02 binds a named accountable owner to each AI system, satisfying the agent-runtime slice of designated AI ownership/oversight. Partial: HITRUST govern"
+    },
+    "GOV-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Governance and Oversight requires AI risk acceptance/tolerance and policy before deployment; Legal and Compliance (3 requirements) requires AI-use policy and prohibited-use constraints. GOV-03 owns autonomy limits and escalation thresholds defined in policy before autonomous action. Partial because "
+    },
+    "GOV-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Governance and Oversight expects human review/approval and accountable decision-making for AI system operation. GOV-04 supplies human review/approval context + decision accountability for sensitive actions. Partial: HITRUST oversight scope includes organizational committees/sign-off processes outsid"
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AI Legal and Compliance (3 requirements) requires that AI use complies with legal/regulatory/contractual obligations and intended-purpose constraints, including data-use authority. GOV-05 binds actions/data-uses to declared purpose, legal basis, consent, and prohibited-use policy at runtime. Partial"
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Legal and Compliance plus Governance categories require tracking applicable obligations and AI-system posture against them (and HITRUST's external-inheritance program for AI service-provider obligations). GOV-06 registers framework/contract/customer/regulator obligations and links them to posture/ev"
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Legal and Compliance requirements include transparency/disclosure expectations for AI systems (informed by NIST AI RMF and ISO mappings carried into HITRUST AI content). GOV-07 documents disclosures, privacy-rights routing, and affected-party feedback/intervention channels linked to runtime evidence"
+    },
+    "ID-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Documenting and Inventorying AI Systems (3 requirements) requires maintaining a current inventory of AI systems and their operating context (mirrors CSF Domain 07 Asset Management AI inventory additions). ID-01 maintains a complete current registry of governed AI systems + operating context, fully s"
+    },
+    "ID-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Inventorying requirements cover AI models, components, and data; AI Supply Chain (4 requirements) requires tracking AI components and their provenance/approval. ID-02 registers tools/MCP surfaces/models/prompt packs/integrations with provenance + approval metadata and stores descriptor hash at appro"
+    },
+    "ID-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Inventorying and data-handling requirements expect documentation of AI data flows and data classes processed by the AI system. ID-03 maps inputs/context stores/outputs/destinations + observed data classes per system. Partial: HITRUST data classification is broader (Domain 13 Privacy / Domain 07), an"
+    },
+    "ID-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AI Supply Chain (4 requirements) requires assessing supply-chain risk of AI models, third-party components, training data, and dependencies (poisoning/supply-chain attacks explicitly in scope). ID-04 assesses models/tools/deps/prompts/orchestration for supply-chain risk (SBOM, provenance), fully mat"
+    },
+    "ID-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AI Security Threat Management (3 requirements) requires identifying and analyzing AI-specific threats/risks for the system, and Governance requires risk-based scoping. ID-05 profiles purpose/autonomy/data sensitivity/action authority/impact tier before use. Partial: HITRUST threat management spans o"
+    },
+    "PR-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Access to the AI System (7 requirements, largest category) requires controlling and authorizing access to and actions within the AI system, mapped to CSF Domain 01 Access Control. PR-01 evaluates sensitive actions against policy and allows them only when identity+context+target are authorized, fully"
+    },
+    "PR-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Access category requires least-privilege/role-appropriate access to AI system functions and resources. PR-02 enforces explicit least-privilege scopes per session + per action, fully matching the runtime authorization-scope slice. IDs not publicly confirmed. (verifier-downgraded: least-privilege scop"
+    },
+    "PR-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Model Robustness (5 requirements) plus Supply Chain require integrity verification of AI models/components against trusted baselines (defending poisoning and supply-chain tampering). PR-03 verifies tool descriptors/model artifacts/execution surfaces against trusted baselines (hash vs ID-02), fully c"
+    },
+    "PR-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Filtering and Sanitizing AI Data, Inputs, and Outputs (3 requirements) requires controlling sensitive-data exposure through AI inputs/outputs (data-exposure concerns from OWASP LLM Top 10 2025). PR-04 inspects/constrains sensitive/regulated data before context-in, system-out, or action-trigger, full"
+    },
+    "PR-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Access and data-handling requirements address segregation of AI system data and tenant/user boundaries to prevent leakage across contexts. PR-05 isolates execution context so system/task/tenant/user/jurisdiction boundaries cannot silently leak. Partial: HITRUST does not prescribe a dedicated multi-t"
+    },
+    "PR-06": {
+      "applicable": true,
+      "coverage": "full",
+      "verified": false,
+      "framework_reference": "AI System Logging and Monitoring (3 requirements) requires logging AI system activity sufficient for accountability and investigation, mapped to CSF Domain 10 (Audit Logging & Monitoring). PR-06 records the full evaluation chain (who/why/under-which-controls), hash-chained, fully covering the runtim"
+    },
+    "PR-08": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Filtering/Sanitizing inputs/outputs and Model Robustness explicitly address input-based attacks including prompt injection and insecure output handling (OWASP LLM Top 10 2025 LLM01/LLM02 + MITRE ATLAS mitigations now mapped). PR-08 validates direct inputs, indirect content, tool payloads, and retrie"
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Development of AI Software (6 requirements) covers secure development/deployment practices; insecure output handling concerns (OWASP LLM) include downstream code execution from AI output. PR-09 confines generated code/shell/dynamic execution to approved sandbox classes. Partial: HITRUST does not pre"
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Model Robustness and data-sanitizing requirements address poisoning/integrity of AI data and training/retrieval inputs (RAG/memory poisoning analogues, MITRE ATLAS poisoning mitigations). PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks, and quarantine. "
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Legal/Compliance and data-handling requirements include retention/disposal of AI data consistent with policy and legal obligation (CSF Domain 13 Privacy / Domain 06 Compliance carry retention duties). PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal ob"
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Encryption of AI Assets (2 requirements) requires protecting AI assets including keys/secrets, and Access requirements restrict credential exposure. PR-12 vaults/scopes/rotates secrets, API keys, signing keys and wallet material and keeps them out of prompts/untrusted tools. Partial: org key-managem"
+    },
+    "DE-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Logging and Monitoring (3 requirements) plus Threat Management require monitoring AI system behavior for anomalous/suspicious activity (MITRE ATLAS detection mitigations). DE-01 monitors agents against expected behavioral baselines and detects suspicious deviations, fully covering the runtime behavi"
+    },
+    "DE-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Data filtering/sanitizing requirements imply ongoing validation that AI data handling stays within declared classifications and boundaries. DE-02 continuously checks observed data handling vs declared classifications + processing boundaries. Partial: HITRUST does not prescribe explicit continuous cl"
+    },
+    "DE-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Logging/Monitoring and Model Robustness support detecting changes/drift in AI system configuration, models, and dependencies (CSF Domain 07 config management overlay). DE-03 detects drift in config/deps/tools/models/policy baselines before it normalizes. Partial: HITRUST treats config/change managem"
+    },
+    "DE-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Logging and Monitoring requires log integrity/protection sufficient for reliable accountability (CSF Domain 10 audit-log protection). DE-04 monitors evidence chains, missing telemetry, and tamper signals. Partial: log-integrity protection is largely an inherited baseline CSF capability rather than A"
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Model Robustness (5 requirements) addresses output reliability, robustness against adversarial manipulation, and degraded/unsafe behavior; OWASP LLM mappings cover model misuse and harmful output. DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias, and out-of-"
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Threat Management plus Model Robustness/Development require adversarial testing, vulnerability assessment, and red-teaming of the AI system, ingesting results for remediation (MITRE ATLAS + OWASP-driven). DE-06 ingests agent vuln scans, adversarial/red-team, resilience tests, and third-party evals a"
+    },
+    "RS-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Threat Management and Monitoring imply defined responses when AI threat conditions are detected. RS-01 executes predefined policy responses when evidence crosses control/classification/overlay thresholds. Partial: HITRUST response is framed around incident-management process (CSF Domain 11) rather t"
+    },
+    "RS-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Threat Management and Access requirements support the ability to disable/restrict access to or contain a compromised AI system. RS-02 can block/quarantine/degrade/halt agents/tools/memory/credentials/actions on risk conditions. Partial: explicit kill-switch/quarantine for agents is inferred from con"
+    },
+    "RS-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Threat Management requires escalation/handling of identified AI security events, tying into CSF Domain 11 Incident Management. RS-03 routes significant failures/exceptions/regulated incidents to responders with reporting context. Partial: the full incident-response process is inherited from baseline"
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Supply Chain and Development requirements include handling vulnerabilities and secure updates of AI components/models over their lifecycle. RS-06 handles vuln intake, coordinated disclosure, secure-update handling, and advisories for shipped agent products. Partial: HITRUST covers update/patch hygie"
+    },
+    "RC-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Resilience of the AI System (2 requirements) requires the AI system to maintain/restore operation under adverse conditions (availability attacks in scope), aligned with CSF Domain 12 Business Continuity. RC-01 documents and tests recovery plans/rollback paths/restoration dependencies. Partial: enter"
+    },
+    "RC-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Resilience requirements expect that the AI system's continuity/recovery capability is exercised and validated. RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedures and captures evidence. Partial: resilience testing here is the security-availability slice; f"
+    }
+  },
+  "framework_mapping": {
+    "GOV-02": [
+      "AISec.Governance-and-Oversight"
+    ],
+    "GOV-03": [
+      "AISec.Governance-and-Oversight",
+      "AISec.Legal-and-Compliance"
+    ],
+    "GOV-04": [
+      "AISec.Governance-and-Oversight"
+    ],
+    "GOV-05": [
+      "AISec.Legal-and-Compliance"
+    ],
+    "GOV-06": [
+      "AISec.Legal-and-Compliance",
+      "AISec.Governance-and-Oversight"
+    ],
+    "GOV-07": [
+      "AISec.Legal-and-Compliance"
+    ],
+    "ID-01": [
+      "AISec.Documenting-and-Inventorying-AI-Systems"
+    ],
+    "ID-02": [
+      "AISec.Documenting-and-Inventorying-AI-Systems",
+      "AISec.Supply-Chain"
+    ],
+    "ID-03": [
+      "AISec.Documenting-and-Inventorying-AI-Systems",
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs"
+    ],
+    "ID-04": [
+      "AISec.Supply-Chain"
+    ],
+    "ID-05": [
+      "AISec.Threat-Management",
+      "AISec.Governance-and-Oversight"
+    ],
+    "PR-01": [
+      "AISec.Access-to-the-AI-System"
+    ],
+    "PR-02": [
+      "AISec.Access-to-the-AI-System"
+    ],
+    "PR-03": [
+      "AISec.Model-Robustness",
+      "AISec.Supply-Chain"
+    ],
+    "PR-04": [
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs",
+      "AISec.Encryption-of-AI-Assets"
+    ],
+    "PR-05": [
+      "AISec.Access-to-the-AI-System",
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs"
+    ],
+    "PR-06": [
+      "AISec.Logging-and-Monitoring"
+    ],
+    "PR-08": [
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs",
+      "AISec.Model-Robustness"
+    ],
+    "PR-09": [
+      "AISec.Development-of-AI-Software",
+      "AISec.Access-to-the-AI-System"
+    ],
+    "PR-10": [
+      "AISec.Model-Robustness",
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs"
+    ],
+    "PR-11": [
+      "AISec.Legal-and-Compliance",
+      "AISec.Documenting-and-Inventorying-AI-Systems"
+    ],
+    "PR-12": [
+      "AISec.Encryption-of-AI-Assets",
+      "AISec.Access-to-the-AI-System"
+    ],
+    "DE-01": [
+      "AISec.Logging-and-Monitoring",
+      "AISec.Threat-Management"
+    ],
+    "DE-02": [
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs"
+    ],
+    "DE-03": [
+      "AISec.Logging-and-Monitoring",
+      "AISec.Model-Robustness"
+    ],
+    "DE-04": [
+      "AISec.Logging-and-Monitoring"
+    ],
+    "DE-05": [
+      "AISec.Model-Robustness",
+      "AISec.Resilience-of-the-AI-System"
+    ],
+    "DE-06": [
+      "AISec.Threat-Management",
+      "AISec.Model-Robustness",
+      "AISec.Development-of-AI-Software"
+    ],
+    "RS-01": [
+      "AISec.Threat-Management",
+      "AISec.Logging-and-Monitoring"
+    ],
+    "RS-02": [
+      "AISec.Threat-Management",
+      "AISec.Access-to-the-AI-System"
+    ],
+    "RS-03": [
+      "AISec.Threat-Management"
+    ],
+    "RS-06": [
+      "AISec.Supply-Chain",
+      "AISec.Development-of-AI-Software"
+    ],
+    "RC-01": [
+      "AISec.Resilience-of-the-AI-System"
+    ],
+    "RC-03": [
+      "AISec.Resilience-of-the-AI-System"
+    ]
+  },
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/hitrust-ai.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=medium, webVerified=True."
+}

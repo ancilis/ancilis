@@ -85,12 +85,20 @@
       "CRS §6-1-1702",
       "Documentation integrity"
     ],
+    "csa_aicm": [
+      "LOG-01",
+      "A&A-01"
+    ],
     "dora": [
       "DORA Art. 6",
       "DORA Art. 10"
     ],
     "eu-ai-act": [
       "Art.12"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(2)",
+      "PCCP-ModProtocol"
     ],
     "fedramp": [
       "NIST SP 800-53 Rev 5 AU-6, AU-12",
@@ -106,6 +114,9 @@
     ],
     "hipaa": [
       "164.308(a)(1)(ii)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Logging-and-Monitoring"
     ],
     "imda-mgf": [
       "MGF Areas 1+4",
@@ -129,6 +140,20 @@
     ],
     "nist-csf": [
       "DE.CM-09"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-4.3",
+      "MG-4.1"
+    ],
+    "nist_privacy_framework": [
+      "CT.DM-P8"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PO.3.3",
+      "PO.4.2"
+    ],
+    "nydfs-500": [
+      "500.6"
     ],
     "pci-dss-v4": [
       "Req 10.3.3",

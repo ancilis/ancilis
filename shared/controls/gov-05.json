@@ -76,14 +76,63 @@
     "use_restriction"
   ],
   "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "UUS-LAW",
+      "UUS-CYBER",
+      "UUS-WEAPONS",
+      "UUS-CHILD",
+      "UUS-FRAUD",
+      "UUS-DEMOCRACY",
+      "UUS-CJSURV",
+      "AUG-AGENTIC"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "csa_aicm": [
+      "GRC-09",
+      "DSP-01",
+      "DSP-02"
     ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Legal-and-Compliance"
+    ],
+    "iso-23894": [
+      "6.3.3",
+      "Annex A"
+    ],
+    "iso-27701": [
+      "A.7.2.1",
+      "A.7.2.2",
+      "A.7.2.3",
+      "A.7.2.4",
+      "A.7.4.2",
+      "B.8.2.1",
+      "B.8.2.2",
+      "B.8.2.4"
+    ],
+    "itar-ear": [
+      "15 CFR 736.2",
+      "15 CFR 744.1",
+      "22 CFR 125.4",
+      "22 CFR 120.16"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.1",
+      "MP-1.1",
+      "MP-4.1"
+    ],
+    "nist_privacy_framework": [
+      "ID.IM-P5",
+      "GV.PO-P1",
+      "GV.PO-P5",
+      "CT.PO-P1"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"

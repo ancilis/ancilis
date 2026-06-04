@@ -78,11 +78,42 @@
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
     ],
+    "csa_aicm": [
+      "SEF-02",
+      "SEF-03"
+    ],
+    "eu_cra": [
+      "Art. 14"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(1)",
+      "Premarket-Cyber-VulnMgmtPlan"
+    ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "iso-27701": [
+      "B.8.5.4",
+      "B.8.5.5",
+      "A.7.5.4"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.1",
+      "GV-2.1"
+    ],
+    "nist_privacy_framework": [
+      "CM.AW-P7",
+      "CM.AW-P8"
+    ],
+    "nydfs-500": [
+      "500.17(a)",
+      "500.17(c)"
+    ],
+    "sec-cyber-disclosure": [
+      "Form 8-K Item 1.05(a)"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"

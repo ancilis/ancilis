@@ -76,14 +76,42 @@
     "execution"
   ],
   "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "UUS-CYBER",
+      "AUG-AGENTIC"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "csa_aicm": [
+      "AIS-11",
+      "IVS-01",
+      "TVM-11"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(j)",
+      "Annex I Part I(2)(k)"
     ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Development-of-AI-Software",
+      "AISec.Access-to-the-AI-System"
+    ],
+    "iso-27701": [
+      "A.7.4.5"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.7",
+      "GV-1.3"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PW.8.1",
+      "PO.5.1"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"

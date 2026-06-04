@@ -78,11 +78,35 @@
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
     ],
+    "csa_aicm": [
+      "BCR-02",
+      "BCR-03"
+    ],
+    "eu_cra": [
+      "Annex I Part II(3)",
+      "Annex I Part I(2)(h)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(2)",
+      "Premarket-Cyber-SecTesting",
+      "PCCP-ModProtocol"
+    ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Resilience-of-the-AI-System"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.6",
+      "MS-2.7",
+      "MG-2.3"
+    ],
+    "nist_privacy_framework": [
+      "PR.PO-P8"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"

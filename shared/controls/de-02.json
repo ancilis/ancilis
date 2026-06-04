@@ -89,6 +89,10 @@
       "CRS §6-1-1702(2)(d)",
       "Annual review + change detection"
     ],
+    "csa_aicm": [
+      "DSP-01",
+      "DSP-21"
+    ],
     "dora": [
       "DORA Art. 8(1)",
       "DORA Art. 10"
@@ -114,6 +118,9 @@
       "164.308(a)(1)(ii)(D)",
       "164.308(a)(5)(ii)(C)"
     ],
+    "hitrust_ai_security": [
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs"
+    ],
     "imda-mgf": [
       "MGF Area 3 (implied)",
       "Change Detection"
@@ -122,8 +129,18 @@
       "A.8.9",
       "A.8.32"
     ],
+    "iso-27701": [
+      "A.7.4.2",
+      "A.7.4.4",
+      "A.7.5.2"
+    ],
     "iso-42001": [
       "Clause 8.1"
+    ],
+    "itar-ear": [
+      "22 CFR 120.50",
+      "15 CFR 734.13",
+      "22 CFR 120.63"
     ],
     "mas-trm": [
       "MAS TRM §6.2"
@@ -137,6 +154,18 @@
     "nist-csf": [
       "DE.CM-01",
       "DE.CM-09"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.10",
+      "MP-4.1"
+    ],
+    "nist_privacy_framework": [
+      "CT.DM-P9",
+      "GV.MT-P1"
+    ],
+    "nydfs-500": [
+      "500.13(a)",
+      "500.3(b)"
     ],
     "pci-dss-v4": [
       "Req 11.5.2"

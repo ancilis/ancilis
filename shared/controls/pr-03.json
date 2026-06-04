@@ -89,11 +89,26 @@
       "CRS §6-1-1702(2)(b)",
       "Impact assessment data provenance"
     ],
+    "csa_aicm": [
+      "MDS-08",
+      "MDS-09",
+      "MDS-13",
+      "MDS-02"
+    ],
     "dora": [
       "DORA Art. 9(4)(a)"
     ],
     "eu-ai-act": [
       "Art.15"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(f)",
+      "Annex I Part II(1)"
+    ],
+    "fda_ai_device_pccp": [
+      "Premarket-Cyber-SecArch",
+      "Premarket-Cyber-SBOM",
+      "524B(b)(2)"
     ],
     "fedramp": [
       "NIST SP 800-53 Rev 5 CM-2, CM-3, CM-6, CM-7",
@@ -110,6 +125,10 @@
     ],
     "hipaa": [
       "164.312(c)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Model-Robustness",
+      "AISec.Supply-Chain"
     ],
     "imda-mgf": [
       "MGF Area 3 §4.3",
@@ -136,6 +155,21 @@
     "nist-csf": [
       "PR.DS-01",
       "PR.DS-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.7",
+      "GV-6.1",
+      "MG-3.2"
+    ],
+    "nist_privacy_framework": [
+      "PR.DS-P6",
+      "PR.DS-P8"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PS.1.1",
+      "PS.2.1",
+      "PW.6.1",
+      "PO.3.2"
     ],
     "pci-dss-v4": [
       "Req 6.3.1",

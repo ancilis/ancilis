@@ -81,11 +81,50 @@
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
     ],
+    "csa_aicm": [
+      "CEK-03",
+      "IAM-04",
+      "DSP-01"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(e)",
+      "Annex I Part I(2)(d)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(2)",
+      "Premarket-Cyber-SecArch"
+    ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Encryption-of-AI-Assets",
+      "AISec.Access-to-the-AI-System"
+    ],
+    "iso-27701": [
+      "A.7.4.9",
+      "B.8.4.3"
+    ],
+    "itar-ear": [
+      "22 CFR 120.33",
+      "15 CFR 734.15"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.7"
+    ],
+    "nist_privacy_framework": [
+      "PR.AC-P1"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PS.1.1",
+      "PW.1.1"
+    ],
+    "nydfs-500": [
+      "500.7(c)",
+      "500.12"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"

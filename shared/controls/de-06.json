@@ -83,11 +83,59 @@
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
     ],
+    "csa_aicm": [
+      "MDS-06",
+      "MDS-07",
+      "TVM-12",
+      "A&A-01"
+    ],
+    "eu_cra": [
+      "Annex I Part II(3)",
+      "Annex I Part I(2)(a)"
+    ],
+    "fda_ai_device_pccp": [
+      "Premarket-Cyber-SecTesting",
+      "Premarket-Cyber-SRM",
+      "PCCP-ModProtocol",
+      "AI-LCM-Draft-PerfMonitoring"
+    ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Threat-Management",
+      "AISec.Model-Robustness",
+      "AISec.Development-of-AI-Software"
+    ],
+    "iso-23894": [
+      "6.4.3",
+      "6.6"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-1.1",
+      "MS-1.3",
+      "MS-2.6",
+      "MS-2.7",
+      "GV-4.3"
+    ],
+    "nist_privacy_framework": [
+      "CT.DM-P9",
+      "PR.PO-P10",
+      "ID.DE-P5"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PW.7.1",
+      "PW.7.2",
+      "PW.8.1",
+      "PW.8.2",
+      "RV.1.2"
+    ],
+    "nydfs-500": [
+      "500.5",
+      "500.2(c)"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"

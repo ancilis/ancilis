@@ -79,6 +79,10 @@
     "context"
   ],
   "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "UUS-PRIVACY",
+      "UUS-CJSURV"
+    ],
     "ccpa": [
       "§1798.150",
       "§1798.140(m)"
@@ -91,11 +95,20 @@
       "CRS §6-1-1702(2)(c)(II)",
       "Consumer data correction right"
     ],
+    "csa_aicm": [
+      "DSP-21",
+      "DSP-01",
+      "LOG-15"
+    ],
     "dora": [
       "DORA Art. 9(2)"
     ],
     "eu-ai-act": [
       "Art.10"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(e)",
+      "Annex I Part I(2)(g)"
     ],
     "fedramp": [
       "NIST SP 800-53 Rev 5 SC-8, SC-13, SC-28, MP-2",
@@ -114,16 +127,38 @@
       "164.312(e)(1)",
       "164.312(e)(2)"
     ],
+    "hitrust_ai_security": [
+      "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs",
+      "AISec.Encryption-of-AI-Assets"
+    ],
     "imda-mgf": [
       "MGF Area 3 §4.1",
       "PDPC Data Protection in AI"
+    ],
+    "iso-23894": [
+      "Annex A",
+      "6.5"
     ],
     "iso-27001": [
       "A.8.10",
       "A.8.11"
     ],
+    "iso-27701": [
+      "A.7.4.1",
+      "A.7.4.2",
+      "A.7.5.1",
+      "A.7.5.2",
+      "B.8.5.1",
+      "B.8.5.2"
+    ],
     "iso-42001": [
       "MAP 1.5"
+    ],
+    "itar-ear": [
+      "22 CFR 120.50",
+      "15 CFR 734.13",
+      "15 CFR 734.15",
+      "22 CFR 120.33"
     ],
     "mas-trm": [
       "MAS TRM §13.2"
@@ -137,6 +172,20 @@
     "nist-csf": [
       "PR.DS-01",
       "PR.DS-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.10",
+      "MP-4.1",
+      "GV-1.1"
+    ],
+    "nist_privacy_framework": [
+      "PR.DS-P5",
+      "CT.DP-P4",
+      "PR.AC-P1"
+    ],
+    "nydfs-500": [
+      "500.15",
+      "500.13(b)"
     ],
     "pci-dss-v4": [
       "Req 3.3.1",

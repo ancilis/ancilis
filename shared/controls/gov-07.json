@@ -77,14 +77,59 @@
     "intervention"
   ],
   "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "HRUC-DISC",
+      "AUG-CHATBOT"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
+    "csa_aicm": [
+      "GRC-13",
+      "GRC-09",
+      "STA-09"
+    ],
+    "eu_cra": [
+      "Annex I Part II(6)",
+      "Art. 13(18)",
+      "Annex I Part II(4)"
+    ],
+    "fda_ai_device_pccp": [
+      "PCCP-DescMod",
+      "AI-LCM-Draft-Transparency",
+      "Premarket-Cyber-Labeling"
     ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Legal-and-Compliance"
+    ],
+    "iso-23894": [
+      "Annex A",
+      "6.2"
+    ],
+    "iso-27701": [
+      "A.7.3.2",
+      "A.7.3.3",
+      "A.7.3.4",
+      "A.7.3.5"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.2",
+      "GV-5.1",
+      "MS-3.3",
+      "MP-2.2"
+    ],
+    "nist_privacy_framework": [
+      "CM.PO-P1",
+      "CM.PO-P2",
+      "CM.AW-P1",
+      "CM.AW-P2",
+      "CT.PO-P3"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"

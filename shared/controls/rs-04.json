@@ -77,11 +77,20 @@
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
     ],
+    "csa_aicm": [
+      "AIS-11",
+      "MDS-11",
+      "BCR-01"
+    ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MG-2.4",
+      "GV-6.2"
     ],
     "securities-mnpi": [
       "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
