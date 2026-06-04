@@ -88,6 +88,10 @@
       "IVS-01",
       "TVM-11"
     ],
+    "eu-ai-act": [
+      "Art. 15(4)",
+      "Art. 15(5)"
+    ],
     "eu_cra": [
       "Annex I Part I(2)(j)",
       "Annex I Part I(2)(k)"
@@ -98,12 +102,38 @@
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
     ],
+    "hipaa": [
+      "164.306(a)",
+      "164.312(c)(1)"
+    ],
     "hitrust_ai_security": [
       "AISec.Development-of-AI-Software",
       "AISec.Access-to-the-AI-System"
     ],
+    "imda-mgf": [
+      "AgenticMGF-D3 Implement Technical Controls and Processes",
+      "Dim-6 Security"
+    ],
+    "iso-27001": [
+      "A.8.31",
+      "A.8.18",
+      "A.8.19"
+    ],
     "iso-27701": [
       "A.7.4.5"
+    ],
+    "iso-42001": [
+      "8.1",
+      "A.6.2.5",
+      "A.4.5"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.6",
+      "MEASURE 2.7"
+    ],
+    "nist-csf": [
+      "PR.PS-01",
+      "PR.IR-01"
     ],
     "nist_ai_600_1_genai_profile": [
       "MS-2.7",

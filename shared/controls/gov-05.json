@@ -86,26 +86,66 @@
       "UUS-CJSURV",
       "AUG-AGENTIC"
     ],
+    "ccpa": [
+      "Cal. Civ. Code 1798.100(a)-(c)",
+      "Cal. Civ. Code 1798.121",
+      "11 CCR 7002",
+      "11 CCR 7051(a)"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "colorado-ai-act": [
+      "6-1-1701",
+      "6-1-1703(1)",
+      "6-1-1702(1)"
     ],
     "csa_aicm": [
       "GRC-09",
       "DSP-01",
       "DSP-02"
     ],
+    "eu-ai-act": [
+      "Art. 5",
+      "Art. 9(2)(a)",
+      "Art. 26(1)",
+      "Recital 27"
+    ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "gdpr": [
+      "Art. 5(1)(a)",
+      "Art. 5(1)(b)",
+      "Art. 6(1)",
+      "Art. 9(1)",
+      "Art. 9(2)",
+      "Art. 7"
     ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
     ],
+    "hipaa": [
+      "164.502(b)",
+      "164.514(d)",
+      "164.502(a)",
+      "164.506"
+    ],
     "hitrust_ai_security": [
       "AISec.Legal-and-Compliance"
+    ],
+    "imda-mgf": [
+      "Dim-2 Data",
+      "AIV-Data Governance"
     ],
     "iso-23894": [
       "6.3.3",
       "Annex A"
+    ],
+    "iso-27001": [
+      "A.5.31",
+      "A.5.34",
+      "A.5.10"
     ],
     "iso-27701": [
       "A.7.2.1",
@@ -117,11 +157,26 @@
       "B.8.2.2",
       "B.8.2.4"
     ],
+    "iso-42001": [
+      "A.9.4",
+      "A.7.3",
+      "A.5.2"
+    ],
     "itar-ear": [
       "15 CFR 736.2",
       "15 CFR 744.1",
       "22 CFR 125.4",
       "22 CFR 120.16"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 1.1",
+      "MAP 1.1",
+      "MAP 1.6",
+      "MEASURE 2.10"
+    ],
+    "nist-csf": [
+      "GV.OC-01",
+      "GV.OC-03"
     ],
     "nist_ai_600_1_genai_profile": [
       "GV-1.1",

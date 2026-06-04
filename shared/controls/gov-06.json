@@ -79,12 +79,30 @@
       "AUG-MCP",
       "AUG-AGENTIC"
     ],
+    "ccpa": [
+      "Cal. Civ. Code 1798.185",
+      "11 CCR 7124",
+      "11 CCR 7157",
+      "11 CCR 7152"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
+    ],
+    "colorado-ai-act": [
+      "6-1-1702(4)",
+      "6-1-1703(5)",
+      "6-1-1706(3)"
     ],
     "csa_aicm": [
       "A&A-01",
       "GRC-07"
+    ],
+    "eu-ai-act": [
+      "Art. 49",
+      "Art. 71",
+      "Art. 16",
+      "Art. 53(1)(a)",
+      "Annex XI"
     ],
     "eu_cra": [
       "Art. 13",
@@ -100,17 +118,36 @@
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
     ],
+    "gdpr": [
+      "Art. 30(1)",
+      "Art. 30(2)",
+      "Art. 28(3)"
+    ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: GOV-06 External Obligation Registry & Posture Reporting"
+    ],
+    "hipaa": [
+      "164.314(a)(1)",
+      "164.504(e)",
+      "164.308(b)(1)"
     ],
     "hitrust_ai_security": [
       "AISec.Legal-and-Compliance",
       "AISec.Governance-and-Oversight"
     ],
+    "imda-mgf": [
+      "Dim-1 Accountability",
+      "Dim-5 Testing and Assurance"
+    ],
     "iso-23894": [
       "5.4.2",
       "6.3.3",
       "6.7"
+    ],
+    "iso-27001": [
+      "A.5.31",
+      "A.5.36",
+      "A.5.20"
     ],
     "iso-27701": [
       "A.7.2.6",
@@ -121,9 +158,24 @@
       "B.8.5.7",
       "B.8.5.8"
     ],
+    "iso-42001": [
+      "4.2",
+      "A.8.3",
+      "A.8.5"
+    ],
     "itar-ear": [
       "22 CFR 122.1",
       "15 CFR 762.2"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 1.1",
+      "GOVERN 4.2",
+      "MAP 4.1"
+    ],
+    "nist-csf": [
+      "GV.OC-03",
+      "GV.SC-01",
+      "GV.SC-09"
     ],
     "nist_ai_600_1_genai_profile": [
       "GV-1.1",

@@ -86,22 +86,58 @@
       "MDS-01",
       "MDS-08"
     ],
+    "eu-ai-act": [
+      "Art. 15(5)",
+      "Art. 10(2)",
+      "Art. 10(3)"
+    ],
     "eu_cra": [
       "Annex I Part I(2)(f)"
     ],
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-10 Memory & Context Integrity"
     ],
+    "gdpr": [
+      "Art. 5(1)(d)",
+      "Art. 5(1)(f)",
+      "Art. 32(1)(b)"
+    ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-10 Memory & Context Integrity"
+    ],
+    "hipaa": [
+      "164.312(c)(1)",
+      "164.312(c)(2)"
     ],
     "hitrust_ai_security": [
       "AISec.Model-Robustness",
       "AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs"
     ],
+    "imda-mgf": [
+      "Dim-6 Security",
+      "Dim-8 Safety and Alignment Research"
+    ],
     "iso-23894": [
       "Annex B",
       "Annex A"
+    ],
+    "iso-27001": [
+      "A.5.33",
+      "A.8.13"
+    ],
+    "iso-42001": [
+      "A.7.4",
+      "A.7.5",
+      "A.7.6"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.7",
+      "MEASURE 2.5",
+      "MANAGE 2.3"
+    ],
+    "nist-csf": [
+      "PR.DS-01",
+      "DE.CM-09"
     ],
     "nist_ai_600_1_genai_profile": [
       "MS-2.7",

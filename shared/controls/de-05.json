@@ -87,14 +87,30 @@
       "UUS-CHILD",
       "AUG-AGENTIC"
     ],
+    "ccpa": [
+      "11 CCR 7200",
+      "11 CCR 7222",
+      "11 CCR 7150(b)"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "colorado-ai-act": [
+      "6-1-1703(1)",
+      "6-1-1703(3)",
+      "6-1-1702(5)"
     ],
     "csa_aicm": [
       "MDS-10",
       "GRC-11",
       "GRC-14",
       "MDS-06"
+    ],
+    "eu-ai-act": [
+      "Art. 15(1)",
+      "Art. 9(2)",
+      "Art. 72",
+      "Art. 14(4)(b)"
     ],
     "fda_ai_device_pccp": [
       "AI-LCM-Draft-PerfMonitoring",
@@ -105,17 +121,52 @@
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
     ],
+    "gdpr": [
+      "Art. 5(1)(a)",
+      "Art. 5(1)(d)",
+      "Art. 22"
+    ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: DE-05 AI Outcome Evaluation & Harm Monitoring"
+    ],
+    "hipaa": [
+      "164.306(a)",
+      "164.312(c)(1)"
     ],
     "hitrust_ai_security": [
       "AISec.Model-Robustness",
       "AISec.Resilience-of-the-AI-System"
     ],
+    "imda-mgf": [
+      "Dim-5 Testing and Assurance",
+      "Dim-8 Safety and Alignment Research",
+      "AIV-Safety",
+      "AIV-Robustness"
+    ],
     "iso-23894": [
       "6.6",
       "6.4.3",
       "Annex A"
+    ],
+    "iso-27001": [
+      "A.8.16"
+    ],
+    "iso-42001": [
+      "A.6.2.4",
+      "A.6.2.6",
+      "9.1"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.3",
+      "MEASURE 2.5",
+      "MEASURE 2.6",
+      "MEASURE 2.9",
+      "MEASURE 2.11",
+      "MEASURE 3.1"
+    ],
+    "nist-csf": [
+      "DE.AE-02",
+      "DE.CM-09"
     ],
     "nist_ai_600_1_genai_profile": [
       "MS-2.3",
