@@ -73,7 +73,75 @@
     "tamper",
     "missing"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.185(a)(15)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 AU.L2-3.3.4, AU.L2-3.3.6",
+      "NIST SP 800-171 Rev. 3 03.03.04, 03.03.06, 03.03.07"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702",
+      "Documentation integrity"
+    ],
+    "dora": [
+      "DORA Art. 6",
+      "DORA Art. 10"
+    ],
+    "eu-ai-act": [
+      "Art.12"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 AU-6, AU-12",
+      "FedRAMP Moderate AU-6, AU-12, AU-6(1)"
+    ],
+    "gdpr": [
+      "Art. 32(1)(d)"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(8), 314.4(d)",
+      "SOX §404, §802",
+      "DORA Art.10"
+    ],
+    "hipaa": [
+      "164.308(a)(1)(ii)"
+    ],
+    "imda-mgf": [
+      "MGF Areas 1+4",
+      "Audit Integrity"
+    ],
+    "iso-27001": [
+      "A.8.15"
+    ],
+    "iso-42001": [
+      "Clause 7.5.3"
+    ],
+    "mas-trm": [
+      "MAS TRM §9.1"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(b)",
+      "NIS2 Art. 21(2)(c)"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.6"
+    ],
+    "nist-csf": [
+      "DE.CM-09"
+    ],
+    "pci-dss-v4": [
+      "Req 10.3.3",
+      "Req 10.6.1"
+    ],
+    "securities-mnpi": [
+      "SOX §404, §802",
+      "SEC Rule 17a-4"
+    ],
+    "soc2": [
+      "CC7.3"
+    ]
+  },
   "display_name": "Evidence Integrity Monitoring",
   "display_detail": "Evidence chains, missing telemetry, and tamper signals are monitored so posture cannot rely on corrupted records.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for DE-04 (Evidence Integrity Monitoring) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

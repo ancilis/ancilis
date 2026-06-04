@@ -75,7 +75,78 @@
     "evidence",
     "chain"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.150"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 CM.L2-3.4.6, CM.L2-3.4.7",
+      "NIST SP 800-171 Rev. 3 03.04.06, 03.04.07"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(b)",
+      "Material change re-assessment"
+    ],
+    "dora": [
+      "DORA Art. 9(4)(a)"
+    ],
+    "eu-ai-act": [
+      "Art.11",
+      "Annex IV"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 CM-7, CM-7(1)",
+      "FedRAMP Moderate CM-7, CM-7(1), CM-7(2)"
+    ],
+    "gdpr": [
+      "Art. 32(1)(b)"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(7)",
+      "SOX §404",
+      "DORA Art.9"
+    ],
+    "hipaa": [
+      "164.308(a)(1)(ii)(B)"
+    ],
+    "imda-mgf": [
+      "MGF Area 3",
+      "Configuration Integrity"
+    ],
+    "iso-27001": [
+      "A.8.9",
+      "A.8.8"
+    ],
+    "iso-42001": [
+      "Clause 8.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §6.1",
+      "§6.2"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(e)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 1.6",
+      "GOVERN 1.4"
+    ],
+    "nist-csf": [
+      "PR.PS-01",
+      "PR.PS-02"
+    ],
+    "pci-dss-v4": [
+      "Req 2.2",
+      "Req 2.2.1"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "soc2": [
+      "CC8.1"
+    ]
+  },
   "display_name": "Audit Trail Completeness",
   "display_detail": "Every governed action records the evaluation chain needed to reconstruct who acted, why, and under which controls.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-06 (Audit Trail Completeness) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

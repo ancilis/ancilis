@@ -77,7 +77,20 @@
     "wallet",
     "key"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ]
+  },
   "display_name": "Secrets, Credential and Wallet Key Custody",
   "display_detail": "Secrets, API keys, signing keys, wallet material, access information, and payment credentials used by agents are vaulted, scoped, rotated, and never exposed to prompts or untrusted tools.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-12 (Secrets, Credential & Wallet Key Custody) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

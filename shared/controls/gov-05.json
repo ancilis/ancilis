@@ -75,7 +75,20 @@
     "consent",
     "use_restriction"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: GOV-05 Purpose, Legal Basis & Data-Use Authority"
+    ]
+  },
   "display_name": "Purpose, Legal Basis and Data-Use Authority",
   "display_detail": "Agent actions and data uses are bound to declared purpose, contractual limits, legal basis, consent, role allocation, and prohibited-use policy.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-05 (Purpose, Legal Basis & Data-Use Authority) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

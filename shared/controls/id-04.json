@@ -75,7 +75,86 @@
     "model",
     "sbom"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.115"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 supplier-risk expectation",
+      "NIST SP 800-171 Rev. 3 03.16.01, 03.16.03"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(3)(a)",
+      "Developer documentation and supply chain"
+    ],
+    "dora": [
+      "DORA Art. 28",
+      "DORA Art. 29",
+      "DORA Art. 30",
+      "DORA Art. 31"
+    ],
+    "eu-ai-act": [
+      "Art.11",
+      "Annex IV"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 SA-9, SA-12",
+      "FedRAMP Moderate SA-9, SA-12, SA-4"
+    ],
+    "gdpr": [
+      "Art. 28(1)",
+      "Art. 28(2)"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(f)",
+      "SOX §404",
+      "DORA Art.28-30"
+    ],
+    "hipaa": [
+      "164.308(b)(1)",
+      "164.504(e)"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 §4.3",
+      "Third-Party AI Component Risk"
+    ],
+    "iso-27001": [
+      "A.5.19",
+      "A.5.20",
+      "A.5.21",
+      "A.5.22"
+    ],
+    "iso-42001": [
+      "MAP 5.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §11.2",
+      "§11.3"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(d)",
+      "NIS2 Art. 22"
+    ],
+    "nist-ai-rmf": [
+      "MAP 5.1",
+      "MAP 1.6"
+    ],
+    "nist-csf": [
+      "ID.SC-01",
+      "ID.SC-02"
+    ],
+    "pci-dss-v4": [
+      "Req 12.8.1",
+      "Req 12.8.2"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100(b)"
+    ],
+    "soc2": [
+      "CC9.2"
+    ]
+  },
   "display_name": "Supply Chain and Dependency Risk",
   "display_detail": "Models, tools, dependencies, prompts, and orchestration components are assessed for supply-chain risk.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for ID-04 (Supply Chain & Dependency Risk) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

@@ -78,7 +78,82 @@
     "dependency",
     "evidence"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.150",
+      "§1798.185(a)(16)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 CA.L2-3.12.1",
+      "NIST SP 800-171 Rev. 3 03.12.01, 03.12.05"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702",
+      "Ongoing compliance obligations"
+    ],
+    "dora": [
+      "DORA Art. 10",
+      "DORA Art. 24"
+    ],
+    "eu-ai-act": [
+      "Art.43",
+      "Art.72"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 CA-2, CA-7",
+      "FedRAMP Moderate CA-2, CA-7, CA-2(1)"
+    ],
+    "gdpr": [
+      "Art. 32(2)"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(d)",
+      "SOX §404",
+      "DORA Art.11, Art.15"
+    ],
+    "hipaa": [
+      "164.308(a)(5)"
+    ],
+    "imda-mgf": [
+      "MGF Area 1",
+      "Governance Audit"
+    ],
+    "iso-27001": [
+      "A.5.35",
+      "A.5.36"
+    ],
+    "iso-42001": [
+      "Clause 9.1",
+      "9.2",
+      "MEA 2.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §5.1"
+    ],
+    "nis2": [
+      "NIS2 Art. 20(1)",
+      "NIS2 Art. 21(2)(b)"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.1"
+    ],
+    "nist-csf": [
+      "DE.AE-02",
+      "DE.AE-06"
+    ],
+    "pci-dss-v4": [
+      "Req 11.3.1",
+      "Req 11.3.2",
+      "Req 11.4.1"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "soc2": [
+      "CC4.1"
+    ]
+  },
   "display_name": "Configuration/Dependency Drift Monitoring",
   "display_detail": "Meaningful drift in configuration, dependencies, tools, models, or policy baselines is detected before it normalizes.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for DE-03 (Configuration/Dependency Drift Monitoring) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

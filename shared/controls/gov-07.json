@@ -76,7 +76,20 @@
     "feedback",
     "intervention"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ]
+  },
   "display_name": "Transparency, Instructions and Affected-Party Feedback",
   "display_detail": "Agent-facing instructions, user/deployer disclosures, privacy-rights routing, affected-party feedback, and intervention channels are documented and linked to runtime evidence.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-07 (Transparency, Instructions & Affected-Party Feedback) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

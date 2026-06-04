@@ -76,7 +76,79 @@
     "baseline",
     "integration"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.100(c)",
+      "§1798.106"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 CM.L2-3.4.1, CM.L2-3.4.2, CM.L2-3.4.3",
+      "NIST SP 800-171 Rev. 3 03.04.01, 03.04.02, 03.04.03, 03.04.04"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(b)",
+      "Impact assessment data provenance"
+    ],
+    "dora": [
+      "DORA Art. 9(4)(a)"
+    ],
+    "eu-ai-act": [
+      "Art.15"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 CM-2, CM-3, CM-6, CM-7",
+      "FedRAMP Moderate CM-2, CM-3, CM-6, CM-7"
+    ],
+    "gdpr": [
+      "Art. 5(1)(d)",
+      "Art. 25"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(4), 314.4(c)(7)",
+      "SOX §404",
+      "DORA Art.28"
+    ],
+    "hipaa": [
+      "164.312(c)"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 §4.3",
+      "AI System Integrity"
+    ],
+    "iso-27001": [
+      "A.8.9",
+      "A.5.15",
+      "A.5.18"
+    ],
+    "iso-42001": [
+      "Clause 8.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §6.1",
+      "§7.3"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(e)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 2.2"
+    ],
+    "nist-csf": [
+      "PR.DS-01",
+      "PR.DS-02"
+    ],
+    "pci-dss-v4": [
+      "Req 6.3.1",
+      "Req 6.2.1"
+    ],
+    "securities-mnpi": [
+      "SOX §302, §404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "soc2": [
+      "CC8.1"
+    ]
+  },
   "display_name": "Tool/Model Integrity and Provenance",
   "display_detail": "Tool descriptors, model artifacts, execution surfaces, and integrations are verified against trusted baselines.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-03 (Tool/Model Integrity & Provenance) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

@@ -75,7 +75,20 @@
     "command",
     "execution"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ]
+  },
   "display_name": "Controlled Code Execution and Sandbox Enforcement",
   "display_detail": "Generated code, shell commands, and dynamic execution artifacts run only inside approved sandbox execution classes.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-09 (Controlled Code Execution & Sandbox Enforcement) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

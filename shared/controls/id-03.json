@@ -77,7 +77,82 @@
     "classification",
     "destination"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.100(c)",
+      "§1798.100(d)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 MP.L2-3.8.1",
+      "NIST SP 800-171 Rev. 3 03.08.01, 03.08.04"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(b)",
+      "§6-1-1702(2)(c)(II)",
+      "Impact assessment data + consumer data correction"
+    ],
+    "dora": [
+      "DORA Art. 8(1)",
+      "DORA Art. 8(4)",
+      "DORA Art. 28"
+    ],
+    "eu-ai-act": [
+      "Art.10"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 MP-1, MP-4",
+      "FedRAMP Moderate MP-1, MP-4, MP-5"
+    ],
+    "gdpr": [
+      "Art. 5(1)(c)",
+      "Art. 5(1)(e)"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(2)",
+      "SOX §404",
+      "DORA Art.8"
+    ],
+    "hipaa": [
+      "164.310(d)(2)",
+      "164.316(b)(2)"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 §4.1",
+      "Data Governance"
+    ],
+    "iso-27001": [
+      "A.5.12",
+      "A.5.13"
+    ],
+    "iso-42001": [
+      "MAP 1.5"
+    ],
+    "mas-trm": [
+      "MAS TRM §13.1",
+      "§13.2"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(a)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 1.5"
+    ],
+    "nist-csf": [
+      "ID.AM-07",
+      "ID.AM-08"
+    ],
+    "pci-dss-v4": [
+      "Req 12.5.2.1",
+      "Req 3.1"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "soc2": [
+      "CC6.1"
+    ]
+  },
   "display_name": "Data Flow Mapping and Classification",
   "display_detail": "Inputs, context stores, outputs, destinations, and observed data classes are mapped for every governed system.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for ID-03 (Data Flow Mapping & Classification) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

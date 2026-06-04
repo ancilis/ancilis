@@ -76,7 +76,20 @@
     "disposal",
     "memory"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ]
+  },
   "display_name": "Retention, Deletion and Memory Disposal",
   "display_detail": "Agent-held data, memory, context, and evidence are retained, deleted, evicted, or disposed according to policy and legal obligations.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-11 (Retention, Deletion & Memory Disposal) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
