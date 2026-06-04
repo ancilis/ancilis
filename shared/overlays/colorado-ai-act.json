@@ -339,49 +339,56 @@
       "coverage": "partial",
       "verified": true,
       "framework_reference": "\u00a7 6-1-1701 defines 'consequential decision' (education, employment, financial/lending, essential government service, health care, housing, insurance, legal services) and 'high-risk artificial intelligence system' as one that materially influences such a decision; \u00a7\u00a7 6-1-1702(1)/1703(1) bind use to t",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "\u00a7 6-1-1702(4) requires developers to publish a public statement summarizing the high-risk systems they have developed and how they manage known/foreseeable algorithmic-discrimination risk; \u00a7 6-1-1703(5) requires the deployer equivalent public statement; \u00a7 6-1-1706(3) anchors posture to a recognized ",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "\u00a7 6-1-1704 requires disclosure to each consumer that they are interacting with an AI system; \u00a7 6-1-1703(4)(a) requires a deployer to notify the consumer (purpose, nature of the consequential decision, plain-language description, contact for the appeal/correction process) at or before a consequential",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-11": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "\u00a7 6-1-1703(3) sets a minimum retention period for impact-assessment records (at least three years following final deployment of the high-risk system). PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation, which is the agent-runtime mechanism tha",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "DE-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "\u00a7 6-1-1703(1) reasonable care against algorithmic discrimination and \u00a7 6-1-1703(3) the impact assessment's post-deployment monitoring element together require ongoing evaluation of outputs for discriminatory/biased outcomes; \u00a7 6-1-1702(5) requires developers to disclose known or reasonably foreseeab",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "DE-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "\u00a7 6-1-1702(2) requires developers to make available evaluation/bias-testing results and the documentation needed to complete an impact assessment; \u00a7 6-1-1703(3) requires the deployer to incorporate testing/evaluation evidence into the impact assessment. DE-06 ingests vuln scans, adversarial/red-team",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "RS-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "\u00a7 6-1-1703(7) (deployer) and \u00a7 6-1-1702(5) (developer) each impose a 90-day window to notify the Colorado Attorney General upon discovering algorithmic discrimination / a foreseeable discrimination risk. RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence, and routes ",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     }
   },
   "reporting_obligations": {

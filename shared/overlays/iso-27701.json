@@ -16,115 +16,134 @@
       "applicable": true,
       "coverage": "inherited",
       "verified": false,
-      "framework_reference": "ISO 27701 inherits ISO 27001 clause 5.3 (roles/responsibilities) and 27002 organizational controls; assigning accountability for privacy/PII processing is generic governance hygiene already owned by the 27001 ISMS. GOV-02 (named accountable owner per AI system) maps as baseline inheritance for accou"
+      "framework_reference": "ISO 27701 inherits ISO 27001 clause 5.3 (roles/responsibilities) and 27002 organizational controls; assigning accountability for privacy/PII processing is generic governance hygiene already owned by the 27001 ISMS. GOV-02 (named accountable owner per AI system) maps as baseline inheritance for accou",
+      "evidence_requirements": []
     },
     "GOV-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "A.7.2.5 (privacy impact assessment - PIA/DPIA for processing likely to result in high risk). GOV-03 defines autonomy limits and escalation thresholds in policy before autonomous action, and ID-05 profiles risk - together these are the agent-runtime inputs to a PIA. Partial/weak: the formal PIA metho"
+      "framework_reference": "A.7.2.5 (privacy impact assessment - PIA/DPIA for processing likely to result in high risk). GOV-03 defines autonomy limits and escalation thresholds in policy before autonomous action, and ID-05 profiles risk - together these are the agent-runtime inputs to a PIA. Partial/weak: the formal PIA metho",
+      "evidence_requirements": []
     },
     "GOV-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "Data-subject rights fulfillment - A.7.3.6 (access, correction and/or erasure), A.7.3.9 (handling requests), A.7.3.10 (automated decision making); processor B.8.3.1 (assist controller in responding to PII-principal requests). GOV-04 supplies the human review/approval and decision-accountability conte"
+      "framework_reference": "Data-subject rights fulfillment - A.7.3.6 (access, correction and/or erasure), A.7.3.9 (handling requests), A.7.3.10 (automated decision making); processor B.8.3.1 (assist controller in responding to PII-principal requests). GOV-04 supplies the human review/approval and decision-accountability conte",
+      "evidence_requirements": []
     },
     "GOV-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "A.7.2.1 (identify/document purpose), A.7.2.2 (identify lawful basis), A.7.2.3/A.7.2.4 (when/how consent obtained and recorded), A.7.4.2 (limit processing to identified purpose). For processors: B.8.2.1 (process only per documented customer agreement/instructions), B.8.2.2 (do not use PII for own pur"
+      "framework_reference": "A.7.2.1 (identify/document purpose), A.7.2.2 (identify lawful basis), A.7.2.3/A.7.2.4 (when/how consent obtained and recorded), A.7.4.2 (limit processing to identified purpose). For processors: B.8.2.1 (process only per documented customer agreement/instructions), B.8.2.2 (do not use PII for own pur",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "A.7.2.6 (contracts with PII processors), A.7.2.7 (joint PII controller arrangements), B.8.2.1 (customer agreement), B.8.2.5 (customer obligations the processor must assist with), B.8.5.6 (disclosure of use of subcontractors), B.8.5.7 (engagement of subcontractors under contract), B.8.5.8 (change of "
+      "framework_reference": "A.7.2.6 (contracts with PII processors), A.7.2.7 (joint PII controller arrangements), B.8.2.1 (customer agreement), B.8.2.5 (customer obligations the processor must assist with), B.8.5.6 (disclosure of use of subcontractors), B.8.5.7 (engagement of subcontractors under contract), B.8.5.8 (change of ",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "A.7.3.2 (determining information for PII principals), A.7.3.3 (providing information to PII principals / privacy notices), A.7.3.4 (providing mechanism to modify or withdraw consent), A.7.3.5 (providing mechanism to object to PII processing). GOV-07 covers disclosures, privacy-rights routing, and af"
+      "framework_reference": "A.7.3.2 (determining information for PII principals), A.7.3.3 (providing information to PII principals / privacy notices), A.7.3.4 (providing mechanism to modify or withdraw consent), A.7.3.5 (providing mechanism to object to PII processing). GOV-07 covers disclosures, privacy-rights routing, and af",
+      "evidence_requirements": []
     },
     "ID-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "A.7.2.8/B.8.2.6 (records of processing - categories of PII, purposes, recipients), A.7.4.1 (limit collection), A.7.5.2 (transfer destinations). ID-03 maps inputs/context-stores/outputs/destinations and observed data classes per system, which is the data-inventory substrate for ROPA and transfer gove"
+      "framework_reference": "A.7.2.8/B.8.2.6 (records of processing - categories of PII, purposes, recipients), A.7.4.1 (limit collection), A.7.5.2 (transfer destinations). ID-03 maps inputs/context-stores/outputs/destinations and observed data classes per system, which is the data-inventory substrate for ROPA and transfer gove",
+      "evidence_requirements": []
     },
     "ID-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "B.8.5.6 (disclosure of subcontractors used to process PII), B.8.5.7 (engagement of a subcontractor to process PII under written contract), B.8.5.8 (change of subcontractor). ID-04 assesses models/tools/deps/orchestration for supply-chain risk and tracks provenance - the agent-runtime view of subproc"
+      "framework_reference": "B.8.5.6 (disclosure of subcontractors used to process PII), B.8.5.7 (engagement of a subcontractor to process PII under written contract), B.8.5.8 (change of subcontractor). ID-04 assesses models/tools/deps/orchestration for supply-chain risk and tracks provenance - the agent-runtime view of subproc",
+      "evidence_requirements": []
     },
     "ID-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "A.7.2.5 (privacy impact assessment). ID-05 profiles purpose/autonomy/data-sensitivity/action-authority/impact tier before use - the structured risk-profiling that feeds a PIA/DPIA determination for an agent that processes PII. Partial: does not produce the full PIA report or its sign-off, which is o"
+      "framework_reference": "A.7.2.5 (privacy impact assessment). ID-05 profiles purpose/autonomy/data-sensitivity/action-authority/impact tier before use - the structured risk-profiling that feeds a PIA/DPIA determination for an agent that processes PII. Partial: does not produce the full PIA report or its sign-off, which is o",
+      "evidence_requirements": []
     },
     "PR-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "A.7.4.1 (limit collection / data minimization), A.7.4.2 (limit processing), A.7.5.1 (identify basis for PII transfer), A.7.5.2 (countries/international organizations to which PII may be transferred); processor B.8.5.1/B.8.5.2 (basis for transfer and transfer destinations). PR-04 inspects and constra"
+      "framework_reference": "A.7.4.1 (limit collection / data minimization), A.7.4.2 (limit processing), A.7.5.1 (identify basis for PII transfer), A.7.5.2 (countries/international organizations to which PII may be transferred); processor B.8.5.1/B.8.5.2 (basis for transfer and transfer destinations). PR-04 inspects and constra",
+      "evidence_requirements": []
     },
     "PR-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "A.7.5.2 / B.8.5.2 (control which countries/organizations PII goes to) and B.8.5.3 (disclosure of PII to third parties / subprocessors). PR-05 isolates execution context so tenant/user/jurisdiction/foreign-person boundaries cannot silently leak - directly relevant to keeping PII within authorized jur"
+      "framework_reference": "A.7.5.2 / B.8.5.2 (control which countries/organizations PII goes to) and B.8.5.3 (disclosure of PII to third parties / subprocessors). PR-05 isolates execution context so tenant/user/jurisdiction/foreign-person boundaries cannot silently leak - directly relevant to keeping PII within authorized jur",
+      "evidence_requirements": []
     },
     "PR-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "A.7.2.8 / B.8.2.6 (records related to processing of PII - records of processing activities, ROPA), A.7.5.3 (records of transfer of PII), A.7.5.4 (records of PII disclosure to third parties), B.8.5.4 (record disclosures). PR-06 records every governed action's evaluation chain (who/why/under-which-con"
+      "framework_reference": "A.7.2.8 / B.8.2.6 (records related to processing of PII - records of processing activities, ROPA), A.7.5.3 (records of transfer of PII), A.7.5.4 (records of PII disclosure to third parties), B.8.5.4 (record disclosures). PR-06 records every governed action's evaluation chain (who/why/under-which-con",
+      "evidence_requirements": []
     },
     "PR-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "A.7.4.9 / B.8.4.3 (PII transmission controls - protect PII in transit, restrict transmission). PR-07 provides authenticated, integrity-protected, replay-resistant channels and signed task context for agent-to-agent/tool messaging, covering the transmission-security slice when the agent moves PII bet"
+      "framework_reference": "A.7.4.9 / B.8.4.3 (PII transmission controls - protect PII in transit, restrict transmission). PR-07 provides authenticated, integrity-protected, replay-resistant channels and signed task context for agent-to-agent/tool messaging, covering the transmission-security slice when the agent moves PII bet",
+      "evidence_requirements": []
     },
     "PR-09": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "A.7.4.5 (PII de-identification and deletion at end of processing / pseudonymization-anonymization). Where de-identification is performed by agent-generated transformation code, PR-09 ensures it runs in an approved sandbox; however de-identification logic correctness is not PR-09's purpose. Weak/part"
+      "framework_reference": "A.7.4.5 (PII de-identification and deletion at end of processing / pseudonymization-anonymization). Where de-identification is performed by agent-generated transformation code, PR-09 ensures it runs in an approved sandbox; however de-identification logic correctness is not PR-09's purpose. Weak/part",
+      "evidence_requirements": []
     },
     "PR-11": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "A.7.4.7 (retention - define/honor retention periods), A.7.4.8 (disposal - secure destruction), A.7.4.4 (PII minimization objectives), A.7.4.6 (temporary files), A.7.3.6 (access, correction and/or erasure - erasure-on-request slice); processor B.8.4.1 (temporary files), B.8.4.2 (return, transfer or d"
+      "framework_reference": "A.7.4.7 (retention - define/honor retention periods), A.7.4.8 (disposal - secure destruction), A.7.4.4 (PII minimization objectives), A.7.4.6 (temporary files), A.7.3.6 (access, correction and/or erasure - erasure-on-request slice); processor B.8.4.1 (temporary files), B.8.4.2 (return, transfer or d",
+      "evidence_requirements": []
     },
     "PR-12": {
       "applicable": true,
       "coverage": "inherited",
       "verified": false,
-      "framework_reference": "A.7.4.9/B.8.4.3 (PII transmission controls) lean on cryptographic key protection. PR-12 (secrets/credential/key custody) maps only as baseline inheritance from ISO 27001/27002 key-management controls; it is not PIMS-specific. Marked inherited."
+      "framework_reference": "A.7.4.9/B.8.4.3 (PII transmission controls) lean on cryptographic key protection. PR-12 (secrets/credential/key custody) maps only as baseline inheritance from ISO 27001/27002 key-management controls; it is not PIMS-specific. Marked inherited.",
+      "evidence_requirements": []
     },
     "DE-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "A.7.4.2 (limit processing to declared purpose), A.7.4.4 (minimization objectives), A.7.5.2 (authorized transfer destinations). DE-02 continuously checks observed data handling vs declared classifications and processing boundaries - detecting purpose-creep, over-collection drift, or PII leaving autho"
+      "framework_reference": "A.7.4.2 (limit processing to declared purpose), A.7.4.4 (minimization objectives), A.7.5.2 (authorized transfer destinations). DE-02 continuously checks observed data handling vs declared classifications and processing boundaries - detecting purpose-creep, over-collection drift, or PII leaving autho",
+      "evidence_requirements": []
     },
     "RS-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "B.8.5.4 (notify controller of disclosure requests), B.8.5.5 (legally binding disclosures), B.8.5.8 (notify customer of subcontractor change). RS-03 routes significant failures/exceptions/regulated events to responders with reporting context - covering the agent-runtime escalation to the controller/c"
+      "framework_reference": "B.8.5.4 (notify controller of disclosure requests), B.8.5.5 (legally binding disclosures), B.8.5.8 (notify customer of subcontractor change). RS-03 routes significant failures/exceptions/regulated events to responders with reporting context - covering the agent-runtime escalation to the controller/c",
+      "evidence_requirements": []
     },
     "RS-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "B.8.5.4 (notify customer/controller of legally binding requests for PII disclosure), B.8.5.5 (legally binding disclosures of PII to authorities), A.7.5.4 (records of PII disclosure to third parties - the controller-side disclosure-recording slice RS-05 also evidences). RS-05 routes regulated inciden"
+      "framework_reference": "B.8.5.4 (notify customer/controller of legally binding requests for PII disclosure), B.8.5.5 (legally binding disclosures of PII to authorities), A.7.5.4 (records of PII disclosure to third parties - the controller-side disclosure-recording slice RS-05 also evidences). RS-05 routes regulated inciden",
+      "evidence_requirements": []
     }
   },
   "framework_mapping": {
@@ -235,5 +254,6 @@
       "A.7.5.4"
     ]
   },
-  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/iso-27701.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=medium, webVerified=True."
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/iso-27701.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=medium, webVerified=True.",
+  "evidence_requirements": {}
 }

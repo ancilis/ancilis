@@ -18,85 +18,99 @@
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "HRUC-HITL requires that for advice/recommendations/subjective decisions directly affecting individuals or consumers in high-risk domains (legal, healthcare, insurance, finance, employment/housing, academic admissions, journalism), 'a qualified professional in that field must review the content or de"
+      "framework_reference": "HRUC-HITL requires that for advice/recommendations/subjective decisions directly affecting individuals or consumers in high-risk domains (legal, healthcare, insurance, finance, employment/housing, academic admissions, journalism), 'a qualified professional in that field must review the content or de",
+      "evidence_requirements": []
     },
     "GOV-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The Universal Usage Standards are a prohibited-use catalog: GOV-05 binds agent actions/data-uses to a declared purpose and to a prohibited-use policy, which is exactly the runtime mechanism that prevents an agent from being driven toward UUS-prohibited ends (illegal activity, cyber compromise, weapo"
+      "framework_reference": "The Universal Usage Standards are a prohibited-use catalog: GOV-05 binds agent actions/data-uses to a declared purpose and to a prohibited-use policy, which is exactly the runtime mechanism that prevents an agent from being driven toward UUS-prohibited ends (illegal activity, cyber compromise, weapo",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "AUG-MCP requires Model Context Protocol servers to comply with Anthropic's Directory Policy, and AUG-AGENTIC subjects all agentic integrations to the Usage Policy. GOV-06 (external obligation registry + posture reporting: framework/contract/customer obligations registered and linked to posture/evide"
+      "framework_reference": "AUG-MCP requires Model Context Protocol servers to comply with Anthropic's Directory Policy, and AUG-AGENTIC subjects all agentic integrations to the Usage Policy. GOV-06 (external obligation registry + posture reporting: framework/contract/customer obligations registered and linked to posture/evide",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "full",
       "verified": true,
-      "framework_reference": "HRUC-DISC requires that 'if model outputs are presented directly to individuals or consumers, you must disclose to them that you are using AI to help produce your advice, decisions, or recommendations.' AUG-CHATBOT requires all consumer-facing chatbots / external-facing AI agents to disclose that th"
+      "framework_reference": "HRUC-DISC requires that 'if model outputs are presented directly to individuals or consumers, you must disclose to them that you are using AI to help produce your advice, decisions, or recommendations.' AUG-CHATBOT requires all consumer-facing chatbots / external-facing AI agents to disclose that th",
+      "evidence_requirements": []
     },
     "ID-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "AUG-MCP (MCP servers must comply with the Directory Policy) and AUG-AGENTIC imply that agentic tool/MCP surfaces are governed and must meet approval/provenance expectations. ID-02 (tool/model/integration registry with provenance + approval metadata, descriptor hash at approval) is the agent-runtime "
+      "framework_reference": "AUG-MCP (MCP servers must comply with the Directory Policy) and AUG-AGENTIC imply that agentic tool/MCP surfaces are governed and must meet approval/provenance expectations. ID-02 (tool/model/integration registry with provenance + approval metadata, descriptor hash at approval) is the agent-runtime ",
+      "evidence_requirements": []
     },
     "PR-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "The 2025 update added the dedicated standard prohibiting 'malicious computer, network, and infrastructure compromise activities' (UUS-CYBER) and protection of critical infrastructure (UUS-CRITINFRA), explicitly targeting agentic tools (Claude Code, Computer Use). PR-01 (action authorization: sensiti"
+      "framework_reference": "The 2025 update added the dedicated standard prohibiting 'malicious computer, network, and infrastructure compromise activities' (UUS-CYBER) and protection of critical infrastructure (UUS-CRITINFRA), explicitly targeting agentic tools (Claude Code, Computer Use). PR-01 (action authorization: sensiti",
+      "evidence_requirements": []
     },
     "PR-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "UUS-CYBER (unauthorized access) and UUS-PRIVACY (unauthorized data access, scraping personal data without authorization) and UUS-CRITINFRA require that agents not exceed authorized access boundaries. PR-02 (permission scope enforcement: explicit least-privilege scopes per session/action) limits an a"
+      "framework_reference": "UUS-CYBER (unauthorized access) and UUS-PRIVACY (unauthorized data access, scraping personal data without authorization) and UUS-CRITINFRA require that agents not exceed authorized access boundaries. PR-02 (permission scope enforcement: explicit least-privilege scopes per session/action) limits an a",
+      "evidence_requirements": []
     },
     "PR-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "UUS-PRIVACY prohibits compromising privacy/identity rights (unauthorized personal-data access, impersonation) and UUS-CJSURV prohibits biometric categorization, predictive policing, and unauthorized tracking/surveillance. PR-04 (data exposure prevention: sensitive/regulated data inspected + constrai"
+      "framework_reference": "UUS-PRIVACY prohibits compromising privacy/identity rights (unauthorized personal-data access, impersonation) and UUS-CJSURV prohibits biometric categorization, predictive policing, and unauthorized tracking/surveillance. PR-04 (data exposure prevention: sensitive/regulated data inspected + constrai",
+      "evidence_requirements": []
     },
     "PR-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "AUG-MINORS requires products serving minors to comply with Anthropic's Help Center / minor-safety guidelines, and UUS-CHILD prohibits sexualization/exploitation of children. PR-05 (context & tenant isolation so user/jurisdiction/audience boundaries cannot silently leak) supports keeping minor-facing"
+      "framework_reference": "AUG-MINORS requires products serving minors to comply with Anthropic's Help Center / minor-safety guidelines, and UUS-CHILD prohibits sexualization/exploitation of children. PR-05 (context & tenant isolation so user/jurisdiction/audience boundaries cannot silently leak) supports keeping minor-facing",
+      "evidence_requirements": []
     },
     "PR-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Demonstrating compliance with the High-Risk Use Case Requirements (that a qualified human reviewed a high-risk output, and that AI disclosure occurred) and with agentic-use obligations requires durable evidence. PR-06 (audit trail completeness: every governed action records the evaluation chain who/"
+      "framework_reference": "Demonstrating compliance with the High-Risk Use Case Requirements (that a qualified human reviewed a high-risk output, and that AI disclosure occurred) and with agentic-use obligations requires durable evidence. PR-06 (audit trail completeness: every governed action records the evaluation chain who/",
+      "evidence_requirements": []
     },
     "PR-08": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "UUS-PLATFORM prohibits 'Do Not Abuse our Platform' activities including jailbreaking/circumventing product guardrails and coordinating malicious activity to evade detection. AUG-AGENTIC extends Usage Policy compliance to agentic tool use. PR-08 (input validation & injection resistance: direct inputs"
+      "framework_reference": "UUS-PLATFORM prohibits 'Do Not Abuse our Platform' activities including jailbreaking/circumventing product guardrails and coordinating malicious activity to evade detection. AUG-AGENTIC extends Usage Policy compliance to agentic tool use. PR-08 (input validation & injection resistance: direct inputs",
+      "evidence_requirements": []
     },
     "PR-09": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "UUS-CYBER prohibits creating malware, DDoS tools, unauthorized access, and persistent-access mechanisms; the update calls out agentic coding/computer-use capabilities as the risk vector. PR-09 (controlled code execution & sandbox enforcement: generated code/shell/dynamic execution runs only in appro"
+      "framework_reference": "UUS-CYBER prohibits creating malware, DDoS tools, unauthorized access, and persistent-access mechanisms; the update calls out agentic coding/computer-use capabilities as the risk vector. PR-09 (controlled code execution & sandbox enforcement: generated code/shell/dynamic execution runs only in appro",
+      "evidence_requirements": []
     },
     "DE-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "Several Universal Usage Standards (incite violence/hate, psychologically/emotionally harmful content, misinformation incl. false health claims, sexually explicit content, child safety) are output-content prohibitions. DE-05 (AI outcome evaluation & harm monitoring: outputs/tool outcomes evaluated fo"
+      "framework_reference": "Several Universal Usage Standards (incite violence/hate, psychologically/emotionally harmful content, misinformation incl. false health claims, sexually explicit content, child safety) are output-content prohibitions. DE-05 (AI outcome evaluation & harm monitoring: outputs/tool outcomes evaluated fo",
+      "evidence_requirements": []
     },
     "RS-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "When an agent begins drifting toward prohibited compromise/abuse activity (UUS-CYBER, UUS-PLATFORM) or otherwise violates the Usage Policy in an agentic context, the runtime must be able to stop it. RS-02 (containment, quarantine & kill switch: agents/tools/memory/credentials/actions blocked/halted "
+      "framework_reference": "When an agent begins drifting toward prohibited compromise/abuse activity (UUS-CYBER, UUS-PLATFORM) or otherwise violates the Usage Policy in an agentic context, the runtime must be able to stop it. RS-02 (containment, quarantine & kill switch: agents/tools/memory/credentials/actions blocked/halted ",
+      "evidence_requirements": []
     }
   },
   "framework_mapping": {
@@ -170,5 +184,6 @@
       "AUG-AGENTIC"
     ]
   },
-  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/anthropic-usage-policy.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True."
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/anthropic-usage-policy.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True.",
+  "evidence_requirements": {}
 }

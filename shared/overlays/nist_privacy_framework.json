@@ -19,211 +19,246 @@
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR.AC-P1 (identities/credentials issued, managed, verified, revoked, audited for authorized individuals, processes, and devices) and PR.AC-P6 (individuals/devices proofed and bound to credentials, authenticated commensurate with the risk of the transaction) map to GOV-01's binding of every governed "
+      "framework_reference": "PR.AC-P1 (identities/credentials issued, managed, verified, revoked, audited for authorized individuals, processes, and devices) and PR.AC-P6 (individuals/devices proofed and bound to credentials, authenticated commensurate with the risk of the transaction) map to GOV-01's binding of every governed ",
+      "evidence_requirements": []
     },
     "GOV-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "ID.IM-P2 inventories owners/operators and their roles for systems/products/services that process data; GV.PO-P3 establishes workforce roles/responsibilities for privacy. GOV-02 (named accountable owner per AI system) directly satisfies the agent-owned slice of recording owner/operator and accountabi"
+      "framework_reference": "ID.IM-P2 inventories owners/operators and their roles for systems/products/services that process data; GV.PO-P3 establishes workforce roles/responsibilities for privacy. GOV-02 (named accountable owner per AI system) directly satisfies the agent-owned slice of recording owner/operator and accountabi",
+      "evidence_requirements": []
     },
     "GOV-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV.RM-P2 (risk tolerance determined and clearly expressed) and GV.RM-P3 (tolerance informed by ecosystem role) map to GOV-03's autonomy limits + escalation thresholds defined in policy before autonomous action. GV.RM-P1 / GV.PO-P6 require organization-wide risk-management processes and stakeholder a"
+      "framework_reference": "GV.RM-P2 (risk tolerance determined and clearly expressed) and GV.RM-P3 (tolerance informed by ecosystem role) map to GOV-03's autonomy limits + escalation thresholds defined in policy before autonomous action. GV.RM-P1 / GV.PO-P6 require organization-wide risk-management processes and stakeholder a",
+      "evidence_requirements": []
     },
     "GOV-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CT.PO-P1 (authorizing/revoking/maintaining data-processing authorizations, e.g., organizational decisions, individual consent) and CT.PO-P3 (enabling individuals' data-processing preferences and requests) involve human decision/approval context. GOV-04 (human oversight + decision accountability for "
+      "framework_reference": "CT.PO-P1 (authorizing/revoking/maintaining data-processing authorizations, e.g., organizational decisions, individual consent) and CT.PO-P3 (enabling individuals' data-processing preferences and requests) involve human decision/approval context. GOV-04 (human oversight + decision accountability for ",
+      "evidence_requirements": []
     },
     "GOV-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "ID.IM-P5 (purposes for data actions inventoried), GV.PO-P1 (privacy values/policies incl. conditions on data uses), GV.PO-P5 (legal/regulatory/contractual privacy requirements understood and managed), and CT.PO-P1 (authorization for data processing incl. consent) map to GOV-05's binding of actions/d"
+      "framework_reference": "ID.IM-P5 (purposes for data actions inventoried), GV.PO-P1 (privacy values/policies incl. conditions on data uses), GV.PO-P5 (legal/regulatory/contractual privacy requirements understood and managed), and CT.PO-P1 (authorization for data processing incl. consent) map to GOV-05's binding of actions/d",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV.PO-P5 (legal/regulatory/contractual privacy requirements managed), GV.MT-P3 (assessing compliance with legal requirements/policies), GV.MT-P4 (communicating progress on managing privacy risks), and ID.DE-P3 (contracts with ecosystem parties implement privacy-program measures) map to GOV-06's exte"
+      "framework_reference": "GV.PO-P5 (legal/regulatory/contractual privacy requirements managed), GV.MT-P3 (assessing compliance with legal requirements/policies), GV.MT-P4 (communicating progress on managing privacy risks), and ID.DE-P3 (contracts with ecosystem parties implement privacy-program measures) map to GOV-06's exte",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CM.PO-P1/CM.PO-P2 (transparency policies/roles for communicating processing purposes, practices, privacy risks), CM.AW-P1 (notices + mechanisms enabling individuals' data-processing preferences/requests), CM.AW-P2 (feedback mechanisms from individuals), and CT.PO-P3 (enabling individuals' processing"
+      "framework_reference": "CM.PO-P1/CM.PO-P2 (transparency policies/roles for communicating processing purposes, practices, privacy risks), CM.AW-P1 (notices + mechanisms enabling individuals' data-processing preferences/requests), CM.AW-P2 (feedback mechanisms from individuals), and CT.PO-P3 (enabling individuals' processing",
+      "evidence_requirements": []
     },
     "ID-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "ID.IM-P1 (systems/products/services that process data inventoried), ID.IM-P2 (owners/operators and roles inventoried), ID.IM-P7 (data processing environment identified, e.g., geographic location/cloud/third parties), and ID.BE-P3 (systems supporting org priorities identified) are substantially satis"
+      "framework_reference": "ID.IM-P1 (systems/products/services that process data inventoried), ID.IM-P2 (owners/operators and roles inventoried), ID.IM-P7 (data processing environment identified, e.g., geographic location/cloud/third parties), and ID.BE-P3 (systems supporting org priorities identified) are substantially satis",
+      "evidence_requirements": []
     },
     "ID-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "ID.IM-P1/ID.IM-P2 inventory systems/products/services and their owners/operators (incl. service providers, partners, developers) that process data. ID-02 (tool/model/integration registry with provenance + approval metadata) satisfies the component/integration slice of these subcategories. It is a na"
+      "framework_reference": "ID.IM-P1/ID.IM-P2 inventory systems/products/services and their owners/operators (incl. service providers, partners, developers) that process data. ID-02 (tool/model/integration registry with provenance + approval metadata) satisfies the component/integration slice of these subcategories. It is a na",
+      "evidence_requirements": []
     },
     "ID-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "ID.IM-P3 (categories of individuals whose data are processed), ID.IM-P4 (data actions inventoried), ID.IM-P6 (data elements within data actions inventoried), ID.IM-P8 (data processing mapped: data actions + associated elements + component owners + interactions), and CM.AW-P6 (data provenance and lin"
+      "framework_reference": "ID.IM-P3 (categories of individuals whose data are processed), ID.IM-P4 (data actions inventoried), ID.IM-P6 (data elements within data actions inventoried), ID.IM-P8 (data processing mapped: data actions + associated elements + component owners + interactions), and CM.AW-P6 (data provenance and lin",
+      "evidence_requirements": []
     },
     "ID-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "ID.DE-P1 (data-processing ecosystem risk-management policies/processes), ID.DE-P2 (ecosystem parties identified/prioritized/assessed via privacy risk assessment), and ID.DE-P5 (ecosystem parties routinely assessed via audits/test results) map to ID-04's supply-chain/dependency risk assessment of mod"
+      "framework_reference": "ID.DE-P1 (data-processing ecosystem risk-management policies/processes), ID.DE-P2 (ecosystem parties identified/prioritized/assessed via privacy risk assessment), and ID.DE-P5 (ecosystem parties routinely assessed via audits/test results) map to ID-04's supply-chain/dependency risk assessment of mod",
+      "evidence_requirements": []
     },
     "ID-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "ID.RA-P1 (contextual factors incl. data sensitivity/types identified), ID.RA-P3 (potential problematic data actions identified), ID.RA-P4 (problematic data actions/likelihoods/impacts used to prioritize risk), and ID.RA-P5 (risk responses identified/prioritized/implemented) map to ID-05's purpose/au"
+      "framework_reference": "ID.RA-P1 (contextual factors incl. data sensitivity/types identified), ID.RA-P3 (potential problematic data actions identified), ID.RA-P4 (problematic data actions/likelihoods/impacts used to prioritize risk), and ID.RA-P5 (risk responses identified/prioritized/implemented) map to ID-05's purpose/au",
+      "evidence_requirements": []
     },
     "PR-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CT.PO-P1 (authorizing data processing, revoking/maintaining authorizations) and PR.AC-P4 (access permissions/authorizations managed with least privilege + separation of duties) map to PR-01's action authorization (sensitive actions allowed only when identity+context+target authorized). PR-01 enforce"
+      "framework_reference": "CT.PO-P1 (authorizing data processing, revoking/maintaining authorizations) and PR.AC-P4 (access permissions/authorizations managed with least privilege + separation of duties) map to PR-01's action authorization (sensitive actions allowed only when identity+context+target authorized). PR-01 enforce",
+      "evidence_requirements": []
     },
     "PR-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "PR.AC-P1 (identities/credentials issued, managed, verified, revoked, audited for authorized individuals/processes/devices) and PR.AC-P4 (access permissions/authorizations managed incorporating least privilege + separation of duties) are substantially satisfied for the agent boundary by PR-02's expli"
+      "framework_reference": "PR.AC-P1 (identities/credentials issued, managed, verified, revoked, audited for authorized individuals/processes/devices) and PR.AC-P4 (access permissions/authorizations managed incorporating least privilege + separation of duties) are substantially satisfied for the agent boundary by PR-02's expli",
+      "evidence_requirements": []
     },
     "PR-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR.DS-P6 (integrity-checking mechanisms verify software/firmware/information integrity) and PR.DS-P8 (integrity-checking mechanisms verify hardware integrity) map to PR-03's verification of tool descriptors/model artifacts/execution surfaces against trusted baselines (hash vs ID-02). PR-03 covers so"
+      "framework_reference": "PR.DS-P6 (integrity-checking mechanisms verify software/firmware/information integrity) and PR.DS-P8 (integrity-checking mechanisms verify hardware integrity) map to PR-03's verification of tool descriptors/model artifacts/execution surfaces against trusted baselines (hash vs ID-02). PR-03 covers so",
+      "evidence_requirements": []
     },
     "PR-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR.DS-P5 (protections against data leaks implemented) and CT.DP-P4 (configurations permit selective collection or disclosure of data elements) map to PR-04's inspection + constraint of sensitive/regulated data before context-in, system-out, or action-trigger. PR-04 owns the agent runtime data-exposu"
+      "framework_reference": "PR.DS-P5 (protections against data leaks implemented) and CT.DP-P4 (configurations permit selective collection or disclosure of data elements) map to PR-04's inspection + constraint of sensitive/regulated data before context-in, system-out, or action-trigger. PR-04 owns the agent runtime data-exposu",
+      "evidence_requirements": []
     },
     "PR-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR.AC-P5 (network integrity protected via segregation/segmentation), CT.DP-P1 (limit observability and linkability), CT.DP-P3 (limit formulation of inferences via decentralized/distributed processing), and PR.DS-P7 (dev/test environments separate from production) map to PR-05's context/tenant isolat"
+      "framework_reference": "PR.AC-P5 (network integrity protected via segregation/segmentation), CT.DP-P1 (limit observability and linkability), CT.DP-P3 (limit formulation of inferences via decentralized/distributed processing), and PR.DS-P7 (dev/test environments separate from production) map to PR-05's context/tenant isolat",
+      "evidence_requirements": []
     },
     "PR-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CT.DM-P8 (audit/log records determined, documented, implemented, and reviewed per policy, incorporating data minimization) and CM.AW-P4 (records of data disclosures/sharing maintained and accessible for review or transmission) map to PR-06's complete, hash-chained audit trail recording the evaluatio"
+      "framework_reference": "CT.DM-P8 (audit/log records determined, documented, implemented, and reviewed per policy, incorporating data minimization) and CM.AW-P4 (records of data disclosures/sharing maintained and accessible for review or transmission) map to PR-06's complete, hash-chained audit trail recording the evaluatio",
+      "evidence_requirements": []
     },
     "PR-07": {
       "applicable": true,
       "coverage": "inherited",
       "verified": true,
-      "framework_reference": "PR.DS-P2 (data-in-transit protected) and PR.PT-P3 (communications and control networks protected) are generic transport-security hygiene already owned by SOC 2 / ISO 27001 baselines. PR-07 (authenticated, integrity-protected, replay-resistant agent messaging + signed task context, A2A) maps only as "
+      "framework_reference": "PR.DS-P2 (data-in-transit protected) and PR.PT-P3 (communications and control networks protected) are generic transport-security hygiene already owned by SOC 2 / ISO 27001 baselines. PR-07 (authenticated, integrity-protected, replay-resistant agent messaging + signed task context, A2A) maps only as ",
+      "evidence_requirements": []
     },
     "PR-10": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR.DS-P6 (integrity-checking mechanisms verify information integrity) and CM.AW-P6 (data provenance and lineage maintained and accessible) map to PR-10's memory/context integrity (provenance, integrity checks, quarantine for persistent memory/retrieved context/shared task state). PR-10 owns the agen"
+      "framework_reference": "PR.DS-P6 (integrity-checking mechanisms verify information integrity) and CM.AW-P6 (data provenance and lineage maintained and accessible) map to PR-10's memory/context integrity (provenance, integrity checks, quarantine for persistent memory/retrieved context/shared task state). PR-10 owns the agen",
+      "evidence_requirements": []
     },
     "PR-11": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "CT.DM-P4 (data elements can be accessed for deletion), CT.DM-P5 (data destroyed according to policy), PR.DS-P3 (systems and associated data formally managed throughout removal/transfers/disposition), and CT.PO-P2 (policies for data deletion/retention) are substantially satisfied for the agent bounda"
+      "framework_reference": "CT.DM-P4 (data elements can be accessed for deletion), CT.DM-P5 (data destroyed according to policy), PR.DS-P3 (systems and associated data formally managed throughout removal/transfers/disposition), and CT.PO-P2 (policies for data deletion/retention) are substantially satisfied for the agent bounda",
+      "evidence_requirements": []
     },
     "PR-12": {
       "applicable": true,
       "coverage": "inherited",
       "verified": true,
-      "framework_reference": "PR.AC-P1 (identities/credentials issued, managed, verified, revoked, audited) touches credential lifecycle. PR-12 (secrets/API/signing/wallet key custody: vaulted, scoped, rotated, never exposed to prompts/untrusted tools) maps only as baseline inheritance against PR.AC-P1; PF 1.0 has no dedicated s"
+      "framework_reference": "PR.AC-P1 (identities/credentials issued, managed, verified, revoked, audited) touches credential lifecycle. PR-12 (secrets/API/signing/wallet key custody: vaulted, scoped, rotated, never exposed to prompts/untrusted tools) maps only as baseline inheritance against PR.AC-P1; PF 1.0 has no dedicated s",
+      "evidence_requirements": []
     },
     "DE-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CT.DM-P9 (technical measures implemented to manage data processing are tested and assessed) and GV.MT-P1 (privacy risk re-evaluated on ongoing basis as data processing/systems change) map to DE-02's continuous checking of observed data handling vs declared classifications + processing boundaries. DE"
+      "framework_reference": "CT.DM-P9 (technical measures implemented to manage data processing are tested and assessed) and GV.MT-P1 (privacy risk re-evaluated on ongoing basis as data processing/systems change) map to DE-02's continuous checking of observed data handling vs declared classifications + processing boundaries. DE",
+      "evidence_requirements": []
     },
     "DE-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR.PO-P2 (configuration change-control processes established) and GV.MT-P1 (re-evaluation as technologies/systems change) map to DE-03's drift detection in config/deps/tools/models/policy baselines before it normalizes. DE-03 detects agent-runtime drift; formal org change-control governance extends "
+      "framework_reference": "PR.PO-P2 (configuration change-control processes established) and GV.MT-P1 (re-evaluation as technologies/systems change) map to DE-03's drift detection in config/deps/tools/models/policy baselines before it normalizes. DE-03 detects agent-runtime drift; formal org change-control governance extends ",
+      "evidence_requirements": []
     },
     "DE-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CT.DM-P8 (audit/log records determined, documented, implemented, and reviewed per policy) maps to DE-04's monitoring of evidence chains, missing telemetry, and tamper signals. DE-04 covers the runtime evidence-integrity monitoring slice; the broader log-review program is org-owned, so partial."
+      "framework_reference": "CT.DM-P8 (audit/log records determined, documented, implemented, and reviewed per policy) maps to DE-04's monitoring of evidence chains, missing telemetry, and tamper signals. DE-04 covers the runtime evidence-integrity monitoring slice; the broader log-review program is org-owned, so partial.",
+      "evidence_requirements": []
     },
     "DE-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "ID.RA-P2 (data analytic inputs and outputs identified and evaluated for bias) and CT.DM-P10 (stakeholder privacy preferences included in algorithmic design objectives; outputs evaluated against these preferences) map to DE-05's evaluation of outputs/tool outcomes for reliability, bias, harmful outpu"
+      "framework_reference": "ID.RA-P2 (data analytic inputs and outputs identified and evaluated for bias) and CT.DM-P10 (stakeholder privacy preferences included in algorithmic design objectives; outputs evaluated against these preferences) map to DE-05's evaluation of outputs/tool outcomes for reliability, bias, harmful outpu",
+      "evidence_requirements": []
     },
     "DE-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CT.DM-P9 (technical measures tested and assessed), PR.PO-P10 (vulnerability management plan developed and implemented), and ID.DE-P5 (ecosystem parties assessed via audits/test results/evaluations) map to DE-06's ingestion of vuln scans, adversarial/red-team, resilience tests, and third-party evals "
+      "framework_reference": "CT.DM-P9 (technical measures tested and assessed), PR.PO-P10 (vulnerability management plan developed and implemented), and ID.DE-P5 (ecosystem parties assessed via audits/test results/evaluations) map to DE-06's ingestion of vuln scans, adversarial/red-team, resilience tests, and third-party evals ",
+      "evidence_requirements": []
     },
     "RS-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV.MT-P5 (policies/processes to receive, analyze, and respond to problematic data actions) and ID.RA-P5 (risk responses identified, prioritized, implemented) map to RS-01's automated execution of predefined policy responses when evidence crosses control/classification thresholds. RS-01 automates the"
+      "framework_reference": "GV.MT-P5 (policies/processes to receive, analyze, and respond to problematic data actions) and ID.RA-P5 (risk responses identified, prioritized, implemented) map to RS-01's automated execution of predefined policy responses when evidence crosses control/classification thresholds. RS-01 automates the",
+      "evidence_requirements": []
     },
     "RS-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CT.PO-P1 (revoking authorizations) and GV.MT-P5 (respond to problematic data actions) map to RS-02's ability to block/quarantine/degrade/halt agents/tools/memory/credentials/actions on risk conditions. RS-02 is the agent-native containment/kill-switch mechanism; PF 1.0 lacks a dedicated containment "
+      "framework_reference": "CT.PO-P1 (revoking authorizations) and GV.MT-P5 (respond to problematic data actions) map to RS-02's ability to block/quarantine/degrade/halt agents/tools/memory/credentials/actions on risk conditions. RS-02 is the agent-native containment/kill-switch mechanism; PF 1.0 lacks a dedicated containment ",
+      "evidence_requirements": []
     },
     "RS-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV.MT-P5 (receive/analyze/respond to problematic data actions), GV.MT-P7 (receive, track, respond to complaints/concerns/questions from individuals), and CM.AW-P7 (impacted individuals/organizations notified about a privacy breach/event) map to RS-03's escalation of significant failures/exceptions/r"
+      "framework_reference": "GV.MT-P5 (receive/analyze/respond to problematic data actions), GV.MT-P7 (receive, track, respond to complaints/concerns/questions from individuals), and CM.AW-P7 (impacted individuals/organizations notified about a privacy breach/event) map to RS-03's escalation of significant failures/exceptions/r",
+      "evidence_requirements": []
     },
     "RS-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "CM.AW-P7 (impacted individuals/organizations notified about a privacy breach or event) and CM.AW-P8 (individuals provided mitigation mechanisms, e.g., consent withdrawal, data alteration/deletion) map to RS-05's regulated-notification clock + authority/customer-notification routing to humans while p"
+      "framework_reference": "CM.AW-P7 (impacted individuals/organizations notified about a privacy breach or event) and CM.AW-P8 (individuals provided mitigation mechanisms, e.g., consent withdrawal, data alteration/deletion) map to RS-05's regulated-notification clock + authority/customer-notification routing to humans while p",
+      "evidence_requirements": []
     },
     "RS-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV.MT-P5 (policies/processes to receive, analyze, and respond to problematic data actions disclosed from internal/external sources, e.g., privacy researchers) and PR.PO-P10 (vulnerability management plan) map to RS-06's coordinated vulnerability disclosure + secure-update handling for shipped agent "
+      "framework_reference": "GV.MT-P5 (policies/processes to receive, analyze, and respond to problematic data actions disclosed from internal/external sources, e.g., privacy researchers) and PR.PO-P10 (vulnerability management plan) map to RS-06's coordinated vulnerability disclosure + secure-update handling for shipped agent ",
+      "evidence_requirements": []
     },
     "RC-01": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR.PO-P7 (response and recovery plans established, in place, and managed) and PR.DS-P4 (adequate capacity to ensure availability maintained) map to RC-01's documented/tested recovery plans, rollback paths, and restoration dependencies. RC-01 owns the agent recovery-planning slice; enterprise BC/DR p"
+      "framework_reference": "PR.PO-P7 (response and recovery plans established, in place, and managed) and PR.DS-P4 (adequate capacity to ensure availability maintained) map to RC-01's documented/tested recovery plans, rollback paths, and restoration dependencies. RC-01 owns the agent recovery-planning slice; enterprise BC/DR p",
+      "evidence_requirements": []
     },
     "RC-02": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV.MT-P6 (policies/processes incorporate lessons learned from problematic data actions) and CM.AW-P7 (impacted parties notified) map to RC-02's post-incident review, corrective action, stakeholder notification, and lessons-learned. RC-02 owns the repeatable post-incident review/communications slice "
+      "framework_reference": "GV.MT-P6 (policies/processes incorporate lessons learned from problematic data actions) and CM.AW-P7 (impacted parties notified) map to RC-02's post-incident review, corrective action, stakeholder notification, and lessons-learned. RC-02 owns the repeatable post-incident review/communications slice ",
+      "evidence_requirements": []
     },
     "RC-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "PR.PO-P8 (response and recovery plans are tested) maps to RC-03's periodic exercise of recovery/rollback/failover/continuity/agent-disablement procedures captured as evidence. RC-03 owns the agent resilience-exercise evidence slice; the org owns the enterprise testing program, so partial."
+      "framework_reference": "PR.PO-P8 (response and recovery plans are tested) maps to RC-03's periodic exercise of recovery/rollback/failover/continuity/agent-disablement procedures captured as evidence. RC-03 owns the agent resilience-exercise evidence slice; the org owns the enterprise testing program, so partial.",
+      "evidence_requirements": []
     }
   },
   "framework_mapping": {
@@ -389,5 +424,6 @@
       "PR.PO-P8"
     ]
   },
-  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/nist-privacy.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True."
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/nist-privacy.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True.",
+  "evidence_requirements": {}
 }

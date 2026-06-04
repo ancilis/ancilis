@@ -321,91 +321,104 @@
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.5.31 Identification of legal/statutory/regulatory/contractual requirements, A.5.34 Privacy and protection of PII, and A.5.10 Acceptable use bound use to authorized purpose. GOV-05 binds actions/data-uses to declared purpose, legal basis, consent, contract limits and prohibited-use policy. Partial:",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "GOV-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.5.31 Identification of legal/regulatory/contractual requirements, A.5.36 Compliance with policies/standards, and A.5.20 Addressing information security within supplier agreements require obligations be captured and compliance evidenced. GOV-06 registers framework/contract/customer/regulator obliga",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "GOV-07": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.5.34 Privacy and protection of PII (covers data-subject rights handling), A.6.8 Information security event reporting (feedback/reporting channels), and A.5.6 Contact with special interest groups support transparency and affected-party routing. GOV-07 documents disclosures, privacy-rights routing, ",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-09": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.8.31 Separation of development/test/production, A.8.18 Use of privileged utility programs, and A.8.19 Installation of software on operational systems govern controlled execution of code/utilities. PR-09 runs generated code/shell/dynamic execution only in approved sandbox classes. Partial: ISO has ",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-10": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.5.33 Protection of records and A.8.13 Information backup relate to integrity/protection of stored information. PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks and quarantine (RAG/memory poisoning). Partial: ISO does not address RAG/memory poisoning; m",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-11": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
       "framework_reference": "A.8.10 Information deletion, A.5.33 Protection of records (retention), and A.7.14 Secure disposal/re-use of equipment require data be retained and deleted/disposed per policy/legal obligation. PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "PR-12": {
       "applicable": true,
       "coverage": "full",
       "verified": true,
       "framework_reference": "A.8.24 Use of cryptography (key management) and A.5.17 Authentication information (secret storage/handling) require secrets and keys be securely stored, scoped and managed. PR-12 vaults, scopes, rotates secrets/API keys/signing keys/wallet material and never exposes them to prompts/untrusted tools —",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "DE-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.8.16 Monitoring activities is the only control loosely related to evaluating output behaviour. DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias, clinical/safety drift and out-of-scope behaviour. Partial/weak: AI output-harm evaluation (hallucination, bias,",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "DE-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
       "framework_reference": "A.8.8 Management of technical vulnerabilities and A.8.29 Security testing in development and acceptance require vulnerabilities be identified/evaluated and security testing be conducted. DE-06 ingests agent vuln scans, adversarial/red-team, resilience and third-party evals as evidence with remediati",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "RS-04": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.8.22 Segregation of networks (limiting blast radius) and A.5.29 Information security during disruption support failure-domain isolation. RS-04 provides multi-agent failure-domain isolation, circuit breakers and coordinated kill-switch. Partial: ISO has no multi-agent cascade-containment concept; m",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "RS-05": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.5.5 Contact with authorities (timely authority contact), A.5.26 Response to incidents, and A.5.28 Collection of evidence support regulated notification and evidence preservation. RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence and routes authority/customer notif",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "RS-06": {
       "applicable": true,
       "coverage": "partial",
       "verified": true,
       "framework_reference": "A.8.8 Management of technical vulnerabilities, A.5.5 Contact with authorities, and A.5.6 Contact with special interest groups support vulnerability intake, advisory monitoring and coordinated disclosure. RS-06 handles vuln intake, coordinated disclosure, secure-update handling, support-period tracki",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     },
     "RC-03": {
       "applicable": true,
       "coverage": "partial",
       "verified": false,
       "framework_reference": "A.5.30 ICT readiness for business continuity requires continuity plans/recovery capability be implemented, maintained and tested; A.5.29 and A.8.13 (backup restoration testing) reinforce exercise/validation. RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedu",
-      "source": "PROD-REPAIRS-D1"
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     }
   },
   "evidence_requirements": {
