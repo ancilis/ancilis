@@ -81,13 +81,34 @@
       "HRUC-DISC",
       "AUG-CHATBOT"
     ],
+    "ccpa": [
+      "Cal. Civ. Code 1798.130",
+      "Cal. Civ. Code 1798.135",
+      "11 CCR 7012",
+      "11 CCR 7220",
+      "Cal. Civ. Code 1798.110",
+      "Cal. Civ. Code 1798.115"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
+    "colorado-ai-act": [
+      "6-1-1704",
+      "6-1-1703(4)(a)",
+      "6-1-1703(4)(c)"
     ],
     "csa_aicm": [
       "GRC-13",
       "GRC-09",
       "STA-09"
+    ],
+    "eu-ai-act": [
+      "Art. 13",
+      "Art. 50(1)",
+      "Art. 50(4)",
+      "Art. 26(7)",
+      "Art. 86",
+      "Art. 27"
     ],
     "eu_cra": [
       "Annex I Part II(6)",
@@ -102,21 +123,66 @@
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
     ],
+    "gdpr": [
+      "Art. 12",
+      "Art. 13",
+      "Art. 14",
+      "Art. 15",
+      "Art. 16",
+      "Art. 18",
+      "Art. 20",
+      "Art. 21",
+      "Art. 22(3)"
+    ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: GOV-07 Transparency, Instructions & Affected-Party Feedback"
+    ],
+    "hipaa": [
+      "164.520",
+      "164.524",
+      "164.526",
+      "164.528"
     ],
     "hitrust_ai_security": [
       "AISec.Legal-and-Compliance"
     ],
+    "imda-mgf": [
+      "Dim-3 Trusted Development and Deployment",
+      "Dim-6 Content Provenance",
+      "AIV-Transparency",
+      "AgenticMGF-D4 Enable End-User Responsibility"
+    ],
     "iso-23894": [
       "Annex A",
       "6.2"
+    ],
+    "iso-27001": [
+      "A.5.34",
+      "A.6.8",
+      "A.5.6"
     ],
     "iso-27701": [
       "A.7.3.2",
       "A.7.3.3",
       "A.7.3.4",
       "A.7.3.5"
+    ],
+    "iso-42001": [
+      "A.8.2",
+      "A.8.5",
+      "A.3.3"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 4.2",
+      "GOVERN 5.1",
+      "GOVERN 5.2",
+      "MAP 5.2",
+      "MEASURE 3.3",
+      "MANAGE 4.3"
+    ],
+    "nist-csf": [
+      "GV.RR-04",
+      "GV.OC-02"
     ],
     "nist_ai_600_1_genai_profile": [
       "GV-1.2",

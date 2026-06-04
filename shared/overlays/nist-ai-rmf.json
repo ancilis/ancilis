@@ -316,6 +316,97 @@
       ],
       "threshold_adjustments": {},
       "framework_reference": "MANAGE 4.4"
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Binding actions/data-uses to declared purpose, legal basis, consent, and prohibited-use policy operationalizes 'legal and regulatory requirements involving AI are understood/managed/documented' (GOVERN 1.1), intended-purpose/context-of-use documentation (MAP 1.1), privacy system requirements (MAP 1.",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "An external obligation registry linking framework/contract/regulator obligations to posture/evidence/owner reporting supports understanding/managing regulatory requirements (GOVERN 1.1) and documenting/communicating impacts (GOVERN 4.2) and legal-risk mapping (MAP 4.1). It is the evidence-linkage la",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Disclosures, privacy-rights routing, and affected-party feedback/intervention channels linked to runtime evidence implement the stakeholder-feedback machinery of GOVERN 5.1/5.2, MAP 5.2, MEASURE 3.3 (user/community problem-report + appeal), and incident communication (MANAGE 4.3). GOV-07 provides th",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Confining generated code/shell/dynamic execution to approved sandbox classes is a safety+security control supporting MEASURE 2.6 (fail safely / operate within knowledge limits) and MEASURE 2.7 (security/resilience). The AI RMF is technology-agnostic and does not prescribe sandboxing, so partial.",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Provenance/integrity/quarantine for persistent memory, retrieved context, and shared task state (RAG/memory poisoning) supports security/resilience (MEASURE 2.7), validity/reliability (MEASURE 2.5), and unknown-risk response (MANAGE 2.3). Maps as a security/reliability control element; partial.",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Retention/deletion/eviction/disposal of agent-held data/memory/context/evidence per policy + legal obligation supports privacy-risk handling (MEASURE 2.10), safe decommissioning that does not increase risk (GOVERN 1.7), and decommissioning within post-deployment plans (MANAGE 4.1). Data-lifecycle is",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": true,
+      "framework_reference": "Vaulting/scoping/rotating secrets, API keys, signing keys, and wallet material and never exposing them to prompts/untrusted tools is generic secrets-management/security hygiene owned by SOC 2 / ISO 27001 / NIST 800-53. It only loosely contributes to MEASURE 2.7 security evaluation and is not an AI-R",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Evaluating outputs/tool outcomes for reliability, hallucination, harmful output, bias, clinical/safety drift, and out-of-scope behavior is a direct agent-runtime realization of the trustworthy-characteristic evaluations: performance/assurance (MEASURE 2.3), validity/reliability (MEASURE 2.5), safety",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Ingesting vuln scans, adversarial/red-team, resilience tests, clinical/safety validations, and third-party evals as evidence with remediation state implements TEVV documentation (MEASURE 2.1), security/resilience evaluation (MEASURE 2.7), independent/external assessment (MEASURE 1.3), and AI testing",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "RS-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Multi-agent failure-domain isolation, circuit breakers, and coordinated kill-switch implement fail-safe / response-time aspects of safety (MEASURE 2.6) and disengage/deactivate mechanisms (MANAGE 2.4) extended to cascading multi-agent topologies, which the AI RMF does not address explicitly. Partial",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Starting jurisdiction-specific regulated-notification clocks, preserving decision evidence, and routing authority/customer notification to humans supports legal/regulatory obligation handling (GOVERN 1.1) and incident communication to relevant actors (MANAGE 4.3). NIST AI RMF (voluntary) does not pr",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Vuln intake, coordinated disclosure, secure-update handling, support-period tracking, and advisories for shipped agent products support testing/incident information-sharing (GOVERN 4.3), third-party failure/incident contingency (GOVERN 6.2), and incident communication (MANAGE 4.3). Partial; product-",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "RC-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Periodically exercising recovery/rollback/failover/continuity/agent-disablement procedures and capturing evidence supports recover-from-risk procedures (MANAGE 2.3), recovery within monitoring plans (MANAGE 4.1), and demonstrating fail-safe behavior (MEASURE 2.6). Partial; resilience-exercise cadenc",
+      "source": "PROD-REPAIRS-D1"
     }
   },
   "evidence_requirements": {
@@ -430,6 +521,74 @@
     ],
     "RC-02": [
       "MANAGE 4.4"
+    ],
+    "GOV-05": [
+      "GOVERN 1.1",
+      "MAP 1.1",
+      "MAP 1.6",
+      "MEASURE 2.10"
+    ],
+    "GOV-06": [
+      "GOVERN 1.1",
+      "GOVERN 4.2",
+      "MAP 4.1"
+    ],
+    "GOV-07": [
+      "GOVERN 4.2",
+      "GOVERN 5.1",
+      "GOVERN 5.2",
+      "MAP 5.2",
+      "MEASURE 3.3",
+      "MANAGE 4.3"
+    ],
+    "PR-09": [
+      "MEASURE 2.6",
+      "MEASURE 2.7"
+    ],
+    "PR-10": [
+      "MEASURE 2.7",
+      "MEASURE 2.5",
+      "MANAGE 2.3"
+    ],
+    "PR-11": [
+      "GOVERN 1.7",
+      "MEASURE 2.10",
+      "MANAGE 4.1"
+    ],
+    "PR-12": [
+      "MEASURE 2.7"
+    ],
+    "DE-05": [
+      "MEASURE 2.3",
+      "MEASURE 2.5",
+      "MEASURE 2.6",
+      "MEASURE 2.9",
+      "MEASURE 2.11",
+      "MEASURE 3.1"
+    ],
+    "DE-06": [
+      "MEASURE 2.1",
+      "MEASURE 2.7",
+      "MEASURE 1.3",
+      "GOVERN 4.3"
+    ],
+    "RS-04": [
+      "MEASURE 2.6",
+      "MANAGE 2.4"
+    ],
+    "RS-05": [
+      "GOVERN 1.1",
+      "MANAGE 4.3"
+    ],
+    "RS-06": [
+      "GOVERN 4.3",
+      "GOVERN 6.2",
+      "MANAGE 4.3"
+    ],
+    "RC-03": [
+      "MANAGE 2.3",
+      "MANAGE 4.1",
+      "MEASURE 2.6"
     ]
   },
   "evidence_retention_minimum_days": 1095,

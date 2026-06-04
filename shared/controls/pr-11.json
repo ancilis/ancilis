@@ -77,12 +77,25 @@
     "memory"
   ],
   "regulatory_mappings": {
+    "ccpa": [
+      "Cal. Civ. Code 1798.105",
+      "Cal. Civ. Code 1798.100(a)(3)",
+      "11 CCR 7022",
+      "11 CCR 7155"
+    ],
     "cmmc-l2": [
       "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ],
+    "colorado-ai-act": [
+      "6-1-1703(3)"
     ],
     "csa_aicm": [
       "DSP-01",
       "DSP-04"
+    ],
+    "eu-ai-act": [
+      "Art. 26(6)",
+      "Art. 12(1)"
     ],
     "eu_cra": [
       "Annex I Part I(2)(m)",
@@ -91,12 +104,33 @@
     "fedramp": [
       "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
     ],
+    "gdpr": [
+      "Art. 5(1)(e)",
+      "Art. 17(1)",
+      "Art. 18",
+      "Art. 25(2)"
+    ],
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-11 Retention, Deletion & Memory Disposal"
+    ],
+    "hipaa": [
+      "164.310(d)(2)(i)",
+      "164.310(d)(2)(ii)",
+      "164.502(b)",
+      "164.530(j)"
     ],
     "hitrust_ai_security": [
       "AISec.Legal-and-Compliance",
       "AISec.Documenting-and-Inventorying-AI-Systems"
+    ],
+    "imda-mgf": [
+      "Dim-2 Data",
+      "AIV-Data Governance"
+    ],
+    "iso-27001": [
+      "A.8.10",
+      "A.5.33",
+      "A.7.14"
     ],
     "iso-27701": [
       "A.7.3.6",
@@ -107,9 +141,23 @@
       "B.8.4.1",
       "B.8.4.2"
     ],
+    "iso-42001": [
+      "A.7.2",
+      "7.5.3"
+    ],
     "itar-ear": [
       "15 CFR 762.2",
       "15 CFR 762.6"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 1.7",
+      "MEASURE 2.10",
+      "MANAGE 4.1"
+    ],
+    "nist-csf": [
+      "PR.DS-01",
+      "PR.DS-11",
+      "GV.OC-03"
     ],
     "nist_ai_600_1_genai_profile": [
       "GV-1.7",

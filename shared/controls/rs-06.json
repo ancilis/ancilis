@@ -84,6 +84,11 @@
       "TVM-12",
       "STA-09"
     ],
+    "eu-ai-act": [
+      "Art. 55(1)(d)",
+      "Art. 15(5)",
+      "CoP-Safety-C9"
+    ],
     "eu_cra": [
       "Annex I Part II(2)",
       "Annex I Part II(4)",
@@ -105,9 +110,36 @@
     "glba": [
       "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RS-06 Coordinated Vulnerability Disclosure & Security Update Handling"
     ],
+    "hipaa": [
+      "164.308(a)(6)(i)",
+      "164.308(a)(1)(ii)(B)"
+    ],
     "hitrust_ai_security": [
       "AISec.Supply-Chain",
       "AISec.Development-of-AI-Software"
+    ],
+    "imda-mgf": [
+      "Dim-4 Incident Reporting",
+      "Dim-6 Security"
+    ],
+    "iso-27001": [
+      "A.8.8",
+      "A.5.5",
+      "A.5.6"
+    ],
+    "iso-42001": [
+      "A.8.4",
+      "A.10.4"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 4.3",
+      "GOVERN 6.2",
+      "MANAGE 4.3"
+    ],
+    "nist-csf": [
+      "ID.RA-08",
+      "RS.MA-01",
+      "ID.IM-02"
     ],
     "nist_ai_600_1_genai_profile": [
       "MS-2.7",

@@ -250,6 +250,97 @@
       ],
       "threshold_adjustments": {},
       "framework_reference": "RC.IM-01, RC.IM-02"
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "GV.OC-01 (organizational mission understood / informs risk) and GV.OC-03 (legal, regulatory, and contractual requirements regarding cybersecurity understood and managed) partially support binding actions/data-uses to declared purpose, contract limits, and legal basis. Not satisfied: consent manageme",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "GV.OC-03 (legal/regulatory/contractual cybersecurity requirements understood and managed) and GV.SC-01/GV.SC-09 (supply-chain cyber risk management program established; supply chain practices integrated/monitored) support registering framework/contract/customer/regulator obligations and linking to p",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "GV.RR-04 (cybersecurity included in human resources / communications practices) and GV.OC-02 (stakeholders understood) loosely support transparency disclosures + affected-party feedback channels. CSF 2.0 has weak coverage of external transparency / privacy-rights routing (those are Privacy Framework",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PR.PS-01 (configuration management) and PR.IR-01 (logical-access/environment protection) partially support running generated code/shell/dynamic execution only in approved sandbox classes. CSF has no explicit sandbox/dynamic-code-execution subcategory; sandboxing is the agent-native realization of pl",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PR.DS-01 (data integrity protection) and DE.CM-09 (computing hardware/software/runtime environments monitored for adverse events) loosely support memory/context integrity, provenance, and quarantine. CSF has no RAG/memory-poisoning subcategory - AI-native gap. AKSI provides the agent-native value; m",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "PR.DS-11 (backups of data created/protected/maintained) and PR.DS-01 partially support retention; GV.OC-03 supports the legal-obligation driver. CSF 2.0 has weak explicit coverage of data deletion/disposal lifecycle (stronger in NIST SP 800-53 MP/SI families). Partial for the agent slice: retention/",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PR.AA-01 (identities and credentials managed) directly covers credential/secret custody; PR.DS-01 (data confidentiality) covers protecting key material; PR.PS-01 (config mgmt) supports vaulting/rotation. Satisfied for the agent slice: secrets/API keys/signing keys/wallet material vaulted, scoped, ro",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "DE.AE-02 (adverse events analyzed) and DE.CM-09 (runtime monitored) loosely support evaluating outputs/tool outcomes for reliability/hallucination/harmful output/bias/safety drift. CSF 2.0 has NO AI-output-quality / harm-monitoring subcategory - this is purely AI-native (more aligned with NIST AI RM",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "full",
+      "verified": true,
+      "framework_reference": "ID.RA-01 (vulnerabilities in assets identified/recorded), ID.RA-08 (processes for receiving/analyzing/responding to vulnerability disclosures), and ID.IM-02 (improvements identified from security tests/exercises, including red teams) support ingesting agent vuln scans, adversarial/red-team, resilien",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "RS-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "RS.MI-01 (incidents contained) partially supports multi-agent failure-domain isolation, circuit breakers, and coordinated kill-switch. CSF has no multi-agent cascade / blast-radius subcategory - this is an agent-system-native concern. Partial; AKSI provides the value beyond single-incident containme",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "RS.CO-02 (stakeholders notified of incidents) and RS.CO-03 (info shared with stakeholders consistent with response plans), plus GV.OC-03 (legal/regulatory requirements managed) support starting jurisdiction-specific notification clocks and routing authority/customer notification to humans. CSF refer",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "ID.RA-08 (vulnerability disclosure receiving/analyzing/responding processes) supports coordinated vulnerability disclosure + secure-update handling for shipped agent products. CSF lacks explicit support-period-tracking / advisory-publication subcategories (closer to CRA/SSDF). Partial for the agent ",
+      "source": "PROD-REPAIRS-D1"
+    },
+    "RC-03": {
+      "applicable": true,
+      "coverage": "full",
+      "verified": true,
+      "framework_reference": "RC.RP-05 (integrity of restored assets verified, systems/services restored, normal operations confirmed) and ID.IM-02 (improvements identified from tests/exercises) support periodically exercising recovery/rollback/failover/continuity/agent-disablement procedures and capturing evidence for the agent",
+      "source": "PROD-REPAIRS-D1"
     }
   },
   "reporting_obligations": {
@@ -366,6 +457,65 @@
     "RC-02": [
       "RC.IM-01",
       "RC.IM-02"
+    ],
+    "GOV-05": [
+      "GV.OC-01",
+      "GV.OC-03"
+    ],
+    "GOV-06": [
+      "GV.OC-03",
+      "GV.SC-01",
+      "GV.SC-09"
+    ],
+    "GOV-07": [
+      "GV.RR-04",
+      "GV.OC-02"
+    ],
+    "PR-09": [
+      "PR.PS-01",
+      "PR.IR-01"
+    ],
+    "PR-10": [
+      "PR.DS-01",
+      "DE.CM-09"
+    ],
+    "PR-11": [
+      "PR.DS-01",
+      "PR.DS-11",
+      "GV.OC-03"
+    ],
+    "PR-12": [
+      "PR.AA-01",
+      "PR.DS-01",
+      "PR.PS-01"
+    ],
+    "DE-05": [
+      "DE.AE-02",
+      "DE.CM-09"
+    ],
+    "DE-06": [
+      "ID.RA-01",
+      "ID.RA-08",
+      "ID.IM-02"
+    ],
+    "RS-04": [
+      "RS.MI-01",
+      "RS.MA-04"
+    ],
+    "RS-05": [
+      "RS.CO-02",
+      "RS.CO-03",
+      "GV.OC-03"
+    ],
+    "RS-06": [
+      "ID.RA-08",
+      "RS.MA-01",
+      "ID.IM-02"
+    ],
+    "RC-03": [
+      "RC.RP-05",
+      "ID.IM-02",
+      "RC.RP-03"
     ]
   },
   "evidence_retention_minimum_days": 365,
