@@ -77,13 +77,49 @@ class PR04ExposureEvaluator:
                 duration_ms=(time.perf_counter() - start) * 1000,
             )
 
-        # Patterns found but no destination restrictions — PASS with evidence
+        # Patterns found and no FAIL above. Sensitive data only PASSES PR-04 when
+        # it is going to a destination that a configured policy actually
+        # authorized. Every other case (no policy, or no determinable
+        # destination) is a FLAG — never a silent PASS that green-lights
+        # potential exfiltration. (FLAG does not BLOCK — blocking requires a
+        # configured policy and a matched destination — but it can never report
+        # as "all passing".)
         pattern_types = ", ".join(m.pattern_type for m in matches)
+        has_destination_policy = bool(
+            config.scope_allowed_destinations or config.scope_blocked_destinations
+        )
+        if destination is not None and has_destination_policy:
+            # Destination was present and cleared the blocked/allowed checks above.
+            evidence["destination_authorized"] = True
+            return ControlResult(
+                control_id=self.control_id,
+                control_name=self.control_name,
+                result="PASS",
+                detail=(
+                    f"Sensitive data patterns detected ({pattern_types}); "
+                    f"destination '{destination}' authorized by configured scope policy."
+                ),
+                evidence_data=evidence,
+                duration_ms=(time.perf_counter() - start) * 1000,
+            )
+
+        evidence["destination_authorized"] = False
+        if not has_destination_policy:
+            detail = (
+                f"Sensitive data patterns detected ({pattern_types}) but no destination "
+                "restrictions are configured. Add scope.allowed_destinations or "
+                "scope.blocked_destinations so outbound destinations can be authorized."
+            )
+        else:
+            detail = (
+                f"Sensitive data patterns detected ({pattern_types}) but no outbound "
+                "destination could be determined to verify against the configured scope policy."
+            )
         return ControlResult(
             control_id=self.control_id,
             control_name=self.control_name,
-            result="PASS",
-            detail=f"Sensitive data patterns detected ({pattern_types}) but no destination restrictions configured.",
+            result="FLAG",
+            detail=detail,
             evidence_data=evidence,
             duration_ms=(time.perf_counter() - start) * 1000,
         )

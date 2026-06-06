@@ -6,7 +6,7 @@ A LangChain conversational agent with Ancilis SDK for SOC 2 compliance monitorin
 
 1. Wrap LangChain tool functions with `ToolActionProducer`
 2. Run a multi-turn conversation — each tool call is evaluated and evidence-recorded
-3. SOC 2 controls activate automatically from `certification_targets: [soc2]`
+3. SOC 2 (plus GDPR and CCPA) overlays activate automatically from the `personal_info` data declaration
 4. `ancilis scan` shows compliance posture from real tool-call evidence
 
 When `ancilis-langchain` ships, the `producer.wrap_tool()` calls can be replaced with the native LangChain integration. The TODO markers in `main.py` show where to migrate.
@@ -39,8 +39,6 @@ The example uses simulated tool responses and does **not** require an OpenAI API
 ```yaml
 agent:
   name: langchain-chatbot
-certification_targets:
-  - soc2
 my_agent_handles:
   - personal_info
 mode: audit

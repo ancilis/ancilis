@@ -6,7 +6,7 @@ Every tool call is evaluated, evidence-recorded, and verifiable against SOC 2 co
 ## What this demonstrates
 
 1. Wrapping LangChain tool functions with `ToolActionProducer`
-2. SOC 2 overlay activated via `certification_targets: [soc2]`
+2. SOC 2 overlay activated automatically via the `personal_info` data declaration
 3. Audit-mode evidence recorded across 5 conversation turns
 4. Hash-chain integrity preserved across all calls
 5. `ancilis scan` showing SOC 2 compliance posture
@@ -105,8 +105,6 @@ security:
       - calculator
 my_agent_handles:
   - personal_info
-certification_targets:
-  - soc2
 ```
 
 ## Docs

@@ -365,13 +365,15 @@ def test_doctor_exit_code_all_pass() -> None:
 
 
 def test_doctor_exit_code_warn_only() -> None:
+    # Warnings are advisory: a healthy, warnings-only run must exit 0 so doctor
+    # does not break CI/scripts on an otherwise-working install.
     report = DoctorReport(
         checks=[
             CheckResult(name="x", status=CheckStatus.PASS, label="X", detail="ok"),
             CheckResult(name="y", status=CheckStatus.WARN, label="Y", detail="warn"),
         ]
     )
-    assert report.exit_code == 1
+    assert report.exit_code == 0
 
 
 def test_doctor_exit_code_any_error() -> None:
@@ -411,3 +413,34 @@ def test_doctor_dependency_no_conflict() -> None:
     result = check_dependency_conflicts(None, False)
     # pydantic v2 + current duckdb → no conflicts in dev env
     assert result.status in (CheckStatus.PASS, CheckStatus.WARN)  # WARN only if missing pkg
+
+
+# ---------------------------------------------------------------------------
+# 13. Audit finding F4: no nonexistent `ancilis login`; hints point at `connect`
+# ---------------------------------------------------------------------------
+
+
+def test_doctor_has_no_ancilis_login_reference() -> None:
+    import ancilis.cli.doctor as doctor_mod
+
+    src = Path(doctor_mod.__file__).read_text(encoding="utf-8")
+    assert "ancilis login" not in src
+    # The real, existing command is `connect`.
+    assert "ancilis connect" in src
+
+
+def test_doctor_warning_only_run_exits_zero(tmp_path: Path) -> None:
+    """A healthy, warnings-only run must exit 0 (not 1)."""
+    cfg = _make_config_file(tmp_path)
+    with (
+        patch("ancilis.cli.doctor.fetch_latest_version", return_value=None),
+        patch("ancilis.cli.doctor.read_cache", return_value=None),
+    ):
+        result = CliRunner().invoke(
+            cli,
+            ["doctor", "--config", str(cfg)],
+            env={"NO_COLOR": "1"},
+        )
+    # No FAIL checks here; whatever warnings exist must not produce a nonzero exit.
+    assert "[✗]" not in result.output  # no hard failures in this minimal setup
+    assert result.exit_code == 0, result.output

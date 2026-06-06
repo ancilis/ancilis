@@ -40,11 +40,14 @@ compliance:
 
 ### 2. Certification-driven activation
 
-When you set a `certification_target`, Ancilis automatically activates the overlay(s) required by that certification:
+When you set a `certification_target`, Ancilis automatically activates the
+overlay(s) and extension controls required by that certification. Valid targets
+include `aiuc-1` and `gov-contractor` (framework overlays such as `soc2` are
+activated from `my_agent_handles` data declarations, not here):
 
 ```yaml
 certification_targets:
-  - soc2-type2
+  - aiuc-1
 ```
 
 ### 3. Automatic data classification trigger

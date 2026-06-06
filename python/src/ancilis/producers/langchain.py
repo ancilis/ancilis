@@ -29,6 +29,7 @@ from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
+from ancilis.producers.enforcement import OBSERVE_ONLY, warn_if_enforce_unsupported
 from ancilis.producers.protocol import ProducerType
 from ancilis.telemetry import record_adapter_used
 
@@ -67,7 +68,14 @@ def _name_from_serialized(serialized: dict[str, Any] | None, fallback: str) -> s
 
 
 class LangChainActionProducer:
-    """Underlying producer that translates ``LangChainEvent`` objects into Actions."""
+    """Underlying producer that translates ``LangChainEvent`` objects into Actions.
+
+    Observe-only: LangChain/LangGraph callbacks fire around execution and cannot
+    block, so ``security.mode: enforce`` does not prevent calls through this
+    producer (a warning is emitted at construction if enforce is set).
+    """
+
+    ENFORCEMENT = OBSERVE_ONLY
 
     def __init__(
         self,
@@ -82,6 +90,7 @@ class LangChainActionProducer:
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
         self._session_id = str(uuid.uuid4())
         record_adapter_used(PROVIDER)
+        warn_if_enforce_unsupported(type(self).__name__, self.ENFORCEMENT, config)
 
     @property
     def session_id(self) -> str:

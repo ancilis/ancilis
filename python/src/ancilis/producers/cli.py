@@ -44,6 +44,7 @@ from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 from ancilis.middleware.response_scanner import ScanResult, scan_response
+from ancilis.producers.enforcement import ENFORCE_CAPABLE
 from ancilis.producers.protocol import ProducerType
 from ancilis.telemetry import record_adapter_used
 
@@ -74,8 +75,11 @@ class CLIExecutionResult:
 class CLIActionProducer:
     """Produces Action objects from CLI/subprocess invocations.
 
-    Implements the ActionProducer protocol.
+    Implements the ActionProducer protocol. Enforce-capable: the subprocess only
+    runs when the evaluation does not return BLOCK.
     """
+
+    ENFORCEMENT = ENFORCE_CAPABLE
 
     def __init__(
         self,

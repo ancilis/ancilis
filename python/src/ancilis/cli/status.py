@@ -47,15 +47,40 @@ def _format_status(
     summary = evidence.get_summary(session_id=session_id)
     control_stats = summary.get("control_pass_rates", {})
 
-    all_passing = True
+    # Honest per-control bucketing. The headline must never report "all passing"
+    # while a control is failing, flagged, or has not actually been evaluated.
+    # Buckets:
+    #   verified  — runtime evaluator with >=1 PASS and no FAIL/ERROR/FLAG
+    #   attested  — attestation-backed control currently passing (fresh attestation)
+    #   pending   — never evaluated yet, or only SKIP (incl. never-attested controls)
+    #   flagged   — at least one FLAG (e.g. sensitive data with no destination policy)
+    #   failing   — at least one FAIL/ERROR
+    verified = attested = pending = flagged = failing = 0
     warnings: list[dict[str, str]] = []
     for cs in enabled:
         stats = control_stats.get(cs.control_id, {})
-        if stats.get("FAIL", 0) > 0 or stats.get("ERROR", 0) > 0:
-            all_passing = False
-        # Collect FLAG results as warnings
-        if stats.get("FLAG", 0) > 0:
-            cdef = control_defs.get(cs.control_id, {})
+        cdef = control_defs.get(cs.control_id, {})
+        support_level = cdef.get("support_level", "runtime_evaluator")
+        fail_count = stats.get("FAIL", 0) + stats.get("ERROR", 0)
+        flag_count = stats.get("FLAG", 0)
+        pass_count = stats.get("PASS", 0)
+
+        if fail_count > 0:
+            failing += 1
+        elif flag_count > 0:
+            flagged += 1
+        elif pass_count > 0:
+            if support_level == "attestation":
+                attested += 1
+            else:
+                verified += 1
+        else:
+            # No PASS/FAIL/FLAG: never evaluated, or only SKIP (e.g. an
+            # attestation control awaiting its first attestation).
+            pending += 1
+
+        # Collect FLAG results as warnings (shown below the headline).
+        if flag_count > 0:
             display = cdef.get("display_name", cs.name).lower()
             warnings.append({
                 "category": display,
@@ -66,10 +91,22 @@ def _format_status(
     total = summary.get("total_evaluations", 0)
     if total == 0:
         passing_str = "not yet evaluated"
-    elif all_passing:
-        passing_str = "all passing"
     else:
-        passing_str = "issues detected"
+        parts: list[str] = []
+        if verified:
+            parts.append(f"{verified} runtime-verified")
+        if attested:
+            parts.append(f"{attested} attestation-passing")
+        if pending:
+            parts.append(f"{pending} pending")
+        if flagged:
+            parts.append(f"{flagged} flagged")
+        if failing:
+            parts.append(f"{failing} failing")
+        passing_str = ", ".join(parts) if parts else "not yet evaluated"
+        # Only an unqualified clean state earns the "all passing" affirmation.
+        if not pending and not flagged and not failing and (verified or attested):
+            passing_str += " — all passing"
     lines.append(f"  Controls: {len(enabled)} active, {passing_str}")
 
     # Certification one-liners
@@ -130,8 +167,9 @@ def _format_status(
                 mark = "\u2717"
                 status_str = f"failing ({fail_count} failures)"
             elif flag_count > 0:
-                mark = "\u2713"
-                status_str = f"passing ({flag_count} flags)"
+                # A flag is a deviation for review \u2014 not a pass.
+                mark = "!"
+                status_str = f"flagged ({flag_count} flag{'s' if flag_count != 1 else ''})"
             else:
                 mark = "\u2713"
                 status_str = "passing"
