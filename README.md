@@ -75,11 +75,23 @@ ancilis status
 ```
 
 ```text
-Ancilis - my-agent
+Ancilis — my-agent
   Mode: audit
-  Controls: 39 common controls active, 2 payment extension controls available
+  Controls: 39 active, 11 runtime-verified, 27 pending, 1 flagged
   Tool calls: 1 evaluated, 0 blocked
+  Sync: 1 pending, 0 failed
+
+  Warnings:
+    [audit trail completeness] Audit Trail Completeness flagged deviations
+            Review recent activity: ancilis report --period 1d
 ```
+
+The headline is honest about coverage: of the 39 active AKSI controls, 11 are
+runtime-evaluated and passing on this call, 27 are attestation-backed and
+pending your attestation, and 1 (Audit Trail Completeness) is flagged for
+review. The `Sync: 1 pending` line reflects that the local record has not been
+pushed to the optional platform (none is configured here). Run
+`ancilis status --verbose` for the per-control breakdown.
 
 That is the adoption loop: define policy, evaluate real agent actions, and keep evidence that can be inspected later.
 
@@ -235,13 +247,22 @@ ancilis status
 ```
 
 ```text
-Ancilis - payment-agent
+Ancilis — payment-agent
   Mode: audit
-  Controls: 39 common controls active, all passing
-  SOC 2 Type II: active - triggered by certification target
-  PCI-DSS v4: active - triggered by credit_cards declaration
-  GDPR: active - triggered by personal_info declaration
+  Controls: 39 active, 9 runtime-verified, 27 pending, 1 flagged, 2 failing
+  AIUC-1: active
+  CCPA/CPRA: active — triggered by personal_info declaration
+  GDPR: active — triggered by personal_info declaration
+  PCI-DSS v4.0: active — triggered by credit_cards declaration
+  SOC 2 Type II: active — triggered by personal_info declaration
+  Tool calls: 1 evaluated, 0 blocked
+  Sync: 1 pending, 0 failed
 ```
+
+The overlays activate from the data declarations (the `aiuc-1` certification
+target shows as `AIUC-1: active`). The headline is honest: on this first call,
+27 controls are attestation-pending, 1 is flagged, and 2 are failing — real
+gaps to resolve before a clean report, not a fabricated "all passing".
 
 ```bash
 ancilis report --format markdown
@@ -261,7 +282,7 @@ Declare what data your agent handles. The right regulatory overlays activate aut
 | `controlled_unclassified` | CMMC L2 |
 | `biometric_data` | EU AI Act |
 
-23 canonical data classes are supported across 19 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
+23 canonical data classes are supported across 37 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
 
 The DORA-RES operational resilience overlay is specified as the architectural anchor for v0.2 function-classification activation. It coexists with the existing `DC-FIN` DORA overlay: the existing overlay covers financial-data handling evidence, while DORA-RES covers AI workload resilience evidence for agents supporting critical or important functions. See [shared/overlays/dora-res/dora_res_overlay_spec.md](shared/overlays/dora-res/dora_res_overlay_spec.md).
 
@@ -369,7 +390,7 @@ LLM SDK and framework producers also ship in the TypeScript package: `AnthropicA
 - **41 AKSI v0.6 controls ship in the catalog.** 39 common controls activate by default; `PAY-01` and `PAY-02` activate only for `DC-PAY`, `AGENT_PAYMENTS`, or `X402`.
 - **Python has 18 direct runtime evaluators plus 23 attestation-backed evaluators.** Attestation-backed controls return `SKIP` until required evidence is recorded with `ancilis attest`.
 - **TypeScript has direct core runtime evaluators plus catalog-backed evaluators for the remaining AKSI controls.** Catalog-backed controls return `FLAG` until explicit manual attestation is supplied; keyword matches are hints, not proof.
-- **19 overlay profiles ship today.** Existing overlays are preserved and reference known AKSI controls; v0.6 adds more catalog coverage than the current overlay depth can fully exercise.
+- **37 overlay profiles ship today.** Existing overlays are preserved and reference known AKSI controls; v0.6 adds more catalog coverage than the current overlay depth can fully exercise.
 - **Evidence integrity depends on protecting the DB.** The hash chain detects tampering after the fact. It does not prevent replacing the entire database.
 - **HTTP wrapping is explicit.** Ancilis does not monkey-patch HTTP libraries. You wrap the calls you want evaluated.
 - **PDF export requires pandoc and xelatex.** The CLI falls back to markdown without them.

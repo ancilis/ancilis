@@ -258,7 +258,7 @@ Every evidence record is chained with SHA-256. The chain ensures tamper-evidence
 from ancilis.evidence import GENESIS_SEED, canonical_payload, compute_hash
 
 # The genesis block hash (first record's prev_hash)
-print(GENESIS_SEED)  # "ancilis-genesis-0"
+print(GENESIS_SEED)  # a 64-char SHA-256 hex digest derived from a fixed genesis label
 
 # Verify chain integrity
 summary = store.get_summary()

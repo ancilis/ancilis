@@ -160,6 +160,7 @@ def _format_status(
             flag_count = stats.get("FLAG", 0)
 
             total_evals = sum(stats.values()) if stats else 0
+            pass_count = stats.get("PASS", 0)
             if total_evals == 0:
                 mark = "–"
                 status_str = "not yet evaluated"
@@ -170,9 +171,14 @@ def _format_status(
                 # A flag is a deviation for review \u2014 not a pass.
                 mark = "!"
                 status_str = f"flagged ({flag_count} flag{'s' if flag_count != 1 else ''})"
-            else:
+            elif pass_count > 0:
                 mark = "\u2713"
                 status_str = "passing"
+            else:
+                # Evaluated only as SKIP (e.g. an attestation control not yet
+                # attested) \u2014 pending, not passing.
+                mark = "\u25cb"
+                status_str = "pending (attestation required)"
             lines.append(f"    {mark} {display_name} — {status_str}")
 
         # Activation details

@@ -270,7 +270,7 @@ export async function runInit(
     out("  1. Review ancilis.yaml and adjust settings");
     out("  2. Run: ancilis doctor       — verify your setup");
     out("  3. Run: ancilis scan          — run your first compliance scan");
-    out("  4. Visit https://docs.ancilis.dev/quickstart for the full guide");
+    out("  4. Visit https://docs.ancilis.ai/quickstart for the full guide");
 
     return { ok: true, output: "" };
   } finally {

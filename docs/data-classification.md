@@ -44,7 +44,7 @@ Ancilis config — my-agent
   Mode: audit
   Handles: health_records → DC-PHI, personal_info → DC-PII
   Overlays: hipaa, gdpr, soc2
-  Controls: 26 active (PR-01, PR-02, PR-04, PR-05 at strict threshold)
+  Controls: 39 active (PR-01, PR-02, PR-04, PR-05 at strict threshold)
   Evidence retention: 2190 days (HIPAA requirement)
 ```
 
@@ -93,7 +93,7 @@ These types now activate the securities-market overlay for MNPI handling, disclo
 
 ### Baseline-only types
 
-These types are recognized and classified but don't currently trigger additional overlays beyond the 26 baseline controls. Overlays for these types are on the roadmap.
+These types are recognized and classified but don't currently trigger additional overlays beyond the 39 common baseline controls. Overlays for these types are on the roadmap.
 
 | Data type | DC code | Future overlay |
 |-----------|---------|----------------|
@@ -134,7 +134,7 @@ DC codes are the internal classification identifiers that bridge plain-language 
 The universal enterprise compliance baseline. Activated by: `general`, `public_data`, `personal_info`, `financial_data`, `financial_records`, `health_records`, `patient_data`.
 
 - **Jurisdiction:** Global
-- **Controls:** All 26 at standard threshold
+- **Controls:** All 39 common controls at standard threshold
 - **Evidence retention:** 365 days minimum
 - **Key focus:** Trust Services Criteria — logical access, change management, monitoring, incident response
 
@@ -189,7 +189,7 @@ Activated by: `material_nonpublic`, `mnpi`.
 AI management system standard. Activated by: `ai_training_data`.
 
 - **Jurisdiction:** Global
-- **Controls:** All 26 at standard threshold
+- **Controls:** All 39 common controls at standard threshold
 - **Evidence retention:** 1095 days (3 years)
 - **Key focus:** Management system scope, risk assessment, operational planning, internal audit, continual improvement
 
@@ -198,7 +198,7 @@ AI management system standard. Activated by: `ai_training_data`.
 Always active as the baseline overlay. All AKSI controls are organized by CSF functions (GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, RECOVER).
 
 - **Jurisdiction:** Global
-- **Controls:** All 26 at standard threshold
+- **Controls:** All 39 common controls at standard threshold
 - **Evidence retention:** 365 days minimum
 - **Key focus:** Framework alignment — familiar language for US federal contractors, self-assessment via CSF Profiles
 

@@ -100,9 +100,33 @@ is added to the canonical payload only when non-null. This means:
   mismatch, because the recomputed canonical includes the injected value while the stored hash
   does not.
 
-## No GUI, no SaaS
+## Local-first; optional hosted platform
 
-Ancilis is an SDK and CLI. There is no web dashboard, no hosted service, no cloud sync. Evidence is local. Reports are generated locally.
+Ancilis is an SDK and CLI that runs fully local by default: every action is
+evaluated locally, evidence is written to a local DuckDB store, and reports are
+generated locally. Core evaluation requires no network and no hosted service.
+
+There is an **optional** hosted platform (dashboard), and it is strictly opt-in:
+
+- Sync is enabled by setting `platform.url` in `ancilis.yaml` together with an
+  API key in the environment variable named by `platform.api_key_env` (default
+  `ANCILIS_API_KEY`). With no `platform.url` configured, `ancilis sync` does
+  nothing and there is no background sync.
+- `ancilis connect --api-key <key>` writes `~/.ancilis/platform.json`; that file
+  is what `ancilis doctor`'s connectivity/API-key checks read. (Evidence sync
+  itself reads `platform.url` + the env-var key, not `platform.json`.)
+- `ancilis sync` then POSTs evidence batches to `<platform.url>/api/evidence/batches`
+  (use an `https://` platform URL for transport security — the client posts to
+  whatever URL you configure) so the dashboard can show posture across environments.
+
+What leaves your machine: only when `platform.url` is configured and you run
+`ancilis sync`, the serialized evidence records are uploaded — that includes the
+record/previous hashes, agent and tool identifiers, decision and mode, per-control
+results, active overlays, data classifications, certifications, session and tenant
+IDs, SDK/framework versions, detected data types, classification context, and any
+`output_summary` you recorded. With no `platform.url` set, nothing is uploaded. To
+guarantee fully offline operation even if a URL is present, set
+`sync.offline_mode: always_offline` in `ancilis.yaml`.
 
 ## PDF export
 
