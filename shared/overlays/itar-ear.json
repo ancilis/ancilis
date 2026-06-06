@@ -17,7 +17,7 @@
       "applicable": true,
       "coverage": "inherited",
       "verified": false,
-      "framework_reference": "GOV-01 binds every governed action to a verifiable runtime identity + auth flow. Export control turns on WHO receives the data (foreign person 22 CFR 120.63 vs U.S. person), so a strong, attested identity for the human/agent principal in a session is foundational to deciding whether a release is a d",
+      "framework_reference": "GOV-01 matches every governed action's declared agent identity at runtime (the authentication flow is attested, not verified by the runtime evaluator). Export control turns on WHO receives the data (foreign person 22 CFR 120.63 vs U.S. person), so a strong, attested identity for the human/agent principal in a session is foundational to deciding whether a release is a d",
       "evidence_requirements": []
     },
     "GOV-03": {

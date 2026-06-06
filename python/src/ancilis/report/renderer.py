@@ -520,6 +520,12 @@ def _render_executive_summary_markdown(lines: list[str], data: ReportData) -> No
     )
     lines.append("")
     lines.append(
+        "This count covers both runtime-evaluated controls and attestation-backed "
+        "organizational controls; each overlay section below leads with how many "
+        "of its criteria Ancilis evaluates at runtime versus by attestation."
+    )
+    lines.append("")
+    lines.append(
         f"- {data.total_evaluations:,} evaluations in period | "
         f"{posture['blocked_evaluations']} blocked | "
         f"{posture['allowed_evaluations']} allowed"
@@ -577,14 +583,39 @@ def _render_compliance_markdown(lines: list[str], section: dict[str, Any]) -> No
         lines.append(f"**Controls at strict threshold:** {', '.join(strict)}  ")
     lines.append("")
 
-    lines.append("| Citation | Control | Evaluations | Pass Rate |")
-    lines.append("|----------|---------|-------------|-----------|")
-    for c in section.get("controls", []):
-        citations = ", ".join(c.get("citations", []))
-        if c["total"] > 0:
-            lines.append(f"| {citations} | {c['control_id']} | {c['total']} | {c['pass_rate']}% |")
-        else:
-            lines.append(f"| {citations} | {c['control_id']} | 0 | - |")
+    # Lead with honest scope: how much of this overlay Ancilis evaluates at
+    # runtime vs. what is organizational (attestation-only).
+    if section.get("scaffold"):
+        lines.append(
+            "> **Scaffold mapping — not yet verified.** Ancilis does not provide "
+            "runtime evidence for this overlay yet; its control crosswalk is a "
+            "placeholder. Treat any coverage below as indicative only."
+        )
+        lines.append("")
+    else:
+        runtime_n = section.get("runtime_criteria", 0)
+        total_m = section.get("total_criteria", 0)
+        org_n = section.get("organizational_criteria", 0)
+        lines.append(
+            f"Ancilis provides runtime evidence for {runtime_n} of {total_m} mapped "
+            f"criteria; the remaining {org_n} are organizational controls it does not "
+            f"assess (evidenced by attestation)."
+        )
+        lines.append("")
+
+    controls = section.get("controls", [])
+    if controls:
+        lines.append("| Citation | Control | Type | Evaluations | Pass Rate |")
+        lines.append("|----------|---------|------|-------------|-----------|")
+        for c in controls:
+            citations = ", ".join(c.get("citations", []))
+            ctype = "runtime" if c.get("runtime_testable") else "attestation"
+            if c["total"] > 0:
+                lines.append(f"| {citations} | {c['control_id']} | {ctype} | {c['total']} | {c['pass_rate']}% |")
+            else:
+                lines.append(f"| {citations} | {c['control_id']} | {ctype} | 0 | - |")
+    else:
+        lines.append("No verified criteria mapped yet.")
 
     retention = section.get("evidence_retention_days", 365)
     configured = section.get("evidence_retention_days_configured")

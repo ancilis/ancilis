@@ -62,7 +62,7 @@ Ancilis scan — crewai-research-crew
   ✓ Evidence Integrity Monitoring — pass (10 evals)
   ✓ AI Outcome Evaluation and Harm Monitoring — pass (10 evals)
   ✓ Assurance Testing and Vulnerability Evidence Ingestion — pass (10 evals)
-  ✓ Agent Identity and Authentication — pass (10 evals)
+  ✓ Agent Identity Declaration and Match — pass (10 evals)
   ✓ Ownership Accountability — pass (10 evals)
   ✓ Risk Tolerance and Policy Baseline — pass (10 evals)
   ✓ Human Oversight and Decision Accountability — pass (10 evals)

@@ -1,4 +1,12 @@
-"""GOV-01: Agent Identity and Authentication evaluator."""
+"""GOV-01: Agent Identity Declaration and Match evaluator.
+
+This runtime evaluator checks that the action carries a declared agent identity
+that matches the configured identity set (and owner). It performs a
+declared-identity *consistency check* — NOT credential authentication: it does
+not verify any token, signature, or auth flow, and in the default SDK path the
+action's agent_id is itself derived from config. Credential authentication is an
+organizational control evidenced by attestation, not by this evaluator.
+"""
 
 from __future__ import annotations
 
@@ -11,7 +19,7 @@ from ancilis.engine.result import ControlResult
 
 class GOV01IdentityAuthEvaluator:
     control_id = "GOV-01"
-    control_name = "Agent Identity and Authentication"
+    control_name = "Agent Identity Declaration and Match"
 
     def evaluate(self, action: Action, config: ResolvedConfig) -> ControlResult:
         start = time.perf_counter()
@@ -74,13 +82,14 @@ class GOV01IdentityAuthEvaluator:
             control_id=self.control_id,
             control_name=self.control_name,
             result="PASS",
-            detail="Agent identity verified.",
+            detail="Agent identity matches configured declaration.",
             evidence_data={
                 "agent_id": action.agent_id,
                 "expected_agent_id": expected_agent_id,
                 "allowed_agent_ids": sorted(allowed_agent_ids),
                 "agent_owner": action.agent_owner,
-                "verification_result": "verified",
+                "verification_result": "matched",
+                "check_type": "declared_identity_match",
             },
             duration_ms=(time.perf_counter() - start) * 1000,
         )

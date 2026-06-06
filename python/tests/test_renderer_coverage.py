@@ -388,17 +388,24 @@ def test_render_markdown_compliance_zero_total_control() -> None:
                 "failed": 0,
                 "pass_rate": 0.0,
                 "threshold": "standard",
+                "runtime_testable": True,
             }
         ],
         "gaps": [],
+        "runtime_criteria": 1,
+        "total_criteria": 1,
+        "organizational_criteria": 0,
         "evidence_retention_days": 365,
         "retention_met": True,
     }
     data = _minimal_report_data(compliance_sections=[section_with_zero])
     output = render_markdown(data)
 
-    # Zero-total control row shows "- " (no data marker) in the pass rate column
-    assert "| CC6.1 | PR-01 | 0 | - |" in output
+    # Zero-total control row shows "- " (no data marker) in the pass rate column,
+    # and the runtime/attestation Type column.
+    assert "| CC6.1 | PR-01 | runtime | 0 | - |" in output
+    # Section leads with the honest runtime-evidence scope line.
+    assert "runtime evidence for 1 of 1 mapped criteria" in output
 
 
 # ---------------------------------------------------------------------------

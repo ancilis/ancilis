@@ -14,7 +14,7 @@
       "applicable": true,
       "coverage": "partial",
       "verified": false,
-      "framework_reference": "IAM-19 (Agent Access Restriction) requires restricting/governing the access an AI agent identity holds. GOV-01 binds every governed action to a verifiable runtime identity + auth flow, which is the identity-establishment half of agent access governance. Does NOT by itself enforce the scope-restricti",
+      "framework_reference": "IAM-19 (Agent Access Restriction) requires restricting/governing the access an AI agent identity holds. GOV-01 matches every governed action's declared agent identity at runtime (the authentication flow is attested, not verified by the runtime evaluator), which is the identity-establishment half of agent access governance. Does NOT by itself enforce the scope-restricti",
       "evidence_requirements": []
     },
     "GOV-02": {
