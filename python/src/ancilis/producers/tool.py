@@ -18,6 +18,7 @@ from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
+from ancilis.producers.enforcement import ENFORCE_CAPABLE
 from ancilis.producers.protocol import ProducerType
 
 P = ParamSpec("P")
@@ -63,7 +64,12 @@ class ToolActionProducer:
     Two first-class modes are supported:
     - decorator/wrapper mode for developer-owned tool definitions
     - explicit evaluate/execute mode for framework-owned registrations
+
+    Enforce-capable: ``execute`` raises ``BlockedActionError`` on a BLOCK
+    decision before the wrapped callable runs.
     """
+
+    ENFORCEMENT = ENFORCE_CAPABLE
 
     def __init__(self, config: ResolvedConfig, engine: Engine, registry: ToolRegistry | None = None, evidence_store: EvidenceStore | None = None) -> None:
         self._config = config

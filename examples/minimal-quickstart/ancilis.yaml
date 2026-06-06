@@ -1,6 +1,8 @@
 agent:
   name: quickstart-agent
-certification_targets:
-  - soc2
 my_agent_handles:
+  # Declaring the data your agent handles auto-activates the matching overlays.
+  # personal_info activates the SOC 2, GDPR, and CCPA overlays — no
+  # certification_targets entry is needed (and `soc2` is an overlay name, not a
+  # valid certification_targets value; those are `aiuc-1` / `gov-contractor`).
   - personal_info

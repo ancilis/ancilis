@@ -61,7 +61,7 @@ security:
 
 my_agent_handles: []      # framework type hints (e.g. [langchain])
 
-certification_targets: [] # e.g. [soc2-type2]
+certification_targets: [] # e.g. [aiuc-1]  (soc2/hipaa/etc. are overlays, auto-activated by my_agent_handles)
 
 compliance:
   overlays: []            # compliance overlays (e.g. [glba, fedramp])
@@ -322,9 +322,9 @@ compliance:
     - glba
     - fedramp
 
-# Certification-driven activation
+# Certification-driven activation (valid targets: aiuc-1, gov-contractor)
 certification_targets:
-  - soc2-type2
+  - aiuc-1
 ```
 
 ---

@@ -38,6 +38,7 @@ from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
+from ancilis.producers.enforcement import OBSERVE_ONLY, warn_if_enforce_unsupported
 from ancilis.producers.protocol import ProducerType
 from ancilis.telemetry import record_adapter_used
 
@@ -89,7 +90,14 @@ def _serializable_message(message: Any) -> Any:
 
 
 class AutoGenActionProducer:
-    """Underlying producer that translates ``AutoGenEvent`` objects into Actions."""
+    """Underlying producer that translates ``AutoGenEvent`` objects into Actions.
+
+    Observe-only: AutoGen hooks return the message unchanged and cannot block, so
+    ``security.mode: enforce`` does not prevent calls through this producer (a
+    warning is emitted at construction if enforce is set).
+    """
+
+    ENFORCEMENT = OBSERVE_ONLY
 
     def __init__(
         self,
@@ -104,6 +112,7 @@ class AutoGenActionProducer:
         self._evidence_store = evidence_store if evidence_store is not None else EvidenceStore(config)
         self._session_id = str(uuid.uuid4())
         record_adapter_used(PROVIDER)
+        warn_if_enforce_unsupported(type(self).__name__, self.ENFORCEMENT, config)
 
     @property
     def session_id(self) -> str:

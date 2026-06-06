@@ -6,7 +6,8 @@ security:
     allowed:
       - search_web
       - send_reply
-certification_targets:
-  - soc2
 my_agent_handles:
+  # personal_info auto-activates the SOC 2 / GDPR / CCPA overlays; soc2 is an
+  # overlay name, not a certification_targets value (those are aiuc-1 /
+  # gov-contractor).
   - personal_info

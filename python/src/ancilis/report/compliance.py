@@ -66,6 +66,7 @@ def build_compliance_sections(
             "controls": controls,
             "gaps": gaps,
             "evidence_retention_days": profile.get("evidence_retention_minimum_days", 365),
+            "evidence_retention_days_configured": config.evidence_retention_days,
             "retention_met": config.evidence_retention_days >= profile.get("evidence_retention_minimum_days", 365),
         })
 

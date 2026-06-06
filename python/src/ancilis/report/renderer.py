@@ -573,9 +573,19 @@ def _render_compliance_markdown(lines: list[str], section: dict[str, Any]) -> No
             lines.append(f"| {citations} | {c['control_id']} | 0 | - |")
 
     retention = section.get("evidence_retention_days", 365)
+    configured = section.get("evidence_retention_days_configured")
     met = "\u2713" if section.get("retention_met", True) else "\u2717"
     lines.append("")
-    lines.append(f"Evidence retention: {retention} days {met}")
+    if configured is not None:
+        # Honest: show the configured window vs the framework-required minimum,
+        # and how to actually enforce it. retention_met reflects policy-meets-
+        # minimum; pruning is what bounds stored data to the window.
+        lines.append(
+            f"Evidence retention: {configured} days configured, {retention} required {met}"
+        )
+        lines.append("Enforce the window with: ancilis evidence prune")
+    else:
+        lines.append(f"Evidence retention: {retention} days {met}")
 
     gaps = section.get("gaps", [])
     if gaps:

@@ -28,6 +28,7 @@ from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
+from ancilis.producers.enforcement import OPT_IN
 from ancilis.producers.protocol import ProducerType
 from ancilis.producers.tool import BlockedActionError
 from ancilis.telemetry import record_adapter_used
@@ -225,7 +226,12 @@ class BedrockActionProducer:
     a fully-formed invocation already collected from the SDK; ``execute`` to
     wrap a transport callable; ``wrap_invoke_model`` to wrap a boto3 client's
     ``invoke_model`` method.
+
+    Opt-in enforcement: blocks on a BLOCK decision only when constructed with
+    ``enforce=True``; otherwise observe/report only.
     """
+
+    ENFORCEMENT = OPT_IN
 
     def __init__(
         self,

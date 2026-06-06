@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime, timedelta, timezone
 import json
 import sys
 from typing import Any
@@ -318,6 +319,77 @@ def evidence_reset(config_path: str | None, db_path: str | None, yes: bool) -> N
     try:
         n = store.reset()
         click.echo(f"Evidence store reset: {n} record(s) deleted. Hash chain restarted from genesis.")
+    finally:
+        store.close()
+
+
+@evidence.command(name="prune")
+@click.option("--config", "config_path", default=None, help="Path to ancilis.yaml")
+@click.option("--db", "db_path", default=None, help="Path to evidence database")
+@click.option(
+    "--days",
+    "days",
+    type=int,
+    default=None,
+    help="Override retention window in days (default: config evidence_retention_days).",
+)
+@click.option(
+    "--before",
+    "before",
+    default=None,
+    help="Explicit ISO timestamp cutoff; delete records strictly older than this. Overrides --days.",
+)
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
+def evidence_prune(
+    config_path: str | None,
+    db_path: str | None,
+    days: int | None,
+    before: str | None,
+    yes: bool,
+) -> None:
+    """Delete evidence records older than the retention window.
+
+    Enforces the retention policy reported by ``ancilis report`` (the
+    ``retention_met`` line). By default it removes records older than the
+    resolved ``evidence_retention_days``; use ``--days`` to override or
+    ``--before`` for an explicit ISO cutoff. This is the command referenced by
+    the evidence-cache size warning and ``ancilis doctor``.
+    """
+    config = _load_evidence_cli_config(config_path, db_path)
+
+    if before is not None:
+        cutoff = before
+        window_desc = f"older than {before}"
+    else:
+        retention_days = (
+            days if days is not None else getattr(config, "evidence_retention_days", 365)
+        )
+        if not retention_days or retention_days <= 0:
+            click.echo(
+                "No positive retention window is configured "
+                "(evidence_retention_days). Pass --days N or --before <iso> to prune.",
+                err=True,
+            )
+            raise SystemExit(1)
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=retention_days)).isoformat()
+        window_desc = f"older than {retention_days} days (before {cutoff})"
+
+    if not yes:
+        click.confirm(
+            f"This will permanently delete evidence records {window_desc}. Continue?",
+            abort=True,
+        )
+
+    store = EvidenceStore(config, db_path=db_path)
+    try:
+        n = store.purge_before(cutoff)
+        click.echo(f"Evidence pruned: {n} record(s) {window_desc} deleted.")
+        if n:
+            click.echo(
+                "Note: a partial prune removes the oldest records, so `ancilis evidence "
+                "verify` will report a chain gap at the new earliest record until the "
+                "surviving chain is re-anchored. Run it to confirm the remaining state."
+            )
     finally:
         store.close()
 
