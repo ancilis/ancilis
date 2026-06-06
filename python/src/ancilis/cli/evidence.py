@@ -237,17 +237,25 @@ def evidence_verify(
 
     store = EvidenceStore(config, db_path=db_path)
     try:
-        valid, errors = store.verify_chain(session_id=session_id)
+        report = store.verify_chain_report(session_id=session_id)
         record_count = store.count(session_id=session_id)
     finally:
         store.close()
+
+    valid = report.valid
+    errors = report.errors
 
     if json_output:
         click.echo(
             json.dumps(
                 {
                     "valid": valid,
+                    "status": report.status,
                     "record_count": record_count,
+                    "verified": report.verified_count,
+                    "legacy_unverified": report.legacy_unverified_count,
+                    "reset_events": report.reset_events,
+                    "purge_events": report.purge_events,
                     "session_id": session_id,
                     "errors": errors,
                 },
@@ -256,7 +264,29 @@ def evidence_verify(
         )
     elif valid:
         scope = f" for session {session_id}" if session_id else ""
-        click.echo(f"Evidence chain valid{scope}: {record_count} record(s) verified.")
+        # Be explicit: keyed (v2) records are cryptographically verified; legacy
+        # (v1, pre-key) records are reported as legacy-unverified, never as a
+        # silent pass.
+        parts: list[str] = []
+        if report.verified_count:
+            parts.append(f"{report.verified_count} cryptographically verified (HMAC)")
+        if report.legacy_unverified_count:
+            parts.append(
+                f"{report.legacy_unverified_count} legacy-unverified "
+                f"(pre-migration v1, not key-attestable)"
+            )
+        detail = "; ".join(parts) if parts else f"{record_count} record(s)"
+        click.echo(f"Evidence chain intact{scope}: {detail}.")
+        if report.reset_events or report.purge_events:
+            click.echo(
+                f"  Audit log: {report.reset_events} reset, "
+                f"{report.purge_events} purge checkpoint(s) recorded."
+            )
+        if report.legacy_unverified_count:
+            click.echo(
+                "  Set ANCILIS_CHAIN_KEY to write keyed (v2) records; existing "
+                "legacy records remain reported as legacy-unverified."
+            )
     else:
         scope = f" for session {session_id}" if session_id else ""
         click.echo(f"Evidence chain broken{scope}: {record_count} record(s) checked.", err=True)

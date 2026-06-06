@@ -63,7 +63,8 @@ evidence = EvidenceStore(config)
 summary = evidence.get_summary()
 print(summary["total_evaluations"])  # number of evaluated tool calls
 print(summary["decisions"])          # {"allowed": N, "blocked": N}
-print(summary["chain_valid"])        # True — hash chain integrity intact
+print(summary["chain_valid"])        # True = no tampering detected
+print(summary["chain_status"])       # "verified" (HMAC) | "legacy-unverified" | "reset-or-purged"
 evidence.close()
 ```
 

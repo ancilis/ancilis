@@ -47,6 +47,7 @@ class ReportData:
     total_evaluations: int = 0
     chain_valid: bool = True
     chain_errors: list[str] = field(default_factory=list)
+    chain_status: str = ""
 
 
 def _parse_period(period: str) -> timedelta:
@@ -95,6 +96,7 @@ class ReportGenerator:
         data.total_evaluations = summary.get("total_evaluations", 0)
         data.chain_valid = summary.get("chain_valid", True)
         data.chain_errors = summary.get("chain_errors", [])
+        data.chain_status = summary.get("chain_status", "")
 
         # 1. Baseline section (always present)
         data.baseline = build_baseline_section(

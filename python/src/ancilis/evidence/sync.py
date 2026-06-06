@@ -245,6 +245,7 @@ def serialize_evidence_record(record: EvidenceRecord) -> dict[str, Any]:
         "detected_data_types": record.detected_data_types,
         "total_duration_ms": record.total_duration_ms,
         "output_summary": record.output_summary,
+        "chain_format_version": record.chain_format_version,
     }
 
 

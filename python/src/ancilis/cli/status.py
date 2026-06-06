@@ -197,11 +197,24 @@ def _format_status(
                         trigger = f" — triggered by {data_type} declaration"
                 lines.append(f"    {oa.name} overlay active{trigger}")
 
-        # Evidence summary
+        # Evidence summary — report the real chain status honestly (keyed-verified
+        # vs legacy-unverified vs reset/purged), not a blanket "intact".
         if total > 0:
             chain_valid = summary.get("chain_valid", True)
-            chain_status = "intact" if chain_valid else "BROKEN"
-            lines.append(f"  Evidence records: {total:,} stored, hash chain {chain_status}")
+            status_code = summary.get("chain_status")
+            if not chain_valid:
+                chain_label = "BROKEN"
+            elif status_code == "verified":
+                chain_label = "verified (HMAC)"
+            elif status_code == "legacy-unverified":
+                chain_label = "legacy-unverified (set ANCILIS_CHAIN_KEY)"
+            elif status_code == "mixed":
+                chain_label = "mixed (some HMAC-verified, some legacy)"
+            elif status_code == "reset-or-purged":
+                chain_label = "reset/purged (see audit log)"
+            else:
+                chain_label = "intact"
+            lines.append(f"  Evidence records: {total:,} stored, hash chain {chain_label}")
 
     # Warnings (always shown)
     if warnings:

@@ -18,6 +18,20 @@ from ancilis.evidence.record import EvidenceRecord
 from ancilis.report.generator import ReportData
 
 
+def _chain_status_label(status: str) -> str:
+    """Honest evidence-chain label for a *valid* chain.
+
+    Distinguishes keyed-verified from legacy-unverified so reports never claim
+    cryptographic verification for an unkeyed (legacy) chain.
+    """
+    return {
+        "verified": "verified (HMAC)",
+        "legacy-unverified": "legacy-unverified (set ANCILIS_CHAIN_KEY)",
+        "mixed": "mixed (HMAC-verified + legacy)",
+        "reset-or-purged": "reset/purged (see audit log)",
+    }.get(status, "intact")
+
+
 @dataclass(frozen=True)
 class RenderPdfResult:
     format: str
@@ -157,7 +171,7 @@ def render_markdown(data: ReportData) -> str:
     lines.append("")
     lines.append("## Evidence Integrity")
     lines.append("")
-    chain = "intact (verified)" if data.chain_valid else "**BROKEN**"
+    chain = _chain_status_label(data.chain_status) if data.chain_valid else "**BROKEN**"
     lines.append(f"- Evidence records: {data.total_evaluations:,}")
     lines.append(f"- Hash chain: {chain}")
     lines.append("")
@@ -329,7 +343,7 @@ def _build_posture_summary(data: ReportData) -> dict[str, Any]:
         "overlay_label": ", ".join(section["overlay_name"] for section in data.compliance_sections) or "none",
         "certification_label": certification_label,
         "chain_mark": "\u2713" if data.chain_valid else "\u2717",
-        "chain_label": "intact" if data.chain_valid else "BROKEN",
+        "chain_label": _chain_status_label(data.chain_status) if data.chain_valid else "BROKEN",
         "chain_color": "green" if data.chain_valid else "red",
     }
 
@@ -456,7 +470,7 @@ def _render_certification_terminal(
     ready = cert.get("ready_count", 0)
     lines.append(f"  Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
     lines.append(f"  Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
-    chain = "intact" if cert.get("chain_valid", True) else "BROKEN"
+    chain = _chain_status_label(cert.get("chain_status", "")) if cert.get("chain_valid", True) else "BROKEN"
     lines.append(f"  Evidence records: {cert.get('evidence_count', 0):,}, hash chain {chain}")
 
 
@@ -513,7 +527,7 @@ def _render_executive_summary_markdown(lines: list[str], data: ReportData) -> No
     lines.append(f"- Active overlays: {posture['overlay_label']}")
     lines.append(f"- Active certifications: {posture['certification_label']}")
     if data.chain_valid:
-        lines.append(f"- Evidence chain: intact ({data.total_evaluations:,} records, SHA-256 verified)")
+        lines.append(f"- Evidence chain: {_chain_status_label(data.chain_status)} ({data.total_evaluations:,} records)")
     else:
         lines.append(f"- Evidence chain: **BROKEN** ({data.total_evaluations:,} records)")
 
@@ -604,7 +618,7 @@ def _render_certification_markdown(lines: list[str], cert: dict[str, Any]) -> No
     coverage = cert.get("coverage_percentage", 0)
     lines.append(f"- Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
     lines.append(f"- Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
-    chain = "intact (verified)" if cert.get("chain_valid", True) else "**BROKEN**"
+    chain = _chain_status_label(cert.get("chain_status", "")) if cert.get("chain_valid", True) else "**BROKEN**"
     lines.append(f"- Evidence records: {cert.get('evidence_count', 0):,}")
     lines.append(f"- Hash chain: {chain}")
 
@@ -691,7 +705,7 @@ def _render_aiuc1_readiness_markdown(lines: list[str], data: ReportData) -> None
     lines.append(f"- Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
     lines.append(f"- Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
     lines.append(f"- Evidence records: {cert.get('evidence_count', 0):,} over reporting period")
-    chain = "intact (verified)" if cert.get("chain_valid", True) else "**BROKEN**"
+    chain = _chain_status_label(cert.get("chain_status", "")) if cert.get("chain_valid", True) else "**BROKEN**"
     lines.append(f"- Hash chain: {chain}")
 
     # Automated coverage
