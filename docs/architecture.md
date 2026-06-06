@@ -39,7 +39,7 @@ Decision logic:
 
 ### Evidence Store
 
-DuckDB-backed with SHA-256 hash chain integrity. Each record links to the previous record's hash, creating a tamper-evident chain from a fixed genesis seed.
+DuckDB-backed keyed hash-chain integrity. New records use an HMAC-SHA256 chain (format v2) keyed with a secret held outside the database (`ANCILIS_CHAIN_KEY` or an OS keyring); `verify_chain` requires the key, and a forged record fails verification. Records written without a key fall back to legacy unkeyed SHA-256 (v1) and are reported as *legacy-unverified*. Each record links to the previous record's hash; `reset`/`prune` record a signed high-water-mark checkpoint so a wipe is reported rather than passing as a clean empty chain.
 
 Default path: `~/.ancilis/{agent_name}-{cwd_hash}/evidence.duckdb`
 

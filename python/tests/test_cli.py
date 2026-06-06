@@ -1241,7 +1241,9 @@ class TestReportRendererUX:
         assert "5 of 6 controls passing across 4 active overlays." in md
         assert "Active overlays: SOC 2, PCI-DSS v4.0, GLBA, GDPR" in md
         assert "Active certifications: AIUC-1 (87% ready)" in md
-        assert "Evidence chain: intact (1,234 records, SHA-256 verified)" in md
+        # No chain_status set on this fixture -> neutral "intact"; the misleading
+        # "SHA-256 verified" overclaim was removed (keyed status is shown when known).
+        assert "Evidence chain: intact (1,234 records)" in md
         assert "### Attention Required" in md
         assert "**Data Exposure Prevention**: 2 failures in reporting period" in md
 

@@ -34,11 +34,13 @@ Verification:
 ancilis status --verbose
 ```
 
-Shows `hash chain intact` or `hash chain BROKEN` if tampering is detected.
+Shows the hash-chain status: `verified (HMAC)` for keyed records, `legacy-unverified`
+for legacy (unkeyed v1) records, `reset/purged` when the store was wiped via a
+signed checkpoint, or `BROKEN` if tampering is detected.
 
 The chain integrity is also verified during report generation.
 
-**Trust boundary**: The hash chain detects modification after the fact. It does not prevent replacement of the entire database by an attacker with host access.
+**Trust boundary**: New records use an HMAC-SHA256 keyed hash chain. With the chain key (held outside the DB), per-record tampering and forgery are detected. Without a key, records fall back to legacy unkeyed SHA-256 and `verify_chain` reports them as *legacy-unverified* — a writer-capable attacker can forge a record and re-chain it, not just replace the whole database. See [limitations](limitations.md) for the full boundary.
 
 ## Evidence storage
 

@@ -391,7 +391,7 @@ LLM SDK and framework producers also ship in the TypeScript package: `AnthropicA
 - **Python has 18 direct runtime evaluators plus 23 attestation-backed evaluators.** Attestation-backed controls return `SKIP` until required evidence is recorded with `ancilis attest`.
 - **TypeScript has direct core runtime evaluators plus catalog-backed evaluators for the remaining AKSI controls.** Catalog-backed controls return `FLAG` until explicit manual attestation is supplied; keyword matches are hints, not proof.
 - **37 overlay profiles ship today.** Existing overlays are preserved and reference known AKSI controls; v0.6 adds more catalog coverage than the current overlay depth can fully exercise.
-- **Evidence integrity depends on protecting the DB.** The hash chain detects tampering after the fact. It does not prevent replacing the entire database.
+- **Evidence integrity depends on protecting the chain key.** New records use an HMAC-SHA256 keyed hash chain; with the key (`ANCILIS_CHAIN_KEY`, held outside the DB) per-record forgery is detected. Without a key, records are legacy unkeyed SHA-256 — an attacker with DB write access can forge a record *and* re-chain following records (not merely replace the whole database), so `verify_chain` reports such records as legacy-unverified.
 - **HTTP wrapping is explicit.** Ancilis does not monkey-patch HTTP libraries. You wrap the calls you want evaluated.
 - **PDF export requires pandoc and xelatex.** The CLI falls back to markdown without them.
 

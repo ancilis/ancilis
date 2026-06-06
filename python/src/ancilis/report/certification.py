@@ -86,4 +86,5 @@ def build_certification_section(
         "coverage_percentage": coverage_pct,
         "evidence_count": summary.get("total_evaluations", 0),
         "chain_valid": summary.get("chain_valid", True),
+        "chain_status": summary.get("chain_status", ""),
     }

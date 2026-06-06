@@ -8,7 +8,17 @@ from ancilis.evidence.adapter import (
     EvidenceAdapterSelection,
     resolve_evidence_adapter,
 )
-from ancilis.evidence.chain import GENESIS_SEED, canonical_payload, compute_hash
+from ancilis.evidence.chain import (
+    CHAIN_FORMAT_V1,
+    CHAIN_FORMAT_V2,
+    CURRENT_CHAIN_FORMAT,
+    GENESIS_SEED,
+    ChainKeyError,
+    canonical_payload,
+    compute_hash,
+    compute_keyed_hash,
+    resolve_chain_key,
+)
 from ancilis.evidence.record import EvidenceRecord
 from ancilis.evidence.store import EvidenceStore
 from ancilis.evidence.sync import SyncEngine, SyncResult
@@ -19,6 +29,10 @@ __all__ = [
     "EvidenceAdapterPayload",
     "EvidenceAdapterQuery",
     "EvidenceAdapterSelection",
+    "CHAIN_FORMAT_V1",
+    "CHAIN_FORMAT_V2",
+    "CURRENT_CHAIN_FORMAT",
+    "ChainKeyError",
     "GENESIS_SEED",
     "EvidenceRecord",
     "EvidenceStore",
@@ -26,5 +40,7 @@ __all__ = [
     "SyncResult",
     "canonical_payload",
     "compute_hash",
+    "compute_keyed_hash",
+    "resolve_chain_key",
     "resolve_evidence_adapter",
 ]
