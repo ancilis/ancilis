@@ -90,7 +90,7 @@ def test_phase1_engine_registers_correct_v06_evaluators() -> None:
     assert "DE-02" in engine._evaluators
     assert "DE-03" in engine._evaluators
 
-    assert engine._evaluators["GOV-01"].control_name == "Agent Identity and Authentication"
+    assert engine._evaluators["GOV-01"].control_name == "Agent Identity Declaration and Match"
     assert engine._evaluators["PR-01"].control_name == "Action Authorization"
     assert engine._evaluators["PR-05"].control_name == "Context and Tenant Isolation"
     assert engine._evaluators["PR-06"].control_name == "Audit Trail Completeness"

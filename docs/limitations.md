@@ -25,7 +25,7 @@ Direct runtime evaluator controls:
 | DE-02 | Classification drift | Declared-vs-observed data classification and boundary drift |
 | DE-03 | Configuration/dependency drift | Tool, dependency, and policy baseline drift |
 | DE-04 | Evidence integrity | Evidence chain and missing telemetry checks |
-| GOV-01 | Agent identity authentication | Verifiable runtime identity and authentication signals |
+| GOV-01 | Agent identity declaration & match | Declared agent identity matched at runtime; authentication flow attested |
 | GOV-02 | Ownership accountability | Named owner and accountability metadata |
 | GOV-03 | Risk tolerance baseline | Policy thresholds, autonomy limits, and escalation requirements |
 | ID-01 | Agent inventory | Registry metadata for governed agents and tool surfaces |

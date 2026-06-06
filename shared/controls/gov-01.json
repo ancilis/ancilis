@@ -3,10 +3,10 @@
   "product_control_id": "AKSI-GOV-01",
   "framework_version": "0.6",
   "framework_source_commit": "aeda1839054090a8384f3d9d2700a656fab519a2",
-  "name": "Agent Identity & Authentication",
+  "name": "Agent Identity Declaration & Match",
   "function": "GOVERN",
   "csf_mapping": "",
-  "description": "Every governed AI action is attributable to a verifiable runtime identity and authentication flow.",
+  "description": "Every governed AI action carries a declared agent identity that is matched at runtime against the configured agent identity and owner. The runtime evaluator performs a declared-identity consistency check, not credential authentication; verifying an authentication flow is an organizational control evidenced by attestation.",
   "effort_level": "medium",
   "common": true,
   "trigger_classifications": [],
@@ -64,8 +64,8 @@
   "default_enabled": true,
   "baseline": true,
   "security_outcome": {
-    "pass": "Current evidence supports AKSI v0.6 GOV-01: Agent Identity & Authentication.",
-    "fail": "Required evidence for AKSI v0.6 GOV-01: Agent Identity & Authentication is missing, stale, or contradictory."
+    "pass": "The action's declared agent identity (and owner) matches the configured identity for AKSI v0.6 GOV-01.",
+    "fail": "The action's declared agent identity is missing or does not match the configured identity/owner, or required attestation evidence for the authentication flow is missing."
   },
   "evidence_fields": [
     "identity",
@@ -170,7 +170,7 @@
       "CC1.2"
     ]
   },
-  "display_name": "Agent Identity and Authentication",
-  "display_detail": "Every governed AI action is attributable to a verifiable runtime identity and authentication flow.",
-  "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-01 (Agent Identity & Authentication) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
+  "display_name": "Agent Identity Declaration and Match",
+  "display_detail": "Runtime check that an action's declared agent identity matches the configured identity and owner (a declared-identity consistency check, not credential authentication). The authentication flow itself is an organizational control evidenced by attestation.",
+  "remediation_hint_template": "Ensure each action carries a declared agent identity matching ancilis.yaml's agent.name/agent_id (and owner). For the authentication-flow portion of GOV-01, attach attestation evidence from a configured source, or record an explicit exception with owner and expiry."
 }

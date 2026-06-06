@@ -15,7 +15,7 @@
       "applicable": true,
       "coverage": "partial",
       "verified": true,
-      "framework_reference": "GV-1.2 integrates trustworthy-AI characteristics into policies/processes and (GV-1.2-002) requires evaluating risk-relevant GAI capabilities and robustness of safety measures before and during deployment. AKSI GOV-01 binds each governed agent action to a verifiable runtime identity + auth flow, whic",
+      "framework_reference": "GV-1.2 integrates trustworthy-AI characteristics into policies/processes and (GV-1.2-002) requires evaluating risk-relevant GAI capabilities and robustness of safety measures before and during deployment. AKSI GOV-01 matches each governed agent action's declared identity at runtime (the authentication flow is attested, not verified by the runtime evaluator), whic",
       "evidence_requirements": []
     },
     "GOV-02": {
