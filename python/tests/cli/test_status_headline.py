@@ -120,3 +120,24 @@ def test_failing_control_reports_failing():
     out = _render(cfg, store)
     assert "all passing" not in out
     assert "failing" in out
+
+
+def test_verbose_skip_only_control_is_pending_not_passing():
+    # A SKIP-only attestation control must render as pending in the verbose
+    # per-control view, never "passing" (the F3 dishonesty must not survive
+    # into --verbose either).
+    cfg = _config([_control("GOV-04", "Gov Attestation"), _control("PR-04", "Data Exposure")])
+    store = _store(
+        {
+            "GOV-04": {"PASS": 0, "FLAG": 0, "FAIL": 0, "ERROR": 0, "SKIP": 3},
+            "PR-04": {"PASS": 0, "FLAG": 2, "FAIL": 0, "ERROR": 0, "SKIP": 0},
+        },
+        total=5,
+    )
+    with patch.object(status_mod, "load_control_definitions", return_value=_CONTROL_DEFS):
+        out = status_mod._format_status(cfg, store, verbose=True)
+    lines = out.splitlines()
+    gov_line = next(ln for ln in lines if "Governance Attestation" in ln)
+    pr04_line = next(ln for ln in lines if "Data Exposure Prevention" in ln)
+    assert "pending" in gov_line and "passing" not in gov_line
+    assert "flagged" in pr04_line and "passing" not in pr04_line

@@ -103,7 +103,7 @@ my_agent_handles:
 | `mnpi` | Securities Markets (SEC Reg FD, SOX) |
 | `trade_secrets` | baseline only |
 
-Types marked "baseline only" are recognized and classified but don't currently trigger an overlay beyond the 26 baseline controls. They will activate overlays as those profiles are implemented. Government and CUI-oriented types now activate the `cmmc-l2` overlay, and MNPI-oriented types now activate the `securities-mnpi` overlay.
+Types marked "baseline only" are recognized and classified but don't currently trigger an overlay beyond the 39 common baseline controls. They will activate overlays as those profiles are implemented. Government and CUI-oriented types now activate the `cmmc-l2` overlay, and MNPI-oriented types now activate the `securities-mnpi` overlay.
 
 ### `certification_targets`
 

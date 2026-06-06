@@ -70,8 +70,9 @@ ancilis status
 ```
 Ancilis — my-agent
   Mode: audit
-  Controls: 26 active, all passing
+  Controls: 39 active, 11 runtime-verified, 27 pending, 1 flagged
   Tool calls: 42 evaluated, 0 blocked
+  Sync: 42 pending, 0 failed
 ```
 
 With `--verbose`, shows per-control breakdown and activation details.
