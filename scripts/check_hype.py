@@ -14,6 +14,11 @@ research/planning) against unsubstantiated marketing claims:
      claim is fine when shown with its mechanism — but it must never appear as a
      bare buzzword. Substantiation is checked at document granularity: a doc that
      uses the term must explain the mechanism somewhere in the same document.
+     Exception: overlay reference pages (docs/overlays/**) quote the FRAMEWORK's
+     evidence requirements (e.g. "MAS TRM §9.1 requires tamper-evident logging"),
+     which is regulatory text, not an Ancilis product claim — the substantiation
+     rule does not apply there. The hard-banned absolutes below DO still apply to
+     overlay pages.
 
 Scope: README + docs/ + shipped example docs (examples/**/*.md). Internal
 research/planning docs are excluded.
@@ -49,15 +54,22 @@ def _doc_files() -> list[Path]:
     return sorted(set(files))
 
 
-def main() -> int:
+def main(files: list[Path] | None = None) -> int:
     errors: list[str] = []
-    for doc in _doc_files():
+    for doc in (files if files is not None else _doc_files()):
         text = doc.read_text(encoding="utf-8")
-        rel = doc.relative_to(ROOT)
+        try:
+            rel = doc.relative_to(ROOT)
+        except ValueError:
+            rel = doc
         for rx in _BANNED:
             for m in rx.finditer(text):
                 errors.append(f"{rel}: banned unsubstantiated term {m.group(0)!r}")
-        if _TAMPER_EVIDENT.search(text) and not _SUBSTANTIATION.search(text):
+        # Overlay reference pages quote framework evidence requirements (which
+        # legitimately include "tamper-evident logging"); the product's own
+        # tamper-evidence is substantiated in the evidence docs, which stay in scope.
+        is_overlay_page = "overlays" in doc.parts
+        if not is_overlay_page and _TAMPER_EVIDENT.search(text) and not _SUBSTANTIATION.search(text):
             errors.append(
                 f"{rel}: uses 'tamper-evident' without substantiating it in the same "
                 f"document (mention the hash chain / SHA-256 / HMAC mechanism)."

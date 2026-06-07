@@ -45,10 +45,13 @@ def _doc_files() -> list[Path]:
 
 
 # Historical stale values that must never reappear in a count context.
+# `scope`: "control" stale-count checks are skipped on overlay reference pages,
+# which legitimately cite a control SUBSET count (e.g. SOC 2 maps "26 controls").
+# The positive catalog/common/overlay-profile checks below still run everywhere.
 _STALE = [
-    (re.compile(r"\b26\s+(?:baseline|common|active|AKSI|control)", re.I), "stale '26' control count"),
-    (re.compile(r"\bAll\s+26\b"), "stale 'All 26' control count"),
-    (re.compile(r"\b(?:19|21)\s+overlay", re.I), "stale overlay count (19/21)"),
+    (re.compile(r"\b26\s+(?:baseline|common|active|AKSI|control)", re.I), "stale '26' control count", "control"),
+    (re.compile(r"\bAll\s+26\b"), "stale 'All 26' control count", "control"),
+    (re.compile(r"\b(?:19|21)\s+overlay", re.I), "stale overlay count (19/21)", "overlay"),
 ]
 
 # Canonical phrasings whose number must match disk.
@@ -57,12 +60,20 @@ _COMMON_CONTROLS = re.compile(r"(\d+)\s+common\s+(?:AKSI[\w. ]*)?controls", re.I
 _CATALOG_CONTROLS = re.compile(r"(\d+)\s+AKSI v[\d.]+ controls", re.I)
 
 
-def main() -> int:
+def main(files: list[Path] | None = None) -> int:
     errors: list[str] = []
-    for doc in _doc_files():
+    for doc in (files if files is not None else _doc_files()):
         text = doc.read_text(encoding="utf-8")
-        rel = doc.relative_to(ROOT)
-        for rx, msg in _STALE:
+        try:
+            rel = doc.relative_to(ROOT)
+        except ValueError:
+            rel = doc
+        is_overlay_page = "overlays" in doc.parts
+        for rx, msg, scope in _STALE:
+            # An overlay page legitimately cites how many controls IT maps; only
+            # the overlay-count stale checks apply there, not control-count ones.
+            if is_overlay_page and scope == "control":
+                continue
             for m in rx.finditer(text):
                 errors.append(f"{rel}: {msg}: {m.group(0)!r}")
         for m in _OVERLAY_PROFILES.finditer(text):
