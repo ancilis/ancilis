@@ -1,0 +1,83 @@
+---
+title: "ancilis serve"
+description: "Run Ancilis as an MCP tool server over stdio for agent and editor integrations."
+---
+
+## Overview
+
+`ancilis serve` starts Ancilis as a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) tool server. It loads your `ancilis.yaml`, opens the local evidence store, and exposes posture, evaluation, evidence, reporting, and project-onboarding tools to any MCP client (such as an agent runtime or a compatible editor). The process runs in the foreground and communicates over stdio until the client disconnects.
+
+```bash
+ancilis serve [OPTIONS]
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config`, `-c` | string | auto-detect | Path to `ancilis.yaml`. Defaults to auto-discovery in the current directory. |
+| `--transport` | `stdio` \| `sse` | `stdio` | MCP transport to run. Only `stdio` is implemented (see note below). |
+| `--port` | integer | `8765` | Reserved for future SSE transport support. Has no effect on the stdio transport. |
+
+<Warning>
+The `sse` transport is not implemented. Passing `--transport sse` raises `NotImplementedError` and the server exits without starting. The `--port` value is reserved for that future support and is ignored today — `ancilis serve` always communicates over stdio.
+</Warning>
+
+<Note>
+This command requires a config. If no `ancilis.yaml` is passed via `--config` and none is found by auto-discovery, the command fails with a "config not found" error. Run `ancilis init` first if you do not have one.
+</Note>
+
+## Tools Exposed
+
+When started, the server registers the following MCP tools:
+
+| Tool | Purpose |
+|------|---------|
+| `ancilis_check_posture` | Return current session posture, active control status, and overlays |
+| `ancilis_evaluate_action` | Evaluate a proposed tool action **without** writing evidence |
+| `ancilis_get_evidence` | Return recent evidence records for the selected or latest session |
+| `ancilis_report` | Generate a posture report for the selected or latest session |
+| `ancilis_list_overlays` | List active overlays and evidence coverage percentages |
+| `ancilis_inspect_project` | Inspect the project to gather onboarding signals |
+| `ancilis_classify_project` | Classify the project for setup recommendations |
+| `ancilis_recommend_setup` | Recommend an Ancilis setup for the project |
+| `ancilis_review_code` | Review code against the configured posture |
+| `ancilis_onboarding_report` | Produce an onboarding report |
+| `ancilis_assess_gap` | Assess gaps against the desired posture |
+
+## Examples
+
+**Start the server with auto-discovered config**
+```bash
+ancilis serve
+```
+
+The process runs in the foreground and speaks MCP over stdin/stdout. It does not print a banner — your MCP client manages the connection. Stop it with `Ctrl+C` or by closing the client.
+
+**Start with an explicit config path**
+```bash
+ancilis serve --config ./ancilis.yaml
+```
+
+**Register with an MCP client**
+
+Most MCP clients launch the server as a subprocess. Configure the command and args (adjust to match your client's config format):
+
+```json
+{
+  "mcpServers": {
+    "ancilis": {
+      "command": "ancilis",
+      "args": ["serve", "--config", "/abs/path/to/ancilis.yaml"]
+    }
+  }
+}
+```
+
+## Related
+
+- [ancilis init](/cli/init) — create the `ancilis.yaml` that `serve` loads
+- [ancilis scan](/cli/scan) — evaluate posture from the command line instead of over MCP
+- [ancilis status](/cli/status) — lightweight posture check
+- [ancilis report](/cli/report) — generate a posture report from the CLI
+- [ancilis doctor](/cli/doctor) — diagnose config and environment issues

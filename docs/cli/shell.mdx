@@ -1,0 +1,142 @@
+---
+title: "ancilis shell"
+description: "Start a read-only interactive REPL to inspect config, posture, overlays, and evidence."
+---
+
+## Overview
+
+`ancilis shell` opens a read-only interactive REPL (`ancilis> `) for inspecting your agent's resolved config, current posture, active overlays, and persisted evidence records. It never writes evidence or changes configuration — the only thing it persists is REPL command history at `~/.ancilis/repl_history`, and only when stdin is an interactive terminal.
+
+```bash
+ancilis shell [OPTIONS]
+```
+
+<Note>
+The shell is read-only. It reads the same evidence database and config as `ancilis status`/`ancilis scan` and never mutates them. Command history is saved to `~/.ancilis/repl_history` only in an interactive TTY session.
+</Note>
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | default | Path to evidence database |
+| `--session` | string | latest | Scope inspection to a specific session ID |
+| `--latest` / `--all` | flag | `--latest` | Scope to the latest session (default) or all sessions |
+
+When neither `--session` nor `--all` is given, the shell scopes to the latest recorded session. Pass `--all` to inspect evidence across every session.
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Shell exited normally (`exit` / `quit` / EOF) |
+| `1` | Config failed to load — missing or invalid `ancilis.yaml` |
+
+## Shell Commands
+
+Once inside the REPL, the following commands are available. Type `help` at the prompt to list them.
+
+| Command | Description |
+|---------|-------------|
+| `help` | List available shell commands |
+| `posture` | Render the same posture summary as `ancilis status` |
+| `config show` | Show resolved config (agent, mode, active controls/overlays/certifications, allowed/blocked tools, retention) |
+| `overlay list` | List active overlays and certifications |
+| `evidence list [--limit N] [--tool NAME] [--decision ALLOW\|BLOCK\|FLAG] [--session ID]` | List persisted evidence records (default `--limit 20`) |
+| `evidence show <record_id>` | Print one evidence record as indented JSON |
+| `evaluate <control_id>` | Show the latest persisted control result for a control ID, as JSON |
+| `exit` / `quit` | Leave the shell |
+
+## Examples
+
+**Open the shell (latest session)**
+```bash
+ancilis shell
+```
+
+```
+ancilis> help
+Available commands:
+  help
+  posture
+  config show
+  overlay list
+  evidence list [--limit N] [--tool NAME] [--decision ALLOW|BLOCK|FLAG] [--session ID]
+  evidence show <record_id>
+  evaluate <control_id>
+  exit
+  quit
+ancilis> config show
+Agent: my-agent
+Mode: audit
+Active controls: 39
+Active overlays: SOC 2 Type II, Financial Services (GLBA, SOX, DORA)
+Active certifications: SOC2
+Allowed tools: none
+Blocked tools: none
+Evidence retention: 365 days
+ancilis> exit
+```
+
+**Inspect evidence, then drill into one record**
+```bash
+ancilis shell
+```
+
+```
+ancilis> evidence list --limit 3 --decision BLOCK
+Record ID | Timestamp | Tool | Source | Decision | Session | Active overlays
+rec_abc123 | 2026-04-12T10:00:00+00:00 | shell_exec | tool_call | BLOCK | sess_20260412_abc123 | SOC 2 Type II
+ancilis> evidence show rec_abc123
+{
+  "active_overlays": [
+    "SOC 2 Type II"
+  ],
+  "decision": "BLOCK",
+  "record_id": "rec_abc123",
+  "tool_name": "shell_exec",
+  ...
+}
+ancilis> exit
+```
+
+**Scope the whole session to a specific session ID**
+```bash
+ancilis shell --session sess_20260412_abc123
+```
+
+**Inspect evidence across all sessions**
+```bash
+ancilis shell --all
+```
+
+**Look up the latest persisted result for a control**
+```bash
+ancilis shell
+```
+
+```
+ancilis> evaluate PR-02
+{
+  "control_id": "PR-02",
+  "status": "pass",
+  ...
+}
+ancilis> evaluate XX-99
+No persisted evidence for this control yet: XX-99
+```
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `Error loading config` | Run `ancilis init` to create `ancilis.yaml`, or pass `--config path/to/ancilis.yaml` |
+| `No evidence records found.` | Attach Ancilis middleware to your agent and run it, then re-open the shell |
+| `No evidence record found: <id>` | Re-run `evidence list` to copy a valid record ID |
+
+## Related
+
+- [ancilis status](/cli/status) — one-shot posture summary (same output as `posture`)
+- [ancilis scan](/cli/scan) — posture check with CI/CD exit codes
+- [ancilis evidence](/cli/evidence) — manage and verify persisted evidence

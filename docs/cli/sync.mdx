@@ -1,0 +1,116 @@
+---
+title: "ancilis sync"
+description: "Manually sync pending local evidence to the Ancilis platform."
+---
+
+## Overview
+
+`ancilis sync` pushes pending evidence records from your local DuckDB store to the Ancilis platform on demand. It batches the pending records, posts each batch to the platform, and marks successfully accepted records as synced — records that fail transiently remain local for a later attempt.
+
+```bash
+ancilis sync [OPTIONS]
+```
+
+<Note>
+Syncing to the platform is optional and opt-in. If no platform URL or API key is configured, `sync` leaves your evidence untouched locally (the `--json` output carries the `platform sync is not configured` detail in its `message`/`errors`). Configure the platform with [`ancilis connect`](/cli/connect) first.
+</Note>
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
+| `--limit` | integer (≥ 1) | unlimited | Maximum number of records to sync this run |
+| `--dry-run` | flag | `false` | Show what would sync without mutating any state |
+| `--json` | flag | `false` | Emit machine-readable JSON |
+
+## Behavior
+
+The result `status` reflects what happened:
+
+| Status | Meaning |
+|--------|---------|
+| `noop` | Nothing to do — no pending records, or `sync.offline_mode` is `always_offline` |
+| `dry_run` | `--dry-run` was set; reports `would_send`/`pending` counts without changing state |
+| `synced` | All attempted records were accepted by the platform |
+| `pending` | Some records failed transiently (or platform not configured) and remain local |
+| `failed` | Records could not be synced; evidence remains local |
+
+<Warning>
+Sync exits with code `1` only when `sync.offline_mode` is set to `always_online` and the run ends with `status: failed`. In the default `auto` mode (and in `always_offline`), a failed or unconfigured sync exits `0` and the evidence simply stays local for the next attempt.
+</Warning>
+
+The `sync.offline_mode` setting in `ancilis.yaml` controls behavior:
+
+- `auto` (default) — attempt to sync if the platform is configured; otherwise keep evidence local.
+- `always_offline` — never contact the platform; `sync` is a no-op.
+- `always_online` — treat platform failures as hard errors (exit code `1`).
+
+## Examples
+
+**Sync all pending evidence**
+```bash
+ancilis sync
+```
+
+```
+Sync pending: 0 evidence records failed transiently and remain local.
+```
+
+**Preview without changing state**
+```bash
+ancilis sync --dry-run
+```
+
+```
+Would sync 5 pending evidence records (5 pending locally).
+```
+
+**Limit how many records sync this run**
+```bash
+ancilis sync --limit 50
+```
+
+**Machine-readable JSON output**
+```bash
+ancilis sync --json
+```
+
+```json
+{
+  "attempted": 0,
+  "batches": 0,
+  "errors": ["platform sync is not configured; pending evidence remains local"],
+  "failed": 0,
+  "message": "platform sync is not configured; pending evidence remains local",
+  "offline_mode": "auto",
+  "pending": 5,
+  "status": "pending",
+  "synced": 0,
+  "would_send": 0
+}
+```
+
+**Platform not configured (default `auto` mode)**
+```bash
+ancilis sync
+```
+
+```
+Sync pending: 0 evidence records failed transiently and remain local.
+```
+
+## Common Errors
+
+| Message | Fix |
+|---------|-----|
+| `platform sync is not configured; pending evidence remains local` | Run [`ancilis connect --api-key <your-key>`](/cli/connect) to configure platform sync |
+| `sync skipped because sync.offline_mode is always_offline` | Set `sync.offline_mode` to `auto` or `always_online` in `ancilis.yaml` |
+| `Error loading config: <detail>` followed by `Suggested fix: Create ancilis.yaml or run 'ancilis doctor' for setup help` (exit code `1`) | Create `ancilis.yaml`, pass `--config path/to/ancilis.yaml`, or run [`ancilis doctor`](/cli/doctor) for setup help |
+
+## Related
+
+- [ancilis connect](/cli/connect) — configure platform URL and API key for sync
+- [ancilis status](/cli/status) — check posture and pending evidence
+- [ancilis scan](/cli/scan) — evaluate evidence posture locally

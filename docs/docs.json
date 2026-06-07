@@ -1,0 +1,102 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Ancilis",
+  "description": "Classification-driven controls, runtime security decisions, and audit-ready evidence for AI agents.",
+  "colors": {
+    "primary": "#2563EB",
+    "light": "#3B82F6",
+    "dark": "#1E40AF"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "quickstart",
+              "configuration",
+              "data-classification"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "architecture",
+              "evidence-and-reporting",
+              "controls-reference",
+              "limitations"
+            ]
+          },
+          {
+            "group": "CLI Reference",
+            "pages": [
+              "cli/init",
+              "cli/doctor",
+              "cli/connect",
+              "cli/status",
+              "cli/scan",
+              "cli/watch",
+              "cli/report",
+              "cli/evidence",
+              "cli/sync",
+              "cli/certify",
+              "cli/attest",
+              "cli/approve-tool",
+              "cli/baseline",
+              "cli/export",
+              "cli/remediate",
+              "cli/serve",
+              "cli/shell",
+              "cli/telemetry",
+              "cli/config",
+              "cli/plugins",
+              "cli/cover"
+            ]
+          },
+          {
+            "group": "Overlays",
+            "pages": [
+              "overlays/overview",
+              "overlays/reading-reports",
+              "overlays/ccpa",
+              "overlays/fedramp",
+              "overlays/financial",
+              "overlays/nist-csf"
+            ]
+          },
+          {
+            "group": "SDK",
+            "pages": [
+              "sdk/python",
+              "sdk/typescript",
+              "sdk/testing",
+              "producers"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "ci-cd-integration"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/ancilis/ancilis"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/ancilis/ancilis"
+    }
+  }
+}

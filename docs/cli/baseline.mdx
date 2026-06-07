@@ -1,0 +1,171 @@
+---
+title: "ancilis baseline"
+description: "Snapshot control posture into named baselines and detect drift over time."
+---
+
+## Overview
+
+`ancilis baseline` manages baseline snapshots of your control posture and detects regressions against them. Create a named baseline from recent evidence, list stored baselines, and check current posture for drift — with a CI-friendly exit code when controls have regressed.
+
+```bash
+ancilis baseline [OPTIONS] COMMAND [ARGS]...
+```
+
+`baseline` is a command group. The work is done by its subcommands: [`create`](#baseline-create), [`list`](#baseline-list), and [`drift`](#baseline-drift).
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show help for the group and exit |
+
+## Subcommands
+
+### `baseline create`
+
+Snapshot the current control posture into a named baseline. Evidence from the lookback window is evaluated and stored as a baseline record in the evidence database.
+
+<Warning>This command writes a baseline record to the evidence database. Creating a baseline deactivates the previously active baseline for the same scope (agent + overlay) and marks the newly created one active. `baseline drift` compares against the most recently created active baseline for the scope.</Warning>
+
+```bash
+ancilis baseline create --label <name> [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--label` | string | _(required)_ | Human-readable name for this baseline snapshot |
+| `--overlay` | string | all overlays | Scope the baseline to a specific overlay ID |
+| `--window` | integer | `168` | Evidence lookback window in hours |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
+
+**Create a baseline from the last 7 days of evidence**
+```bash
+ancilis baseline create --label "v1-baseline"
+```
+
+```
+Baseline created: 3327a53b-c356-4bfa-abf4-3daf512c3cbc
+  Label   : v1-baseline
+  Agent   : my-agent
+  Controls: 41 snapshot(s)
+  Window  : 168h ending 2026-06-07T05:10:11.461446+00:00
+```
+
+**Scope a baseline to a single overlay with a 24-hour window**
+```bash
+ancilis baseline create --label "soc2-pre-audit" --overlay soc2 --window 24
+```
+
+### `baseline list`
+
+List stored baselines in a table. Read-only — does not modify the evidence database.
+
+```bash
+ancilis baseline list [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--overlay` | string | all overlays | Filter by overlay ID |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
+
+**List all baselines**
+```bash
+ancilis baseline list
+```
+
+```
+ID                                      LABEL                     AGENT             OVERLAY           ACTIVE  CREATED
+------------------------------------------------------------------------------------------------------------------------
+3327a53b-c356-4bfa-abf4-3daf512c3cbc    v1-baseline               my-agent          -                 YES     2026-06-07T05:10:11.461446+00:00
+```
+
+When no baselines match, it prints `No baselines found.`
+
+**Filter by overlay**
+```bash
+ancilis baseline list --overlay soc2
+```
+
+### `baseline drift`
+
+Check current control posture for regressions against a baseline. By default it compares against the latest active baseline; pass `--id` to target a specific one.
+
+```bash
+ancilis baseline drift [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--id` | string | latest active | Baseline ID to check against |
+| `--overlay` | string | all overlays | Scope the drift check to a specific overlay |
+| `--format` | `terminal` \| `json` | `terminal` | Output format |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
+
+<Note>`baseline drift` exits `2` when drift is detected (overall status `DRIFTED`), which makes it suitable as a gate in CI/CD pipelines. A clean run (`STABLE`) exits `0`.</Note>
+
+**Check for drift against the active baseline**
+```bash
+ancilis baseline drift
+```
+
+```
+Drift Report — f14f0436-e989-4451-b69b-68ee6b70a1cb
+  Baseline : stable-demo (6f6a9ccf-5bb8-4860-98d5-9f6e3987a8a8)
+  Checked  : 2026-06-07T05:12:57.242715+00:00
+  Status   : STABLE
+  Summary  : All controls stable
+
+  All controls are stable.
+```
+
+When controls have regressed, drifted controls are listed and the command exits `2`:
+
+```
+Drift Report — 2a10ba4a-2254-49d5-9286-e61065a71c1f
+  Baseline : v1-baseline (3327a53b-c356-4bfa-abf4-3daf512c3cbc)
+  Checked  : 2026-06-07T05:10:12.173268+00:00
+  Status   : DRIFTED
+  Summary  : 7 control(s) drifted; top severity: HIGH
+
+  Drifted Controls:
+  CONTROL     SEV       BASELINE    CURRENT      B-RATE   C-RATE  DETAIL
+  ------------------------------------------------------------------------------------------
+  DE-01       HIGH      PASS        SKIP        100.0%    0.0%  DE-01
+  DE-02       HIGH      PASS        SKIP         80.0%    0.0%  DE-02
+  PR-01       HIGH      PASS        SKIP        100.0%    0.0%  PR-01
+  PR-02       HIGH      PASS        SKIP         80.0%    0.0%  PR-02
+  PR-04       HIGH      PASS        SKIP         80.0%    0.0%  PR-04
+  PR-07       HIGH      PASS        SKIP        100.0%    0.0%  PR-07
+  PR-08       HIGH      PASS        SKIP        100.0%    0.0%  PR-08
+```
+
+**Check a specific baseline and emit JSON for automation**
+```bash
+ancilis baseline drift --id 3327a53b-c356-4bfa-abf4-3daf512c3cbc --format json
+echo "Exit code: $?"
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success — for `drift`, status is `STABLE` |
+| `1` | Config error (`ancilis.yaml` not found or invalid), or `drift` could not find the requested baseline |
+| `2` | `drift` only — drift detected (status `DRIFTED`) |
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `Error: No ancilis.yaml found and no config provided` | Run `ancilis init`, or pass `--config path/to/ancilis.yaml` |
+| `drift` reports no baseline found | Create one first with `ancilis baseline create --label <name>` |
+
+## Related
+
+- [ancilis scan](/cli/scan) — evaluate current posture and pass/fail for CI/CD
+- [ancilis status](/cli/status) — lightweight posture check
+- [ancilis report](/cli/report) — full posture report in multiple formats

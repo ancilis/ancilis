@@ -1,0 +1,143 @@
+---
+title: "ancilis plugins"
+description: "Discover and validate Ancilis plugin entry points installed in your environment."
+---
+
+## Overview
+
+`ancilis plugins` is a command group for inspecting Ancilis SDK extensions — producers, overlays, and adapters — that are registered as Python entry points (`ancilis.producers`, `ancilis.overlays`, `ancilis.adapters`). Its subcommands list every discovered plugin and validate that a specific installed package exposes compatible entry points. Discovery is read-only: it never imports or runs plugin hooks, and it makes no changes to your environment.
+
+```bash
+ancilis plugins [OPTIONS] COMMAND [ARGS]...
+```
+
+## Flags
+
+The top-level group takes no options other than `--help`. All behavior lives in the subcommands below.
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show the command group help and exit |
+
+## Subcommands
+
+| Command | What it does |
+|---------|--------------|
+| `list` | List discovered Ancilis plugin entry points across the environment |
+| `validate` | Validate the Ancilis plugin entry points exposed by one installed package or module |
+
+<Note>
+Plugins are SDK-version-checked at discovery, not loaded. Each plugin declares a
+`min_sdk_version` (and optional `max_sdk_version`); if the installed SDK is
+outside that range the entry point is reported as `skipped:` with the reason
+rather than activated. A plugin whose declared `plugin_type` does not match its
+entry-point group is also reported as skipped.
+</Note>
+
+---
+
+### plugins list
+
+List discovered Ancilis plugin entry points across all three groups.
+
+```bash
+ancilis plugins list [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--type` | `producer` \| `overlay` \| `adapter` | all types | Filter the listing to a single plugin type |
+
+Every discovered entry point is printed — both compatible and skipped ones — so the listing doubles as a compatibility report. The `STATUS` column reads `compatible` or `skipped: <reason>` (for example `skipped: requires Ancilis SDK >=0.7.0`). This command always exits `0`, even when some plugins are skipped or none are found.
+
+**Example — list every discovered plugin**
+```bash
+ancilis plugins list
+```
+
+```
+TYPE      NAME                      PACKAGE                   VERSION     STATUS
+------------------------------------------------------------------------------------------
+producer  langchain                 ancilis-langchain         0.3.1       compatible
+overlay   soc2                       ancilis-overlays-soc2     1.0.0       compatible
+adapter   bedrock                    ancilis-bedrock           0.2.0       skipped: requires Ancilis SDK >=0.7.0
+```
+
+**Example — filter to a single type**
+```bash
+ancilis plugins list --type producer
+```
+
+When nothing is registered (or nothing matches the filter), the command prints `No Ancilis plugins discovered.` and exits `0`.
+
+---
+
+### plugins validate
+
+Validate the Ancilis plugin entry points exposed by one installed package or module.
+
+```bash
+ancilis plugins validate [OPTIONS] PACKAGE_OR_MODULE
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show the subcommand help and exit |
+
+`PACKAGE_OR_MODULE` is the installed distribution name (e.g. `ancilis-langchain`) or an import module path; matching is case- and separator-insensitive (`ancilis_langchain` and `ancilis-langchain` both resolve). The command discovers only that package's entry points, prints the same table as `plugins list`, and reports the verdict.
+
+Exit behavior:
+
+| Condition | Output | Exit code |
+|-----------|--------|-----------|
+| No Ancilis entry points found for the target | `No Ancilis plugin entry points found for <pkg>.` (stderr) | `1` |
+| One or more discovered entry points are skipped | the table, then exit | `1` |
+| All discovered entry points are compatible | the table, then `Validated N Ancilis plugin entry point(s).` | `0` |
+
+**Example — package validates cleanly**
+```bash
+ancilis plugins validate ancilis-langchain
+echo "Exit code: $?"
+```
+
+```
+TYPE      NAME                      PACKAGE                   VERSION     STATUS
+------------------------------------------------------------------------------------------
+producer  langchain                 ancilis-langchain         0.3.1       compatible
+Validated 1 Ancilis plugin entry point(s).
+Exit code: 0
+```
+
+**Example — package found but incompatible (non-zero exit)**
+```bash
+ancilis plugins validate ancilis-bedrock
+echo "Exit code: $?"
+```
+
+```
+TYPE      NAME                      PACKAGE                   VERSION     STATUS
+------------------------------------------------------------------------------------------
+adapter   bedrock                   ancilis-bedrock           0.2.0       skipped: requires Ancilis SDK >=0.7.0
+Exit code: 1
+```
+
+**Example — no entry points for the package**
+```bash
+ancilis plugins validate some-unrelated-package
+```
+
+```
+No Ancilis plugin entry points found for some-unrelated-package.
+```
+
+<Note>
+`validate` is safe to run in CI as a gate: a clean package exits `0`, while a
+missing or SDK-incompatible package exits `1`. Like `list`, it inspects entry-point
+metadata only and never executes plugin code.
+</Note>
+
+## Related
+
+- [ancilis doctor](/cli/doctor) — full environment diagnostics, including the producer-framework availability check
+- [ancilis init](/cli/init) — create the config that enables overlays and producers
+- [ancilis scan](/cli/scan) — evaluate posture once plugins are active

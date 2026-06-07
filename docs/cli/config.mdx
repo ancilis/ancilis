@@ -1,0 +1,104 @@
+---
+title: "ancilis config"
+description: "Configuration management commands for your ancilis.yaml."
+---
+
+## Overview
+
+`ancilis config` is a command group for managing your `ancilis.yaml` configuration. It currently exposes a single subcommand, `validate`, which loads the config and reports whether it is valid along with a summary of the resolved agent, mode, controls, and overlays.
+
+```bash
+ancilis config [OPTIONS] COMMAND [ARGS]...
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show help for the `config` group and exit |
+
+<Note>
+`config` is a group with no options of its own. Run a subcommand such as `ancilis config validate` to do work.
+</Note>
+
+## Subcommands
+
+### `config validate`
+
+Validates `ancilis.yaml` and prints a human-readable summary: the resolved agent name, mode, active certification targets and overlays, the count of enabled controls (noting any at the `strict` threshold), any roadmap (not-yet-available) overlays, and any warnings. On an invalid or missing config it prints actionable hints and exits non-zero. This command is read-only — it writes no files and changes nothing.
+
+```bash
+ancilis config validate [OPTIONS] [CONFIG_PATH_ARG]
+```
+
+| Flag / Argument | Type | Default | Description |
+|------|------|---------|-------------|
+| `CONFIG_PATH_ARG` | string (positional) | auto-detect | Path to `ancilis.yaml` |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+
+<Note>
+Both the positional `CONFIG_PATH_ARG` and the `--config` option set the config path. If both are given, `--config` takes precedence. When neither is provided, the config is auto-detected from the current directory.
+</Note>
+
+#### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Config is valid |
+| `1` | Config is missing or invalid |
+
+#### Example
+
+**Validate the config in the current directory**
+```bash
+ancilis config validate
+```
+
+```
+✓ Config valid
+  Agent: my-agent
+  Mode: audit
+  Activation:
+    certification_targets: [aiuc-1] → AIUC-1 active, 6 controls
+  Controls: 6 active (PR-01 at strict threshold)
+```
+
+**Validate a config at an explicit path**
+```bash
+ancilis config validate --config /path/to/ancilis.yaml
+# or, as a positional argument:
+ancilis config validate /path/to/ancilis.yaml
+```
+
+**Missing or invalid config (exits 1)**
+```bash
+ancilis config validate
+echo "Exit code: $?"
+```
+
+```
+✗ Config not found
+  No ancilis.yaml found in current directory.
+  Create one with: agent.name set to your agent's name.
+Exit code: 1
+```
+
+When a config is present but invalid, the output includes targeted hints — for example, an unknown control ID lists the available control IDs, an unknown data type lists the available types, and a missing `agent.name` suggests adding `agent: { name: my-agent }` to `ancilis.yaml`.
+
+## Examples
+
+**Validate before scanning**
+```bash
+ancilis config validate && ancilis scan
+```
+
+**Use in CI to fail fast on a bad config**
+```bash
+ancilis config validate || exit 1
+```
+
+## Related
+
+- [ancilis init](/cli/init) — create an initial `ancilis.yaml`
+- [ancilis doctor](/cli/doctor) — broader environment and configuration diagnostics
+- [ancilis scan](/cli/scan) — evaluate evidence posture once the config is valid
