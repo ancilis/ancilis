@@ -294,6 +294,11 @@ class CLIActionProducer:
             except FileNotFoundError:
                 stderr = f"Command not found: {command[0]}"
                 return_code = -1
+            except OSError as exc:
+                # Not executable, permission denied, etc. — return a clean result
+                # rather than leaking a raw OSError to the caller.
+                stderr = f"Command could not be executed: {exc}"
+                return_code = -1
 
             # Scan stdout only (not stderr) for sensitive patterns
             if stdout:

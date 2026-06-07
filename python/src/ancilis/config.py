@@ -457,7 +457,10 @@ def _apply_overlay_effects(
 
 def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     """Validate raw config dict and return (config, warnings)."""
-    warnings: list[str] = raw.pop("_warnings", [])
+    # `_warnings` is an internal channel for injected warnings; a user-supplied
+    # non-list value must not later crash warnings.append(...).
+    warnings_raw = raw.pop("_warnings", [])
+    warnings: list[str] = warnings_raw if isinstance(warnings_raw, list) else []
 
     # Validate control IDs in overrides
     security = raw.get("security", {})
@@ -467,6 +470,10 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
             custom_control_ids: set[str] | None = None
             valid_control_ids = set(load_control_definitions())
             for key in controls:
+                if not isinstance(key, str):
+                    raise config_invalid(
+                        f"Control IDs in security.controls must be strings, got {key!r}."
+                    )
                 if key.startswith("custom:"):
                     if custom_control_ids is None:
                         from ancilis.controls.custom import list_custom_controls
@@ -485,6 +492,10 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     my_agent_handles = raw.get("my_agent_handles", [])
     if isinstance(my_agent_handles, list):
         for dt in my_agent_handles:
+            if not isinstance(dt, str):
+                raise config_invalid(
+                    f"my_agent_handles entries must be strings, got {dt!r}."
+                )
             if dt not in valid_types:
                 raise config_invalid(
                     f"Unknown data type in my_agent_handles: '{dt}'. "
@@ -496,6 +507,10 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     if isinstance(cert_targets, list):
         valid_certs = _load_valid_certification_targets()
         for ct in cert_targets:
+            if not isinstance(ct, str):
+                raise config_invalid(
+                    f"certification_targets entries must be strings, got {ct!r}."
+                )
             if ct not in valid_certs:
                 available = ", ".join(sorted(valid_certs)) if valid_certs else "none available"
                 warnings.append(
@@ -503,6 +518,9 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
                     f"Available targets: {available}"
                 )
 
+    bad_keys = [k for k in raw if not isinstance(k, str)]
+    if bad_keys:
+        raise config_invalid(f"Top-level config keys must be strings; got {bad_keys!r}.")
     config = AncilisConfig(**raw)
     return config, warnings
 
@@ -726,6 +744,23 @@ def resolve_config(
     return result
 
 
+def _parse_config_yaml(text: str, source: Path) -> dict[str, Any]:
+    """Parse a config file's YAML into a dict, translating parse errors and
+    non-mapping roots into a clean ConfigError instead of a raw traceback."""
+    try:
+        loaded = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise config_invalid(f"Invalid YAML in {source}: {exc}") from exc
+    if loaded is None:
+        return {}
+    if not isinstance(loaded, dict):
+        raise config_invalid(
+            f"{source} must contain a YAML mapping at the top level, "
+            f"got {type(loaded).__name__}."
+        )
+    return loaded
+
+
 def load_config(
     path: str | Path | None = None,
     raw: dict[str, Any] | None = None,
@@ -747,7 +782,7 @@ def load_config(
         config_dict = dict(raw)
     elif path is not None:
         config_path = Path(path)
-        config_dict = yaml.safe_load(config_path.read_text()) or {}
+        config_dict = _parse_config_yaml(config_path.read_text(), config_path)
         from ancilis.controls.custom import load_custom_controls_from_directory
 
         custom_warnings.extend(
@@ -757,7 +792,7 @@ def load_config(
         # Try to find ancilis.yaml in current directory
         default_path = Path("ancilis.yaml")
         if default_path.exists():
-            config_dict = yaml.safe_load(default_path.read_text()) or {}
+            config_dict = _parse_config_yaml(default_path.read_text(), default_path)
             from ancilis.controls.custom import load_custom_controls_from_directory
 
             custom_warnings.extend(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from typing import Any
@@ -51,12 +52,18 @@ class ReportData:
 
 
 def _parse_period(period: str) -> timedelta:
-    """Parse a period string like '30d' into a timedelta."""
-    if period.endswith("d"):
-        return timedelta(days=int(period[:-1]))
-    if period.endswith("h"):
-        return timedelta(hours=int(period[:-1]))
-    return timedelta(days=30)
+    """Parse a period string like '30d'/'24h' into a timedelta.
+
+    Accepts only a strictly positive integer followed by 'd' or 'h'. Anything
+    else ('7xd', '7w', '0h', '-1d', 'nonsense') raises a clear ValueError rather
+    than leaking int()'s error or silently defaulting to a plausible-but-wrong
+    window.
+    """
+    match = re.fullmatch(r"([1-9][0-9]*)([dh])", period)
+    if match is None:
+        raise ValueError(f"invalid period {period!r}; use forms like 7d, 24h, 30d")
+    amount, unit = int(match.group(1)), match.group(2)
+    return timedelta(days=amount) if unit == "d" else timedelta(hours=amount)
 
 
 class ReportGenerator:
