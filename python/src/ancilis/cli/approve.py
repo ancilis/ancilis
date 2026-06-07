@@ -37,12 +37,29 @@ def approve_tool(tool_name: str, config_path: str) -> None:
         click.echo("Suggested fix: Create ancilis.yaml or run 'ancilis doctor' for setup help", err=True)
         raise SystemExit(1)
 
-    data = _read_config(config_path)
+    try:
+        data = _read_config(config_path)
+    except yaml.YAMLError as exc:
+        click.echo(f"Invalid YAML in {config_path}: {exc}", err=True)
+        raise SystemExit(1) from exc
+    if not isinstance(data, dict):
+        click.echo(f"{config_path} must contain a YAML mapping at the top level.", err=True)
+        raise SystemExit(1)
 
-    # Navigate to security.tools.allowed (scope — PR-02)
-    security = data.setdefault("security", {})
-    tools = security.setdefault("tools", {})
-    allowed = tools.setdefault("allowed", [])
+    # Navigate to security.tools.allowed (scope — PR-02), tolerating a config
+    # whose security/tools sections are missing or not mappings.
+    security = data.get("security")
+    if not isinstance(security, dict):
+        security = {}
+        data["security"] = security
+    tools = security.get("tools")
+    if not isinstance(tools, dict):
+        tools = {}
+        security["tools"] = tools
+    allowed = tools.get("allowed")
+    if not isinstance(allowed, list):
+        allowed = []
+        tools["allowed"] = allowed
 
     added_to_scope = False
     if tool_name not in allowed:

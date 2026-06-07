@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
 from ancilis.config import ResolvedConfig
+from ancilis.errors import StorageError
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.adapter import EvidenceAdapter, EvidenceAdapterPayload
 from ancilis.evidence.chain import (
@@ -266,8 +267,14 @@ class EvidenceStore:
             self._conn = duckdb.connect(":memory:")
         else:
             db_dir = os.path.dirname(self._db_path)
-            os.makedirs(db_dir, exist_ok=True)
-            self._conn = duckdb.connect(self._db_path)
+            try:
+                if db_dir:
+                    os.makedirs(db_dir, exist_ok=True)
+                self._conn = duckdb.connect(self._db_path)
+            except (duckdb.Error, OSError) as exc:
+                # Not a valid DuckDB file, corrupt, locked, or an unwritable/
+                # uncreatable directory — surface a clean E004, not a traceback.
+                raise StorageError(self._db_path) from exc
             logger.info("Evidence store: %s", self._db_path)
 
         self._connection.execute(CREATE_TABLE_SQL)

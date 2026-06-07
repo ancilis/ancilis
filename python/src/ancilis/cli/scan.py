@@ -46,6 +46,15 @@ def _period_to_since(period: str) -> str:
     return (datetime.now(timezone.utc) - _parse_period(period)).isoformat()
 
 
+def _validate_period(ctx: object, param: object, value: str) -> str:
+    """Click callback: reject a malformed --period with a clean usage error."""
+    try:
+        _parse_period(value)
+    except ValueError as exc:
+        raise click.BadParameter(str(exc)) from exc
+    return value
+
+
 def _print_human_summary(
     config: ResolvedConfig,
     control_results: list[dict[str, Any]],
@@ -119,7 +128,7 @@ def _print_human_summary(
 @click.option("--db", "db_path", default=None, help="Path to evidence database")
 @click.option("--session", "session_id", default=None, help="Scope to a specific session ID")
 @click.option("--latest/--all", "use_latest", default=True, help="Show latest session (default) or all sessions")
-@click.option("--period", default="24h", help="Evidence window (e.g. 1h, 24h, 7d)")
+@click.option("--period", default="24h", callback=_validate_period, help="Evidence window (e.g. 1h, 24h, 7d)")
 @click.option("--watch", "watch_mode", is_flag=True, help="Watch for file changes and re-evaluate posture in real-time")
 @click.option("--debounce", default=2.0, type=float, show_default=True, help="Seconds to wait after last change before re-scanning (watch mode)")
 @click.option("--clear", "clear_screen", is_flag=True, help="Clear terminal on each re-scan (watch mode)")
