@@ -1,0 +1,1102 @@
+---
+title: "Core (TypeScript)"
+description: "The Ancilis facade, config loading, the decision engine, MCP middleware, the evidence store and hash chain, and the structured error/warning hierarchy — for the TypeScript SDK."
+---
+
+The core of the TypeScript SDK (the `ancilis` package). This page covers the ergonomic [`Ancilis`](#ancilis) facade, configuration loading, the decision [`Engine`](#engine) and [`ToolRegistry`](#toolregistry), the [`AncilisMiddleware`](#ancilismiddleware) MCP wrapper, the [`EvidenceStore`](#evidencestore) and its hash chain, and the structured `Ancilis*Error`/`AncilisWarning` types.
+
+Every symbol below is exported from the top-level `ancilis` entry point. Signatures are copied verbatim from the compiled `.d.ts` declarations. Symbols re-exported with `export type` are type-only (interfaces, type aliases) and are marked as such; the rest are runtime value exports (classes, functions, constants).
+
+```typescript
+import {
+  Ancilis,
+  loadConfig,
+  formatResolvedConfig,
+  Engine,
+  ToolRegistry,
+  ToolStatus,
+  DE04IntegrityEvaluator,
+  AncilisMiddleware,
+  BlockedToolCallError,
+  scanResponse,
+  EvidenceStore,
+  GENESIS_SEED,
+  canonicalPayload,
+  computeHash,
+  AncilisError,
+} from "ancilis";
+```
+
+---
+
+## Facade
+
+### Ancilis
+
+**Kind:** class &middot; **Module:** `ancilis/facade`
+
+Ergonomic SDK facade for common runtime enforcement flows. It bundles a resolved [`config`](#resolvedconfig), an [`Engine`](#engine), a [`ToolRegistry`](#toolregistry), an [`EvidenceStore`](#evidencestore), and a `ToolActionProducer` into a single object. The constructor is private; build instances with the static [`load`](#ancilis-load) method.
+
+```typescript
+declare class Ancilis {
+    readonly config: ResolvedConfig;
+    readonly engine: Engine;
+    readonly registry: ToolRegistry;
+    readonly evidenceStore: EvidenceStore;
+    readonly toolProducer: ToolActionProducer;
+    private constructor();
+    static load(options?: AncilisLoadOptions): Ancilis;
+    tool<Args extends unknown[], Return>(fn: FacadeToolFn<Args, Return>, options?: AncilisToolOptions): AncilisToolRun<Args, Return>;
+}
+```
+
+<a id="ancilis-load" />
+- `static load(options?: AncilisLoadOptions): Ancilis` — construct an `Ancilis` facade, loading and resolving configuration and wiring up the engine, registry, and evidence store. Accepts [`AncilisLoadOptions`](#ancilisloadoptions) to override any of the wired components.
+- `tool<Args, Return>(fn, options?): AncilisToolRun<Args, Return>` — wrap a plain function as a policy-enforced tool. Returns an [`AncilisToolRun`](#ancilistoolrun) whose `call` evaluates and (if allowed) invokes the function, and whose `evaluate` returns the `[Action, EvaluationResult]` pair without invoking it.
+
+```typescript
+import { Ancilis } from "ancilis";
+
+const ancilis = Ancilis.load({ raw: { agent: { name: "ancilis-agent" } } });
+
+const search = ancilis.tool(
+  async (query: string) => fetchResults(query),
+  { toolName: "web_search" },
+);
+
+const results = await search.call("ancilis");
+```
+
+---
+
+### AncilisLoadOptions
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/facade`
+
+Options for [`Ancilis.load`](#ancilis-load). Extends [`LoadConfigOptions`](#loadconfigoptions), adding optional pre-built components and evidence-store settings.
+
+```typescript
+interface AncilisLoadOptions extends LoadConfigOptions {
+    engine?: Engine;
+    registry?: ToolRegistry;
+    evidenceStore?: EvidenceStore;
+    evidence?: {
+        dbPath?: string;
+        inMemory?: boolean;
+        tenantId?: string;
+    };
+}
+```
+
+---
+
+### AncilisToolOptions
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/facade`
+
+Options for [`Ancilis.tool`](#ancilis): the agent and tool names to stamp onto the produced action.
+
+```typescript
+interface AncilisToolOptions {
+    agentName?: string;
+    toolName?: string;
+}
+```
+
+---
+
+### AncilisToolRun
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/facade`
+
+A policy-enforced wrapper returned by [`Ancilis.tool`](#ancilis). `call` evaluates the action and invokes the wrapped function when allowed; `evaluate` returns the action and its evaluation result without invoking.
+
+```typescript
+interface AncilisToolRun<Args extends unknown[] = unknown[], Return = unknown> {
+    readonly toolName: string | undefined;
+    call(...args: Args): Promise<Awaited<Return>>;
+    evaluate(...args: Args): Promise<[Action, EvaluationResult]>;
+}
+```
+
+---
+
+## Configuration
+
+### loadConfig
+
+**Kind:** function &middot; **Module:** `ancilis/config`
+
+Load and resolve an Ancilis configuration. Pass `path` to read an `ancilis.yaml` file, or `raw` to supply an in-memory config object. If neither is given, a [`ConfigError`](#configerror) is thrown. Returns a [`ResolvedConfig`](#resolvedconfig) with all controls, overlays, and classifications resolved.
+
+```typescript
+declare function loadConfig(options?: LoadConfigOptions): ResolvedConfig;
+```
+
+```typescript
+import { loadConfig } from "ancilis";
+
+// From a file
+const config = loadConfig({ path: "ancilis.yaml" });
+
+// From an in-memory object (no file required)
+const inline = loadConfig({ raw: { agent: { name: "ancilis-agent" } } });
+```
+
+---
+
+### formatResolvedConfig
+
+**Kind:** function &middot; **Module:** `ancilis/config`
+
+Render a [`ResolvedConfig`](#resolvedconfig) as a human-readable multi-line summary string (agent, mode, active baseline controls, data classifications, active overlays).
+
+```typescript
+declare function formatResolvedConfig(resolved: ResolvedConfig): string;
+```
+
+---
+
+### LoadConfigOptions
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/config`
+
+Options for [`loadConfig`](#loadconfig). Provide exactly one of `path` or `raw`.
+
+```typescript
+interface LoadConfigOptions {
+    path?: string;
+    raw?: Record<string, unknown>;
+}
+```
+
+---
+
+### ResolvedConfig
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/config`
+
+A fully resolved configuration: agent identity, mode, the control set, data classifications, active and unavailable overlays, scope limits, certifications, and dependency-scan settings. Returned by [`loadConfig`](#loadconfig) and consumed across the engine, middleware, and evidence store.
+
+```typescript
+interface ResolvedConfig {
+    agentName: string;
+    agentId: string | null;
+    agentOwner: string;
+    mode: string;
+    controls: Map<string, ControlStatus>;
+    dataClassifications: Map<string, string[]>;
+    activeOverlays: Map<string, OverlayActivation>;
+    unavailableOverlays: UnavailableOverlay[];
+    overlayAdjustments: string[];
+    evidenceRetentionDays: number;
+    humanOversightRequired: boolean;
+    warnings: string[];
+    toolsAllowed: string[];
+    toolsBlocked: string[];
+    scopeMaxActionsPerMinute: number | null;
+    scopeAllowedDestinations: string[];
+    scopeBlockedDestinations: string[];
+    activeCertifications: string[];
+    llmProvider: string | null;
+    controlActivationSources: Map<string, Set<string>>;
+    controlHasActivationSource: (controlId: string, ...sourcePrefixes: string[]) => boolean;
+    scanDependenciesEnabled: boolean;
+    scanDependenciesSeverityThreshold: "critical" | "high" | "medium" | "low";
+    scanDependenciesIgnore: string[];
+}
+```
+
+---
+
+### ControlStatus
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/config`
+
+The resolved state of a single control: whether it is enabled, its threshold, and the overlay citations that activated it.
+
+```typescript
+interface ControlStatus {
+    controlId: string;
+    name: string;
+    enabled: boolean;
+    threshold: string;
+    overlayCitations: string[];
+}
+```
+
+---
+
+### OverlayActivation
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/config`
+
+An active overlay and the inputs (`triggeredBy`) that activated it.
+
+```typescript
+interface OverlayActivation {
+    overlayId: string;
+    name: string;
+    triggeredBy: string[];
+}
+```
+
+---
+
+### UnavailableOverlay
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/config`
+
+An overlay that would apply to a declared data type but is not available.
+
+```typescript
+interface UnavailableOverlay {
+    overlayId: string;
+    triggeredBy: string;
+    dataType: string;
+}
+```
+
+---
+
+## Engine
+
+### Engine
+
+**Kind:** class &middot; **Module:** `ancilis/engine`
+
+Decision engine — orchestrates control evaluation. Built from a [`ResolvedConfig`](#resolvedconfig) (and optionally a [`ToolRegistry`](#toolregistry), rate tracker, baseline window, and evidence-store adapter), it evaluates an [`Action`](#action) and returns an [`EvaluationResult`](#evaluationresult).
+
+```typescript
+declare class Engine {
+    private config;
+    readonly registry: ToolRegistry;
+    private evaluators;
+    private controlDefs;
+    constructor(config: ResolvedConfig, options?: {
+        registry?: ToolRegistry;
+        rateTracker?: RateTracker;
+        baselineWindow?: BaselineWindow;
+        evidenceStore?: DE04StoreAdapter | null;
+    });
+    evaluate(action: Action): EvaluationResult;
+    /** Expose evaluators for testing (e.g., to inject a broken evaluator). */
+    _setEvaluator(controlId: string, evaluator: ControlEvaluator): void;
+    private isPolicyGated;
+}
+```
+
+---
+
+### ToolRegistry
+
+**Kind:** class &middot; **Module:** `ancilis/engine`
+
+Tool registry for provenance verification. Tracks known tools, their status, and approval metadata.
+
+```typescript
+declare class ToolRegistry {
+    private tools;
+    register(entry: ToolEntry): void;
+    lookup(name: string): ToolEntry | undefined;
+    isRegistered(name: string): boolean;
+    approve(name: string, approvedBy?: string): boolean;
+    getAll(): ToolEntry[];
+}
+```
+
+---
+
+### ToolStatus
+
+**Kind:** enum &middot; **Module:** `ancilis/engine`
+
+The provenance status of a registered tool.
+
+```typescript
+declare enum ToolStatus {
+    OBSERVED = "observed",
+    APPROVED = "approved",
+    BLOCKED = "blocked"
+}
+```
+
+---
+
+### ToolEntry
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+A single entry in the [`ToolRegistry`](#toolregistry): a tool's identity, version, description hash, and provenance status.
+
+```typescript
+interface ToolEntry {
+    name: string;
+    version?: string | null;
+    descriptionHash?: string | null;
+    status: ToolStatus;
+    approvedBy?: string | null;
+    firstSeen: string;
+    statusChanged: string;
+}
+```
+
+---
+
+### DE04IntegrityEvaluator
+
+**Kind:** class &middot; **Module:** `ancilis/engine`
+
+DE-04: Evidence Integrity Verification evaluator. Implements [`ControlEvaluator`](#controlevaluator). Construct it with an optional [`DE04StoreAdapter`](#de04storeadapter) so it can count records and verify the hash chain during a health check.
+
+```typescript
+declare class DE04IntegrityEvaluator implements ControlEvaluator {
+    controlId: string;
+    controlName: string;
+    private readonly _store;
+    constructor(store?: DE04StoreAdapter | null);
+    evaluate(_action: Action, _config: ResolvedConfig): ControlResult;
+}
+```
+
+---
+
+### Action
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+Action object — standardized representation of an agent action for evaluation.
+
+```typescript
+interface Action {
+    actionId: string;
+    timestamp: string;
+    agentId: string;
+    sourceType?: string;
+    frameworkVersion?: string;
+    producerType?: string;
+    producerVersion?: string;
+    agentOwner?: string | null;
+    actionType: "tool_call" | "api_request" | "data_access";
+    tool: ToolInfo;
+    parameters: ActionParameters;
+    context?: ActionContext;
+}
+```
+
+---
+
+### ToolInfo
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+Identity of the tool an [`Action`](#action) targets.
+
+```typescript
+interface ToolInfo {
+    name: string;
+    version?: string | null;
+    server?: string | null;
+    descriptionHash?: string | null;
+}
+```
+
+---
+
+### ActionParameters
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+The raw parameters of an [`Action`](#action) plus a hash of them.
+
+```typescript
+interface ActionParameters {
+    raw: Record<string, unknown>;
+    parameterHash: string;
+}
+```
+
+---
+
+### ActionContext
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+Optional session and classification context attached to an [`Action`](#action).
+
+```typescript
+interface ActionContext {
+    sessionId?: string | null;
+    parentActionId?: string | null;
+    dataClassifications?: string[];
+    activeOverlays?: string[];
+}
+```
+
+---
+
+### ControlResult
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+The outcome of a single control evaluation, produced by a [`ControlEvaluator`](#controlevaluator).
+
+```typescript
+interface ControlResult {
+    controlId: string;
+    controlName: string;
+    result: "PASS" | "FAIL" | "SKIP" | "ERROR" | "FLAG";
+    detail: string;
+    evidenceData: Record<string, unknown>;
+    durationMs: number;
+    displayName?: string;
+    displayDetail?: string;
+    remediationHint?: string;
+}
+```
+
+---
+
+### EvaluationResult
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+The full result of evaluating an [`Action`](#action) through the [`Engine`](#engine): the per-control results plus the overall decision.
+
+```typescript
+interface EvaluationResult {
+    evaluationId: string;
+    actionId: string;
+    timestamp: string;
+    agentId: string;
+    sourceType: string;
+    frameworkVersion?: string;
+    mode: "audit" | "enforce";
+    controlResults: ControlResult[];
+    decision: "ALLOW" | "BLOCK" | "FLAG";
+    decisionReason: string;
+    activeOverlays: string[];
+    dataClassifications: string[];
+    totalDurationMs: number;
+    detectedDataTypes?: string[];
+    context?: {
+        sessionId?: string;
+    };
+}
+```
+
+---
+
+### ControlEvaluator
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+Base interface for control evaluators. Each evaluator exposes its control id and name and an `evaluate` method that produces a [`ControlResult`](#controlresult).
+
+```typescript
+interface ControlEvaluator {
+    controlId: string;
+    controlName: string;
+    evaluate(action: Action, config: ResolvedConfig): ControlResult;
+}
+```
+
+---
+
+### RateTracker
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+Per-agent action-rate source used by scope enforcement (PR-02).
+
+```typescript
+interface RateTracker {
+    getActionCount(agentId: string): number;
+}
+```
+
+---
+
+### DE04StoreAdapter
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/engine`
+
+Minimal synchronous interface for the evidence store, enabling testability without requiring a live DuckDB connection. Implement this with a sync adapter over [`EvidenceStore`](#evidencestore) when running DE-04 in production health checks.
+
+```typescript
+interface DE04StoreAdapter {
+    count(): number;
+    verifyChain(): {
+        valid: boolean;
+        errors: string[];
+    };
+}
+```
+
+---
+
+## Middleware
+
+### AncilisMiddleware
+
+**Kind:** class &middot; **Module:** `ancilis/middleware`
+
+MCP middleware — intercepts tool calls, evaluates them through the engine, and enforces decisions (blocked calls raise a [`BlockedToolCallError`](#blockedtoolcallerror) rather than reaching the server). It auto-registers discovered tools, scans responses for sensitive-data patterns, and records evidence. Wrap an MCP client that conforms to [`McpClientLike`](#mcpclientlike).
+
+```typescript
+declare class AncilisMiddleware {
+    private _config;
+    private _client;
+    private _registry;
+    private _engine;
+    private _evaluationLog;
+    private _scanResults;
+    private _driftEvents;
+    private _evidenceStore;
+    private _issueCount;
+    constructor(client: McpClientLike, options?: AncilisMiddlewareOptions);
+    get config(): ResolvedConfig;
+    get registry(): ToolRegistry;
+    get evidenceStore(): EvidenceStore;
+    get evaluationLog(): EvaluationResult[];
+    get scanResults(): ScanResult[];
+    get driftEvents(): DriftEvent[];
+    callTool(name: string, args?: Record<string, unknown>): Promise<{
+        content: Array<{
+            type: string;
+            text?: string;
+            [key: string]: unknown;
+        }>;
+        [key: string]: unknown;
+    }>;
+    listTools(): Promise<{
+        tools: Array<{
+            name: string;
+            description?: string;
+            [key: string]: unknown;
+        }>;
+        [key: string]: unknown;
+    }>;
+    getRecommendations(): string[];
+    getSummaryLine(): string;
+    getLastEvaluation(): EvaluationResult | undefined;
+    private extractResponseText;
+}
+```
+
+```typescript
+import { AncilisMiddleware } from "ancilis";
+
+const mw = new AncilisMiddleware(client, { configPath: "ancilis.yaml" });
+const result = await mw.callTool("web_search", { query: "ancilis" });
+```
+
+---
+
+### BlockedToolCallError
+
+**Kind:** class &middot; **Module:** `ancilis/middleware`
+
+Thrown by [`AncilisMiddleware.callTool`](#ancilismiddleware) when a tool call is blocked by policy. Carries the offending tool name and the [`EvaluationResult`](#evaluationresult) that produced the block.
+
+```typescript
+declare class BlockedToolCallError extends Error {
+    tool_name: string;
+    evaluation: EvaluationResult;
+    displayMessage: string;
+    constructor(toolName: string, evaluation: EvaluationResult);
+}
+```
+
+---
+
+### scanResponse
+
+**Kind:** function &middot; **Module:** `ancilis/middleware`
+
+Run pattern detection on a tool-call response. Returns a [`ScanResult`](#scanresult) with matched patterns, encryption findings, and recommendations.
+
+```typescript
+declare function scanResponse(toolName: string, responseText: string): ScanResult;
+```
+
+---
+
+### AncilisMiddlewareOptions
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/middleware`
+
+Options for [`AncilisMiddleware`](#ancilismiddleware): provide a `config` directly, a `configPath` to load, and/or an existing `evidenceStore` to reuse.
+
+```typescript
+interface AncilisMiddlewareOptions {
+    configPath?: string;
+    config?: ResolvedConfig;
+    evidenceStore?: EvidenceStore;
+}
+```
+
+---
+
+### McpClientLike
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/middleware`
+
+Minimal interface for an MCP client — avoids tight coupling to SDK version. [`AncilisMiddleware`](#ancilismiddleware) requires only `callTool` and `listTools`.
+
+```typescript
+interface McpClientLike {
+    callTool(params: {
+        name: string;
+        arguments?: Record<string, unknown>;
+    }, ...rest: unknown[]): Promise<{
+        content: Array<{
+            type: string;
+            text?: string;
+            [key: string]: unknown;
+        }>;
+        [key: string]: unknown;
+    }>;
+    listTools(...args: unknown[]): Promise<{
+        tools: Array<{
+            name: string;
+            description?: string;
+            [key: string]: unknown;
+        }>;
+        [key: string]: unknown;
+    }>;
+}
+```
+
+---
+
+### ScanResult
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/middleware`
+
+The result of [`scanResponse`](#scanresponse): the tool name, matched patterns, encryption findings, and recommendations.
+
+```typescript
+interface ScanResult {
+    toolName: string;
+    patterns: PatternMatch[];
+    encryptionFindings: EncryptionFinding[];
+    recommendations: string[];
+}
+```
+
+---
+
+### EncryptionFinding
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/middleware`
+
+A single encryption-related finding from a response scan.
+
+```typescript
+interface EncryptionFinding {
+    findingType: "high_entropy" | "base64_block" | "jwt_token";
+    detail: string;
+}
+```
+
+---
+
+### DriftEvent
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/middleware`
+
+A tool-description drift event recorded during auto-discovery: a tool's description hash changed from a previously observed value.
+
+```typescript
+interface DriftEvent {
+    toolName: string;
+    oldHash: string | null;
+    newHash: string;
+}
+```
+
+---
+
+## Evidence
+
+### EvidenceStore
+
+**Kind:** class &middot; **Module:** `ancilis/evidence`
+
+DuckDB-backed evidence store with hash chain integrity. Converts an [`EvaluationResult`](#evaluationresult) into an immutable [`EvidenceRecord`](#evidencerecord), links it into a cryptographic hash chain, and supports querying, counting, chain verification, summaries, and pruning.
+
+```typescript
+declare class EvidenceStore {
+    private _db;
+    private _conn;
+    private _certifications;
+    private _llmProvider;
+    private _initialized;
+    private _dbPath;
+    private _inMemory;
+    private _tenantId;
+    constructor(config: ResolvedConfig, options?: {
+        dbPath?: string;
+        inMemory?: boolean;
+        tenantId?: string;
+    });
+    get dbPath(): string;
+    private ensureInitialized;
+    close(): Promise<void>;
+    private getLastHash;
+    store(evaluation: EvaluationResult, toolName: string, outputSummary?: string | null): Promise<EvidenceRecord>;
+    getRecords(filters?: {
+        agentId?: string;
+        toolName?: string;
+        decision?: string;
+        since?: string;
+        sessionId?: string;
+        limit?: number | null;
+    }): Promise<EvidenceRecord[]>;
+    count(scope?: SessionScope): Promise<number>;
+    verifyChain(scope?: SessionScope): Promise<{
+        valid: boolean;
+        errors: string[];
+    }>;
+    getSummary(options?: {
+        since?: string;
+        sessionId?: string;
+    }): Promise<Record<string, unknown>>;
+    /** Execute a DDL or DML statement with no result. */
+    exec(sql: string): Promise<void>;
+    /** Run a parameterised query and return all rows. */
+    query(sql: string, params?: unknown[]): Promise<DuckDBRow[]>;
+    /** Run a parameterised DML statement (INSERT / UPDATE / DELETE). */
+    run(sql: string, params?: unknown[]): Promise<void>;
+    listSessions(): Promise<Array<{
+        session_id: string;
+        count: number;
+        first_seen: string;
+        last_seen: string;
+    }>>;
+    latestSessionId(): Promise<string | null>;
+    reset(): Promise<number>;
+    purgeBefore(beforeTimestamp: string): Promise<number>;
+    private rowToRecord;
+}
+```
+
+> The `SessionScope` parameter accepted by `count` and `verifyChain` is `{ sessionId?: string | null } | string | undefined`; `DuckDBRow` is `Record<string, unknown>`. Both are internal type aliases (not exported).
+
+```typescript
+import { loadConfig, EvidenceStore } from "ancilis";
+
+const config = loadConfig({ raw: { agent: { name: "ancilis-agent" } } });
+const store = new EvidenceStore(config, { inMemory: true });
+```
+
+---
+
+### EvidenceRecord
+
+**Kind:** interface (type-only export) &middot; **Module:** `ancilis/evidence`
+
+Evidence record model — immutable record of a control evaluation. This is the unit persisted by the [`EvidenceStore`](#evidencestore); `recordHash` and `previousHash` link it into the hash chain.
+
+```typescript
+interface EvidenceRecord {
+    recordId: string;
+    evaluationId: string;
+    timestamp: string;
+    agentId: string;
+    sourceType: string;
+    toolName: string;
+    decision: string;
+    mode: string;
+    controlResults: Array<Record<string, unknown>>;
+    activeOverlays: string[];
+    dataClassifications: string[];
+    activeCertifications: string[];
+    recordHash: string;
+    previousHash: string;
+    totalDurationMs: number;
+    outputSummary?: string | null;
+    sessionId?: string | null;
+    tenantId?: string | null;
+    detectedDataTypes?: string[];
+    sdkVersion?: string | null;
+    frameworkVersion?: string | null;
+    classificationContext?: Record<string, unknown>;
+}
+```
+
+---
+
+### GENESIS_SEED
+
+**Kind:** const &middot; **Module:** `ancilis/evidence`
+
+Genesis seed — the `previousHash` for the very first record in any chain.
+
+```typescript
+declare const GENESIS_SEED: string;
+```
+
+---
+
+### canonicalPayload
+
+**Kind:** function &middot; **Module:** `ancilis/evidence`
+
+Build the canonical JSON string used as hash input. Fields are sorted alphabetically so the hash is stable across runs.
+
+```typescript
+declare function canonicalPayload(fields: {
+    evaluationId: string;
+    timestamp: string;
+    agentId: string;
+    sourceType?: string;
+    toolName: string;
+    decision: string;
+    mode: string;
+    controlResults: Array<Record<string, unknown>>;
+    activeOverlays: string[];
+    dataClassifications: string[];
+    activeCertifications: string[];
+    totalDurationMs: number;
+    previousHash: string;
+    outputSummary?: string | null;
+    sessionId?: string | null;
+    tenantId?: string | null;
+    detectedDataTypes?: string[] | null;
+    sdkVersion?: string | null;
+    frameworkVersion?: string | null;
+    classificationContext?: Record<string, unknown> | null;
+}): string;
+```
+
+---
+
+### computeHash
+
+**Kind:** function &middot; **Module:** `ancilis/evidence`
+
+SHA-256 hash of the canonical payload string produced by [`canonicalPayload`](#canonicalpayload).
+
+```typescript
+declare function computeHash(canonical: string): string;
+```
+
+---
+
+## Errors & Warnings
+
+All SDK errors extend [`AncilisError`](#anciliserror) and carry a structured error code (`E001`–`E010`), a human-readable message, an optional fix suggestion, and a documentation URL. Warnings are modeled by [`AncilisWarning`](#anciliswarning) (codes `W001`–`W003`) and are returned alongside results rather than thrown.
+
+### AncilisError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+Base class for all Ancilis SDK errors. Every error carries `code` (e.g. `"E001"`), an optional `suggestion` (actionable fix hint), and `docsUrl` (canonical docs page for this code). `format` renders a multi-line, colour-formatted string suitable for CLI output.
+
+```typescript
+declare class AncilisError extends Error {
+    readonly code: string;
+    readonly suggestion?: string;
+    readonly docsUrl: string;
+    constructor(code: string, message: string, suggestion?: string);
+    format(colorEnabled?: boolean): string;
+}
+```
+
+---
+
+### ConnectionError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E001 — Cannot connect to platform. `url` is the platform URL that was unreachable.
+
+```typescript
+declare class ConnectionError extends AncilisError {
+    constructor(url: string, cause?: unknown);
+}
+```
+
+---
+
+### ConfigError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E002 — Invalid `ancilis.yaml` configuration. `validationError` is a human-readable description of the validation failure.
+
+```typescript
+declare class ConfigError extends AncilisError {
+    constructor(validationError: string);
+}
+```
+
+---
+
+### OverlayNotFoundError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E003 — Overlay profile not found. `name` is the overlay that was not found; `available` lists available overlay names.
+
+```typescript
+declare class OverlayNotFoundError extends AncilisError {
+    constructor(name: string, available?: string[]);
+}
+```
+
+---
+
+### StorageError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E004 — Evidence store initialization failed (DuckDB). `path` is the evidence store path that failed.
+
+```typescript
+declare class StorageError extends AncilisError {
+    constructor(path: string, cause?: unknown);
+}
+```
+
+---
+
+### AuthError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E005 — Authentication failed (invalid API key). `platformUrl` is where a new key can be generated.
+
+```typescript
+declare class AuthError extends AncilisError {
+    constructor(platformUrl: string);
+}
+```
+
+---
+
+### RateLimitError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E006 — Rate limited by platform. `retryAfterSeconds` is the number of seconds until the client may retry.
+
+```typescript
+declare class RateLimitError extends AncilisError {
+    constructor(retryAfterSeconds?: number);
+}
+```
+
+---
+
+### ScanError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E007 — Scan target directory not found or empty. `path` is the path that was not found.
+
+```typescript
+declare class ScanError extends AncilisError {
+    constructor(path: string);
+}
+```
+
+---
+
+### UnsupportedFileError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E008 — No supported files found in scan directory. `path` is the directory that was scanned.
+
+```typescript
+declare class UnsupportedFileError extends AncilisError {
+    constructor(path: string);
+}
+```
+
+---
+
+### UploadError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E009 — Evidence upload failed. `httpStatus` is the HTTP status code returned by the platform.
+
+```typescript
+declare class UploadError extends AncilisError {
+    constructor(httpStatus: number | string);
+}
+```
+
+---
+
+### VersionError
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+E010 — SDK/Node version unsupported. `current` is the current Node.js version; `minimum` is the minimum required version.
+
+```typescript
+declare class VersionError extends AncilisError {
+    constructor(current: string, minimum: string);
+}
+```
+
+---
+
+### AncilisWarning
+
+**Kind:** class &middot; **Module:** `ancilis/errors`
+
+Structured warning — not raised as an exception, returned alongside results. Carries `code` (e.g. `"W001"`), `message`, an optional `suggestion`, and `docsUrl`. `format` renders a multi-line, colour-formatted string suitable for CLI output.
+
+```typescript
+declare class AncilisWarning {
+    readonly code: string;
+    readonly message: string;
+    readonly suggestion?: string;
+    readonly docsUrl: string;
+    constructor(code: string, message: string, suggestion?: string);
+    toString(): string;
+    format(colorEnabled?: boolean): string;
+}
+```
+
+---
+
+### warnNoOverlays
+
+**Kind:** function &middot; **Module:** `ancilis/errors`
+
+W001 — No overlay profiles configured. Returns an [`AncilisWarning`](#anciliswarning).
+
+```typescript
+declare function warnNoOverlays(): AncilisWarning;
+```
+
+---
+
+### warnSdkUpdate
+
+**Kind:** function &middot; **Module:** `ancilis/errors`
+
+W002 — Newer SDK version available. `current` is the installed version; `latest` is the available version. Returns an [`AncilisWarning`](#anciliswarning).
+
+```typescript
+declare function warnSdkUpdate(current: string, latest: string): AncilisWarning;
+```
+
+---
+
+### warnStoreSize
+
+**Kind:** function &middot; **Module:** `ancilis/errors`
+
+W003 — Evidence store approaching size limit. `sizeMb` is the current store size; `limitMb` is the configured limit. Returns an [`AncilisWarning`](#anciliswarning).
+
+```typescript
+declare function warnStoreSize(sizeMb: number, limitMb: number): AncilisWarning;
+```

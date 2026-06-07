@@ -111,13 +111,22 @@
             ]
           },
           {
-            "group": "API Reference",
+            "group": "API Reference (Python)",
             "pages": [
               "sdk/api/producers",
               "sdk/api/adapters",
               "sdk/api/evidence",
               "sdk/api/config-middleware",
               "sdk/api/utilities"
+            ]
+          },
+          {
+            "group": "API Reference (TypeScript)",
+            "pages": [
+              "sdk/api/ts-core",
+              "sdk/api/ts-producers",
+              "sdk/api/ts-reporting",
+              "sdk/api/ts-utilities"
             ]
           },
           {

@@ -1,0 +1,494 @@
+---
+title: "Reporting, Baselines & Remediation (TypeScript)"
+description: "TypeScript API reference for the Ancilis report generator and renderers, baseline snapshots and drift detection, and remediation guidance."
+---
+
+This page documents the reporting, baseline, and remediation surface exported from the `ancilis`
+package for TypeScript. It covers the [`ReportGenerator`](#reportgenerator) and the
+[`parsePeriod`](#parseperiod) helper, the output renderers
+([`renderTerminal`](#renderterminal), [`renderMarkdown`](#rendermarkdown),
+[`renderNdjson`](#renderndjson), [`renderCsv`](#rendercsv),
+[`renderOscalJson`](#renderoscaljson), [`renderPdf`](#renderpdf)), the
+[`BaselineManager`](#baselinemanager), and the remediation helpers
+([`buildRemediationRecommendations`](#buildremediationrecommendations),
+[`loadRemediationGuides`](#loadremediationguides),
+[`renderRemediationRecommendations`](#renderremediationrecommendations)).
+
+Every signature below is copied verbatim from the compiled TypeScript declarations
+(`dist/ancilis/**/*.d.ts`). Only symbols re-exported from the package root (`ancilis`) are
+documented here. Type-only symbols are marked as interfaces and are imported with `import type`.
+
+```typescript
+import {
+  ReportGenerator,
+  parsePeriod,
+  renderTerminal,
+  renderMarkdown,
+  renderNdjson,
+  renderCsv,
+  renderOscalJson,
+  renderPdf,
+  BaselineManager,
+  buildRemediationRecommendations,
+  loadRemediationGuides,
+  renderRemediationRecommendations,
+} from "ancilis";
+```
+
+---
+
+## Reporting
+
+The report module queries the evidence summary, assembles posture sections, and renders them in
+one of several output formats.
+
+### ReportGenerator
+
+- **Kind:** class
+- **Module:** `ancilis/report/generator`
+
+Core report generation — queries evidence and assembles sections. Construct it with a
+`ResolvedConfig` and an evidence summary, then call [`generate`](#reportgenerator) to produce a
+[`ReportData`](#reportdata) structure that the renderers consume.
+
+```typescript
+declare class ReportGenerator {
+  constructor(config: ResolvedConfig, summary: EvidenceSummaryLike);
+  generate(period?: string, reportFormat?: string, options?: {
+    now?: Date;
+  }): ReportData;
+}
+```
+
+The `summary` parameter accepts either an [`EvidenceSummary`](#evidencesummary) or a plain
+`Record<string, unknown>` (the `EvidenceSummaryLike` union). The `period` argument is parsed with
+[`parsePeriod`](#parseperiod).
+
+```typescript
+import { ReportGenerator, renderMarkdown, loadConfig, EvidenceStore } from "ancilis";
+
+const config = loadConfig();
+const store = new EvidenceStore(config);
+const summary = await store.getSummary();
+
+const generator = new ReportGenerator(config, summary);
+const report = generator.generate("30d", "default");
+const markdown = renderMarkdown(report);
+```
+
+### parsePeriod
+
+- **Kind:** function
+- **Module:** `ancilis/report/generator`
+
+Parses a period string into a duration in milliseconds. A `"d"` suffix is interpreted as days and
+an `"h"` suffix as hours; any other input falls back to 30 days.
+
+```typescript
+declare function parsePeriod(period: string): number;
+```
+
+### renderTerminal
+
+- **Kind:** function
+- **Module:** `ancilis/report/renderer`
+
+Renders a [`ReportData`](#reportdata) as a colorized terminal string.
+
+```typescript
+declare function renderTerminal(data: ReportData): string;
+```
+
+### renderMarkdown
+
+- **Kind:** function
+- **Module:** `ancilis/report/renderer`
+
+Renders a [`ReportData`](#reportdata) as a Markdown document.
+
+```typescript
+declare function renderMarkdown(data: ReportData): string;
+```
+
+### renderNdjson
+
+- **Kind:** function
+- **Module:** `ancilis/report/renderer`
+
+Renders a list of `EvidenceRecord`s as newline-delimited JSON (one record per line).
+
+```typescript
+declare function renderNdjson(records: EvidenceRecord[]): string;
+```
+
+### renderCsv
+
+- **Kind:** function
+- **Module:** `ancilis/report/renderer`
+
+Renders a list of `EvidenceRecord`s as CSV.
+
+```typescript
+declare function renderCsv(records: EvidenceRecord[]): string;
+```
+
+### renderOscalJson
+
+- **Kind:** function
+- **Module:** `ancilis/report/renderer`
+
+Renders a [`ReportData`](#reportdata) as OSCAL JSON.
+
+```typescript
+declare function renderOscalJson(data: ReportData): string;
+```
+
+### renderPdf
+
+- **Kind:** function
+- **Module:** `ancilis/report/renderer`
+
+Renders Markdown to PDF via `pandoc`/`xelatex`, writing the result to `outputPath`. When the PDF
+toolchain is unavailable, it falls back to writing the Markdown alongside the requested path and
+reports that in the returned [`RenderPdfResult`](#renderpdfoptions--renderpdfresult).
+
+```typescript
+declare function renderPdf(markdown: string, outputPath: string, options?: RenderPdfOptions): RenderPdfResult;
+```
+
+### ReportData
+
+- **Kind:** interface
+- **Module:** `ancilis/report/generator`
+
+The assembled report structure returned by [`ReportGenerator.generate`](#reportgenerator) and
+consumed by the renderers.
+
+```typescript
+interface ReportData {
+  agentName: string;
+  mode: string;
+  periodStart: string;
+  periodEnd: string;
+  generatedAt: string;
+  reportFormat: string;
+  baseline: Record<string, unknown>;
+  complianceSections: Record<string, unknown>[];
+  certification: Record<string, unknown> | null;
+  advisory: Record<string, unknown> | null;
+  evidenceRecords?: EvidenceRecord[];
+  totalEvaluations: number;
+  chainValid: boolean;
+  chainErrors: string[];
+}
+```
+
+### EvidenceSummary
+
+- **Kind:** interface
+- **Module:** `ancilis/report/generator`
+
+The evidence summary shape accepted by [`ReportGenerator`](#reportgenerator).
+
+```typescript
+interface EvidenceSummary {
+  total_evaluations: number;
+  decisions: Record<string, number>;
+  tools_evaluated: string[];
+  control_pass_rates?: Record<string, Record<string, number>>;
+  pattern_detections?: Record<string, number>;
+  chain_valid: boolean;
+  chain_errors: string[];
+}
+```
+
+### RenderPdfOptions & RenderPdfResult
+
+- **Kind:** interface
+- **Module:** `ancilis/report/renderer`
+
+Options for, and result of, [`renderPdf`](#renderpdf). `RenderPdfOptions.execFile` allows
+injecting an alternative `execFileSync` implementation (used for testing). `RenderPdfResult`
+reports whether a PDF or a Markdown fallback was written, the final `outputPath`, and an optional
+`fallbackReason`.
+
+```typescript
+interface RenderPdfOptions {
+  execFile?: typeof execFileSync;
+}
+
+interface RenderPdfResult {
+  format: "pdf" | "markdown";
+  outputPath: string;
+  fallbackReason?: string;
+}
+```
+
+---
+
+## Baselines & Drift
+
+A baseline captures the control posture observed over an evidence window so later runs can be
+compared against it. Drift detection compares the current window against the stored baseline and
+reports per-control deviations.
+
+<Note>
+Baselines are operator assertions (policy intent), not a link in the evidence hash chain. They are
+stored in the same DuckDB database as evidence records for convenience, but carry no cryptographic
+guarantee — treat them as configuration, not as audit proof.
+</Note>
+
+### BaselineManager
+
+- **Kind:** class
+- **Module:** `ancilis/baselines/manager`
+
+Snapshot and drift detection for evidence baselines. Construct it with an `EvidenceStore` and a
+`ResolvedConfig` (and an optional `tenantId`); it provisions its own baselines table in the
+underlying store.
+
+```typescript
+declare class BaselineManager {
+  constructor(store: EvidenceStore, config: ResolvedConfig, options?: {
+    tenantId?: string;
+  });
+  create(options: {
+    label: string;
+    overlayId?: string;
+    evidenceWindowHours?: number;
+    metadata?: Record<string, unknown>;
+  }): Promise<Baseline>;
+  listBaselines(overlayId?: string): Promise<Baseline[]>;
+  getBaseline(baselineId: string): Promise<Baseline>;
+  checkDrift(options?: {
+    baselineId?: string;
+    overlayId?: string;
+  }): Promise<DriftReport>;
+  deactivate(baselineId: string): Promise<void>;
+}
+```
+
+```typescript
+import { BaselineManager, EvidenceStore, loadConfig } from "ancilis";
+
+const config = loadConfig();
+const store = new EvidenceStore(config);
+const manager = new BaselineManager(store, config);
+
+const baseline = await manager.create({ label: "release-1.0" });
+const report = await manager.checkDrift({ baselineId: baseline.baselineId });
+```
+
+### Baseline
+
+- **Kind:** interface
+- **Module:** `ancilis/baselines/models`
+
+A stored baseline snapshot.
+
+```typescript
+interface Baseline {
+  baselineId: string;
+  createdAt: string;
+  agentId: string;
+  overlayId: string | null;
+  label: string;
+  controlSnapshots: ControlSnapshot[];
+  metadata: Record<string, unknown> | null;
+  isActive: boolean;
+}
+```
+
+### ControlSnapshot
+
+- **Kind:** interface
+- **Module:** `ancilis/baselines/models`
+
+A single control's posture captured at baseline time.
+
+```typescript
+interface ControlSnapshot {
+  controlId: string;
+  result: string;
+  passRate: number;
+  totalEvaluations: number;
+  evidenceWindowStart: string;
+  evidenceWindowEnd: string;
+}
+```
+
+### ControlDrift
+
+- **Kind:** interface
+- **Module:** `ancilis/baselines/models`
+
+The deviation of a single control between baseline and current windows.
+
+```typescript
+interface ControlDrift {
+  controlId: string;
+  controlName: string;
+  baselineResult: string;
+  baselinePassRate: number;
+  currentResult: string;
+  currentPassRate: number;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  firstFailureAt: string | null;
+  failureCount: number;
+  evidenceDelta: EvidenceDelta;
+}
+```
+
+### EvidenceDelta
+
+- **Kind:** interface
+- **Module:** `ancilis/baselines/models`
+
+New failures observed for a control since the baseline.
+
+```typescript
+interface EvidenceDelta {
+  newFailures: string[];
+  failureTools: string[];
+}
+```
+
+### DriftReport
+
+- **Kind:** interface
+- **Module:** `ancilis/baselines/models`
+
+The result of [`BaselineManager.checkDrift`](#baselinemanager).
+
+```typescript
+interface DriftReport {
+  driftReportId: string;
+  baselineId: string;
+  baselineLabel: string;
+  checkedAt: string;
+  agentId: string;
+  overlayId: string | null;
+  overallStatus: "STABLE" | "DRIFTED";
+  summary: DriftSummary;
+  controlDrifts: ControlDrift[];
+}
+```
+
+### DriftSummary
+
+- **Kind:** interface
+- **Module:** `ancilis/baselines/models`
+
+Aggregate counts across all controls in a [`DriftReport`](#driftreport).
+
+```typescript
+interface DriftSummary {
+  totalControls: number;
+  regressed: number;
+  degraded: number;
+  stable: number;
+}
+```
+
+---
+
+## Remediation
+
+Remediation helpers load per-control fix guides and turn the current evidence summary into a
+prioritized list of recommendations.
+
+### buildRemediationRecommendations
+
+- **Kind:** function
+- **Module:** `ancilis/remediation`
+
+Builds a prioritized list of [`RemediationRecommendation`](#remediationrecommendation)s from the
+resolved config and an evidence summary. Pass `options.controlId` to scope the recommendations to a
+single control.
+
+```typescript
+declare function buildRemediationRecommendations(config: ResolvedConfig, summary: Record<string, unknown>, options?: {
+  controlId?: string;
+}): RemediationRecommendation[];
+```
+
+### loadRemediationGuides
+
+- **Kind:** function
+- **Module:** `ancilis/remediation`
+
+Loads the bundled remediation guides, keyed by control ID.
+
+```typescript
+declare function loadRemediationGuides(): Map<string, RemediationGuide>;
+```
+
+### renderRemediationRecommendations
+
+- **Kind:** function
+- **Module:** `ancilis/remediation`
+
+Renders a list of [`RemediationRecommendation`](#remediationrecommendation)s as a human-readable
+string. Pass `options.controlId` to match the message used by a control-scoped query.
+
+```typescript
+declare function renderRemediationRecommendations(recommendations: RemediationRecommendation[], options?: {
+  controlId?: string;
+}): string;
+```
+
+```typescript
+import {
+  buildRemediationRecommendations,
+  renderRemediationRecommendations,
+  loadConfig,
+  EvidenceStore,
+} from "ancilis";
+
+const config = loadConfig();
+const store = new EvidenceStore(config);
+const summary = await store.getSummary();
+
+const recommendations = buildRemediationRecommendations(config, summary);
+console.log(renderRemediationRecommendations(recommendations));
+```
+
+### RemediationGuide
+
+- **Kind:** interface
+- **Module:** `ancilis/remediation`
+
+A per-control remediation guide.
+
+```typescript
+interface RemediationGuide {
+  controlId: string;
+  title: string;
+  difficulty: string;
+  timeEstimate: string;
+  evidenceNeeded: string[];
+  fixSteps: string[];
+  codeExample: string;
+  explanation: string;
+  docsUrl: string | null;
+}
+```
+
+### RemediationRecommendation
+
+- **Kind:** interface
+- **Module:** `ancilis/remediation`
+
+A guide paired with the current evidence-window status for its control.
+
+```typescript
+interface RemediationRecommendation {
+  guide: RemediationGuide;
+  status: "GAP" | "PARTIAL" | "NO_EVIDENCE" | "HEALTHY";
+  evaluations: number;
+  failures: number;
+  flags: number;
+  passRate: number;
+  codeExample: string;
+}
+```
