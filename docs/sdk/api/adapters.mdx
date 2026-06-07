@@ -1,0 +1,437 @@
+---
+title: Provider Adapters
+description: Observe-only adapters that translate native LLM-provider API calls (Anthropic, Azure OpenAI, Bedrock, Cloudflare, Hugging Face, and more) into Ancilis Actions, evaluations, and evidence.
+---
+
+Provider adapters (also called provider producers) observe native LLM-provider
+API calls and turn them into the standardized Ancilis `Action` shape so they can
+be evaluated and recorded as evidence. They cover providers such as Anthropic,
+Azure OpenAI, AWS Bedrock, Cloudflare Workers AI, Hugging Face Inference, Google
+Vertex AI, Replicate, and the OpenAI Assistants and Realtime APIs.
+
+These adapters are **observe-only**: they record evidence but cannot block a
+call. Each adapter accepts a plain dictionary or a typed `*Invocation`
+dataclass, so the SDK stays importable without the provider's own Python package
+installed. For every provider there are four exported symbols:
+
+- a `*ActionProducer` — the main adapter class,
+- a `*Adapter` — a backwards-compatible alias for the producer,
+- an `*Invocation` dataclass — the raw, pre-translation envelope, and
+- an `*Observation` dataclass — the resulting action, evaluation, and evidence.
+
+All symbols on this page are exported from `ancilis.adapters`.
+
+```python
+from ancilis import load_config
+from ancilis.adapters import AnthropicActionProducer, AnthropicInvocation
+from ancilis.engine.engine import Engine
+
+config = load_config()
+producer = AnthropicActionProducer(config, Engine(config))
+
+invocation = AnthropicInvocation(operation="Messages.create", model="claude-3-5-sonnet")
+observation = producer.observe(invocation)
+```
+
+---
+
+## Anthropic
+
+### AnthropicActionProducer
+
+**Kind:** class
+
+```python
+AnthropicActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces `Action` objects from native Anthropic API invocations. The adapter
+accepts plain dictionaries or `AnthropicInvocation` objects so the SDK stays
+importable without the `anthropic` Python package installed. Observe-only.
+
+### AnthropicAdapter
+
+**Kind:** class
+
+```python
+AnthropicAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Backwards-compatible alias for [`AnthropicActionProducer`](#anthropicactionproducer).
+
+### AnthropicInvocation
+
+**Kind:** class
+
+```python
+AnthropicInvocation(operation: 'str', model: 'str | None' = None, request_body: 'Any' = None, response_body: 'Any' = None, stream_chunks: 'Sequence[Any] | None' = None, http_status: 'int | None' = None, request_id: 'str | None' = None, latency_ms: 'float | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None, base_url: 'str | None' = None) -> None
+```
+
+Raw Anthropic API invocation before translation to an Action.
+
+### AnthropicObservation
+
+**Kind:** class
+
+```python
+AnthropicObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for an observed Anthropic call.
+
+---
+
+## OpenAI Assistants
+
+### OpenAIAssistantsActionProducer
+
+**Kind:** class
+
+```python
+OpenAIAssistantsActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces `Action` objects from OpenAI Assistants v2 invocations. Observe-only.
+
+### OpenAIAssistantsAdapter
+
+**Kind:** class
+
+```python
+OpenAIAssistantsAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Backwards-compatible alias for [`OpenAIAssistantsActionProducer`](#openaiassistantsactionproducer).
+
+### OpenAIAssistantsInvocation
+
+**Kind:** class
+
+```python
+OpenAIAssistantsInvocation(operation: 'str', thread_id: 'str | None' = None, assistant_id: 'str | None' = None, run_id: 'str | None' = None, run_body: 'Any' = None, steps: 'Sequence[Any] | None' = None, http_status: 'int | None' = None, request_id: 'str | None' = None, latency_ms: 'float | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None, base_url: 'str | None' = None) -> None
+```
+
+Raw OpenAI Assistants v2 invocation before translation to an Action.
+
+### OpenAIAssistantsObservation
+
+**Kind:** class
+
+```python
+OpenAIAssistantsObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for an observed Assistants call.
+
+---
+
+## OpenAI Realtime
+
+### OpenAIRealtimeActionProducer
+
+**Kind:** class
+
+```python
+OpenAIRealtimeActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces `Action` objects from OpenAI Realtime sessions. Observe-only.
+
+### OpenAIRealtimeAdapter
+
+**Kind:** class
+
+```python
+OpenAIRealtimeAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Backwards-compatible alias for [`OpenAIRealtimeActionProducer`](#openairealtimeactionproducer).
+
+### OpenAIRealtimeInvocation
+
+**Kind:** class
+
+```python
+OpenAIRealtimeInvocation(operation: 'str' = 'Session.observe', session_id: 'str | None' = None, session_config: 'Mapping[str, Any] | None' = None, events: 'Sequence[Mapping[str, Any]]' = <factory>, session_started_at: 'str | None' = None, session_ended_at: 'str | None' = None, http_status: 'int | None' = 101, request_id: 'str | None' = None, latency_ms: 'float | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None, base_url: 'str | None' = None) -> None
+```
+
+Raw OpenAI Realtime session invocation before translation.
+
+### OpenAIRealtimeObservation
+
+**Kind:** class
+
+```python
+OpenAIRealtimeObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for a Realtime session.
+
+---
+
+## AWS Bedrock
+
+### BedrockActionProducer
+
+**Kind:** class
+
+```python
+BedrockActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces `Action` objects from AWS Bedrock Runtime invocations. Observe-only.
+
+### BedrockAdapter
+
+**Kind:** class
+
+```python
+BedrockAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Backwards-compatible alias for [`BedrockActionProducer`](#bedrockactionproducer).
+
+### BedrockInvocation
+
+**Kind:** class
+
+```python
+BedrockInvocation(operation: 'str', model_id: 'str | None' = None, region: 'str | None' = None, request_body: 'Any' = None, response_body: 'Any' = None, stream_chunks: 'Sequence[Any] | None' = None, http_status: 'int | None' = None, request_id: 'str | None' = None, latency_ms: 'float | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None) -> None
+```
+
+Raw Bedrock Runtime invocation before translation to an Action.
+
+### BedrockObservation
+
+**Kind:** class
+
+```python
+BedrockObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for an observed Bedrock call.
+
+---
+
+## Azure OpenAI
+
+### AzureOpenAIActionProducer
+
+**Kind:** class
+
+```python
+AzureOpenAIActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None, deployment_model_map: 'Mapping[str, str] | None' = None) -> 'None'
+```
+
+Produces `Action` objects from Azure OpenAI request/response envelopes. The
+optional `deployment_model_map` maps Azure deployment names to underlying model
+identifiers. Observe-only.
+
+### AzureOpenAIAdapter
+
+**Kind:** class
+
+```python
+AzureOpenAIAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None, deployment_model_map: 'Mapping[str, str] | None' = None) -> 'None'
+```
+
+Backwards-compatible alias for [`AzureOpenAIActionProducer`](#azureopenaiactionproducer).
+
+### AzureOpenAIInvocation
+
+**Kind:** class
+
+```python
+AzureOpenAIInvocation(operation: 'str', azure_deployment: 'str | None' = None, endpoint_host: 'str | None' = None, api_version: 'str | None' = None, region: 'str | None' = None, request_body: 'Any' = None, response_body: 'Any' = None, http_status: 'int | None' = None, request_id: 'str | None' = None, latency_ms: 'float | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None, url: 'str | None' = None) -> None
+```
+
+Raw Azure OpenAI invocation before translation to an Action.
+
+### AzureOpenAIObservation
+
+**Kind:** class
+
+```python
+AzureOpenAIObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for an observed Azure OpenAI call.
+
+---
+
+## Cloudflare Workers AI
+
+### CloudflareWorkersAIActionProducer
+
+**Kind:** class
+
+```python
+CloudflareWorkersAIActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces `Action` objects from native Cloudflare Workers AI invocations.
+Observe-only.
+
+### CloudflareWorkersAIAdapter
+
+**Kind:** class
+
+```python
+CloudflareWorkersAIAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Backwards-compatible alias for [`CloudflareWorkersAIActionProducer`](#cloudflareworkersaiactionproducer).
+
+### CloudflareWorkersAIInvocation
+
+**Kind:** class
+
+```python
+CloudflareWorkersAIInvocation(operation: 'str', model_id: 'str | None' = None, account_id: 'str | None' = None, gateway_id: 'str | None' = None, request_body: 'Any' = None, response_body: 'Any' = None, http_status: 'int | None' = None, request_id: 'str | None' = None, latency_ms: 'float | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None, base_url: 'str | None' = None) -> None
+```
+
+Raw Cloudflare Workers AI invocation before translation to an Action.
+
+### CloudflareWorkersAIObservation
+
+**Kind:** class
+
+```python
+CloudflareWorkersAIObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for an observed Workers AI call.
+
+---
+
+## Hugging Face Inference
+
+### HuggingFaceActionProducer
+
+**Kind:** class
+
+```python
+HuggingFaceActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None, long_generation_tokens: 'int' = 1000) -> 'None'
+```
+
+Produces `Action` objects from native Hugging Face Inference invocations. The
+`long_generation_tokens` threshold controls when a generation is flagged as
+long. Observe-only.
+
+### HuggingFaceAdapter
+
+**Kind:** class
+
+```python
+HuggingFaceAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None, long_generation_tokens: 'int' = 1000) -> 'None'
+```
+
+Backwards-compatible alias for [`HuggingFaceActionProducer`](#huggingfaceactionproducer).
+
+### HuggingFaceInvocation
+
+**Kind:** class
+
+```python
+HuggingFaceInvocation(operation: 'str' = 'Models.run', model_owner: 'str | None' = None, model_name: 'str | None' = None, model_revision: 'str | None' = None, task_type: 'str | None' = None, endpoint_kind: 'str | None' = None, routing_provider: 'str | None' = None, request_body: 'Any' = None, response_body: 'Any' = None, http_status: 'int | None' = None, request_id: 'str | None' = None, latency_ms: 'float | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None, base_url: 'str | None' = None) -> None
+```
+
+Raw Hugging Face Inference invocation before translation to an Action.
+
+### HuggingFaceObservation
+
+**Kind:** class
+
+```python
+HuggingFaceObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for an observed Hugging Face call.
+
+---
+
+## Google Vertex AI
+
+### VertexAIActionProducer
+
+**Kind:** class
+
+```python
+VertexAIActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces `Action` objects from Google Vertex AI invocations. Observe-only.
+
+### VertexAIAdapter
+
+**Kind:** class
+
+```python
+VertexAIAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Backwards-compatible alias for [`VertexAIActionProducer`](#vertexaiactionproducer).
+
+### VertexAIInvocation
+
+**Kind:** class
+
+```python
+VertexAIInvocation(method: 'str', project_id: 'str | None' = None, location: 'str | None' = None, endpoint_id: 'str | None' = None, publisher_model_id: 'str | None' = None, request_body: 'Any' = None, response_body: 'Any' = None, http_status: 'int | None' = None, request_id: 'str | None' = None, latency_ms: 'float | None' = None, endpoint_host: 'str | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None) -> None
+```
+
+Raw Vertex AI invocation before translation to an Action.
+
+### VertexAIObservation
+
+**Kind:** class
+
+```python
+VertexAIObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for an observed Vertex AI call.
+
+---
+
+## Replicate
+
+### ReplicateActionProducer
+
+**Kind:** class
+
+```python
+ReplicateActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces `Action` objects from native Replicate API invocations. Observe-only.
+
+### ReplicateAdapter
+
+**Kind:** class
+
+```python
+ReplicateAdapter(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Backwards-compatible alias for [`ReplicateActionProducer`](#replicateactionproducer).
+
+### ReplicateInvocation
+
+**Kind:** class
+
+```python
+ReplicateInvocation(operation: 'str', model_owner: 'str | None' = None, model_name: 'str | None' = None, version: 'str | None' = None, request_body: 'Any' = None, response_body: 'Any' = None, http_status: 'int | None' = None, request_id: 'str | None' = None, latency_ms: 'float | None' = None, headers: 'Mapping[str, Any] | None' = None, response_metadata: 'Mapping[str, Any] | None' = None, agent_id: 'str | None' = None, auth_mode: 'str | None' = None, base_url: 'str | None' = None) -> None
+```
+
+Raw Replicate API invocation before translation to an Action.
+
+### ReplicateObservation
+
+**Kind:** class
+
+```python
+ReplicateObservation(action: 'Action', evaluation: 'EvaluationResult', evidence: 'EvidenceRecord') -> None
+```
+
+Action, evaluation, and evidence record for an observed Replicate call.

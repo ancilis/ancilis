@@ -1,0 +1,278 @@
+---
+title: Producers
+description: Wrap a call site (tool, MCP, CLI, HTTP, or LLM) and turn it into a governed Action that the engine evaluates.
+---
+
+Producers are the entry point for governance. Each producer wraps a specific kind of call
+site — a Python function/tool, an MCP tool call, a CLI/subprocess invocation, or an outbound
+HTTP request — and translates the raw invocation into a standardized [`Action`](#actionproducer)
+object. The control [`Engine`](/sdk/api/engine) then evaluates that Action, and the result is
+persisted to the evidence store.
+
+All producers implement the [`ActionProducer`](#actionproducer) protocol, so the engine never
+needs to know which protocol an action came from. Enforce-capable producers (Tool, CLI, MCP) can
+block an action before the wrapped call runs; HTTP enforcement is opt-in.
+
+This page documents the symbols whose module begins with `ancilis.producers`.
+
+```python
+from ancilis import ToolActionProducer, CLIActionProducer, HTTPActionProducer
+from ancilis.engine import Engine
+from ancilis.config import load_config
+from ancilis.evidence import EvidenceStore
+
+config = load_config()
+evidence_store = EvidenceStore(config)
+engine = Engine(config, evidence_store=evidence_store)
+producer = ToolActionProducer(config=config, engine=engine, evidence_store=evidence_store)
+```
+
+## Protocol
+
+### ActionProducer
+
+**Kind:** class (protocol)
+
+```python
+ActionProducer(*args, **kwargs)
+```
+
+Protocol that any action source must implement. MCP middleware, CLI interceptors, HTTP proxies,
+A2A adapters, and framework callbacks all implement this interface — the engine does not know or
+care which producer created an Action. Implementations expose `producer_type` and
+`producer_version` properties and the methods `translate(raw_invocation)`,
+`compute_tool_hash(tool_identifier)`, and `register_tools(registry)`. It is a
+`runtime_checkable` `Protocol`.
+
+### ProducerType
+
+**Kind:** class (enum)
+
+```python
+ProducerType(*args, **kwds)
+```
+
+Identifies the source protocol for an action. A string-valued `Enum` with members `MCP`, `CLI`,
+`HTTP`, `A2A`, `FRAMEWORK`, and `MANUAL`.
+
+## Tool producer
+
+The Tool producer governs developer-owned Python functions. It supports a decorator/wrapper mode
+for tool definitions you own and an explicit evaluate/execute mode for framework-owned
+registrations.
+
+### ToolActionProducer
+
+**Kind:** class
+
+```python
+ToolActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces Action objects from Python function/tool invocations. Enforce-capable: `execute` raises
+[`BlockedActionError`](#blockedactionerror) on a BLOCK decision before the wrapped callable runs.
+Key methods include `evaluate(...)` (evaluate without executing), `execute(...)` (evaluate then
+run when allowed), and `wrap_tool(...)` (return a wrapped callable).
+
+### ToolInvocation
+
+**Kind:** class (dataclass)
+
+```python
+ToolInvocation(func: 'Callable[..., Any]', agent_name: 'str', args: 'tuple[Any, ...]' = (), kwargs: 'dict[str, Any] | None' = None, tool_name: 'str | None' = None) -> None
+```
+
+Raw tool invocation captured before it is translated into an Action.
+
+### ToolExecutionResult
+
+**Kind:** class (dataclass)
+
+```python
+ToolExecutionResult(action: 'Action', evaluation: 'EvaluationResult', blocked: 'bool', return_value: 'Any' = None) -> None
+```
+
+Result of running a tool through the producer: the translated `action`, the `evaluation`, whether
+it was `blocked`, and the wrapped function's `return_value`.
+
+### BlockedActionError
+
+**Kind:** class (exception)
+
+```python
+BlockedActionError(tool_name: 'str', evaluation: 'EvaluationResult')
+```
+
+Raised when a producer blocks execution before the wrapped action runs. Carries the `tool_name`,
+the `evaluation`, and a human-readable `display_message` describing which controls failed and how
+to approve or review the action.
+
+### tool
+
+**Kind:** function
+
+```python
+tool(*, producer: 'ToolActionProducer', agent_name: 'str | None' = None, tool_name: 'str | None' = None) -> 'Callable[[Callable[P, R]], Callable[P, R]]'
+```
+
+Decorator factory that wraps a function so each call is evaluated and executed through the given
+`producer`.
+
+### wrap_tool
+
+**Kind:** function
+
+```python
+wrap_tool(func: 'Callable[P, R]', *, producer: 'ToolActionProducer', agent_name: 'str | None' = None, tool_name: 'str | None' = None) -> 'Callable[P, R]'
+```
+
+Return a wrapped version of `func` that routes every invocation through the `producer` (a
+function form of `ToolActionProducer.wrap_tool`).
+
+### evaluate_and_execute
+
+**Kind:** function
+
+```python
+evaluate_and_execute(func: 'Callable[P, R]', *, producer: 'ToolActionProducer', agent_name: 'str', args: 'tuple[Any, ...]' = (), kwargs: 'dict[str, Any] | None' = None, tool_name: 'str | None' = None) -> 'ToolExecutionResult'
+```
+
+Evaluate a single function invocation and execute it when allowed, returning a
+[`ToolExecutionResult`](#toolexecutionresult). Delegates to `ToolActionProducer.execute`.
+
+## MCP producer
+
+### MCPActionProducer
+
+**Kind:** class
+
+```python
+MCPActionProducer(config: 'ResolvedConfig', registry: 'ToolRegistry') -> 'None'
+```
+
+Produces Action objects from MCP tool calls, delegating to the existing action-builder and
+discovery modules. Enforce-capable: the MCP middleware refuses a tool call on a BLOCK decision
+before forwarding it. `translate` accepts a dict with `name` and optional `arguments` keys,
+matching the MCP `callTool` params shape.
+
+## CLI producer
+
+### CLIActionProducer
+
+**Kind:** class
+
+```python
+CLIActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces Action objects from CLI/subprocess invocations. Enforce-capable: the subprocess only runs
+when the evaluation does not return BLOCK. Use `execute(...)` to evaluate and run a command, or
+`translate(CLIInvocation(...))` to build an Action for a dry-run evaluation.
+
+### CLIInvocation
+
+**Kind:** class (dataclass)
+
+```python
+CLIInvocation(command: 'list[str]', agent_name: 'str', working_directory: 'str | None' = None, environment: 'dict[str, str] | None' = None) -> None
+```
+
+Raw CLI invocation before translation to an Action.
+
+### CLIExecutionResult
+
+**Kind:** class (dataclass)
+
+```python
+CLIExecutionResult(action: 'Action', evaluation: 'EvaluationResult', blocked: 'bool', stdout: 'str | None' = None, stderr: 'str | None' = None, return_code: 'int | None' = None, scan_result: 'ScanResult | None' = None) -> None
+```
+
+Result of a CLI execution through the producer, including captured `stdout`/`stderr`, the process
+`return_code`, and an optional response `scan_result`.
+
+## HTTP producer
+
+The HTTP producer governs outbound HTTP/API requests. Observe/report mode is the primary path;
+pre-request blocking via explicit transport wrapping is opt-in.
+
+### HTTPActionProducer
+
+**Kind:** class
+
+```python
+HTTPActionProducer(config: 'ResolvedConfig', engine: 'Engine', registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Produces Action objects for outbound HTTP requests. Observe/report mode is the primary path;
+explicit transport wrapping can optionally enforce pre-request blocking, but it is opt-in by
+design. Use `observe(request)` to evaluate without sending, or `execute(...)` / `wrap_transport(...)`
+to send through a transport.
+
+### HTTPRequest
+
+**Kind:** class (dataclass)
+
+```python
+HTTPRequest(method: 'str', url: 'str', agent_name: 'str', headers: 'dict[str, str] | None' = None, body: 'Any' = None, service_name: 'str | None' = None, metadata: 'dict[str, Any] | None' = None) -> None
+```
+
+Raw outbound HTTP request captured before translation into an Action.
+
+### HTTPObservation
+
+**Kind:** class (dataclass)
+
+```python
+HTTPObservation(action: 'Action', evaluation: 'EvaluationResult') -> None
+```
+
+Pairs the translated `action` with its `evaluation` for an observed (not yet sent) HTTP request.
+
+### HTTPExecutionResult
+
+**Kind:** class (dataclass)
+
+```python
+HTTPExecutionResult(action: 'Action', evaluation: 'EvaluationResult', blocked: 'bool', response: 'Any' = None) -> None
+```
+
+Result of sending an HTTP request through the producer: the `action`, the `evaluation`, whether it
+was `blocked`, and the transport `response`.
+
+## Runtime selection
+
+Helpers for assembling the set of active producers (built-in plus explicitly selected plugin
+producers) and for validating translated actions.
+
+### RuntimeProducerSelection
+
+**Kind:** class (dataclass)
+
+```python
+RuntimeProducerSelection(producers: 'Mapping[str, ActionProducer]', warnings: 'tuple[str, ...]' = ()) -> None
+```
+
+Resolved runtime producers plus non-fatal selection warnings.
+
+### resolve_runtime_producers
+
+**Kind:** function
+
+```python
+resolve_runtime_producers(config: 'ResolvedConfig', *, builtin_names: 'Iterable[str] | None' = None, plugin_names: 'Iterable[str]' = (), plugin_configs: 'Mapping[str, Mapping[str, Any]] | None' = None, plugin_registry: 'PluginRegistry | None' = None, engine: 'Engine | None' = None, registry: 'ToolRegistry | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'RuntimeProducerSelection'
+```
+
+Resolve built-in producers and explicitly selected plugin producers. The built-in Tool/MCP/CLI/HTTP
+producers remain the default set; plugin producers are additive, selected with `plugin:<name>`, and
+are skipped rather than allowed to override a built-in producer name.
+
+### translate_runtime_action
+
+**Kind:** function
+
+```python
+translate_runtime_action(producer: 'ActionProducer', raw_invocation: 'Any') -> 'Action'
+```
+
+Translate a runtime invocation through `producer.translate` and validate that the result is a
+standardized `Action`, raising `TypeError` otherwise.
