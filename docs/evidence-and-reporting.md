@@ -12,9 +12,9 @@ Each evaluation produces an `EvidenceRecord` with:
 | `evaluation_id` | Links to the evaluation that produced it |
 | `timestamp` | ISO 8601 timestamp |
 | `agent_id` | Agent that made the tool call |
-| `source_type` | Producer type (framework, mcp, cli, http) |
+| `source_type` | Producer type (`agent` by default; e.g. `mcp`, `dependency_scan`, or an importer type) |
 | `tool_name` | Name of the tool called |
-| `decision` | ALLOW or BLOCK |
+| `decision` | ALLOW, BLOCK, or FLAG |
 | `mode` | audit or enforce |
 | `control_results` | Per-control evaluation results (JSON) |
 | `active_overlays` | Overlays active at evaluation time |
@@ -111,16 +111,18 @@ certification targets.
 
 ### `ancilis certify`
 
-Computes v0.1 dry-run framework coverage from local evidence.
+Computes dry-run framework coverage from local evidence.
 
 ```bash
 ancilis certify --target soc2
 ancilis certify --target pci --format json --dry-run
 ```
 
-The command reports each in-scope AKSI control as `covered`, `partial`, or
-`gap`, with evidence counts and the latest evidence timestamp. If no evidence
-exists, all in-scope controls are listed as gaps.
+The command reports each in-scope AKSI control's coverage status — `covered`,
+`policy_gated`, `attestation_required`, `attestation_stale`,
+`attestation_incomplete`, or `gap` — along with the action required, evidence
+count, and the latest evidence timestamp. If no evidence exists, all in-scope
+controls are listed as gaps.
 
 ### `ancilis report`
 
@@ -155,17 +157,50 @@ Report sections:
 
 ### `ancilis report` output structure
 
-Terminal reports show control IDs and regulatory citations. This is the auditor-facing view — control IDs are appropriate here.
+The terminal and markdown formats render compliance posture differently. The terminal format is a compact at-a-glance view; the markdown format is the detailed auditor-facing view with regulatory citations.
+
+**Terminal format** (`--format terminal`) leads with "Ancilis Posture Report" and renders a "Compliance Matrix:" grid — one row per control, one column per active overlay, with `✓`/`-` cells showing whether each control passes for that overlay:
 
 ```
-HIPAA Security Rule Compliance Posture
-Activated by: health_records declaration
-Controls at strict threshold: PR-01, PR-02, PR-04, PR-05
+Ancilis Posture Report — my-agent
+Period: 2026-05-08 to 2026-06-07
+Mode: audit
+Posture: HEALTHY (1/39 controls passing)
+Evaluations: 15 total | 0 blocked | 15 allowed
+Active overlays: Financial Services (GLBA, SOX, DORA), SOC 2 Type II
+Active certifications: none
+Evidence chain: ✓ legacy-unverified (set ANCILIS_CHAIN_KEY) (15 records)
 
-  164.312(d)  ✓ PR-01: 42 evaluations, 100.0% pass
-  164.312(a)(1), 164.308(a)(3)  ✓ PR-02: 42 evaluations, 100.0% pass
-  ...
-  Evidence retention: 2190 days ✓
+Baseline Controls:
+  ✓ 1 controls passing (full detail preserved in markdown)
+Tools evaluated: dependency-scanner
+
+Compliance Matrix:
+  Control | Financial Services (GLBA, SOX, DORA) | SOC 2 Type II
+  DE-01   | ✓                                    | ✓            
+  DE-02   | -                                    | -            
+  DE-03   | -                                    | -            
+  ...  # truncated: one row per control through RS-06
+```
+
+**Markdown format** (`--format markdown`) emits a per-overlay "_X_ Compliance Posture" section with `Activated by:`, `Controls at strict threshold:`, an `Evidence retention:` line, and a citation table keyed `| Citation | Control | Type | Evaluations | Pass Rate |`:
+
+```markdown
+## Financial Services (GLBA, SOX, DORA) Compliance Posture
+
+**Activated by:** financial_records declaration  
+**Controls at strict threshold:** DE-01, PR-01, PR-02, PR-04, PR-05  
+
+Ancilis provides runtime evidence for 18 of 39 mapped criteria; the remaining 21 are organizational controls it does not assess (evidenced by attestation).
+
+| Citation | Control | Type | Evaluations | Pass Rate |
+|----------|---------|------|-------------|-----------|
+| GLBA 16 CFR 314.4(c)(8), 314.4(h), SOX §404, DORA Art.10, Art.17, Art.19 | DE-01 | runtime | 15 | 0.0% |
+| GLBA 16 CFR 314.4(d), SOX §404, DORA Art.9, Art.15 | DE-02 | runtime | 0 | - |
+| ...  # truncated: one row per mapped control through RS-06 |
+
+Evidence retention: 2555 days configured, 2555 required ✓
+Enforce the window with: ancilis evidence prune
 ```
 
 ### Report periods

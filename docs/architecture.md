@@ -33,7 +33,7 @@ The engine evaluates an Action against all active controls and produces an `Eval
 
 Decision logic:
 - In **audit** mode: ALLOW always, log everything
-- In **enforce** mode: BLOCK if any control FAILs, ALLOW otherwise
+- In **enforce** mode: BLOCK if any control FAILs or ERRORs, ALLOW otherwise
 
 `decision_reason` / `decisionReason` is a human-readable summary and may truncate long control-ID lists. Consumers that need complete control-level status should read the structured `control_results` / `controlResults` array.
 
@@ -47,7 +47,7 @@ Default path: `~/.ancilis/{agent_name}-{cwd_hash}/evidence.duckdb`
 
 `ancilis.yaml` → Pydantic validation → `ResolvedConfig`
 
-Two activation paths (from ADR-004):
+Two activation paths (data-classification overlay activation documented in ADR-0001):
 1. **Data classification**: `my_agent_handles` → DC codes → overlay activation
 2. **Certification intent**: `certification_targets` → certification profile → control activation
 
@@ -61,7 +61,7 @@ python/src/ancilis/
 ├── cli/             # Click CLI commands
 ├── controls/        # Shared evaluator implementations
 ├── engine/          # Core evaluation engine
-│   └── evaluators/  # PR-01 through PR-04
+│   └── evaluators/  # GOV, ID, PR, DE, RS control evaluators
 ├── evidence/        # DuckDB store, hash chain, record schema
 ├── middleware/       # MCP middleware
 ├── producers/       # MCP, CLI, HTTP, Tool producers

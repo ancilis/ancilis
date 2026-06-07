@@ -25,12 +25,12 @@ Direct runtime evaluator controls:
 | DE-02 | Classification drift | Declared-vs-observed data classification and boundary drift |
 | DE-03 | Configuration/dependency drift | Tool, dependency, and policy baseline drift |
 | DE-04 | Evidence integrity | Evidence chain and missing telemetry checks |
-| GOV-01 | Agent identity declaration & match | Declared agent identity matched at runtime; authentication flow attested |
+| GOV-01 | Agent identity declaration and match | Declared agent identity matched at runtime (consistency check, not credential authentication) |
 | GOV-02 | Ownership accountability | Named owner and accountability metadata |
 | GOV-03 | Risk tolerance baseline | Policy thresholds, autonomy limits, and escalation requirements |
 | ID-01 | Agent inventory | Registry metadata for governed agents and tool surfaces |
-| PR-01 | Identity verification | Agent identity present and valid |
-| PR-02 | Scope enforcement | Tool in allowed list, not in blocked list, rate limits |
+| PR-01 | Action authorization | Agent identity authorized, target not blocked, policy gate satisfied |
+| PR-02 | Permission scope enforcement | Tool in allowed list, not in blocked list, rate limits |
 | PR-03 | Tool provenance | Tool registered and hash-verified |
 | PR-04 | Data exposure scan | Sensitive data patterns in parameters |
 | PR-05 | Context isolation | Tenant and context-boundary isolation signals |

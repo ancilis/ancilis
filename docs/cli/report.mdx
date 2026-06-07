@@ -16,9 +16,9 @@ ancilis report generate [OPTIONS]  # explicit subcommand (identical behavior)
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--format`, `-f` | choice | `terminal` | Output format: `terminal`, `markdown`, `pdf`, `aiuc1-readiness`, `ndjson`, `csv` |
+| `--format` | choice | `terminal` | Output format: `terminal`, `markdown`, `pdf`, `aiuc1-readiness`, `ndjson`, `csv`, `oscal` |
 | `--period` | string | `30d` | Reporting period — e.g. `7d`, `30d`, `90d`, `365d` |
-| `--output`, `-o` | path | stdout | Output file path (required for `pdf`) |
+| `--output`, `-o` | path | stdout | Output file path (defaults to `ancilis-report.pdf` for `pdf`) |
 | `--session` | string | latest | Scope to a specific session ID |
 | `--latest` / `--all` | flag | `--latest` | Use latest session (default) or all sessions |
 | `--config` | string | auto-detect | Path to `ancilis.yaml` |
@@ -30,10 +30,11 @@ ancilis report generate [OPTIONS]  # explicit subcommand (identical behavior)
 |--------|-------------|----------|
 | `terminal` | Color-coded table for human review | Development, quick checks |
 | `markdown` | GitHub-flavored markdown | PR comments, wiki uploads |
-| `pdf` | PDF via WeasyPrint (falls back to markdown if unavailable) | Formal audit packages |
-| `aiuc1-readiness` | Markdown formatted for AKSI UC-1 readiness reviews | Certification prep |
+| `pdf` | PDF via pandoc/xelatex (falls back to markdown if unavailable) | Formal audit packages |
+| `aiuc1-readiness` | Markdown formatted for AIUC-1 readiness reviews | Certification prep |
 | `ndjson` | One evidence record per line | Log pipelines, SIEM ingestion |
 | `csv` | Spreadsheet-compatible evidence export | Audit spreadsheets |
+| `oscal` | OSCAL Assessment Results JSON (AKSI → NIST SP 800-53 Rev 5) | GRC tooling, NIST workflows |
 
 ## Examples
 
@@ -44,18 +45,23 @@ ancilis report
 
 ```
 Ancilis Posture Report — my-agent
-Period: last 30 days  |  Mode: audit
+Period: 2026-05-08 to 2026-06-07
+Mode: audit
+Posture: HEALTHY (1/39 controls passing)
+Evaluations: 15 total | 0 blocked | 15 allowed
+Active overlays: Financial Services (GLBA, SOX, DORA), SOC 2 Type II
+Active certifications: none
+Evidence chain: ✓ legacy-unverified (set ANCILIS_CHAIN_KEY) (15 records)
 
-Control              Status    Evals   Failures   Flags
-─────────────────────────────────────────────────────
-Identity & Auth      ✓ pass    42      0          0
-Scope Confinement    ✓ pass    38      0          2
-Output Integrity     ✓ pass    55      0          0
-Prompt Security      ✓ pass    31      0          0
-Audit Trail          ✓ pass    80      0          0
-Dependencies (DE-01) ✓ pass    —       0          0
+Baseline Controls:
+  ✓ 1 controls passing (full detail preserved in markdown)
+Tools evaluated: dependency-scanner
 
-Posture: COMPLIANT  |  Total evaluations: 246
+Compliance Matrix:
+  Control | Financial Services (GLBA, SOX, DORA) | SOC 2 Type II
+  DE-01   | ✓                                    | ✓
+  DE-02   | -                                    | -
+  ...
 ```
 
 **Markdown report to file**
@@ -70,7 +76,7 @@ ancilis report --format pdf --output ancilis-report-q1.pdf --period 90d
 
 **NDJSON export to stdout**
 ```bash
-ancilis report --format ndjson --period 30d | jq '.control_id'
+ancilis report --format ndjson --period 30d | jq '.control_results[].control_id'
 ```
 
 **CSV export**
@@ -94,7 +100,7 @@ ancilis report --format aiuc1-readiness --period 30d --output readiness.md
 |-------|-----|
 | `ancilis.yaml not found` | Pass `--config path/to/ancilis.yaml` or run from project root |
 | `No evidence found` | Run your agent with Ancilis middleware to collect evidence |
-| PDF falls back to markdown | Install WeasyPrint: `pip install ancilis[pdf]` |
+| PDF falls back to markdown | Install pandoc and a LaTeX engine (xelatex) so `pandoc --pdf-engine=xelatex` is available |
 
 ## Related
 
