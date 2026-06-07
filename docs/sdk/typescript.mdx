@@ -15,6 +15,27 @@ yarn add ancilis
 
 ---
 
+## Control parity with the Python SDK
+
+<Warning>
+The TypeScript SDK has **not yet completed the AKSI v0.6 control migration** that
+the Python SDK and the [Controls Reference](/controls-reference) describe. Until
+it does, a few controls evaluate differently — or are absent — in TypeScript:
+
+| Control | Python / catalog (v0.6) | TypeScript today |
+|---------|-------------------------|------------------|
+| `DE-02` | Classification Drift & Boundary Validation | **Config Drift** (pre-v0.6) |
+| `PR-05` | Context & Tenant Isolation | **Audit** (pre-v0.6) |
+| `PR-06` | Audit Trail Completeness | **Config Baseline** (pre-v0.6) |
+| `GOV-03`, `PR-09`, `DE-03`, `RS-02` | evaluated | **not yet implemented** |
+
+If you need the v0.6 control semantics today, use the Python SDK. The TypeScript
+v0.6 migration is tracked and will align these controls; this note will be
+removed when it lands.
+</Warning>
+
+---
+
 ## Configuration
 
 ### `loadConfig()`
