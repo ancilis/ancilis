@@ -111,6 +111,16 @@
             ]
           },
           {
+            "group": "API Reference",
+            "pages": [
+              "sdk/api/producers",
+              "sdk/api/adapters",
+              "sdk/api/evidence",
+              "sdk/api/config-middleware",
+              "sdk/api/utilities"
+            ]
+          },
+          {
             "group": "Operations",
             "pages": [
               "ci-cd-integration"
