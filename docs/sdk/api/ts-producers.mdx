@@ -1,0 +1,716 @@
+---
+title: Producers & Adapters (TypeScript)
+description: TypeScript producers and adapters that wrap a call site (tool, MCP, CLI, HTTP, LLM, or framework) and turn it into a governed Action the engine evaluates.
+---
+
+Producers are the entry point for governance in the TypeScript SDK. Each producer wraps a specific
+kind of call site — a function/tool, an MCP tool call, a CLI/subprocess invocation, an outbound HTTP
+request, or an LLM SDK call — and translates the raw invocation into a standardized `Action` that the
+control [`Engine`](/sdk/api/engine) evaluates. All producers implement the
+[`ActionProducer`](#actionproducer) protocol, so the engine never needs to know which protocol an
+action came from.
+
+Every symbol below is a value export (class / function / const) or a type-only export (`export type`)
+from the `ancilis` package root. Provider producers (`AnthropicActionProducer`, `OpenAIActionProducer`,
+the Bedrock adapter, Gemini/Cohere/Groq/Mistral/etc.) are duck-typed against the upstream SDKs — no
+hard imports — so each model invocation becomes an evaluated, evidence-recorded Action.
+
+```typescript
+import {
+  loadConfig,
+  Engine,
+  ToolActionProducer,
+  autoRegister,
+} from "ancilis";
+
+const config = loadConfig({ raw: { agent: { name: "my-agent" } } });
+const engine = new Engine(config);
+const producer = new ToolActionProducer(config, engine);
+```
+
+## Protocol
+
+### ProducerType
+
+**Kind:** enum (value export)
+
+```typescript
+export declare enum ProducerType {
+    MCP = "mcp",
+    CLI = "cli",
+    HTTP = "http",
+    A2A = "a2a",
+    FRAMEWORK = "framework",
+    MANUAL = "manual"
+}
+```
+
+Identifies the source protocol for an action. Shared producer protocol surface for Python parity.
+
+### ActionProducer
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface ActionProducer {
+    readonly producerType: ProducerType;
+    readonly producerVersion: string;
+    translate(rawInvocation: unknown): Action;
+    computeToolHash(toolIdentifier: unknown): string;
+    registerTools(registry: ToolRegistry): string[];
+}
+```
+
+The interface that any action source must implement. The engine does not know or care which producer
+created an Action.
+
+## Tool producer
+
+The Tool producer governs developer-owned functions. It supports a wrapper/decorator mode that
+evaluates and (optionally) executes a wrapped function.
+
+### ToolActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class ToolActionProducer {
+    constructor(config: ResolvedConfig, engine: Engine, registry?: ToolRegistry, evidenceStore?: EvidenceStore);
+    get producerType(): ProducerType;
+    get producerVersion(): string;
+    /** Unique identifier for this producer instance (one per agent run). */
+    get sessionId(): string;
+    translate(invocation: ToolInvocation): Action;
+    computeToolHash(fn: AnyFn | string): string;
+    registerTools(registry: ToolRegistry): string[];
+    evaluate(fn: AnyFn, agentName: string, args?: unknown[], kwargs?: Record<string, unknown>, toolName?: string): Promise<[Action, EvaluationResult]>;
+    execute<R = unknown>(fn: (...args: unknown[]) => R | Promise<R>, agentName: string, args?: unknown[], kwargs?: Record<string, unknown>, toolName?: string): Promise<ToolExecutionResult<Awaited<R>>>;
+    wrapTool<R>(fn: (...args: unknown[]) => R | Promise<R>, agentName?: string, toolName?: string): (...args: unknown[]) => Promise<Awaited<R>>;
+}
+```
+
+Wraps functions/tools for security evaluation. `evaluate` translates and evaluates without running the
+function; `execute` runs it after the evaluation passes; `wrapTool` returns a drop-in async wrapper.
+
+### BlockedActionError
+
+**Kind:** class (value export)
+
+```typescript
+export declare class BlockedActionError extends Error {
+    toolName: string;
+    evaluation: EvaluationResult;
+    displayMessage: string;
+    constructor(toolName: string, evaluation: EvaluationResult);
+}
+```
+
+Thrown when an evaluated tool action is blocked. Carries the offending `toolName` and the full
+`evaluation`.
+
+### tool
+
+**Kind:** function (value export)
+
+```typescript
+export declare function tool<R>(options: ToolWrapOptions): (fn: (...args: unknown[]) => R | Promise<R>) => (...args: unknown[]) => Promise<Awaited<R>>;
+```
+
+Decorator-style factory: given `ToolWrapOptions`, returns a function that wraps a target function into
+a governed async wrapper.
+
+### wrapTool
+
+**Kind:** function (value export)
+
+```typescript
+export declare function wrapTool<R>(fn: (...args: unknown[]) => R | Promise<R>, options: ToolWrapOptions): (...args: unknown[]) => Promise<Awaited<R>>;
+```
+
+Wraps a single function into a governed async wrapper using the producer and metadata in
+`ToolWrapOptions`.
+
+### evaluateAndExecute
+
+**Kind:** function (value export)
+
+```typescript
+export declare function evaluateAndExecute<R>(fn: (...args: unknown[]) => R | Promise<R>, options: EvaluateAndExecuteOptions): Promise<ToolExecutionResult<Awaited<R>>>;
+```
+
+Evaluates a function and, if allowed, executes it once — returning a `ToolExecutionResult`.
+
+### AnyFn
+
+**Kind:** type alias (`export type`)
+
+```typescript
+export type AnyFn = (...args: unknown[]) => unknown;
+```
+
+### ToolInvocation
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface ToolInvocation {
+    fn: AnyFn;
+    agentName: string;
+    args?: unknown[];
+    kwargs?: Record<string, unknown>;
+    toolName?: string;
+}
+```
+
+### ToolExecutionResult
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface ToolExecutionResult<R = unknown> {
+    action: Action;
+    evaluation: EvaluationResult;
+    blocked: boolean;
+    returnValue: R;
+}
+```
+
+### ToolWrapOptions
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface ToolWrapOptions {
+    producer: ToolActionProducer;
+    agentName?: string;
+    toolName?: string;
+}
+```
+
+### EvaluateAndExecuteOptions
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface EvaluateAndExecuteOptions {
+    producer: ToolActionProducer;
+    agentName: string;
+    args?: unknown[];
+    kwargs?: Record<string, unknown>;
+    toolName?: string;
+}
+```
+
+## MCP producer
+
+### MCPActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class MCPActionProducer {
+    constructor(config: ResolvedConfig, registry: ToolRegistry);
+    get producerType(): ProducerType;
+    get producerVersion(): string;
+    translate(rawInvocation: MCPInvocation): Action;
+    computeToolHash(toolIdentifier: unknown): string;
+    registerTools(registry: ToolRegistry): string[];
+    registerToolsFromResponse(tools: DiscoverableTool[], registry: ToolRegistry, preApproved?: string[]): DriftEvent[];
+}
+```
+
+Wraps existing MCP action building and discovery logic. `registerToolsFromResponse` registers tools
+discovered from an MCP `tools/list` response and returns any `DriftEvent`s.
+
+### MCPInvocation
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface MCPInvocation {
+    name: string;
+    arguments?: Record<string, unknown>;
+}
+```
+
+## CLI producer
+
+### CLIActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class CLIActionProducer {
+    constructor(config: ResolvedConfig, engine: Engine, registry?: ToolRegistry, evidenceStore?: EvidenceStore);
+    get producerType(): ProducerType;
+    get producerVersion(): string;
+    /** Unique identifier for this producer instance (one per agent run). */
+    get sessionId(): string;
+    translate(invocation: CLIInvocation): Action;
+    computeToolHash(toolIdentifier: string): string;
+    registerTools(registry: ToolRegistry): string[];
+    execute(command: string[], agentName: string, workingDirectory?: string, timeoutMs?: number): Promise<CLIExecutionResult>;
+}
+```
+
+Intercepts CLI/subprocess tool calls for evaluation. `execute` evaluates the command and, if allowed,
+runs the subprocess and returns its captured output.
+
+### CLIInvocation
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface CLIInvocation {
+    command: string[];
+    agentName: string;
+    workingDirectory?: string;
+    environment?: Record<string, string>;
+}
+```
+
+### CLIExecutionResult
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface CLIExecutionResult {
+    action: Action;
+    evaluation: EvaluationResult;
+    blocked: boolean;
+    stdout?: string;
+    stderr?: string;
+    returnCode?: number;
+    scanResult?: ScanResult;
+}
+```
+
+## HTTP producer
+
+The HTTP producer runs in observe/report mode for outbound HTTP requests; enforcement is opt-in.
+
+### HTTPActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class HTTPActionProducer {
+    constructor(config: ResolvedConfig, engine: Engine, registry?: ToolRegistry, evidenceStore?: EvidenceStore);
+    get producerType(): ProducerType;
+    get producerVersion(): string;
+    /** Unique identifier for this producer instance (one per agent run). */
+    get sessionId(): string;
+    translate(request: HTTPRequest): Action;
+    computeToolHash(toolIdentifier: string): string;
+    registerTools(registry: ToolRegistry): string[];
+    observe(request: HTTPRequest): Promise<HTTPObservation>;
+    execute<R = unknown>(request: HTTPRequest, transport: () => R | Promise<R>, enforce?: boolean): Promise<HTTPExecutionResult<R>>;
+    wrapTransport<R>(transport: (method: string, url: string, ...args: unknown[]) => R | Promise<R>, agentName?: string, serviceName?: string, enforce?: boolean): (method: string, url: string, ...args: unknown[]) => Promise<HTTPExecutionResult<R>>;
+}
+```
+
+Observe/report mode for outbound HTTP requests. `observe` evaluates without sending; `execute` runs
+the supplied transport (enforcement opt-in via `enforce`); `wrapTransport` wraps a method/url transport.
+
+### HTTPRequest
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface HTTPRequest {
+    method: string;
+    url: string;
+    agentName: string;
+    headers?: Record<string, string>;
+    body?: unknown;
+    serviceName?: string;
+    metadata?: Record<string, unknown>;
+}
+```
+
+### HTTPObservation
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface HTTPObservation {
+    action: Action;
+    evaluation: EvaluationResult;
+}
+```
+
+### HTTPExecutionResult
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface HTTPExecutionResult<R = unknown> {
+    action: Action;
+    evaluation: EvaluationResult;
+    blocked: boolean;
+    response?: R;
+}
+```
+
+## LLM producer
+
+The LLM producer wraps the SDK call surface so every model invocation becomes an evaluated,
+evidence-recorded Action. Duck-typed against the upstream SDKs — no hard imports.
+
+### LLMActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class LLMActionProducer {
+    static readonly provider: string;
+    constructor(config: ResolvedConfig, engine: Engine, registry?: ToolRegistry, evidenceStore?: EvidenceStore);
+    /** Concrete provider slug for this instance — overridden via static. */
+    get provider(): string;
+    get producerType(): ProducerType;
+    get producerVersion(): string;
+    get sessionId(): string;
+    translate(invocation: LLMInvocation): Action;
+    computeToolHash(toolIdentifier: string): string;
+    registerTools(registry: ToolRegistry): string[];
+    observe(invocation: LLMInvocation): Promise<LLMObservation>;
+    execute<R = unknown>(invocation: LLMInvocation, transport: () => R | Promise<R>, enforce?: boolean): Promise<LLMExecutionResult<R>>;
+    wrapCreate<R = unknown>(create: (kwargs: Record<string, unknown>) => R | Promise<R>, agentName?: string, enforce?: boolean): (kwargs: Record<string, unknown>) => Promise<LLMExecutionResult<R>>;
+}
+```
+
+Base producer for LLM SDK calls (`static provider = "llm"`). Subclasses set `provider` and may override
+`extractInvocation` to normalize provider-specific kwargs into `LLMInvocation`. `wrapCreate` wraps an
+SDK `create`-style callable — works with `client.messages.create` (Anthropic),
+`client.chat.completions.create` and `client.responses.create` (OpenAI), and
+`client.models.generateContent` (Gemini, when called with kwargs).
+
+### AnthropicActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class AnthropicActionProducer extends LLMActionProducer {
+    static readonly provider: string;
+}
+```
+
+Provider producer for the Anthropic SDK. `static provider = "anthropic"`.
+
+### OpenAIActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class OpenAIActionProducer extends LLMActionProducer {
+    static readonly provider: string;
+    protected extractInvocation(kwargs: Record<string, unknown>, agentName: string): LLMInvocation;
+}
+```
+
+Provider producer for the OpenAI SDK. `static provider = "openai"`. Overrides `extractInvocation` for
+the OpenAI kwargs shape. Base class for the OpenAI-compatible inference platforms below.
+
+### GeminiActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class GeminiActionProducer extends LLMActionProducer {
+    static readonly provider: string;
+    protected extractInvocation(kwargs: Record<string, unknown>, agentName: string): LLMInvocation;
+}
+```
+
+Provider producer for Google Gemini. `static provider = "gemini"`.
+
+### MistralActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class MistralActionProducer extends LLMActionProducer {
+    static readonly provider: string;
+}
+```
+
+Provider producer for the Mistral SDK. `static provider = "mistral"`.
+
+### CohereActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class CohereActionProducer extends LLMActionProducer {
+    static readonly provider: string;
+    protected extractInvocation(kwargs: Record<string, unknown>, agentName: string): LLMInvocation;
+}
+```
+
+Provider producer for the Cohere SDK. `static provider = "cohere"`.
+
+### XAIActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class XAIActionProducer extends OpenAIActionProducer {
+    static readonly provider: string;
+}
+```
+
+Provider producer for xAI. Extends `OpenAIActionProducer`. `static provider = "xai"`.
+
+### GroqActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class GroqActionProducer extends OpenAIActionProducer {
+    static readonly provider: string;
+}
+```
+
+Provider producer for the Groq OpenAI-compatible platform. `static provider = "groq"`.
+
+### TogetherActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class TogetherActionProducer extends OpenAIActionProducer {
+    static readonly provider: string;
+}
+```
+
+Provider producer for the Together OpenAI-compatible platform. `static provider = "together"`.
+
+### FireworksActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class FireworksActionProducer extends OpenAIActionProducer {
+    static readonly provider: string;
+}
+```
+
+Provider producer for the Fireworks OpenAI-compatible platform. `static provider = "fireworks"`.
+
+### DeepSeekActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class DeepSeekActionProducer extends OpenAIActionProducer {
+    static readonly provider: string;
+}
+```
+
+Provider producer for the DeepSeek OpenAI-compatible platform. `static provider = "deepseek"`.
+
+### LLMInvocation
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface LLMInvocation {
+    model: string;
+    agentName: string;
+    messages?: unknown[];
+    system?: unknown;
+    tools?: unknown[];
+    response?: unknown;
+    metadata?: Record<string, unknown>;
+}
+```
+
+### LLMObservation
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface LLMObservation {
+    action: Action;
+    evaluation: EvaluationResult;
+}
+```
+
+### LLMExecutionResult
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface LLMExecutionResult<R = unknown> {
+    action: Action;
+    evaluation: EvaluationResult;
+    blocked: boolean;
+    response?: R;
+}
+```
+
+## Bedrock adapter
+
+### BedrockActionProducer
+
+**Kind:** class (value export)
+
+```typescript
+export declare class BedrockActionProducer {
+    constructor(config: ResolvedConfig, engine: Engine, registry?: ToolRegistry, evidenceStore?: EvidenceStore);
+    get producerType(): ProducerType;
+    get producerVersion(): string;
+    get sessionId(): string;
+    translate(rawInvocation: unknown): Action;
+    observe(rawInvocation: unknown): Promise<BedrockObservation>;
+    computeToolHash(toolIdentifier: unknown): string;
+    registerTools(registry: ToolRegistry): string[];
+}
+```
+
+Normalizes AWS Bedrock Runtime calls into Actions. `observe` translates, evaluates, and records
+evidence for a raw Bedrock invocation.
+
+### BedrockAdapter
+
+**Kind:** const (value export)
+
+```typescript
+export declare const BedrockAdapter: typeof BedrockActionProducer;
+```
+
+Alias for `BedrockActionProducer`.
+
+### BedrockInvocation
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface BedrockInvocation extends UnknownRecord {
+    operation?: string;
+    operationName?: string;
+    operation_name?: string;
+    modelId?: string;
+    model_id?: string;
+    region?: string;
+    regionName?: string;
+    region_name?: string;
+    requestBody?: unknown;
+    request_body?: unknown;
+    responseBody?: unknown;
+    response_body?: unknown;
+    streamChunks?: unknown[];
+    stream_chunks?: unknown[];
+    responseStream?: unknown[];
+    response_stream?: unknown[];
+    input?: UnknownRecord;
+    output?: UnknownRecord;
+    response?: UnknownRecord;
+    httpStatus?: number;
+    http_status?: number;
+    requestId?: string;
+    request_id?: string;
+    latencyMs?: number;
+    latency_ms?: number;
+    duration_ms?: number;
+    headers?: Record<string, unknown>;
+    responseMetadata?: UnknownRecord;
+    response_metadata?: UnknownRecord;
+    agentId?: string;
+    agent_id?: string;
+    agent?: string;
+    agent_name?: string;
+    authMode?: string;
+    auth_mode?: string;
+}
+```
+
+Where `UnknownRecord` is `Record<string, unknown>`. Accepts both camelCase and snake_case field
+variants for parity with the upstream Bedrock Runtime shapes.
+
+### BedrockObservation
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface BedrockObservation {
+    action: Action;
+    evaluation: EvaluationResult;
+    evidence: EvidenceRecord;
+}
+```
+
+## Auto-detection helpers
+
+These helpers detect which upstream LLM/framework SDKs are installed and instantiate one producer per
+detected SDK. Detection uses module resolution only — the upstream package is never imported, so there
+are no side effects.
+
+### autoRegister
+
+**Kind:** function (value export)
+
+```typescript
+export declare function autoRegister(config: ResolvedConfig, engine: Engine, options?: AutoRegisterOptions): Record<string, LLMActionProducer | BedrockActionProducer | LangChainActionProducer | CrewAIActionProducer | AutoGenActionProducer | SemanticKernelActionProducer>;
+```
+
+Instantiates one producer per detected upstream SDK. Returns a record keyed by provider slug.
+
+### detectInstalledSdks
+
+**Kind:** function (value export)
+
+```typescript
+export declare function detectInstalledSdks(): Record<string, boolean>;
+```
+
+Side-effect-free detection: returns a flat `{provider: present?}` map.
+
+### installedProviderSlugs
+
+**Kind:** function (value export)
+
+```typescript
+export declare function installedProviderSlugs(): string[];
+```
+
+Slugs whose upstream SDK is detected as installed.
+
+### AutoRegisterOptions
+
+**Kind:** interface (`export type`)
+
+```typescript
+export interface AutoRegisterOptions {
+    registry?: ToolRegistry;
+    evidenceStore?: EvidenceStore;
+    /** Only consider these provider slugs (still must be installed). */
+    include?: readonly string[];
+    /** Skip these provider slugs even if installed. */
+    exclude?: readonly string[];
+}
+```
+
+## Usage
+
+```typescript
+import { loadConfig, Engine, ToolActionProducer, BlockedActionError } from "ancilis";
+
+const config = loadConfig({ raw: { agent: { name: "my-agent" } } });
+const engine = new Engine(config);
+const producer = new ToolActionProducer(config, engine);
+
+const send = producer.wrapTool(
+  async (to: string, body: string) => `sent to ${to}`,
+  "my-agent",
+  "send_email",
+);
+
+try {
+  await send("ops@example.com", "hello");
+} catch (err) {
+  if (err instanceof BlockedActionError) {
+    console.error(`blocked ${err.toolName}: ${err.displayMessage}`);
+  }
+}
+```
