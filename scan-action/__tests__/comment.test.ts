@@ -86,7 +86,7 @@ describe("formatComment", () => {
   it("includes help collapsible section", () => {
     const comment = formatComment(scan);
     expect(comment).toContain("<details>");
-    expect(comment).toContain("ancilis.dev");
+    expect(comment).toContain("ancilis.ai");
   });
 
   it("includes skipped count in summary when non-zero", () => {

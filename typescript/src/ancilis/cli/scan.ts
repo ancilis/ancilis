@@ -127,7 +127,7 @@ function printFirstRunGuidance(out: (m: string) => void): void {
   out("Try the demo:");
   out("  cd examples/demo && npx ancilis scan");
   out("");
-  out("Docs: https://ancilis.dev/quickstart");
+  out("Docs: https://docs.ancilis.ai/quickstart");
 }
 
 function printNextSteps(out: (m: string) => void): void {

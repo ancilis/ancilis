@@ -12,7 +12,7 @@
 #
 # Environment variables (all optional):
 #   ANCILIS_HOSTED_URL    Platform base URL (default: production Railway URL)
-#   ANCILIS_DEMO_EMAIL    Login email       (default: demo@ancilis.dev)
+#   ANCILIS_DEMO_EMAIL    Login email       (default: demo@ancilis.ai)
 #   ANCILIS_DEMO_PASSWORD Login password    (default: demo123)
 #   ANCILIS_DEMO_OPEN_BROWSER  Set to 0 to skip opening the browser (default: 1)
 
@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SDK_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 HOSTED_URL="${ANCILIS_HOSTED_URL:-https://ancilis-one-shot-production.up.railway.app}"
-DEMO_EMAIL="${ANCILIS_DEMO_EMAIL:-demo@ancilis.dev}"
+DEMO_EMAIL="${ANCILIS_DEMO_EMAIL:-demo@ancilis.ai}"
 DEMO_PASSWORD="${ANCILIS_DEMO_PASSWORD:-demo123}"
 
 _START_TS="$(date +%s)"

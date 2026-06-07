@@ -79,7 +79,7 @@ def _print_human_summary(
             click.echo("Try the demo:")
             click.echo("  cd examples/demo && ancilis scan")
             click.echo()
-            click.echo("Docs: https://ancilis.dev/quickstart")
+            click.echo("Docs: https://docs.ancilis.ai/quickstart")
     else:
         lines = [
             f"Ancilis scan \u2014 {config.agent_name}",

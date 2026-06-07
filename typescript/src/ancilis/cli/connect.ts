@@ -32,7 +32,7 @@ export async function runConnect(
   if (existsSync(platformPath)) {
     try {
       const data = JSON.parse(readFileSync(platformPath, "utf-8")) as Record<string, unknown>;
-      const platform = (data.platform as string | undefined) ?? "ancilis.dev";
+      const platform = (data.platform as string | undefined) ?? "ancilis.ai";
       lines.push("Status: connected");
       lines.push(`  Platform: ${platform}`);
     } catch {
@@ -43,7 +43,7 @@ export async function runConnect(
     lines.push(`Status: not connected`);
     lines.push(``);
     lines.push(`To connect to the Ancilis platform:`);
-    lines.push(`  1. Sign up at https://ancilis.dev`);
+    lines.push(`  1. Sign up at https://app.ancilis.ai`);
     lines.push(`  2. Create an API key in Settings`);
     lines.push(`  3. Run: ancilis connect --api-key <key>`);
   }

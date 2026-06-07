@@ -203,7 +203,7 @@ def format_comment(
         f"| Control | Verdict | Details |\n"
         f"|---------|---------|--------|\n"
         f"{rows}\n\n"
-        f"*Scanned by [Ancilis](https://ancilis.dev) · ancilis-action v1*"
+        f"*Scanned by [Ancilis](https://ancilis.ai) · ancilis-action v1*"
     )
 
 

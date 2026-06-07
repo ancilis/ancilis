@@ -23,7 +23,7 @@ describe("convertToSarif", () => {
   it("tool driver is Ancilis", () => {
     const driver = sarif.runs[0].tool.driver;
     expect(driver.name).toBe("Ancilis");
-    expect(driver.informationUri).toBe("https://ancilis.dev");
+    expect(driver.informationUri).toBe("https://ancilis.ai");
   });
 
   it("has one rule per control", () => {

@@ -50,7 +50,7 @@ export function formatComment(scan: ScanResult): string {
     "<summary>What is this?</summary>",
     "",
     "Ancilis scans AI agent tool calls for security control compliance.",
-    "[Learn more](https://ancilis.dev) · [Configure](https://ancilis.dev/docs/github-action)",
+    "[Learn more](https://ancilis.ai) · [Configure](https://docs.ancilis.ai/github-action)",
     "",
     "</details>",
     "",

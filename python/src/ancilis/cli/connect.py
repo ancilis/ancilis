@@ -81,7 +81,7 @@ def connect(api_key: str | None, api_url: str) -> None:
         click.echo("Status: not connected")
         click.echo()
         click.echo("To connect your SDK to the Ancilis dashboard:")
-        click.echo("  1. Sign up at https://ancilis.dev")
+        click.echo("  1. Sign up at https://app.ancilis.ai")
         click.echo("  2. Create an API key in Settings")
         click.echo("  3. Run: ancilis connect --api-key <your-key>")
         click.echo()
