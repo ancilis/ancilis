@@ -8,6 +8,7 @@ Ancilis evaluates agent actions against AKSI Framework v0.6.
 - `support_level: runtime_evaluator` means the Python SDK has direct deterministic evaluator code today; it is not a cross-language parity field.
 - `support_level: attestation` means the control is evidence-backed and requires attached, imported, or attested evidence when it cannot be proven from a single action alone.
 - The TypeScript SDK has direct evaluators for its core runtime controls and uses catalog-backed evaluators for the remaining AKSI controls; those catalog-backed controls return `FLAG` until explicit attestation is supplied.
+- **Cross-language note:** the catalog below reflects AKSI v0.6 (the Python SDK). The TypeScript SDK has not yet completed the v0.6 migration for a few controls (`DE-02`, `PR-05`, `PR-06` differ; `GOV-03`, `PR-09`, `DE-03`, `RS-02` are not yet implemented) — see [Control parity with the Python SDK](/sdk/typescript#control-parity-with-the-python-sdk).
 
 ## Control Table
 
