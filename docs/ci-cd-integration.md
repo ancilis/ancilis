@@ -10,9 +10,10 @@ Run Ancilis compliance checks automatically on every pull request — compliance
 
 | Exit code | Meaning |
 |-----------|---------|
-| `0` | Compliant — all enabled controls pass |
-| `1` | Non-compliant — one or more controls have violations |
-| `2` | Configuration error — `ancilis.yaml` missing or invalid |
+| `0` | Compliant — no enabled control has violations |
+| `1` | Non-compliant — one or more controls have violations (or a tool call was blocked) |
+
+If `ancilis.yaml` is missing or cannot be loaded, the scan falls back to a default configuration rather than erroring out.
 
 This makes it trivial to gate merges on compliance posture.
 
@@ -54,21 +55,26 @@ pip install ancilis
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `ANCILIS_CONFIG` | Path to `ancilis.yaml` | `./ancilis.yaml` |
-| `ANCILIS_DB` | Path to evidence database | `./ancilis-evidence.duckdb` |
+| `ANCILIS_CHAIN_KEY` | HMAC key for keyed (v2) tamper-evident evidence chains | unset (legacy unkeyed SHA-256) |
+| `ANCILIS_NO_UPDATE_CHECK` | Set to disable the background update check | unset |
+| `ANCILIS_TELEMETRY_DISABLE_PROMPT` | Suppress the first-run anonymous-telemetry prompt | unset |
 
 Pass these as CI/CD secrets or job-level environment variables.
+
+The config and evidence-database paths are **not** environment variables — pass them with the `--config` and `--db` CLI options. If `--db` is omitted, the store defaults to `~/.ancilis/<agent-name>-<cwd-hash>/evidence.duckdb`.
 
 ### Minimal `ancilis.yaml`
 
 ```yaml
-agent_name: my-agent
-mode: audit          # or enforce
-controls:
-  PR-01:
-    enabled: true
-  DE-01:
-    enabled: true
+agent:
+  name: my-agent
+security:
+  mode: audit        # or enforce
+  controls:
+    PR-01:
+      enabled: true
+    DE-01:
+      enabled: true
 ```
 
 ---
@@ -98,7 +104,7 @@ ancilis scan --ci --session "$AGENT_SESSION_ID"
 - **`audit`** — records violations but does not block agent tool calls. Use this when introducing Ancilis for the first time.
 - **`enforce`** — blocks tool calls that violate controls. Violations in enforce mode always fail `ancilis scan`.
 
-Set `mode` in `ancilis.yaml`. You can run the scan in either mode; the scan result reflects what the agent actually did.
+Set `security.mode` in `ancilis.yaml`. You can run the scan in either mode; the scan result reflects what the agent actually did.
 
 ---
 
@@ -108,28 +114,48 @@ Set `mode` in `ancilis.yaml`. You can run the scan in either mode; the scan resu
 
 `ancilis scan --ci` writes to stdout:
 
+All common controls are enabled by default (opt-out) — a typical scan reports every control in the active framework (~39 for the base set), most of them `skip` until evidence accumulates:
+
 ```json
 {
   "version": "0.1.0",
   "agent": "my-agent",
   "mode": "audit",
-  "timestamp": "2026-04-07T03:00:00+00:00",
+  "timestamp": "2026-06-07T12:07:00.743334+00:00",
   "controls": [
     {
-      "id": "PR-01",
-      "name": "Tool Call Approval",
+      "id": "DE-01",
+      "name": "Behavioral Anomaly Detection",
       "status": "pass",
-      "evaluations": 12,
+      "evaluations": 15,
+      "failures": 0,
+      "flags": 0
+    },
+    {
+      "id": "DE-02",
+      "name": "Classification Drift and Boundary Validation",
+      "status": "skip",
+      "evaluations": 0,
       "failures": 0,
       "flags": 0
     }
+    // ... 37 more controls, mostly "skip" until evidence is recorded ...
   ],
+  "dependencies": {
+    "posture": "skip",
+    "findings": [
+      {
+        "result": "SKIP",
+        "detail": "No dependency manifests found"
+      }
+    ]
+  },
   "summary": {
-    "total_controls": 3,
-    "passing": 2,
+    "total_controls": 39,
+    "passing": 1,
     "failing": 0,
-    "skipped": 1,
-    "total_evaluations": 24
+    "skipped": 38,
+    "total_evaluations": 15
   },
   "posture": "compliant",
   "exit_code": 0
@@ -150,12 +176,12 @@ A `skip` does **not** fail the scan — it means the control had no activity to 
 
 | ID | Name | What it checks |
 |----|------|----------------|
-| `PR-01` | Tool Call Approval | Tool calls were approved before execution |
-| `PR-02` | Input Validation | Inputs were validated against policy |
-| `PR-03` | Output Inspection | Outputs were inspected before use |
-| `PR-04` | Scope Enforcement | Tool calls stayed within declared scope |
-| `PR-05` | Rate Limiting | Call rates stayed within configured limits |
-| `DE-01` | Data Exfiltration | No prohibited data left the agent boundary |
+| `PR-01` | Action Authorization | Sensitive actions were authorized against policy before execution |
+| `PR-02` | Permission Scope Enforcement | The agent operated inside its declared least-privilege scopes |
+| `PR-03` | Tool/Model Integrity and Provenance | Tools, model artifacts, and integrations matched trusted baselines |
+| `PR-04` | Data Exposure Prevention | Sensitive or regulated data was constrained before leaving the system |
+| `PR-05` | Context and Tenant Isolation | Execution context did not leak across tenant or task boundaries |
+| `DE-01` | Behavioral Anomaly Detection | Agent behavior stayed within expected baselines |
 
 ---
 
@@ -175,16 +201,14 @@ Ready-to-use files in `examples/ci/`:
 
 ### Custom overlay profiles
 
-Activate a compliance overlay (e.g. financial regulations) in `ancilis.yaml`:
+Activate one or more compliance overlays (e.g. financial regulations) in `ancilis.yaml`:
 
 ```yaml
-overlays:
-  financial:
-    enabled: true
-    regulations: [GLBA, SOX, DORA]
+compliance:
+  overlays: [glba, dora]
 ```
 
-The scan evaluates the active overlay's additional controls alongside the base set.
+The scan evaluates each active overlay's additional controls alongside the base set.
 
 ### Multi-agent pipelines
 
@@ -202,11 +226,14 @@ Or aggregate evidence from all sessions by omitting `--session`.
 Export the evidence database for long-term retention:
 
 ```sh
-# Save the DuckDB file as a pipeline artifact
-cp ancilis-evidence.duckdb "$ARTIFACT_DIR/evidence-$(date +%Y%m%d).duckdb"
+# Run the scan against an explicit evidence DB path, then save that file as an artifact
+ancilis scan --ci --db ./evidence.duckdb
+cp ./evidence.duckdb "$ARTIFACT_DIR/evidence-$(date +%Y%m%d).duckdb"
 ```
 
-The file contains an SHA-256 hash chain. Each row's `evidence_hash` covers all previous rows, so tampering is detectable.
+Pin the database location with `--db` (rather than relying on the per-agent default under `~/.ancilis/`) so the path your scan reads is the same one you archive.
+
+The file contains a hash chain: each row's `record_hash` chains from the `previous_hash`. Set `ANCILIS_CHAIN_KEY` to write keyed (HMAC-SHA256, v2) records so the chain is tamper-evident; without a key, records use the legacy unkeyed SHA-256 format, which is not cryptographically attestable against a writer-capable adversary.
 
 ### Introducing Ancilis without blocking PRs
 
@@ -218,8 +245,9 @@ Start in audit mode and use `allow_failure: true` (GitLab) or `continue-on-error
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| Exit code 2, no JSON output | `ancilis.yaml` not found | Set `ANCILIS_CONFIG` to the correct path |
-| All controls show `skip` | Evidence DB is empty or wrong path | Confirm `ANCILIS_DB` points to the file your agent wrote |
-| Scan passes but agent blocked calls | Mode is `audit` — scan only sees evidence, not blocked calls | Check `mode: enforce` if you want blocks to fail the scan |
+| Wrong agent name in output | `ancilis.yaml` not found — scan fell back to a default config | Point `--config` at the correct path |
+| Unexpectedly few controls | Controls are opt-out (enabled by default); some were explicitly turned off with `enabled: false` in `ancilis.yaml` | Remove the `enabled: false` overrides for any control you expect to run |
+| All controls show `skip` | Evidence DB is empty or wrong path | Confirm `--db` points to the file your agent wrote |
+| Scan passes despite a risky run | Mode is `audit` — the agent recorded violations but never issued a `BLOCK` decision (a `BLOCK` decision in the evidence window fails the scan) | Set `security.mode: enforce` so violating calls are blocked and recorded as `BLOCK` |
 | `ancilis: command not found` | Pip install not in `PATH` | Add `$(python -m site --user-base)/bin` to `PATH`, or use `python -m ancilis` |
 | Evidence from previous run is included | No session scoping | Use `--session` to pin to the current agent run |

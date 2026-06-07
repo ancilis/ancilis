@@ -120,7 +120,7 @@ What to look for:
 
 1. The financial demo agent executed six mock MCP tool calls through Ancilis middleware.
 2. Each tool call was evaluated against the active AKSI controls before the underlying tool response was returned.
-3. The declared data classifications activated the `soc2`, `pci-dss`, and `glba` overlays automatically.
+3. The declared data classifications activated the `ccpa`, `gdpr`, `glba`, `pci-dss-v4`, and `soc2` overlays automatically.
 4. AIUC-1 certification targets were resolved alongside the baseline controls.
 5. Each evaluation was persisted into a SHA-256 hash-chained DuckDB evidence store.
 6. The Platform bootstrapped or reused a workspace-scoped `sdk_direct` integration, reconciled it against the current DuckDB path, and set the sync scope to latest-session mode.

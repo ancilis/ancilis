@@ -51,7 +51,10 @@ try:
     unapproved_tool("some args")
 except BlockedActionError as e:
     print(e.display_message)
-    # Ancilis [blocked]: Action 'unapproved_tool' blocked — scope enforcement.
+    # Ancilis [blocked]: Action 'unapproved_tool' blocked — permission scope enforcement, tool/model integrity and provenance, containment, quarantine and kill switch.
+    #   To approve: ancilis approve-tool unapproved_tool
+    #   To review: ancilis status
+    # (the trailing control list names every control that failed, so it varies with your config)
 ```
 
 ## 4. Run and see evidence
@@ -62,7 +65,7 @@ from ancilis.evidence.store import EvidenceStore
 evidence = EvidenceStore(config)
 summary = evidence.get_summary()
 print(summary["total_evaluations"])  # number of evaluated tool calls
-print(summary["decisions"])          # {"allowed": N, "blocked": N}
+print(summary["decisions"])          # {"ALLOW": N, "BLOCK": N}
 print(summary["chain_valid"])        # True = no tampering detected
 print(summary["chain_status"])       # "verified" (HMAC) | "legacy-unverified" | "reset-or-purged"
 evidence.close()
