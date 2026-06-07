@@ -17,7 +17,7 @@ ancilis scan [OPTIONS]
 |------|------|---------|-------------|
 | `--ci` | flag | `false` | Machine-readable JSON output with exit codes |
 | `--config` | string | auto-detect | Path to `ancilis.yaml` |
-| `--db` | string | `~/.ancilis/<agent>.duckdb` | Path to evidence database |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
 | `--session` | string | latest session | Scope evaluation to a specific session ID |
 | `--latest` / `--all` | flag | `--latest` | Evaluate latest session (default) or all sessions |
 | `--period` | string | `24h` | Evidence window — e.g. `1h`, `24h`, `7d` |

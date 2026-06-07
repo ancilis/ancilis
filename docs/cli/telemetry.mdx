@@ -1,0 +1,196 @@
+---
+title: "ancilis telemetry"
+description: "Inspect or change anonymous, opt-in SDK usage telemetry."
+---
+
+## Overview
+
+`ancilis telemetry` is a command group for managing the SDK's anonymous usage telemetry. Telemetry is **off by default and fully opt-in** — nothing is queued or sent until you run `ancilis telemetry on`. Running the group with no subcommand prints the current status (the same output as `ancilis telemetry status`).
+
+```bash
+ancilis telemetry [OPTIONS] COMMAND [ARGS]...
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show help for the group (or a subcommand) and exit |
+
+<Note>
+The group and each subcommand accept only `--help`. Telemetry has no other options; behavior is controlled by the subcommands and by environment variables (see below).
+</Note>
+
+## What is collected
+
+When telemetry is enabled, the SDK queues a small set of anonymous event types and sends them at most once per hour:
+
+- `scan_executed`
+- `report_generated`
+- `overlay_activated`
+- `adapter_used`
+- `cli_command`
+
+Each event carries only the SDK language/version, the runtime (Python) version, the OS platform string, and a random installation ID (a UUID generated when you first enable telemetry).
+
+<Note>
+No file paths, file contents, evidence data, email addresses, or API keys are collected. Events are written to a local queue (`~/.ancilis/telemetry/events.ndjson`) before being sent.
+</Note>
+
+## Environment variables
+
+| Variable | Effect |
+|----------|--------|
+| `DO_NOT_TRACK` / `DNT` | If set to any value other than `0`/`false`/`no`/`off`/empty, telemetry is force-disabled regardless of config. `status` reports `Reason: DO_NOT_TRACK is set`. |
+| `ANCILIS_TELEMETRY_ENDPOINT` | Override the upload endpoint (defaults to `https://api.ancilis.ai/api/telemetry/events`). |
+
+## Subcommands
+
+### `status`
+
+Show the current consent state, config and queue file locations, endpoint, and the list of collected event types. This is also what `ancilis telemetry` (no subcommand) prints.
+
+```bash
+ancilis telemetry status [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show help and exit |
+
+**Example**
+```bash
+ancilis telemetry status
+```
+
+```
+Telemetry: off
+Reason: telemetry is off
+Config: /Users/you/.ancilis/config.toml
+Queue: 0 event(s) at /Users/you/.ancilis/telemetry/events.ndjson
+Endpoint: https://api.ancilis.ai/api/telemetry/events
+Collected event types:
+  - scan_executed
+  - report_generated
+  - overlay_activated
+  - adapter_used
+  - cli_command
+
+No file paths, file contents, evidence data, email addresses, or API keys are collected.
+```
+
+### `on`
+
+Enable anonymous telemetry. This writes `~/.ancilis/config.toml` (creating `~/.ancilis/` if needed), records a `prompted_at` timestamp, and generates a random `installation_id` UUID on first enable.
+
+```bash
+ancilis telemetry on [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show help and exit |
+
+**Example**
+```bash
+ancilis telemetry on
+```
+
+```
+Telemetry enabled. Anonymous usage events may be queued and sent at most once per hour.
+```
+
+<Note>
+If `DO_NOT_TRACK` (or `DNT`) is set in your environment, telemetry stays disabled even after `on` — the environment variable always wins. `status` will then show `Reason: DO_NOT_TRACK is set`.
+</Note>
+
+### `off`
+
+Disable telemetry. This writes `~/.ancilis/config.toml` with `enabled = false`. No new events will be queued or sent. Existing queued events on disk are not deleted, but they will not be flushed while telemetry is off.
+
+```bash
+ancilis telemetry off [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show help and exit |
+
+**Example**
+```bash
+ancilis telemetry off
+```
+
+```
+Telemetry disabled. No new telemetry events will be queued or sent.
+```
+
+### `flush`
+
+Force any queued telemetry events to be sent immediately, bypassing the once-per-hour rate limit. On success it sends up to 50 events per batch, removes the sent events from the local queue, and reports how many were flushed.
+
+```bash
+ancilis telemetry flush [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show help and exit |
+
+**Example — events queued and telemetry enabled**
+```bash
+ancilis telemetry flush
+```
+
+```
+Flushed 3 telemetry event(s).
+```
+
+**Example — nothing to send (telemetry off, empty queue, or upload failed)**
+```bash
+ancilis telemetry flush
+```
+
+```
+No telemetry events flushed.
+```
+
+<Note>
+`flush` is a no-op (prints `No telemetry events flushed.`) when telemetry is off, when `DO_NOT_TRACK` is set, when the queue is empty, or when the network upload fails. Upload attempts use a short 2-second timeout and fail silently rather than raising.
+</Note>
+
+## Examples
+
+**Check current telemetry state**
+```bash
+ancilis telemetry
+# same as: ancilis telemetry status
+```
+
+**Opt in, then verify**
+```bash
+ancilis telemetry on
+ancilis telemetry status
+```
+
+**Opt out at any time**
+```bash
+ancilis telemetry off
+```
+
+**Disable for a single shell session without changing config**
+```bash
+DO_NOT_TRACK=1 ancilis telemetry status
+# Reason: DO_NOT_TRACK is set
+```
+
+**Send queued events now (e.g. before shutting down a CI runner)**
+```bash
+ancilis telemetry flush
+```
+
+## Related
+
+- [ancilis status](/cli/status) — overall agent and evidence posture
+- [ancilis doctor](/cli/doctor) — diagnostic checks for your Ancilis setup
+- [ancilis connect](/cli/connect) — opt-in connection to the Ancilis platform

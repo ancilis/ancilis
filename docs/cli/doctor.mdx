@@ -16,7 +16,7 @@ ancilis doctor [OPTIONS]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--config` | string | auto-detect | Path to `ancilis.yaml` |
-| `--db` | string | `~/.ancilis/<agent>.duckdb` | Path to evidence database |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
 | `--verbose`, `-v` | flag | `false` | Show full diagnostic details per check |
 | `--json` | flag | `false` | Machine-readable JSON output |
 | `--fix` | flag | `false` | Auto-fix common issues (gitignore entry, cache directory) |
