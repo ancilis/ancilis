@@ -1,0 +1,97 @@
+---
+title: "agent-payments Overlay"
+description: "AKSI compliance overlay for AI agents that handle payment data (DC-PAY)."
+---
+
+## Overview
+
+The `agent-payments` overlay packages AKSI control wiring for AI agents that initiate, authorize, or otherwise handle payment data. It groups the AKSI governance, identity, protection, detection, response, recovery, and payment-specific controls that apply when an agent works with payment information so that posture can be tracked against a single overlay.
+
+<Warning>
+This overlay is a **scaffold mapping**. It wires the controls that reference `agent-payments` but does not yet assert any framework requirement mappings — its `framework_mapping` is empty and it is flagged `scaffold: true`. Treat coverage as indicative only; controls are not yet backed by runtime evidence. Populate framework references and evidence requirements from an authoritative source before relying on this overlay for any production assertion.
+</Warning>
+
+**Use this overlay when your agent:**
+- Initiates, authorizes, or settles payments
+- Handles payment data classified as `DC-PAY`
+- Stores, transmits, or processes payment instrument details
+- Operates within a workflow subject to payment-handling controls
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your config:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - agent-payments
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares that it handles the relevant payment data classification (`DC-PAY`) via `my_agent_handles`. See [Data Classification](/data-classification) for how to declare handled data classes.
+
+---
+
+## Control Mapping
+
+This table lists every control wired by the overlay (41 total). Framework references and evidence requirements are empty in the current scaffold and are shown as `—` until populated from an authoritative source.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | — | — |
+| **GOV-02** | — | — |
+| **GOV-03** | — | — |
+| **GOV-04** | — | — |
+| **GOV-05** | — | — |
+| **GOV-06** | — | — |
+| **GOV-07** | — | — |
+| **ID-01** | — | — |
+| **ID-02** | — | — |
+| **ID-03** | — | — |
+| **ID-04** | — | — |
+| **ID-05** | — | — |
+| **PR-01** | — | — |
+| **PR-02** | — | — |
+| **PR-03** | — | — |
+| **PR-04** | — | — |
+| **PR-05** | — | — |
+| **PR-06** | — | — |
+| **PR-07** | — | — |
+| **PR-08** | — | — |
+| **PR-09** | — | — |
+| **PR-10** | — | — |
+| **PR-11** | — | — |
+| **PR-12** | — | — |
+| **DE-01** | — | — |
+| **DE-02** | — | — |
+| **DE-03** | — | — |
+| **DE-04** | — | — |
+| **DE-05** | — | — |
+| **DE-06** | — | — |
+| **RS-01** | — | — |
+| **RS-02** | — | — |
+| **RS-03** | — | — |
+| **RS-04** | — | — |
+| **RS-05** | — | — |
+| **RS-06** | — | — |
+| **RC-01** | — | — |
+| **RC-02** | — | — |
+| **RC-03** | — | — |
+| **PAY-01** | — | — |
+| **PAY-02** | — | — |
+
+---
+
+## Retention & Jurisdiction
+
+This scaffold overlay does not assert an evidence retention minimum or a jurisdiction — neither is defined in the overlay definition. Retention and jurisdiction must be supplied from an authoritative source (or another applicable overlay) before this overlay is used for production compliance assertions.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

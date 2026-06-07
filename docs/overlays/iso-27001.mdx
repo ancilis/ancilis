@@ -1,0 +1,95 @@
+---
+title: "ISO/IEC 27001:2022 Overlay"
+description: "AKSI compliance overlay mapping agent controls to ISO/IEC 27001:2022 Annex A."
+---
+
+## Overview
+
+ISO/IEC 27001:2022 is the international standard for information security management systems (ISMS). Its Annex A defines security controls across four themes — Organizational (A.5), People (A.6), Physical (A.7), and Technological (A.8) — that certified organizations must apply where relevant to their risk profile.
+
+The `iso-27001` overlay packages AKSI control evidence against the ISO/IEC 27001:2022 Annex A controls most relevant to AI agent deployments. It maps each AKSI control to the Annex A controls it supports, treating AI agents as information assets within the ISMS scope, and their tools and MCP servers as cloud services or suppliers under A.5.23 and A.5.19. This overlay covers Annex A technical controls only — it does not cover the full ISMS clauses 4–10, which are organizational requirements.
+
+**Use this overlay when your agent:**
+- Operates within an organization holding or pursuing ISO/IEC 27001 certification
+- Must produce evidence for applicable Annex A controls ahead of a certification or surveillance audit
+- Is treated as an information asset within the organization's ISMS scope
+- Handles data requiring documented confidentiality, integrity, and availability controls
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your project configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - iso-27001
+```
+
+**Data classification trigger** — because this overlay has a `data_classification` trigger type, it also auto-activates when your agent declares (via `my_agent_handles`) that it handles any of the data classifications it is triggered by: `DC-GEN`, `DC-AI`, `DC-PII`, `DC-PHI`, `DC-FIN`, `DC-GOV`, or `DC-CUI`. See [Data Classification](/data-classification) for how to declare the data your agent handles.
+
+---
+
+## Control Mapping
+
+Every applicable AKSI control in this overlay, mapped to its ISO/IEC 27001:2022 Annex A reference. Controls drawn directly from runtime production repairs (coverage: partial/full) carry their mapping in the framework reference; their detailed evidence requirements are captured at the control level rather than in this summary table.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|--------------------|--------------------------|
+| **GOV-01** | A.5.1 | Information security policies documented, approved by management, published, and communicated to employees and relevant external parties (A.5.1) |
+| **GOV-02** | A.5.2, A.5.3 | Information security roles and responsibilities defined and allocated (A.5.2) |
+| **GOV-03** | A.5.3 | Information security risk assessment performed using consistent, valid, and comparable risk criteria (A.5.3, A.8.8 for vulnerability management) |
+| **GOV-04** | A.5.35, A.5.36 | Independent review of organization's approach to managing information security at planned intervals or when significant changes occur (A.5.35) |
+| **ID-01** | A.5.9 | Inventory of assets associated with information and information processing facilities maintained (A.5.9) |
+| **ID-02** | A.5.23, A.5.19, A.5.21 | Security requirements for use of cloud services identified and managed (A.5.23) |
+| **ID-03** | A.5.12, A.5.13 | Information classified according to information security needs based on confidentiality, integrity, and availability (A.5.12) |
+| **ID-04** | A.5.19, A.5.20, A.5.21, A.5.22 | Information security requirements established and agreed with each supplier that may access, process, store, communicate, or provide IT infrastructure components (A.5.19) |
+| **ID-05** | A.5.7, A.8.8 | Technical vulnerabilities in information systems managed timely to reduce exploitability (A.8.8) |
+| **PR-01** | A.8.5 | Secure authentication technologies and procedures implemented consistent with information access restriction (A.8.5) |
+| **PR-02** | A.8.3, A.8.2, A.5.15, A.5.18 | Access to information and other associated assets restricted in accordance with access control policy (A.8.3) |
+| **PR-03** | A.8.9, A.5.15, A.5.18 | Configuration management documented including secure configurations for information processing (A.8.9) |
+| **PR-04** | A.8.10, A.8.11 | Information storage media managed over its lifecycle including secure disposal or re-use (A.8.10) |
+| **PR-05** | A.8.15, A.8.17 | Event logs recording user activities, exceptions, faults, and information security events produced, stored, protected, and analyzed (A.8.15) |
+| **PR-06** | A.8.9, A.8.8 | Configurations of hardware, software, services and networks established, documented, implemented, monitored, and reviewed (A.8.9) |
+| **PR-07** | A.8.24, A.5.14 | Information transferred over networks protected using appropriate security measures — encryption of sensitive data in transit (A.8.24) |
+| **PR-08** | A.8.28, A.8.29, A.8.8 | Secure coding practices applied in software development — input validation, output encoding, parameterized queries (A.8.28) |
+| **DE-01** | A.8.16 | Networks, systems, and applications monitored for anomalous behavior and appropriate actions taken to evaluate potential information security incidents (A.8.16) |
+| **DE-02** | A.8.9, A.8.32 | Configurations of hardware, software, services and networks monitored and reviewed for deviations (A.8.9) |
+| **DE-03** | A.5.35, A.5.36 | Independent review of information security at planned intervals (A.5.35) |
+| **DE-04** | A.8.15 | Event logs protected against tampering and unauthorized access — evidence integrity monitoring directly supports this (A.8.15) |
+| **RS-01** | A.5.24, A.5.26, A.6.8 | Responsibilities and procedures established for managing information security incidents — including AI-specific incident categories (A.5.24) |
+| **RS-02** | A.5.26, A.5.28 | Information security incidents responded to in accordance with documented procedures (A.5.26) |
+| **RS-03** | A.5.28, A.5.7 | Evidence preserved, collected, acquired, and managed in alignment with legal and regulatory requirements (A.5.28) |
+| **RC-01** | A.5.30, A.8.13 | ICT readiness for business continuity planned, implemented, maintained, and tested (A.5.30) |
+| **RC-02** | A.5.27, A.6.3 | Knowledge gained from analyzing and resolving information security incidents used to reduce likelihood or impact of future incidents (A.5.27) |
+| **GOV-05** | A.5.31 Identification of legal/statutory/regulatory/contractual requirements, A.5.34 Privacy and protection of PII, and A.5.10 Acceptable use bound use to authorized purpose. GOV-05 binds actions/data-uses to declared purpose, legal basis, consent, contract limits and prohibited-use policy. Partial: | — |
+| **GOV-06** | A.5.31 Identification of legal/regulatory/contractual requirements, A.5.36 Compliance with policies/standards, and A.5.20 Addressing information security within supplier agreements require obligations be captured and compliance evidenced. GOV-06 registers framework/contract/customer/regulator obliga | — |
+| **GOV-07** | A.5.34 Privacy and protection of PII (covers data-subject rights handling), A.6.8 Information security event reporting (feedback/reporting channels), and A.5.6 Contact with special interest groups support transparency and affected-party routing. GOV-07 documents disclosures, privacy-rights routing, | — |
+| **PR-09** | A.8.31 Separation of development/test/production, A.8.18 Use of privileged utility programs, and A.8.19 Installation of software on operational systems govern controlled execution of code/utilities. PR-09 runs generated code/shell/dynamic execution only in approved sandbox classes. Partial: ISO has | — |
+| **PR-10** | A.5.33 Protection of records and A.8.13 Information backup relate to integrity/protection of stored information. PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks and quarantine (RAG/memory poisoning). Partial: ISO does not address RAG/memory poisoning; m | — |
+| **PR-11** | A.8.10 Information deletion, A.5.33 Protection of records (retention), and A.7.14 Secure disposal/re-use of equipment require data be retained and deleted/disposed per policy/legal obligation. PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation | — |
+| **PR-12** | A.8.24 Use of cryptography (key management) and A.5.17 Authentication information (secret storage/handling) require secrets and keys be securely stored, scoped and managed. PR-12 vaults, scopes, rotates secrets/API keys/signing keys/wallet material and never exposes them to prompts/untrusted tools — | — |
+| **DE-05** | A.8.16 Monitoring activities is the only control loosely related to evaluating output behaviour. DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias, clinical/safety drift and out-of-scope behaviour. Partial/weak: AI output-harm evaluation (hallucination, bias, | — |
+| **DE-06** | A.8.8 Management of technical vulnerabilities and A.8.29 Security testing in development and acceptance require vulnerabilities be identified/evaluated and security testing be conducted. DE-06 ingests agent vuln scans, adversarial/red-team, resilience and third-party evals as evidence with remediati | — |
+| **RS-04** | A.8.22 Segregation of networks (limiting blast radius) and A.5.29 Information security during disruption support failure-domain isolation. RS-04 provides multi-agent failure-domain isolation, circuit breakers and coordinated kill-switch. Partial: ISO has no multi-agent cascade-containment concept; m | — |
+| **RS-05** | A.5.5 Contact with authorities (timely authority contact), A.5.26 Response to incidents, and A.5.28 Collection of evidence support regulated notification and evidence preservation. RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence and routes authority/customer notif | — |
+| **RS-06** | A.8.8 Management of technical vulnerabilities, A.5.5 Contact with authorities, and A.5.6 Contact with special interest groups support vulnerability intake, advisory monitoring and coordinated disclosure. RS-06 handles vuln intake, coordinated disclosure, secure-update handling, support-period tracki | — |
+| **RC-03** | A.5.30 ICT readiness for business continuity requires continuity plans/recovery capability be implemented, maintained and tested; A.5.29 and A.8.13 (backup restoration testing) reinforce exercise/validation. RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedu | — |
+
+---
+
+## Retention & Jurisdiction
+
+- **Evidence retention minimum:** 1095 days (3 years), aligning with ISO/IEC 27001's annual surveillance audits and 3-year recertification cycle.
+- **Jurisdiction:** International (ISO certification; adopted by 170+ countries).
+- **Human oversight:** required — human review of AI agent risk assessments and compliance monitoring outputs, with documented management review of ISMS effectiveness including AI agent security controls (basis: A.5.35, A.5.36, A.8.16).
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

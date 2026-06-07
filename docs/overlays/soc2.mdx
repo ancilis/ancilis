@@ -1,0 +1,74 @@
+---
+title: "SOC 2 Type II Overlay"
+description: "AKSI compliance overlay packaging Trust Services Criteria evidence for service organizations."
+---
+
+## Overview
+
+SOC 2 Type II is the AICPA's Trust Services Criteria framework for service organizations, assessing whether controls are both designed appropriately and operating effectively over a 6–12 month audit period. It is the universal B2B compliance baseline — virtually every agent startup selling to enterprises needs it. The criteria span all five Trust Services Categories: Security (CC), Availability (A), Processing Integrity (PI), Confidentiality (C), and Privacy (P).
+
+The `soc2` overlay maps each AKSI control to the relevant Trust Services Criteria, packaging the evidence requirements an auditor expects to see for each control. It is activated by general business data or personal information declarations.
+
+**Use this overlay when your agent:**
+- Operates within a service organization selling to enterprise customers
+- Handles general business data (`DC-GEN`) or personal information (`DC-PII`)
+- Is part of a system pursuing or maintaining a SOC 2 Type I or Type II report
+- Must demonstrate controls are operating effectively over an audit period
+
+---
+
+## Activation
+
+Explicit activation in your project configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - soc2
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares handling of the relevant data classes (`DC-GEN` or `DC-PII`) via `my_agent_handles`. See [Data Classification](/data-classification) for the declaration syntax and the full DC code reference.
+
+---
+
+## Control Mapping
+
+The overlay maps 26 AKSI controls to Trust Services Criteria.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | CC1.1, CC1.2 | Information security policy communicated to personnel and third parties (CC1.1) |
+| **GOV-02** | CC1.2, CC1.3 | Organizational structure with defined reporting lines and authorities (CC1.2) |
+| **GOV-03** | CC3.1, CC3.2 | Risk assessment process identifies and analyzes risks to service commitments (CC3.1) |
+| **GOV-04** | CC1.4, CC4.1, CC4.2 | Management monitors internal controls effectiveness on an ongoing basis (CC4.1) |
+| **ID-01** | CC6.1 | Information assets inventoried and classified (CC6.1) |
+| **ID-02** | CC6.6 | Software and infrastructure inventories maintained (CC6.6) |
+| **ID-03** | CC6.1 | Data classified based on sensitivity and regulatory requirements (CC6.1) |
+| **ID-04** | CC9.2 | Vendor risk assessment and due diligence processes documented (CC9.2) |
+| **ID-05** | CC3.2 | Risk assessment identifies threats and vulnerabilities relevant to service commitments (CC3.2) |
+| **PR-01** | CC6.1, CC6.2 | Logical access security controls restrict access to authorized users (CC6.1) |
+| **PR-02** | CC6.1, CC6.3 | Least privilege access implemented and enforced (CC6.3) |
+| **PR-03** | CC8.1 | Change management process implemented for system components (CC8.1) |
+| **PR-04** | CC6.7, C1.1, PI1.1 | Data transmission restricted to authorized channels (CC6.7) |
+| **PR-05** | CC7.1, CC7.2 | System activity logged and monitored for security events (CC7.1, CC7.2) |
+| **PR-06** | CC8.1 | Configuration management procedures documented and followed (CC8.1) |
+| **PR-07** | CC6.7 | Encryption used for data in transit and at rest per policy (CC6.7) |
+| **PR-08** | CC7.1 | Input validation and error handling implemented (CC7.1) |
+| **DE-01** | CC7.2, CC7.3 | Security event monitoring and anomaly detection active (CC7.2) |
+| **DE-02** | CC7.1, CC8.1 | Configuration monitoring detects unauthorized changes (CC7.1) |
+| **DE-03** | CC4.1 | Internal control effectiveness evaluated on an ongoing basis (CC4.1) |
+| **DE-04** | CC7.3 | Security event monitoring includes log integrity validation (CC7.3) |
+| **RS-01** | CC7.3, CC7.4 | Incident response procedures defined, communicated, and tested (CC7.3, CC7.4) |
+| **RS-02** | CC7.4 | Escalation procedures defined for security incidents (CC7.4) |
+| **RS-03** | CC7.5 | Incident investigation procedures include evidence preservation (CC7.5) |
+| **RC-01** | A1.2 | System recovery and business continuity plans documented and tested (A1.2) |
+| **RC-02** | CC4.2 | Post-incident reviews conducted with lessons learned documented (CC4.2) |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** global
+- **Evidence retention minimum:** 365 days — evidence must be retained for at least one year to support the Type II audit period and the licensed CPA firm's review.
+

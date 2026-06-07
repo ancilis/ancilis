@@ -1,0 +1,82 @@
+---
+title: "PCI-DSS v4.0 Overlay"
+description: "AKSI compliance overlay for AI agents that store, process, or transmit cardholder data."
+---
+
+## Overview
+
+The `pci-dss-v4` overlay maps AKSI control evidence to the Payment Card Industry Data Security Standard (PCI-DSS) v4.0. PCI-DSS applies to any system that stores, processes, or transmits cardholder data or sensitive authentication data. This overlay packages the AKSI control evidence required to demonstrate coverage of the PCI-DSS v4.0 requirements that are in scope for an agent SDK — identity (Req 8), access control (Req 7), data protection (Req 3–4), logging (Req 10), and monitoring (Req 10.4) — and applies strict evidence thresholds where the standard mandates them.
+
+**Use this overlay when your agent:**
+- Stores, processes, or transmits cardholder data (CHD)
+- Handles sensitive authentication data such as PAN, track data, CVV, or PIN data
+- Operates within a cardholder data environment (CDE)
+- Supports a business pursuing or maintaining PCI-DSS v4.0 attestation (SAQ or ROC)
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - pci-dss-v4
+```
+
+**Data classification trigger** — this overlay also auto-activates when your agent declares that it handles cardholder data, classified as `DC-CHD`, via `my_agent_handles`. See [Data Classification](/data-classification) for how to declare the data your agent handles.
+
+```yaml
+my_agent_handles:
+  - DC-CHD
+```
+
+---
+
+## Control Mapping
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | Req 12.1, Req 12.3 | Information security policy covering all PCI-DSS requirements reviewed annually (Req 12.1) |
+| **GOV-02** | Req 12.1.2, Req 12.4 | Roles and responsibilities for PCI-DSS compliance formally assigned (Req 12.1.2) |
+| **GOV-03** | Req 12.3.1, Req 12.3.2 | Formal risk assessment process identifying threats and vulnerabilities to cardholder data (Req 12.3.1) |
+| **GOV-04** | Req 12.4, Req 12.6 | Security awareness program for personnel with access to cardholder data (Req 12.6) |
+| **ID-01** | Req 12.5.1, Req 12.5.2 | Inventory of system components in scope for PCI-DSS maintained and current (Req 12.5.1) |
+| **ID-02** | Req 6.3.2, Req 2.2.4 | Inventory of authorized software and tools on in-scope systems (Req 6.3.2) |
+| **ID-03** | Req 12.5.2.1, Req 3.1 | Data discovery and classification of cardholder data locations (Req 12.5.2.1) |
+| **ID-04** | Req 12.8.1, Req 12.8.2, Req 6.3.2 | List of third-party service providers with access to cardholder data maintained (Req 12.8.1) |
+| **ID-05** | Req 12.3.1, Req 12.3.2 | Risk assessment covers threats to cardholder data environment (Req 12.3.1) |
+| **PR-01** | Req 8.2.1, Req 8.3.1, Req 8.4.1, Req 8.4.2 | Unique ID assigned to each person and agent with access to cardholder data (Req 8.2.1) |
+| **PR-02** | Req 7.2.1, Req 7.2.2, Req 7.2.5 | Access to cardholder data restricted by business need-to-know (Req 7.2.1) |
+| **PR-03** | Req 6.3.1, Req 6.2.1, Req 11.5.2 | Inventory of bespoke and custom software verified for known vulnerabilities (Req 6.3.1) |
+| **PR-04** | Req 3.3.1, Req 3.4, Req 3.4.1, Req 4.2.1 | All outbound actions scanned for PAN, track data, CVV, and PIN data (Req 3.4.1) |
+| **PR-05** | Req 10.2.1, Req 10.2.1.1-10.2.1.7, Req 10.5.1 | Audit logs record all access to cardholder data (Req 10.2.1) |
+| **PR-06** | Req 2.2, Req 2.2.1, Req 2.2.2 | System configurations hardened per industry standards (Req 2.2.1) |
+| **PR-07** | Req 3.5.1, Req 4.2.1, Req 4.2.1.1 | Strong cryptography used to protect cardholder data during transmission over open networks (Req 4.2.1) |
+| **PR-08** | Req 6.2.4 | Input validation on all user-supplied data to prevent injection attacks (Req 6.2.4) |
+| **DE-01** | Req 10.4.1, Req 10.4.1.1, Req 10.4.2 | Monitor all access to cardholder data environments for anomalies (Req 10.4.1) |
+| **DE-02** | Req 11.5.2 | File integrity monitoring deployed on critical system files (Req 11.5.2) |
+| **DE-03** | Req 11.3.1, Req 11.3.2, Req 11.4.1 | Internal vulnerability scans performed at least quarterly (Req 11.3.1) |
+| **DE-04** | Req 10.3.3, Req 10.6.1 | Audit log integrity protected — no alteration or deletion (Req 10.3.3) |
+| **RS-01** | Req 12.10.1, Req 12.10.2, Req 12.10.4 | Incident response plan includes specific procedures for cardholder data breaches (Req 12.10.1) |
+| **RS-02** | Req 12.10.3 | Designated personnel available 24/7 for incident response (Req 12.10.3) |
+| **RS-03** | Req 12.10.5 | Incident evidence preserved per forensic investigation requirements |
+| **RC-01** | Req 12.10.1 | Business continuity and disaster recovery procedures documented (Req 12.10.1) |
+| **RC-02** | Req 12.10.6 | Incident response plan updated based on lessons learned (Req 12.10.6) |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** global
+- **Evidence retention minimum:** 365 days
+
+PCI-DSS v4.0 applies globally to any entity that stores, processes, or transmits cardholder data, regardless of location. This overlay enforces a minimum evidence retention of 365 days.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

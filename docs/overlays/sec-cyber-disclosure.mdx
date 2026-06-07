@@ -1,0 +1,73 @@
+---
+title: "SEC Cybersecurity Disclosure Overlay"
+description: "AKSI compliance overlay for AI agents within SEC-registered public companies subject to the cyber risk-management, governance, and incident-disclosure rules."
+---
+
+## Overview
+
+The SEC Cybersecurity Risk Management, Strategy, Governance, and Incident Disclosure Rules (Regulation S-K Item 106; Form 8-K Item 1.05; Form 10-K Item 1C / Form 20-F / Form 6-K for foreign private issuers) are a public-company **disclosure** regime, not a prescriptive security-controls standard: they require timely Form 8-K Item 1.05 reporting of material cyber incidents (within 4 business days of the materiality determination) and annual Reg S-K Item 106 / Form 10-K Item 1C descriptions of cyber risk-management processes and board/management governance. The agent-responsibility boundary is narrow and indirect: an agent runtime can detect/escalate incidents and start and preserve evidence.
+
+The `sec-cyber-disclosure` overlay packages AKSI control evidence against the parts of this regime that an agent runtime can actually contribute to — incident detection and escalation, the regulated notification clock, tamper-evident audit trails, governance accountability, and third-party/dependency risk identification — and maps each control to its Reg S-K Item 106 and Form 8-K Item 1.05 citations.
+
+**Use this overlay when your agent:**
+- Operates within an SEC-registered public company / Exchange Act registrant (including foreign private issuers)
+- Handles material non-public information, financial data, or personal information that could factor into a material cybersecurity incident
+- Can detect, escalate, or preserve evidence for cybersecurity incidents subject to Form 8-K Item 1.05 disclosure
+- Contributes to the cyber risk-management and governance processes described under Reg S-K Item 106
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - sec-cyber-disclosure
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares (via `my_agent_handles`) that it handles data classified under `DC-MNPI`, `DC-FIN`, or `DC-PII`:
+
+```yaml
+my_agent_handles:
+  - DC-MNPI
+```
+
+See [Data Classification](/data-classification) for the full classification code reference.
+
+---
+
+## Control Mapping
+
+The overlay maps the following AKSI controls. Each row uses the control's `framework_reference` from the overlay definition; key evidence requirements are not yet enumerated in the overlay definition.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-02** | Item 106(c)(2) requires describing management's role in assessing/managing material cyber risks, including the management positions or committees responsible and their relevant expertise. GOV-02 (named accountable owner for operation/risk/remediation of each AI system) supplies the agent-runtime evi | — |
+| **GOV-04** | Item 106(c)(1)/(c)(2) require describing how the board and management are informed about and oversee cyber risks. GOV-04 (human oversight + decision accountability) provides the agent-runtime mechanism by which sensitive cyber-relevant decisions are escalated for human review and recorded, supplying | — |
+| **GOV-06** | GOV-06 (external obligation registry + posture reporting) registers the SEC Item 106 disclosure obligations and links the agent's cyber risk-management posture, governance touchpoints, and evidence to owner reporting. This feeds the company's required Item 106(b)(1) description of risk-assessment/ma | — |
+| **ID-04** | Item 106(b)(1) expressly calls for describing oversight of risks associated with the registrant's use of third-party service providers, and use of third-party cybersecurity assessors/auditors. ID-04 (supply chain & dependency risk: models/tools/deps/prompts via SBOM/provenance) covers the agent-runt | — |
+| **ID-05** | Item 106(b)(1) requires describing processes for assessing/identifying material risks from cybersecurity threats. ID-05 (agent risk profiling: purpose/autonomy/data sensitivity/action authority/impact tier) is the agent-runtime risk-identification step that contributes to that process for governed a | — |
+| **PR-06** | Determining materiality and disclosing 'material aspects of the nature, scope and timing' under Item 1.05 requires reliable, tamper-evident records of what happened and when. PR-06 (hash-chained audit trail completeness) preserves the who/why/under-which-controls evaluation chain for governed agent | — |
+| **DE-01** | Item 1.05 disclosure obligation is triggered only after an incident is detected and assessed; Item 106(b)(1) requires describing the process for identifying material cyber risks. DE-01 (behavioral anomaly detection) is the agent-runtime sensor that surfaces suspicious deviations which feed incident | — |
+| **DE-05** | Item 106(b)(1) requires describing processes for assessing/identifying material risks from cybersecurity threats, including risks arising from the registrant's own systems. DE-05 (AI outcome evaluation + harm monitoring) contributes evidence about agent-originated harmful/out-of-scope outputs and to | — |
+| **RS-03** | RS-03 (human escalation + incident reporting context) supports the agent slice of routing a detected/suspected material incident to the responders, disclosure committee, and board/management with the contextual reporting package that Item 106(c)(1) board-oversight and 106(c)(2) management-role proce | — |
+| **RS-05** | Item 1.05(a) requires filing a Form 8-K within four business days AFTER the registrant determines a cybersecurity incident is material, describing material aspects of nature/scope/timing and material/reasonably-likely-material impact. RS-05 (regulated notification clock + authority routing) directly | — |
+
+---
+
+## Jurisdiction & Retention
+
+**Jurisdiction:** United States (SEC-registered public companies / Exchange Act registrants, including foreign private issuers).
+
+The overlay definition does not specify an `evidence_retention_minimum_days` value; apply your organization's record-retention policy for cybersecurity-incident and disclosure evidence.
+
+This overlay is a review-first mapping: most control mappings are marked `partial` and several are not yet verified against runtime evidence. Treat coverage as indicative and confirm each mapping before relying on it for disclosure.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

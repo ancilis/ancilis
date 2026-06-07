@@ -1,0 +1,96 @@
+---
+title: "eu_gpai_code Overlay"
+description: "Scaffold AKSI compliance overlay wiring controls to the EU General-Purpose AI Code of Practice."
+---
+
+## Overview
+
+The `eu_gpai_code` overlay associates AKSI controls with the EU General-Purpose AI (GPAI) Code of Practice. It is a scaffold mapping created to resolve a dangling control-to-overlay reference: it wires the 39 AKSI controls that reference this overlay but does not yet assert any framework requirement mappings.
+
+Per the overlay definition: *"SCAFFOLD overlay for 'eu_gpai_code' — created to resolve a dangling control->overlay reference (D3). No aksi-ultra research crosswalk exists for this id; control wiring only, no requirement-ID mappings asserted."*
+
+<Warning>
+This overlay is a **scaffold mapping** and is **not yet backed by runtime evidence**. The top-level `scaffold` flag is set and the `framework_mapping` is empty, so no requirement-ID crosswalk has been asserted (verified=false by construction). Treat any coverage shown here as **indicative only**. Framework references and evidence requirements must be populated from an authoritative source before any production assertion.
+</Warning>
+
+**Use this overlay when your agent:**
+- Is a general-purpose AI system in scope of the EU GPAI Code of Practice
+- Declares that it handles AI-classified data (`DC-AI`)
+- Needs the GPAI control set wired ahead of an authoritative requirement crosswalk
+
+---
+
+## Activation
+
+Activate explicitly in your config:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - eu_gpai_code
+```
+
+**Data classification trigger** — because this overlay uses a `data_classification` trigger, it also auto-activates when your agent declares (via `my_agent_handles`) that it handles the data class `DC-AI`. See [Data Classification](/data-classification) for how to declare handled data classes.
+
+---
+
+## Control Mapping
+
+This overlay wires 39 controls. Because the overlay is a scaffold, every control's framework reference and evidence requirements are currently unpopulated — see the warning above.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| GOV-01 | — | — |
+| GOV-02 | — | — |
+| GOV-03 | — | — |
+| GOV-04 | — | — |
+| GOV-05 | — | — |
+| GOV-06 | — | — |
+| GOV-07 | — | — |
+| ID-01 | — | — |
+| ID-02 | — | — |
+| ID-03 | — | — |
+| ID-04 | — | — |
+| ID-05 | — | — |
+| PR-01 | — | — |
+| PR-02 | — | — |
+| PR-03 | — | — |
+| PR-04 | — | — |
+| PR-05 | — | — |
+| PR-06 | — | — |
+| PR-07 | — | — |
+| PR-08 | — | — |
+| PR-09 | — | — |
+| PR-10 | — | — |
+| PR-11 | — | — |
+| PR-12 | — | — |
+| DE-01 | — | — |
+| DE-02 | — | — |
+| DE-03 | — | — |
+| DE-04 | — | — |
+| DE-05 | — | — |
+| DE-06 | — | — |
+| RS-01 | — | — |
+| RS-02 | — | — |
+| RS-03 | — | — |
+| RS-04 | — | — |
+| RS-05 | — | — |
+| RS-06 | — | — |
+| RC-01 | — | — |
+| RC-02 | — | — |
+| RC-03 | — | — |
+
+---
+
+## Retention & Jurisdiction
+
+This overlay maps to the EU General-Purpose AI Code of Practice. The scaffold definition does not assert an evidence retention minimum, so no retention floor is enforced by this overlay; configure retention according to your governing requirements until an authoritative crosswalk is populated.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

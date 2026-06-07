@@ -1,0 +1,86 @@
+---
+title: "New York State Department of Financial Services Cybersecurity Requirements for Financial Services Companies (23 NYCRR Part 500) Overlay"
+description: "AKSI compliance overlay mapping agent-runtime controls to NYDFS 23 NYCRR Part 500 cybersecurity requirements."
+---
+
+## Overview
+
+23 NYCRR Part 500 is the NYDFS cybersecurity regulation binding on DFS-regulated financial services "Covered Entities." Its Second Amendment (effective Nov 1, 2023, phasing in through Nov 1, 2025) added governance, asset-management, 72-hour incident and 24-hour ransomware notice, annual compliance certification, and Class A enhanced controls.
+
+The `nydfs-500` overlay packages AKSI control evidence against Part 500 and maps each AKSI control to the relevant section citations (e.g., 500.4, 500.6, 500.7(a), 500.13(a), 500.16(a)(1), 500.17(a)). Part 500 is an entity-level program regulation, so most mappings are scoped to the agent-runtime slice (agent identity, authorization, audit trail, containment, notification-clock start, recovery) rather than the full entity-level obligation.
+
+<Warning>
+This overlay is a scaffold mapping that is not yet backed by runtime evidence. Every control's `evidence_requirements` list is currently empty, and the source mapping is marked "REVIEW-FIRST, not production-asserted" with most mappings carried as `partial` (and several as `verified=false`). Treat coverage as indicative only.
+</Warning>
+
+**Use this overlay when your agent:**
+- Operates within or on behalf of a DFS-regulated financial services "Covered Entity"
+- Handles nonpublic information (`DC-NPI`), financial data (`DC-FIN`), personally identifiable information (`DC-PII`), or financial-customer information (`DC-FCI`)
+- Participates in a system subject to NYDFS Part 500 governance, audit-trail, or incident-notification obligations
+- Must start or feed the 72-hour incident / 24-hour ransomware notification clock at the agent-runtime layer
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - nydfs-500
+```
+
+**Data classification trigger** — because this overlay has `trigger_type: data_classification`, it also auto-activates when your agent declares handling of the relevant data classes (`DC-NPI`, `DC-FIN`, `DC-PII`, `DC-FCI`) via `my_agent_handles`. See [Data Classification](/data-classification) for how declared data classes map to overlay activation.
+
+---
+
+## Control Mapping
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-02** | 500.4 Cybersecurity governance requires a designated CISO and senior-officer/board accountability for the cybersecurity program. GOV-02 (named accountable owner per AI system for operation/risk/remediation) satisfies the agent-runtime slice: every governed agent has a named accountable owner. It doe | _(no evidence requirements defined)_ |
+| **GOV-03** | 500.3 requires written, annually-approved cybersecurity policies addressing (among others) information security and access controls; 500.2 requires a program based on the risk assessment. GOV-03 (autonomy limits + escalation thresholds defined in policy before autonomous action) provides the agent-r | _(no evidence requirements defined)_ |
+| **GOV-04** | 500.7(a) requires limiting privileged accounts and ensuring privileged accounts are used only when performing functions requiring such access (i.e., human authorization context for elevated actions). GOV-04 (human review/approval + decision accountability for sensitive actions/exceptions) satisfies | _(no evidence requirements defined)_ |
+| **GOV-06** | 500.17(b) requires an annual Certification of Material Compliance (or Acknowledgment of Noncompliance) signed by the highest-ranking executive and CISO, with five-year retention of supporting documentation; 500.2 requires the program to fulfill regulatory reporting obligations. GOV-06 (obligation re | _(no evidence requirements defined)_ |
+| **ID-01** | 500.13(a) requires a complete and accurate asset management inventory tracking owner, location, classification/sensitivity, support expiration, recovery time objectives, and update frequency; 500.9 risk assessment must cover information systems. ID-01 (complete current registry of governed AI system | _(no evidence requirements defined)_ |
+| **ID-02** | 500.13(a) asset management inventory must track key information for each asset (owner, classification, support/end-of-life). ID-02 (tool/model/integration registry with provenance + approval metadata, descriptor hash at approval time) maps the agent's tools, models, MCP surfaces and integrations int | _(no evidence requirements defined)_ |
+| **ID-03** | 500.3(b) requires policies for data governance, classification and retention; 500.13(a) requires tracking classification/sensitivity per asset. ID-03 (data flow mapping + classification of inputs/context stores/outputs/destinations + observed data classes) satisfies the agent-runtime data-classifica | _(no evidence requirements defined)_ |
+| **ID-04** | 500.11(a) requires identification and risk assessment of third-party service providers and periodic risk-based assessment. ID-04 (supply-chain/dependency risk for models/tools/deps/prompts/orchestration, SBOM, provenance) satisfies the agent-supply-chain slice of TPSP/dependency risk. Partial: 500.1 | _(no evidence requirements defined)_ |
+| **ID-05** | 500.9 requires a periodic risk assessment with written policies addressing criteria for evaluating risks and adequacy of controls. ID-05 (agent risk profiling: purpose/autonomy/data sensitivity/action authority/impact tier before use) satisfies the agent-specific risk-assessment input feeding the br | _(no evidence requirements defined)_ |
+| **PR-01** | 500.7(a) requires limiting access privileges to information systems providing access to nonpublic information and using privileged access only when necessary. PR-01 (sensitive actions evaluated against policy; allowed only when identity+context+target authorized) satisfies the agent-runtime authoriz | _(no evidence requirements defined)_ |
+| **PR-02** | 500.7(a) requires least-privilege limitation of user access and minimization of privileged accounts/functions, with annual review to remove unneeded access. PR-02 (explicit least-privilege scopes checked per session + per action) directly enforces least privilege for agent identities at runtime. Par | _(no evidence requirements defined)_ |
+| **PR-04** | 500.15 requires encryption (or CISO-approved compensating controls) of nonpublic information in transit and at rest; 500.13(b) requires secure disposal of NPI no longer needed. PR-04 (sensitive/regulated data inspected + constrained before context-in, system-out, or action-trigger) provides the agen | _(no evidence requirements defined)_ |
+| **PR-05** | 500.7(a) limits access to NPI and 500.15 protects NPI confidentiality. PR-05 (context/tenant isolation so system/task/tenant/user/jurisdiction boundaries cannot silently leak) satisfies the agent-runtime isolation slice that prevents cross-tenant/cross-context NPI exposure. Partial: no single Part 5 | _(no evidence requirements defined)_ |
+| **PR-06** | 500.6 Audit Trail requires systems to reconstruct material financial transactions and audit trails designed to detect and respond to cybersecurity events, retained at least five years. PR-06 (every governed action records who/why/under-which-controls; hash-chained) satisfies the agent-runtime audit- | _(no evidence requirements defined)_ |
+| **PR-08** | 500.8 Application Security requires written procedures/standards for secure development and for assessing/testing security of externally developed and in-house applications; 500.3(i) covers systems and application security and development and QA. PR-08 (input validation + injection resistance for di | _(no evidence requirements defined)_ |
+| **PR-11** | 500.13(b) requires policies/procedures for secure periodic disposal of nonpublic information no longer necessary for business operations (except where retention is legally required or disposal not reasonably feasible); 500.3(b) covers data retention. PR-11 (agent-held data/memory/context/evidence re | _(no evidence requirements defined)_ |
+| **PR-12** | 500.12 requires MFA for access; 500.7(c) (Class A) requires privileged access management and blocking commonly used passwords. PR-12 (secrets/API keys/signing keys vaulted, scoped, rotated, never exposed to prompts/untrusted tools) protects the credential material an agent uses, supporting the acces | _(no evidence requirements defined)_ |
+| **DE-01** | 500.14(a) requires risk-based controls to monitor the activity of authorized users and detect unauthorized access, use, or tampering with NPI; 500.2(a) requires the program to detect cybersecurity events. DE-01 (agents monitored vs expected behavioral baselines; suspicious deviations detected) satis | _(no evidence requirements defined)_ |
+| **DE-02** | 500.13(a) requires the asset inventory to track classification/sensitivity and keep it accurate; 500.3(b) data governance and classification. DE-02 (observed data handling continuously checked vs declared classifications + processing boundaries) provides continuous validation that agent data handlin | _(no evidence requirements defined)_ |
+| **DE-03** | 500.5 Vulnerability management requires monitoring information systems to identify vulnerabilities (including periodic penetration testing and automated scans); 500.13(a) requires keeping the asset inventory current. DE-03 (drift in config/deps/tools/models/policy baselines detected before it normal | _(no evidence requirements defined)_ |
+| **DE-04** | 500.6 requires audit trails designed to detect and respond to cybersecurity events and to be securely maintained for five years. DE-04 (evidence-chain, missing-telemetry, tamper-signal monitoring) supports the integrity and completeness of the agent audit trail that 500.6 requires. Partial: monitori | _(no evidence requirements defined)_ |
+| **DE-06** | 500.5 requires vulnerability management including periodic penetration testing (at least annually) and automated/manual vulnerability scans, with timely remediation by risk priority; 500.2(c) requires Class A independent audits of the cybersecurity program. DE-06 (vuln scans, adversarial/red-team, r | _(no evidence requirements defined)_ |
+| **RS-02** | 500.16(a)(1) requires an incident response plan reasonably designed to enable prompt response to and recovery from cybersecurity events, including identification of system weaknesses requiring remediation; 500.2(a) requires responding to detected events to mitigate negative effects. RS-02 (block/qua | _(no evidence requirements defined)_ |
+| **RS-03** | 500.16(a)(1) requires the IR plan to define clear roles/responsibilities/decision-making authority, internal/external communication, and reporting; 500.17(a) requires 72-hour notice to the Superintendent after determining a cybersecurity incident occurred. RS-03 (route significant failures/exception | _(no evidence requirements defined)_ |
+| **RS-05** | 500.17(a) requires electronic notice to the Superintendent no later than 72 hours after determining a cybersecurity incident occurred (including incidents at affiliates/TPSPs); 500.17(c) requires notice within 24 hours of an extortion/ransomware payment plus a written explanation within 30 days. RS- | _(no evidence requirements defined)_ |
+| **RC-02** | 500.16(a)(1) requires the IR plan to include a root cause analysis describing how/why the event occurred, the business impact, and measures to prevent reoccurrence, plus documentation and reporting. RC-02 (post-incident review, corrective action, stakeholder notification, lessons-learned) satisfies | _(no evidence requirements defined)_ |
+
+---
+
+## Retention & Jurisdiction
+
+**Jurisdiction:** United States — New York State (DFS-regulated financial services "Covered Entities").
+
+**Regime version:** Second Amendment, adopted/effective November 1, 2023 (staggered transitional periods through November 1, 2025).
+
+**Retention:** The source overlay does not define an `evidence_retention_minimum_days` value. Part 500 itself imposes retention obligations in the mapped sections — for example, 500.6 requires audit trails to be securely maintained for at least five years, and 500.17(b) requires five-year retention of documentation supporting the annual compliance certification. Configure evidence retention to meet the longest applicable Part 500 obligation for your Covered Entity.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

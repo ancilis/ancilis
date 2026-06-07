@@ -1,0 +1,101 @@
+---
+title: "Singapore Model AI Governance Framework (IMDA MGF) — Second Edition Overlay"
+description: "AKSI compliance overlay for AI agents governed under Singapore's IMDA/PDPC Model AI Governance Framework."
+---
+
+## Overview
+
+The Singapore IMDA/PDPC Model AI Governance Framework (Second Edition, 2020) is a voluntary, principle-based framework for private sector organizations deploying AI in Singapore. It is organized into four governance areas: (1) Internal Governance Structures, (2) Human Involvement in Decision-Making, (3) Operations Management, and (4) Stakeholder Communication. Its PDPC linkage makes personal data protection obligations directly regulatory, and it pairs as a strong companion signal with MAS TRM (mandatory for Singapore financial institutions).
+
+The `imda-mgf` overlay packages AKSI control evidence and maps each AKSI control to the relevant MGF governance area, section reference, and AI Verify / Agentic MGF dimension citations.
+
+**Use this overlay when your agent:**
+- Deploys AI in Singapore under the IMDA/PDPC Model AI Governance Framework
+- Handles personal data subject to Singapore PDPA / PDPC obligations in an AI context
+- Operates alongside MAS TRM requirements as a Singapore financial institution
+- Makes consequential AI-augmented decisions affecting individuals' rights, safety, or financial interests
+- Needs documented human oversight classification for AI-augmented decision-making
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your config:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - imda-mgf
+```
+
+**Data classification trigger** — because this overlay uses a `data_classification` trigger, it also auto-activates when your agent declares handling of the relevant data class (`DC-AI`) via `my_agent_handles`. See [Data Classification](/data-classification) for how to declare the `DC-AI` class.
+
+---
+
+## Control Mapping
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | MGF Area 1 — Internal Governance Structures and Measures §2.1 | Documented AI governance policy approved by senior management or board |
+| **GOV-02** | MGF Area 1 — Internal Governance Structures and Measures §2.2 | Named individual or team accountable for each deployed AI system |
+| **GOV-03** | MGF Area 1 — Internal Governance Structures and Measures §2.3 | AI-specific risk assessment process documented — includes bias, accuracy degradation, misuse, and third-party risk dimensions |
+| **GOV-04** | MGF Area 2 — Human Involvement in AI-Augmented Decision-Making §3.1–3.3 | Human oversight classification documented for each AI system: human-in-the-loop, human-on-the-loop, or fully automated — with rationale |
+| **ID-01** | MGF Area 1 — Internal Governance Structures and Measures (implied) | Inventory of AI systems in scope of governance program — minimum: system name, intended purpose, deployment context, accountable owner |
+| **ID-02** | MGF Area 3 — Operations Management §4.3 (vendor/third-party) | Third-party AI tools and components included in vendor risk assessment |
+| **ID-03** | MGF Area 3 — Operations Management §4.1 (data governance) | Data quality assessment documented for AI training and inference inputs — representativeness, bias screening, known limitations |
+| **ID-04** | MGF Area 3 — Operations Management §4.3 (third-party AI component risk) | Third-party AI components (models, APIs, datasets) assessed for risk before adoption |
+| **ID-05** | MGF Areas 1+2 — risk assessment drives oversight level selection | AI system risk profile documented — severity of potential harm, breadth of impact, reversibility, and automation level |
+| **PR-01** | MGF Area 3 — Operations Management (access controls implied) | Access controls for AI systems documented — who can modify, retrain, or access model outputs |
+| **PR-02** | MGF Area 3 — Operations Management (minimal access principle) | AI system permissions scoped to intended purpose — documented principle of data minimization in deployment |
+| **PR-03** | MGF Area 3 — Operations Management §4.3 (AI system integrity) | AI component integrity verified before deployment — third-party models and APIs assessed for authenticity |
+| **PR-04** | MGF Area 3 — Operations Management §4.1 (data protection); PDPC Advisory on Use of Personal Data in AI Recommendation Systems | Personal data exposure in AI outputs controlled and documented — PDPC Advisory on AI linkage applies |
+| **PR-05** | MGF Areas 1+4 — accountability and stakeholder interaction | Audit logs maintained for AI system actions — sufficient for accountability and contested decision review |
+| **PR-06** | MGF Area 3 — Operations Management (AI system integrity monitoring) | AI system configuration controls documented — change management process for model updates and parameter changes |
+| **PR-07** | MGF Area 3 — Operations Management (data security, implied) | Data in transit protected for AI system communications — encryption applied to model API calls involving personal or sensitive data |
+| **PR-08** | MGF Area 3 — Operations Management §4.2 (AI system testing); AI Verify Toolkit (companion resource) | AI system tested for robustness against adversarial inputs before deployment |
+| **DE-01** | MGF Area 3 — Operations Management §4.2 (model monitoring) | Model performance monitoring implemented — tracks accuracy, drift, bias indicators, and output quality degradation |
+| **DE-02** | MGF Area 3 — Operations Management (change detection implied) | Configuration change detection in place for AI systems — alerts on unauthorized or unexpected changes |
+| **DE-03** | MGF Area 1 — Internal Governance (governance audit and continuous improvement) | Internal governance audit process covers AI system compliance with policies and framework commitments |
+| **DE-04** | MGF Areas 1+4 — accountability and audit integrity | Audit log integrity maintained — controls to detect tampering with AI audit records |
+| **RS-01** | MGF Area 3 — Operations Management §4.4 (incident response) | Incident response process documented for AI system failures, harmful outputs, and misuse events |
+| **RS-02** | MGF Area 2 §3.2 (human review) and Area 4 §5.2 (contestation mechanism) | Human escalation pathway documented for high-risk AI decisions and contested AI outputs |
+| **RS-03** | MGF Area 3 — Operations Management §4.4 (incident management and evidence) | Incident evidence preserved sufficient for accountability review and post-incident analysis |
+| **RC-01** | MGF Area 3 — Operations Management §4.4 (model rollback and recovery) | AI model rollback capability demonstrated — ability to revert to prior model version on safety or quality failure |
+| **RC-02** | MGF Areas 1+3 — continuous improvement and post-incident learning | Post-incident review process for AI events — root cause analysis, contributing factors, remediation plan |
+| **GOV-05** | MGF Dimension 2 (Data) addresses data quality and 'potentially contentious' (e.g., copyrighted/personal) training data and privacy-law compliance; AI Verify 'Data Governance' covers data source and quality. AKSI GOV-05 binds actions/data-uses to declared purpose, legal basis, consent and prohibited- | — |
+| **GOV-06** | Dimension 1 expects documented allocation of responsibility and disclosure to downstream parties; Dimension 5 (Testing and Assurance) envisions third-party testing against common standards reported to stakeholders. AKSI GOV-06 registers framework/contract/customer/regulator obligations and links the | — |
+| **GOV-07** | Dimension 3 enhances transparency around safety/hygiene measures and disclosure (e.g., model/safety 'food-label' style disclosures); Dimension 6 (Content Provenance) introduces labelling/watermarking/metadata so users know content is AI-generated; AI Verify 'Transparency' requires appropriate inform | — |
+| **PR-09** | The Agentic AI MGF technical-controls pillar covers tool guardrails and operational boundaries on autonomous execution; Dimension 6 Security covers adversarial misuse. AKSI PR-09 confines generated code/shell/dynamic execution to approved sandbox classes — the controlled-execution slice for agents t | — |
+| **PR-10** | Dimension 6 (Security) names data poisoning; Dimension 8 (Safety and Alignment Research) concerns systems behaving as intended. AKSI PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks and quarantine (RAG/memory poisoning) — the memory/context-integrity sli | — |
+| **PR-11** | Dimension 2 / AI Verify Data Governance imply lawful data handling including retention/disposal consistent with privacy obligations (PDPA context). AKSI PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation — the agent-held-data lifecycle slice. | — |
+| **PR-12** | Dimension 6 (Security) covers protection against adversarial extraction; the Agentic AI MGF technical-controls pillar covers least-privilege access. AKSI PR-12 vaults/scopes/rotates secrets, API keys and signing keys and keeps them out of prompts/untrusted tools — the credential-custody slice protec | — |
+| **DE-05** | Dimension 5 (Testing and Assurance) and Dimension 8 (Safety and Alignment Research) plus AI Verify Safety/Robustness require evaluating output reliability, harmful output and alignment. AKSI DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias and out-of-scope b | — |
+| **DE-06** | Dimension 5 promotes third-party testing on common standards (AI Verify provides the technical tests and process checks); Dimension 3 promotes safety testing/red-teaming before production. AKSI DE-06 ingests vuln scans, adversarial/red-team, resilience tests and third-party evals as evidence with re | — |
+| **RS-05** | Dimension 4 (Incident Reporting) envisions timely notification of AI incidents to relevant parties/authorities. AKSI RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence and routes authority/customer notification to humans — the notification-clock/evidence-preservation | — |
+| **RS-06** | Dimension 4 supports continuous improvement after incidents and Dimension 6 (Security) addresses vulnerabilities/adversarial attacks; together they support coordinated vulnerability handling for shipped AI products. AKSI RS-06 covers vuln intake, coordinated disclosure, secure-update handling and ad | — |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** SGP (Singapore)
+- **Evidence retention minimum:** 1095 days
+
+Configure retention to meet the overlay minimum:
+
+```yaml
+compliance:
+  overlays:
+    - imda-mgf
+  evidence:
+    retention_days: 1095
+```
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)
