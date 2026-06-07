@@ -1,0 +1,78 @@
+---
+title: "Financial Services (GLBA, SOX, DORA) Overlay"
+description: "AKSI compliance overlay for AI agents handling customer financial data, transaction records, and financial reporting information."
+---
+
+## Overview
+
+The `glba` overlay is a financial services overlay for agents handling customer financial data, transaction records, or financial reporting information. It packages evidence for GLBA Safeguards Rule controls, SOX internal-control obligations, and DORA operational resilience requirements.
+
+Rather than a single-regulation attestation, this overlay treats financial-services handling as a combined control package: the GLBA Safeguards Rule drives customer-information security controls, SOX drives internal-control and record-retention rigor for financially relevant systems, and DORA adds ICT resilience and incident-management expectations for regulated financial entities.
+
+**Use this overlay when your agent:**
+- Handles customer financial data
+- Processes transaction records
+- Works with financial reporting information
+- Operates within a business subject to GLBA, SOX, or DORA obligations
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your agent configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - glba
+```
+
+**Data classification trigger** — because this overlay uses a `data_classification` trigger, it also auto-activates when your agent declares that it handles the relevant financial data classification (`DC-FIN`) via `my_agent_handles`:
+
+```yaml
+my_agent_handles:
+  - DC-FIN
+```
+
+See [Data Classification](/data-classification) for how declared data types map to overlay activation.
+
+---
+
+## Control Mapping
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | GLBA 16 CFR 314.4(a), 314.4(i); SOX §302, §406; DORA Art.5 | Information security program documented and approved by senior leadership per GLBA 16 CFR 314.4(a) |
+| **GOV-02** | GLBA 16 CFR 314.4(a), 314.4(i); SOX §301, §404; DORA Art.5(2) | Roles and responsibilities for information security program defined and documented per GLBA 314.4(a) |
+| **GOV-03** | GLBA 16 CFR 314.4(b); SOX §404; DORA Art.6 | Risk assessment conducted covering customer information and relevant systems per GLBA 314.4(b) |
+| **GOV-04** | GLBA 16 CFR 314.4(g), 314.4(i); SOX §302, §404; DORA Art.15 | Oversight mechanisms for automated financial decisions documented per SOX §302 CEO/CFO accountability |
+| **ID-01** | GLBA 16 CFR 314.4(c)(2); SOX §404; DORA Art.8 | Inventory of systems, applications, and data assets handling customer financial information maintained per GLBA 314.4(c)(2) |
+| **ID-02** | GLBA 16 CFR 314.4(f); SOX §404; DORA Art.28 | Software and model inventory maintained for systems processing customer financial information (GLBA 314.4(f)) |
+| **ID-03** | GLBA 16 CFR 314.4(c)(2); SOX §404; DORA Art.8 | Customer financial information classified per GLBA categories (nonpublic personal information) per GLBA 314.4(c)(2) |
+| **ID-04** | GLBA 16 CFR 314.4(f); SOX §404; DORA Art.28-30 | Service provider oversight program documented per GLBA 314.4(f) covering selection and monitoring |
+| **ID-05** | GLBA 16 CFR 314.4(b); SOX §404; DORA Art.6 | Risk assessment identifies foreseeable internal and external risks to customer information per GLBA 314.4(b) |
+| **PR-01** | GLBA 16 CFR 314.4(c)(1), 314.4(c)(5); SOX §302, §404; DORA Art.9 | Access controls and multi-factor authentication enforced for systems handling customer financial information |
+| **PR-02** | GLBA 16 CFR 314.4(c)(1); SOX §302, §404; DORA Art.9 | Least-privilege entitlements and segregation-of-duties matrix maintained for finance-sensitive workflows |
+| **PR-03** | GLBA 16 CFR 314.4(c)(4), 314.4(c)(7); SOX §404; DORA Art.28 | Change management records demonstrate secure development and testing for systems processing financial data |
+| **PR-04** | GLBA 16 CFR 314.4(c)(3); SOX §404; DORA Art.9 | Encryption protects customer financial information in transit and at rest, with compensating-control approval documented when needed |
+| **PR-05** | GLBA 16 CFR 314.4(c)(8); SOX §404, §802; DORA Art.10 | Tamper-evident audit logs capture every financially relevant agent action with enough detail for ICFR review |
+| **PR-06** | GLBA 16 CFR 314.4(c)(7); SOX §404; DORA Art.9 | Configuration management procedures cover systems processing customer financial information (GLBA 314.4(c)(7)) |
+| **PR-07** | GLBA 16 CFR 314.4(c)(3); SOX §404; DORA Art.9 | Encryption policy covers customer financial information at rest and in transit (GLBA 314.4(c)(3)) |
+| **PR-08** | GLBA 16 CFR 314.4(c)(6); SOX §802; DORA Art.9 | Input validation and injection controls implemented for systems processing customer financial data (GLBA 314.4(c)(6)) |
+| **DE-01** | GLBA 16 CFR 314.4(c)(8), 314.4(h); SOX §404; DORA Art.10, Art.17, Art.19 | Behavioral monitoring and anomaly detection cover privileged access, transaction spikes, and exfiltration indicators |
+| **DE-02** | GLBA 16 CFR 314.4(d); SOX §404; DORA Art.9, Art.15 | Configuration monitoring detects unauthorized changes to GLBA-in-scope systems (GLBA 314.4(d)) |
+| **DE-03** | GLBA 16 CFR 314.4(d); SOX §404; DORA Art.11, Art.15 | Continuous monitoring of information security controls per GLBA 314.4(d) ongoing oversight requirement |
+| **DE-04** | GLBA 16 CFR 314.4(c)(8), 314.4(d); SOX §404, §802; DORA Art.10 | Audit log integrity protected to prevent tampering — required for SOX §802 electronic record integrity |
+| **RS-01** | GLBA 16 CFR 314.4(h); SOX §404; DORA Art.17 | Incident response plan documented per GLBA 314.4(h) covering detection, response, and recovery |
+| **RS-02** | GLBA 16 CFR 314.4(h)(3), 314.4(h)(4); SOX §302, §404; DORA Art.17, Art.19 | Escalation and notification procedures for security incidents involving customer financial information (GLBA 314.4(h)) |
+| **RS-03** | GLBA 16 CFR 314.4(h)(5), 314.4(h)(6); SOX §802; DORA Art.17 | Incident documentation and evidence preservation procedures per GLBA 314.4(h)(5)-(6) |
+| **RC-01** | GLBA 16 CFR 314.4(h), 314.4(g); SOX §404; DORA Art.12 | Business continuity and disaster recovery plan documented per GLBA 314.4(g) and 314.4(h) |
+| **RC-02** | GLBA 16 CFR 314.4(g), 314.4(h)(7); SOX §404; DORA Art.13 | Post-incident review process documented per GLBA 314.4(g) including lessons learned |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** `us-eu` — GLBA and SOX apply to US financial-services obligations, while DORA adds EU ICT operational-resilience expectations for regulated financial entities.
+- **Evidence retention minimum:** 2555 days (7 years), aligned with SOX §802 recordkeeping obligations for financially relevant systems.

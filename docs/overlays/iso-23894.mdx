@@ -1,0 +1,82 @@
+---
+title: "ISO/IEC 23894:2023 Overlay"
+description: "AKSI compliance overlay mapping agent-runtime evidence to ISO/IEC 23894:2023 AI risk-management guidance."
+---
+
+## Overview
+
+ISO/IEC 23894:2023 (*Information technology — Artificial intelligence — Guidance on risk management*) is voluntary international guidance — not a certifiable requirements standard — that adapts the ISO 31000:2018 risk-management framework and process to AI, with Clause 4 principles, Clause 5 framework, Clause 6 process, and Annexes A (AI-related objectives), B (AI-related risk sources) and C (life-cycle mapping). It underpins the risk-treatment expectations of the certifiable ISO/IEC 42001.
+
+The `iso-23894` overlay packages AKSI control evidence against the agent-runtime slice of the ISO/IEC 23894 risk process. Because the standard is guidance expressed as high-level objectives rather than discrete shall-statements, most mappings are interpretive and partial: the overlay owns the runtime instantiation of the risk process (identification, treatment, monitoring, recording) while framework-level and org-wide design activities remain out of scope.
+
+<Warning>
+This overlay is a review-first mapping that is not yet backed by runtime evidence. In the source overlay every control carries `coverage: partial` (several with `verified: false`) and no per-control evidence requirements are populated. Treat coverage as **indicative**, not production-asserted.
+</Warning>
+
+**Use this overlay when your agent:**
+- Operates within an AI risk-management program aligned to ISO/IEC 23894:2023
+- Supports or feeds an ISO/IEC 42001 management system that relies on ISO/IEC 23894 risk treatment
+- Needs runtime evidence mapped to the ISO 31000-derived AI risk process (Clauses 5–6, Annexes A–C)
+- Declares handling of AI-system data (`DC-AI`) under an organization's AI risk framework
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your project configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - iso-23894
+```
+
+This overlay has `trigger_type: certification` — it does not auto-activate from data-classification declarations and must be enabled explicitly. Its associated AI data class is `DC-AI` (see [Data Classification](/data-classification)).
+
+---
+
+## Control Mapping
+
+The table lists every control in the overlay (22 controls). **Framework Reference** is the control's mapped ISO/IEC 23894 clause/annex citation. **Key Evidence Requirement** reflects the overlay's per-control evidence list, which is currently unpopulated for this review-first mapping.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-02** | 5.2, 5.4.2 | _Not yet specified_ |
+| **GOV-03** | 6.3, 6.3.4, 5.4 | _Not yet specified_ |
+| **GOV-04** | Annex A, 6.5 | _Not yet specified_ |
+| **GOV-05** | 6.3.3, Annex A | _Not yet specified_ |
+| **GOV-06** | 5.4.2, 6.3.3, 6.7 | _Not yet specified_ |
+| **GOV-07** | Annex A, 6.2 | _Not yet specified_ |
+| **ID-01** | 6.3.3, Annex C | _Not yet specified_ |
+| **ID-03** | 6.4.2, Annex A, Annex B | _Not yet specified_ |
+| **ID-04** | Annex B, 6.4.2 | _Not yet specified_ |
+| **ID-05** | 6.4.2, 6.3.3, Annex B | _Not yet specified_ |
+| **PR-04** | Annex A, 6.5 | _Not yet specified_ |
+| **PR-06** | 6.7 | _Not yet specified_ |
+| **PR-08** | Annex B, 6.5 | _Not yet specified_ |
+| **PR-10** | Annex B, Annex A | _Not yet specified_ |
+| **DE-01** | 6.6 | _Not yet specified_ |
+| **DE-03** | 6.6, Annex B | _Not yet specified_ |
+| **DE-05** | 6.6, 6.4.3, Annex A | _Not yet specified_ |
+| **DE-06** | 6.4.3, 6.6 | _Not yet specified_ |
+| **RS-01** | 6.5, 6.5.2 | _Not yet specified_ |
+| **RS-02** | 6.5 | _Not yet specified_ |
+| **RS-03** | 6.2, 6.7 | _Not yet specified_ |
+| **RC-02** | 5.7, 6.6 | _Not yet specified_ |
+
+---
+
+## Jurisdiction & Retention
+
+**Jurisdiction:** International (ISO/IEC JTC 1/SC 42); voluntary guidance, not certifiable; basis for ISO/IEC 42001 risk treatment.
+
+The overlay does not declare a minimum evidence-retention period. Retention for ISO/IEC 23894-aligned evidence should follow your organization's AI risk-management and records policy (Clause 6.7, Recording and reporting) and any retention required by the certifiable ISO/IEC 42001 system it supports.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

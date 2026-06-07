@@ -1,0 +1,86 @@
+---
+title: "Colorado Artificial Intelligence Act (SB 24-205) Overlay"
+description: "AKSI compliance overlay for AI agents that make consequential decisions affecting Colorado consumers under SB 24-205."
+---
+
+## Overview
+
+Colorado SB 24-205 (the Consumer Protections for Artificial Intelligence Act) is the first comprehensive US state AI governance law. It applies to "deployers" that use high-risk AI systems to make consequential decisions affecting Colorado consumers in education, employment, financial services, essential government services, health care, housing, insurance, and legal services. Key obligations include a risk management policy, an impact assessment before deployment, annual review, consumer notices, and an appeal mechanism. Compliance with a recognized AI risk management framework (ISO 42001, NIST AI RMF, or an AG-designated equivalent) provides an affirmative defense to algorithmic discrimination claims.
+
+The `colorado-ai-act` overlay packages AKSI control evidence against the deployer and developer obligations codified in CRS Title 6, Article 1, §§ 6-1-1701 et seq. It maps each AKSI control to the relevant CRS provision and the Colorado-specific evidence each control must produce.
+
+**Use this overlay when your agent:**
+- Makes or materially influences consequential decisions affecting Colorado consumers
+- Operates in a covered domain (education, employment, financial services, essential government services, health care, housing, insurance, or legal services)
+- Handles personal, AI, health, or financial data classified as `DC-PII`, `DC-AI`, `DC-PHI`, or `DC-FIN`
+- Is deployed by an organization seeking the SB 24-205 affirmative defense via a recognized AI risk management framework
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - colorado-ai-act
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares (via `my_agent_handles`) that it handles data carrying any of the relevant classifications: `DC-PII`, `DC-AI`, `DC-PHI`, or `DC-FIN`. See [Data Classification](/data-classification) for how to declare handled data classes.
+
+---
+
+## Control Mapping
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | CRS §6-1-1702(2)(a) — Deployer risk management policy obligation | Written risk management policy for each high-risk AI system documented and approved (CRS §6-1-1702(2)(a)) |
+| **GOV-02** | CRS §6-1-1702 — Developer and deployer accountability obligations | Named responsible individual or team for each high-risk AI system documented |
+| **GOV-03** | CRS §6-1-1702(2)(b) — Impact assessment obligation | Risk tolerance for each high-risk AI system defined and documented as part of risk management policy |
+| **GOV-04** | CRS §6-1-1702(2)(c)(I) and §6-1-1702(2)(e) — Consumer notice and website disclosure obligations | Human oversight configuration documented — level of human review for consequential AI decisions |
+| **ID-01** | CRS §6-1-1702(2)(e) — Website disclosure obligation (requires enumeration of deployed high-risk AI systems) | Inventory of all high-risk AI systems deployed — includes: system name/description, consequential decision domain, deployment date, accountable owner |
+| **ID-02** | CRS §6-1-1702(3)(a) — Developer documentation furnishing obligation | Third-party AI tools and model providers used in high-risk AI systems documented |
+| **ID-03** | CRS §6-1-1702(2)(b) and §6-1-1702(2)(c)(II) — Impact assessment data documentation + consumer data correction | Data inputs to high-risk AI systems documented — personal data types, sources, and classification |
+| **ID-04** | CRS §6-1-1702(3)(a) — Developer documentation obligations; deployer due diligence | Third-party AI system providers assessed — developer-furnished documentation reviewed as part of deployer due diligence |
+| **ID-05** | CRS §6-1-1702(2)(b) — Impact assessment obligation (equivalent to AKSI risk profiling) | Impact assessment completed before deployment of each high-risk AI system (CRS §6-1-1702(2)(b)) |
+| **PR-01** | CRS §6-1-1702(2)(a) — Risk management program (access controls implied) | Access controls for high-risk AI systems documented — part of the risk management program |
+| **PR-02** | CRS §6-1-1702 — AI system use limited to declared purpose | Scope enforcement for high-risk AI systems documented — system used only for declared consequential decision purpose |
+| **PR-03** | CRS §6-1-1702(2)(b) — Impact assessment (provenance as data quality documentation) | Tool and component provenance verified — part of impact assessment supply chain documentation |
+| **PR-04** | CRS §6-1-1702(2)(c)(II) — Consumer right to correct personal data | Consumer personal data used in consequential decisions protected against unauthorized exposure |
+| **PR-05** | CRS §6-1-1702(2) — Documentation obligations; adverse decision records | Audit logs maintained for consequential AI decisions — sufficient to reconstruct the basis for each decision |
+| **PR-06** | CRS §6-1-1702(2)(b) — Impact assessment (re-assessment on material change implied) | Material changes to high-risk AI systems documented — configuration change records supporting change-triggered re-assessment obligations |
+| **PR-07** | CRS §6-1-1702(2)(a) — Risk management program | Personal data of Colorado consumers in transit encrypted — part of risk management program |
+| **PR-08** | CRS §6-1-1702(2)(b) — Impact assessment (foreseeable risks including adversarial inputs) | High-risk AI systems tested for robustness and discrimination risk before deployment |
+| **DE-01** | CRS §6-1-1702(2)(b) and §6-1-1702(2)(d) — Post-deployment monitoring and annual review | Post-deployment monitoring implemented for each high-risk AI system — per monitoring plan in impact assessment (CRS §6-1-1702(2)(b)) |
+| **DE-02** | CRS §6-1-1702(2)(d) — Annual review obligation (material change detection supports re-assessment trigger) | Configuration drift detection for high-risk AI systems — material changes trigger re-assessment obligation |
+| **DE-03** | CRS §6-1-1702 — Ongoing compliance obligations | Compliance deviations from risk management policy tracked and remediated |
+| **DE-04** | CRS §6-1-1702 — Documentation integrity (implied by enforcement obligations) | Impact assessment and audit log integrity protected — records tamper-evident |
+| **RS-01** | CRS §6-1-1702(3)(b) — 90-day developer disclosure to AG; deployer internal response | Automated response procedures for discrimination risk discovery documented |
+| **RS-02** | CRS §6-1-1702(2)(c)(II)-(III) — Consumer data correction and appeal obligation | Consumer appeal mechanism implemented for adverse consequential AI decisions (CRS §6-1-1702(2)(c)(III)) |
+| **RS-03** | CRS §6-1-1702 — Documentation and evidence obligations | Evidence of each consequential AI decision preserved — sufficient for AG review and consumer appeal |
+| **RC-01** | CRS §6-1-1702(2)(a) — Risk management program (implied operational controls) | Rollback capability for high-risk AI systems documented — ability to suspend or revert if discrimination risk confirmed |
+| **RC-02** | CRS §6-1-1702(2)(d) — Annual review obligation (proactive, not incident-triggered) | Annual review completed for each high-risk AI system — confirms system is not causing algorithmic discrimination (CRS §6-1-1702(2)(d)) |
+| **GOV-05** | § 6-1-1701 defines 'consequential decision' (education, employment, financial/lending, essential government service, health care, housing, insurance, legal services) and 'high-risk artificial intelligence system' as one that materially influences such a decision; §§ 6-1-1702(1)/1703(1) bind use to t | — |
+| **GOV-06** | § 6-1-1702(4) requires developers to publish a public statement summarizing the high-risk systems they have developed and how they manage known/foreseeable algorithmic-discrimination risk; § 6-1-1703(5) requires the deployer equivalent public statement; § 6-1-1706(3) anchors posture to a recognized | — |
+| **GOV-07** | § 6-1-1704 requires disclosure to each consumer that they are interacting with an AI system; § 6-1-1703(4)(a) requires a deployer to notify the consumer (purpose, nature of the consequential decision, plain-language description, contact for the appeal/correction process) at or before a consequential | — |
+| **PR-11** | § 6-1-1703(3) sets a minimum retention period for impact-assessment records (at least three years following final deployment of the high-risk system). PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation, which is the agent-runtime mechanism tha | — |
+| **DE-05** | § 6-1-1703(1) reasonable care against algorithmic discrimination and § 6-1-1703(3) the impact assessment's post-deployment monitoring element together require ongoing evaluation of outputs for discriminatory/biased outcomes; § 6-1-1702(5) requires developers to disclose known or reasonably foreseeab | — |
+| **DE-06** | § 6-1-1702(2) requires developers to make available evaluation/bias-testing results and the documentation needed to complete an impact assessment; § 6-1-1703(3) requires the deployer to incorporate testing/evaluation evidence into the impact assessment. DE-06 ingests vuln scans, adversarial/red-team | — |
+| **RS-05** | § 6-1-1703(7) (deployer) and § 6-1-1702(5) (developer) each impose a 90-day window to notify the Colorado Attorney General upon discovering algorithmic discrimination / a foreseeable discrimination risk. RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence, and routes | — |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** US-CO (Colorado)
+- **Evidence retention minimum:** 1825 days (5 years)
+
+Evidence supporting consequential AI decisions, impact assessments, consumer notices, appeals, and developer disclosures must be retained for at least the overlay's minimum so that records remain available for Colorado Attorney General review and consumer appeal over multi-year enforcement look-back periods.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)
