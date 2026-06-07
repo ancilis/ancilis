@@ -139,20 +139,23 @@ function generateEnvExample(targetDir: string): void {
     writeFileSync(
       envFile,
       "# Ancilis platform API key (optional for local-only scanning)\n" +
-      "# Get yours at https://ancilis.dev/settings\n" +
+      "# Get yours at https://app.ancilis.ai/settings\n" +
       "# ANCILIS_API_KEY=your-api-key-here\n",
       "utf-8",
     );
   }
 }
 
-function updateGitignore(targetDir: string): void {
+// Append `.ancilis/` to an existing .gitignore. Returns true only if the file
+// was actually changed (it is never created — the user may not use git).
+function updateGitignore(targetDir: string): boolean {
   const gitignorePath = join(targetDir, ".gitignore");
-  if (!existsSync(gitignorePath)) return; // Don't create it — user may not be using git
+  if (!existsSync(gitignorePath)) return false; // Don't create it — user may not be using git
   const content = readFileSync(gitignorePath, "utf-8");
-  if (content.includes(".ancilis/")) return;
+  if (content.includes(".ancilis/")) return false; // already ignored
   const separator = content && !content.endsWith("\n") ? "\n" : "";
   writeFileSync(gitignorePath, content + separator + ".ancilis/\n", "utf-8");
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -257,8 +260,9 @@ export async function runInit(
     generateEnvExample(targetDir);
     created.push(".env.example");
 
-    updateGitignore(targetDir);
-    created.push("updated .gitignore");
+    if (updateGitignore(targetDir)) {
+      created.push("updated .gitignore");
+    }
 
     // 5. Print results
     out("");

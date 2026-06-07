@@ -155,20 +155,24 @@ def _generate_env_example(target: Path) -> None:
     if not env_file.exists():
         env_file.write_text(
             "# Ancilis platform API key (optional for local-only scanning)\n"
-            "# Get yours at https://ancilis.dev/settings\n"
+            "# Get yours at https://app.ancilis.ai/settings\n"
             "# ANCILIS_API_KEY=your-api-key-here\n",
             encoding="utf-8",
         )
 
 
-def _update_gitignore(target: Path) -> None:
+def _update_gitignore(target: Path) -> bool:
+    """Append `.ancilis/` to an existing .gitignore. Returns True only if the
+    file was actually changed (it is never created — the user may not use git)."""
     gitignore = target / ".gitignore"
     if not gitignore.exists():
-        return  # Don't create it — user may not be using git
+        return False  # Don't create it — user may not be using git
     content = gitignore.read_text(encoding="utf-8")
-    if ".ancilis/" not in content:
-        separator = "\n" if content and not content.endswith("\n") else ""
-        gitignore.write_text(content + separator + ".ancilis/\n", encoding="utf-8")
+    if ".ancilis/" in content:
+        return False  # already ignored
+    separator = "\n" if content and not content.endswith("\n") else ""
+    gitignore.write_text(content + separator + ".ancilis/\n", encoding="utf-8")
+    return True
 
 
 def _print_next_steps(
@@ -290,8 +294,8 @@ def init(
     _generate_env_example(target)
     created.append(".env.example")
 
-    _update_gitignore(target)
-    created.append("updated .gitignore")
+    if _update_gitignore(target):
+        created.append("updated .gitignore")
 
     # 6. Print next steps
     _print_next_steps(created, no_sample)
