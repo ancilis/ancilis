@@ -6,7 +6,7 @@ description: TypeScript producers and adapters that wrap a call site (tool, MCP,
 Producers are the entry point for governance in the TypeScript SDK. Each producer wraps a specific
 kind of call site — a function/tool, an MCP tool call, a CLI/subprocess invocation, an outbound HTTP
 request, or an LLM SDK call — and translates the raw invocation into a standardized `Action` that the
-control [`Engine`](/sdk/api/engine) evaluates. All producers implement the
+control [`Engine`](/sdk/api/ts-core) evaluates. All producers implement the
 [`ActionProducer`](#actionproducer) protocol, so the engine never needs to know which protocol an
 action came from.
 

@@ -6,7 +6,7 @@ description: Wrap a call site (tool, MCP, CLI, HTTP, or LLM) and turn it into a 
 Producers are the entry point for governance. Each producer wraps a specific kind of call
 site — a Python function/tool, an MCP tool call, a CLI/subprocess invocation, or an outbound
 HTTP request — and translates the raw invocation into a standardized [`Action`](#actionproducer)
-object. The control [`Engine`](/sdk/api/engine) then evaluates that Action, and the result is
+object. The control `Engine` then evaluates that Action, and the result is
 persisted to the evidence store.
 
 All producers implement the [`ActionProducer`](#actionproducer) protocol, so the engine never
