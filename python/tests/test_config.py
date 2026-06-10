@@ -152,6 +152,14 @@ class TestValidation:
                 }
             )
 
+    def test_unknown_top_level_key_raises(self):
+        with pytest.raises(ConfigError, match="Unknown top-level config key: 'securty'"):
+            load_config(raw={"agent": {"name": "x"}, "securty": {"mode": "enforce"}})
+
+    def test_unknown_nested_key_raises(self):
+        with pytest.raises(ValidationError, match="extra_forbidden|Extra inputs"):
+            load_config(raw={"agent": {"name": "x"}, "security": {"mod": "enforce"}})
+
 
 class TestDataTypeTranslation:
     def test_health_records_maps_to_phi_pii(self):

@@ -11,6 +11,7 @@ from typing import Any
 
 import click
 
+from ancilis import __version__
 from ancilis.config import ResolvedConfig, load_config, load_control_definitions
 from ancilis.deps.scanner import DependencyScanner
 from ancilis.evidence.store import EvidenceStore
@@ -38,7 +39,7 @@ def _default_config() -> ResolvedConfig:
     """Create a minimal in-memory config for zero-config scanning."""
     return load_config(raw={
         "agent": {"name": Path.cwd().name},
-        "mode": "audit",
+        "security": {"mode": "audit"},
     })
 
 
@@ -297,7 +298,7 @@ def scan(
 
         if ci:
             output = {
-                "version": "0.1.0",
+                "version": __version__,
                 "agent": config.agent_name,
                 "mode": config.mode,
                 "timestamp": datetime.now(timezone.utc).isoformat(),

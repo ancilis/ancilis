@@ -68,13 +68,17 @@ def test_unhashable_certification_target_raises_config_error() -> None:
         validate_config({"agent": {"name": "x"}, "certification_targets": [["nested"]]})
 
 
-def test_malformed_warnings_field_does_not_crash() -> None:
-    # A user-supplied non-list `_warnings` must be ignored, not crash the later
-    # warnings.append() on the cert-target warning path.
-    _cfg, warns = validate_config(
-        {"agent": {"name": "x"}, "_warnings": "nope", "certification_targets": ["bogus-target"]}
-    )
-    assert isinstance(warns, list)
+def test_malformed_warnings_field_is_rejected_as_unknown_config_key() -> None:
+    # `_warnings` used to be an internal side channel for ignored unknown-key
+    # warnings. Unknown keys now fail closed instead of being accepted.
+    with pytest.raises(ConfigError, match="Unknown top-level config key: '_warnings'"):
+        validate_config(
+            {
+                "agent": {"name": "x"},
+                "_warnings": "nope",
+                "certification_targets": ["bogus-target"],
+            }
+        )
 
 
 def test_installed_cli_group_handles_config_error_cleanly(tmp_path: Path) -> None:

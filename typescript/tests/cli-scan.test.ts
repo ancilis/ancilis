@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
@@ -15,6 +15,10 @@ import { Engine, ToolRegistry, ToolStatus } from "../src/ancilis/engine/index.js
 import type { Action, EvaluationResult } from "../src/ancilis/engine/index.js";
 import { EvidenceStore } from "../src/ancilis/evidence/store.js";
 import { handleScan } from "../src/ancilis/cli/scan.js";
+
+const packageVersion = JSON.parse(
+  readFileSync(new URL("../../package.json", import.meta.url), "utf-8"),
+) as { version: string };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -159,7 +163,7 @@ describe("TestScanCommand", () => {
 
     expect(exitCode).toBe(0);
     const data = JSON.parse(capture.stdout()) as Record<string, unknown>;
-    expect(data["version"]).toBe("0.1.0");
+    expect(data["version"]).toBe(packageVersion.version);
     expect(data["agent"]).toBe("test-agent");
     expect(data["posture"]).toBe("compliant");
     expect(data["exit_code"]).toBe(0);

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ancilis"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python-first runtime evaluation and policy enforcement for AI agent tool calls"
 readme = "README.md"
 license = { file = "LICENSE" }

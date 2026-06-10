@@ -8,6 +8,7 @@ from typing import Any
 
 import click
 
+from ancilis import __version__
 from ancilis.cli.status import status
 from ancilis.cli.report import report
 from ancilis.cli.remediate import remediate
@@ -84,7 +85,7 @@ class AncilisCLIGroup(click.Group):
 
 
 @click.group(cls=AncilisCLIGroup)
-@click.version_option(version="0.1.0", prog_name="ancilis")
+@click.version_option(version=__version__, prog_name="ancilis")
 @click.option("--no-update-check", is_flag=True, default=False, hidden=True,
               help="Suppress update check.")
 @click.pass_context
