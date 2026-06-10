@@ -66,8 +66,10 @@ def test_evidence_verify_valid_chain_exits_zero(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
-    assert "Evidence chain valid" in result.output
-    assert "1 record" in result.output
+    # No chain key set in tests → records are legacy v1, reported as
+    # legacy-unverified (never a silent "verified" pass).
+    assert "Evidence chain intact" in result.output
+    assert "legacy-unverified" in result.output
 
 
 def test_evidence_verify_db_only_does_not_require_config_in_cwd(tmp_path: Path) -> None:
@@ -78,8 +80,8 @@ def test_evidence_verify_db_only_does_not_require_config_in_cwd(tmp_path: Path) 
         result = runner.invoke(cli, ["evidence", "verify", "--db", str(db_path)])
 
     assert result.exit_code == 0
-    assert "Evidence chain valid" in result.output
-    assert "1 record" in result.output
+    assert "Evidence chain intact" in result.output
+    assert "legacy-unverified" in result.output
 
 
 def test_evidence_verify_tampered_chain_exits_nonzero(tmp_path: Path) -> None:
@@ -121,9 +123,13 @@ def test_evidence_verify_json_reports_session_scope(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     payload = json.loads(result.output)
-    assert payload == {
-        "valid": True,
-        "record_count": 1,
-        "session_id": "session-1",
-        "errors": [],
-    }
+    assert payload["valid"] is True
+    assert payload["record_count"] == 1
+    assert payload["session_id"] == "session-1"
+    assert payload["errors"] == []
+    # Richer, honest fields: legacy (v1) records are surfaced explicitly.
+    assert payload["status"] == "legacy-unverified"
+    assert payload["verified"] == 0
+    assert payload["legacy_unverified"] == 1
+    assert payload["reset_events"] == 0
+    assert payload["purge_events"] == 0

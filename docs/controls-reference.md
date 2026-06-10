@@ -8,6 +8,7 @@ Ancilis evaluates agent actions against AKSI Framework v0.6.
 - `support_level: runtime_evaluator` means the Python SDK has direct deterministic evaluator code today; it is not a cross-language parity field.
 - `support_level: attestation` means the control is evidence-backed and requires attached, imported, or attested evidence when it cannot be proven from a single action alone.
 - The TypeScript SDK has direct evaluators for its core runtime controls and uses catalog-backed evaluators for the remaining AKSI controls; those catalog-backed controls return `FLAG` until explicit attestation is supplied.
+- **Cross-language note:** the catalog below reflects AKSI v0.6 (the Python SDK). The TypeScript SDK has not yet completed the v0.6 migration for a few controls (`DE-02`, `PR-05`, `PR-06` differ; `GOV-03`, `PR-09`, `DE-03`, `RS-02` are not yet implemented) — see [Control parity with the Python SDK](/sdk/typescript#control-parity-with-the-python-sdk).
 
 ## Control Table
 
@@ -19,7 +20,7 @@ Ancilis evaluates agent actions against AKSI Framework v0.6.
 | DE-04 | DETECT | Evidence Integrity Monitoring | common | runtime_evaluator | sdk_direct, otel, attestation, github |
 | DE-05 | DETECT | AI Outcome Evaluation & Harm Monitoring | common | attestation | sdk_direct, openai, anthropic, otel, arize_phoenix, langfuse, langsmith, attestation, jira |
 | DE-06 | DETECT | Assurance Testing & Vulnerability Evidence Ingestion | common | attestation | sdk_direct, sarif_import, cyclonedx_import, github, otel, arize_phoenix, langfuse, langsmith, attestation, jira |
-| GOV-01 | GOVERN | Agent Identity & Authentication | common | runtime_evaluator | sdk_direct, aws_cloudtrail, github, attestation |
+| GOV-01 | GOVERN | Agent Identity Declaration & Match | common | runtime_evaluator | sdk_direct, aws_cloudtrail, github, attestation |
 | GOV-02 | GOVERN | Ownership Accountability | common | runtime_evaluator | sdk_direct, github, jira, attestation |
 | GOV-03 | GOVERN | Risk Tolerance & Policy Baseline | common | runtime_evaluator | sdk_direct, github, jira, attestation |
 | GOV-04 | GOVERN | Human Oversight & Decision Accountability | common | attestation | sdk_direct, github, jira, attestation |
@@ -124,9 +125,9 @@ Agent-specific vulnerability scans, adversarial tests, red-team exercises, resil
 - Product ID: `AKSI-DE-06`
 - Evidence keywords: vulnerability, scan, red_team, testing
 
-### GOV-01 - Agent Identity & Authentication
+### GOV-01 - Agent Identity Declaration & Match
 
-Every governed AI action is attributable to a verifiable runtime identity and authentication flow.
+Every governed AI action carries a declared agent identity matched at runtime against the configured identity and owner (a declared-identity consistency check, not credential authentication). The authentication flow itself is an organizational control evidenced by attestation.
 
 - Function: `GOVERN`
 - Effort level: `medium`

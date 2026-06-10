@@ -1,0 +1,97 @@
+---
+title: "NIST AI 600-1: Artificial Intelligence Risk Management Framework — Generative Artificial Intelligence Profile Overlay"
+description: "AKSI compliance overlay mapping agent-runtime controls to the NIST AI 600-1 Generative AI Profile of the AI RMF 1.0."
+---
+
+## Overview
+
+NIST AI 600-1 (final, July 2024; DOI 10.6028/NIST.AI.600-1) is a cross-sectoral companion Profile to the AI RMF 1.0. It enumerates 12 generative-AI risk categories and 200+ voluntary suggested actions keyed to AI RMF Govern/Map/Measure/Manage subcategories (e.g., GV-1.6, MS-2.7, MG-2.4). It is guidance, not regulation, so the mappings here reflect alignment-to-suggested-actions rather than mandatory conformity. The agent-responsibility-boundary caveat applies throughout: AKSI controls own the agent-runtime slice (identity, action authorization, isolation, output/security evaluation, kill-switch, audit) while organization-wide obligations remain outside the runtime.
+
+The `nist_ai_600_1_genai_profile` overlay packages AKSI control evidence against the AI RMF subcategories referenced by the GenAI Profile, mapping each AKSI control to the Govern/Map/Measure/Manage subcategories it aligns with.
+
+**Use this overlay when your agent:**
+- Is a generative-AI system in scope of the NIST AI 600-1 GenAI Profile
+- Operates under an AI RMF 1.0 risk-management program (Govern/Map/Measure/Manage)
+- Supports US federal AI policy or procurement that cross-references NIST AI guidance
+- Needs agent-runtime evidence aligned to the GenAI Profile's suggested actions
+
+<Warning>
+This overlay is a **review-first scaffold mapping** that is not yet backed by runtime evidence — every control in the source profile carries an empty `evidence_requirements` set, and the source notes flag the mapping as REVIEW-FIRST, not production-asserted (many entries are `verified: false`). Treat the coverage shown below as indicative alignment to the AI RMF subcategories, not as asserted runtime conformity.
+</Warning>
+
+---
+
+## Activation
+
+Activate explicitly in your `ancilis.yaml`:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - nist_ai_600_1_genai_profile
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares handling of the relevant data classes (`DC-AI`, `DC-GEN`) via `my_agent_handles`. See [Data Classification](/data-classification) for the declaration syntax and the full DC code list.
+
+---
+
+## Control Mapping
+
+Each AKSI control is mapped to the NIST AI RMF 1.0 subcategories (the codes the GenAI Profile keys its suggested actions to). The Key Evidence Requirement column is empty across the board because the source profile defines no runtime evidence requirements yet — see the scaffold note above.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| GOV-01 | GV-1.2 | — |
+| GOV-02 | GV-2.1 | — |
+| GOV-03 | GV-1.3, GV-1.4 | — |
+| GOV-04 | GV-3.2, MS-3.3, MP-2.2 | — |
+| GOV-05 | GV-1.1, MP-1.1, MP-4.1 | — |
+| GOV-06 | GV-1.1, GV-4.2, MS-4.2 | — |
+| GOV-07 | GV-1.2, GV-5.1, MS-3.3, MP-2.2 | — |
+| ID-01 | GV-1.6 | — |
+| ID-02 | GV-6.1, MP-4.1, MG-3.2 | — |
+| ID-03 | MP-4.1, MS-2.10, GV-1.2 | — |
+| ID-04 | GV-6.1, MP-4.1, MS-2.7 | — |
+| ID-05 | MP-1.1, MP-2.1, MP-5.1 | — |
+| PR-01 | MG-1.3, GV-1.3 | — |
+| PR-02 | MG-1.3, MS-2.7 | — |
+| PR-03 | MS-2.7, GV-6.1, MG-3.2 | — |
+| PR-04 | MS-2.10, MP-4.1, GV-1.1 | — |
+| PR-05 | MS-2.10, GV-1.1 | — |
+| PR-06 | GV-4.3, MG-4.1 | — |
+| PR-08 | MS-2.7, MS-2.6 | — |
+| PR-09 | MS-2.7, GV-1.3 | — |
+| PR-10 | MS-2.7, MP-4.1 | — |
+| PR-11 | GV-1.7, MG-2.4 | — |
+| PR-12 | MS-2.7 | — |
+| DE-01 | MG-4.1, MS-2.6 | — |
+| DE-02 | MS-2.10, MP-4.1 | — |
+| DE-03 | MG-3.2, MG-4.2, MS-2.13 | — |
+| DE-04 | GV-4.3, MG-4.1 | — |
+| DE-05 | MS-2.3, MS-2.5, MS-2.6, MS-2.9, MS-2.11 | — |
+| DE-06 | MS-1.1, MS-1.3, MS-2.6, MS-2.7, GV-4.3 | — |
+| RS-01 | MG-1.3, MG-2.3 | — |
+| RS-02 | MG-2.4, GV-1.7, GV-1.3 | — |
+| RS-03 | GV-4.3, MG-4.3, GV-2.1 | — |
+| RS-04 | MG-2.4, GV-6.2 | — |
+| RS-05 | GV-1.1, GV-2.1 | — |
+| RS-06 | MS-2.7, GV-6.1, MG-3.1 | — |
+| RC-01 | MG-2.3, GV-6.2 | — |
+| RC-02 | MG-4.3, GV-1.5, MG-4.2 | — |
+| RC-03 | MS-2.6, MS-2.7, MG-2.3 | — |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** us-federal (NIST, voluntary; cross-referenced by US federal AI policy and procurement, and adopted internationally as guidance).
+- **Evidence retention:** the source profile defines no overlay-specific minimum retention period — retention follows your agent's configured policy and any governing organizational or regulatory obligations.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

@@ -18,6 +18,7 @@ from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.record import EvidenceRecord
 from ancilis.evidence.store import EvidenceStore
+from ancilis.producers.enforcement import OBSERVE_ONLY, warn_if_enforce_unsupported
 from ancilis.producers.protocol import ProducerType
 from ancilis.telemetry import record_adapter_used
 
@@ -112,6 +113,8 @@ class AzureOpenAIActionProducer:
         self._deployment_model_map = dict(deployment_model_map or {})
         self._session_id = str(uuid.uuid4())
         record_adapter_used(PROVIDER)
+        # Observe-only: this provider adapter records evidence but cannot block.
+        warn_if_enforce_unsupported(type(self).__name__, OBSERVE_ONLY, config)
 
     @property
     def session_id(self) -> str:

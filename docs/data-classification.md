@@ -10,7 +10,7 @@ ancilis.yaml                  Taxonomy                    Overlays
 │ my_agent_handles:│    │ health_records  │    │ HIPAA: strict PR-01,  │
 │   - health_records├───►│   → DC-PHI     ├───►│   PR-02, PR-04, PR-05 │
 │   - personal_info │    │ personal_info   │    │ GDPR: strict PR-02,   │
-│                  │    │   → DC-PII     ├───►│   PR-04, PR-05, DE-01 │
+│                  │    │   → DC-PII     ├───►│   PR-04, PR-05        │
 └──────────────────┘    └─────────────────┘    │ SOC 2: standard       │
                                                └───────────────────────┘
 ```
@@ -40,12 +40,15 @@ ancilis config validate
 ```
 
 ```
-Ancilis config — my-agent
+✓ Config valid
+  Agent: my-agent
   Mode: audit
-  Handles: health_records → DC-PHI, personal_info → DC-PII
-  Overlays: hipaa, gdpr, soc2
-  Controls: 26 active (PR-01, PR-02, PR-04, PR-05 at strict threshold)
-  Evidence retention: 2190 days (HIPAA requirement)
+  Activation:
+    CCPA/CPRA overlay active (triggered by DC-PII via health_records, DC-PII via personal_info)
+    GDPR overlay active (triggered by DC-PII via health_records, DC-PII via personal_info)
+    HIPAA Security Rule overlay active (triggered by DC-PHI via health_records)
+    SOC 2 Type II overlay active (triggered by DC-PII via health_records, DC-PII via personal_info)
+  Controls: 39 active (GOV-04 at strict threshold, PR-01 at strict threshold, PR-02 at strict threshold, PR-04 at strict threshold, PR-05 at strict threshold)
 ```
 
 ## Data types reference
@@ -56,15 +59,15 @@ These data types trigger specific regulatory overlays with adjusted thresholds a
 
 | Data type | DC code | Overlays activated | Key requirements |
 |-----------|---------|-------------------|------------------|
-| `health_records` | DC-PHI | HIPAA, GDPR, SOC 2 | 6-year retention, strict identity/scope/exposure/audit |
-| `patient_data` | DC-PHI | HIPAA, GDPR, SOC 2 | Same as health_records |
-| `personal_info` | DC-PII | GDPR, SOC 2 | Strict scope/exposure/audit/anomaly detection |
+| `health_records` | DC-PHI, DC-PII | HIPAA, GDPR, CCPA, SOC 2 | 6-year retention, strict identity/scope/exposure/audit |
+| `patient_data` | DC-PHI, DC-PII | HIPAA, GDPR, CCPA, SOC 2 | Same as health_records |
+| `personal_info` | DC-PII | CCPA, GDPR, SOC 2 | Strict scope/exposure/audit |
 | `credit_cards` | DC-CHD | PCI-DSS v4.0 | Strict on 6 controls, daily monitoring, Luhn detection |
-| `financial_data` | DC-FIN | SOC 2 | Standard thresholds, 365-day retention |
-| `financial_records` | DC-FIN | SOC 2 | Same as financial_data |
-| `general` | DC-GEN | SOC 2 | Universal enterprise baseline |
-| `public_data` | DC-GEN | SOC 2 | Baseline controls apply |
-| `ai_training_data` | DC-AI | EU AI Act, ISO 42001 | 10-year retention (EU AI Act), human oversight required |
+| `financial_data` | DC-FIN | GLBA, SOC 2 | Strict identity/scope/exposure/audit/anomaly, 7-year retention (GLBA) |
+| `financial_records` | DC-FIN | GLBA, SOC 2 | Same as financial_data |
+| `general` | DC-GEN | (none — baseline only) | Universal enterprise baseline |
+| `public_data` | DC-GEN | (none — baseline only) | Baseline controls apply |
+| `ai_training_data` | DC-AI | EU AI Act, ISO 42001, NIST AI RMF, ISO 23894, and other AI overlays | 10-year retention (EU AI Act), human oversight required |
 | `biometric_data` | DC-BIO | EU AI Act | 10-year retention, human oversight required |
 
 ### Government overlay types
@@ -74,13 +77,13 @@ These types activate CMMC Level 2, FedRAMP Rev 5 Moderate, or both overlays for 
 | Data type | DC code | Active overlay |
 |-----------|---------|----------------|
 | `controlled_unclassified` | DC-CUI | CMMC Level 2 |
-| `government_cui` | DC-GOV, DC-CUI | CMMC Level 2 |
+| `government_cui` | DC-GOV, DC-CUI | CMMC Level 2, FedRAMP Rev 5 Moderate |
 | `government_documents` | DC-GOV, DC-CUI | CMMC Level 2, FedRAMP Rev 5 Moderate |
 | `government_system` | DC-GOV | CMMC Level 2, FedRAMP Rev 5 Moderate |
 | `federal_contract` | DC-FCI | FedRAMP Rev 5 Moderate |
 | `federal_contract_info` | DC-FCI | FedRAMP Rev 5 Moderate |
-| `federal_cloud` | DC-FCI, DC-GOV | FedRAMP Rev 5 Moderate |
-| `fedramp_system` | DC-FCI, DC-GOV | FedRAMP Rev 5 Moderate |
+| `federal_cloud` | DC-FCI, DC-GOV | CMMC Level 2, FedRAMP Rev 5 Moderate |
+| `fedramp_system` | DC-FCI, DC-GOV | CMMC Level 2, FedRAMP Rev 5 Moderate |
 
 ### Securities overlay types
 
@@ -93,12 +96,10 @@ These types now activate the securities-market overlay for MNPI handling, disclo
 
 ### Baseline-only types
 
-These types are recognized and classified but don't currently trigger additional overlays beyond the 26 baseline controls. Overlays for these types are on the roadmap.
+These types are recognized and classified but don't currently trigger additional overlays beyond the 39 common baseline controls. Overlays for these types are on the roadmap.
 
 | Data type | DC code | Future overlay |
 |-----------|---------|----------------|
-| `childrens_data` | DC-MINOR | COPPA, GDPR Art. 8, FERPA |
-| `critical_infrastructure` | DC-CRIT | NERC CIP, NIS2 |
 | `export_controlled` | DC-ITAR | ITAR, EAR |
 | `legal_data` | DC-LEGAL | Attorney-client privilege |
 | `legal_privileged` | DC-LEGAL | Attorney-client privilege |
@@ -115,26 +116,26 @@ DC codes are the internal classification identifiers that bridge plain-language 
 | DC-CHD | Cardholder Data | Card numbers (Luhn), CVV, expiration dates |
 | DC-FIN | Financial Services Data | Account numbers, routing numbers, SWIFT/BIC, IBAN |
 | DC-GEN | General Business Data | No pattern detection (baseline only) |
-| DC-AI | AI Training / Model Data | Declared classification only |
+| DC-AI | AI System, Model, Prompt, and Training Data | Declared classification only |
 | DC-BIO | Biometric Data | Declared classification only |
 | DC-CUI | Controlled Unclassified Information | Declared classification only |
 | DC-MNPI | Material Non-Public Information | Declared classification (contextual) |
 | DC-FCI | Federal Contract Information | Declared classification only |
 | DC-GOV | Government System Data | Declared classification only |
-| DC-ITAR | Export-Controlled Data | Declared classification only |
-| DC-CRIT | Critical Infrastructure OT Data | Declared classification only |
+| DC-ITAR | ITAR-Controlled Technical Data | Declared classification only |
+| DC-CRIT | Critical Infrastructure Data | Declared classification only |
 | DC-MINOR | Children's Data | Declared classification (contextual) |
 | DC-LEGAL | Legal Privileged Data | Declared classification (contextual) |
-| DC-IP | Trade Secrets & Proprietary Data | Declared classification (organizational) |
+| DC-IP | Intellectual Property and Trade Secrets | Declared classification (organizational) |
 
 ## Overlays in detail
 
 ### SOC 2 Type II
 
-The universal enterprise compliance baseline. Activated by: `general`, `public_data`, `personal_info`, `financial_data`, `financial_records`, `health_records`, `patient_data`.
+The universal enterprise compliance baseline. Activated by: `personal_info`, `financial_data`, `financial_records`, `health_records`, `patient_data`.
 
 - **Jurisdiction:** Global
-- **Controls:** All 26 at standard threshold
+- **Controls:** All 39 common controls at standard threshold
 - **Evidence retention:** 365 days minimum
 - **Key focus:** Trust Services Criteria — logical access, change management, monitoring, incident response
 
@@ -152,7 +153,7 @@ The most concrete regulatory framework for agents handling payment data. Activat
 EU data protection regulation. Activated by: `personal_info`, `health_records`, `patient_data`.
 
 - **Jurisdiction:** EU (applies globally to data of EU residents)
-- **Strict controls:** PR-02, PR-04, PR-05, DE-01
+- **Strict controls:** PR-02, PR-04, PR-05
 - **Evidence retention:** 365 days minimum
 - **Key focus:** Lawful basis, purpose limitation, security of processing, data subject rights, 72-hour breach notification
 
@@ -189,7 +190,7 @@ Activated by: `material_nonpublic`, `mnpi`.
 AI management system standard. Activated by: `ai_training_data`.
 
 - **Jurisdiction:** Global
-- **Controls:** All 26 at standard threshold
+- **Controls:** All 39 common controls at standard threshold
 - **Evidence retention:** 1095 days (3 years)
 - **Key focus:** Management system scope, risk assessment, operational planning, internal audit, continual improvement
 
@@ -198,7 +199,7 @@ AI management system standard. Activated by: `ai_training_data`.
 Always active as the baseline overlay. All AKSI controls are organized by CSF functions (GOVERN, IDENTIFY, PROTECT, DETECT, RESPOND, RECOVER).
 
 - **Jurisdiction:** Global
-- **Controls:** All 26 at standard threshold
+- **Controls:** All 39 common controls at standard threshold
 - **Evidence retention:** 365 days minimum
 - **Key focus:** Framework alignment — familiar language for US federal contractors, self-assessment via CSF Profiles
 
@@ -222,7 +223,7 @@ security:
       - schedule_appointment
 ```
 
-Activates: HIPAA + GDPR + SOC 2. Evidence retained 6 years. Strict thresholds on identity, scope, exposure, and audit controls. Only listed tools execute.
+Activates: HIPAA + GDPR + CCPA + SOC 2. Evidence retained 6 years. Strict thresholds on identity, scope, exposure, and audit controls. Only listed tools execute.
 
 ### Payment processing agent
 
@@ -245,7 +246,7 @@ security:
       - "*.external.io"
 ```
 
-Activates: PCI-DSS v4.0 + GDPR + SOC 2. Strict thresholds on 6 controls. Credit card patterns detected via Luhn validation. External destinations blocked.
+Activates: PCI-DSS v4.0 + GDPR + CCPA + SOC 2. Strict thresholds on 7 controls. Credit card patterns detected via Luhn validation. External destinations blocked.
 
 ### AI/ML pipeline agent
 
@@ -260,7 +261,7 @@ security:
   mode: audit
 ```
 
-Activates: EU AI Act + ISO 42001 + GDPR + SOC 2. 10-year evidence retention. Human oversight required (EU AI Act Art. 14). Start in audit mode to observe before enforcing.
+Activates: EU AI Act + ISO 42001 + NIST AI RMF (and other AI overlays) + GDPR + CCPA + SOC 2. 10-year evidence retention. Human oversight required (EU AI Act Art. 14). Start in audit mode to observe before enforcing.
 
 ### General enterprise agent
 
@@ -272,7 +273,7 @@ my_agent_handles:
   - general
 ```
 
-Activates: SOC 2. Standard thresholds. 365-day retention. The most common starting point for enterprise agents.
+Activates: no regulatory overlays — the 39 common baseline controls apply at standard thresholds with 365-day retention. The most common starting point for enterprise agents.
 
 ## Combining with certification targets
 
@@ -288,7 +289,7 @@ certification_targets:
   - aiuc-1
 ```
 
-This activates HIPAA, GDPR, SOC 2 overlays (from data classification) plus AIUC-1 certification requirements (from certification target). The strictest threshold and longest retention always win.
+This activates HIPAA, GDPR, CCPA, SOC 2 overlays (from data classification) plus AIUC-1 certification requirements (from certification target). The strictest threshold and longest retention always win.
 
 ## Runtime pattern detection
 
@@ -310,7 +311,7 @@ Invalid data types produce clear error messages:
 ```bash
 $ ancilis config validate
 # With: my_agent_handles: [medical]
-# Error: Unknown data type in my_agent_handles: 'medical'. Valid types: ai_training_data, biometric_data, ...
+# Error: Unknown data type in my_agent_handles: 'medical'. Valid types: agent_payments, ai_training_data, biometric_data, ...
 ```
 
 The validator checks data types against the taxonomy at `shared/classifications/taxonomy.json`.

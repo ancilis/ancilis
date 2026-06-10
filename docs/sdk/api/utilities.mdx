@@ -1,0 +1,326 @@
+---
+title: "Utilities API Reference"
+description: "Python API reference for Ancilis baselines and drift, custom control registration, the dependency scanner, remediation guidance, and telemetry."
+---
+
+This page documents the supporting utilities exported from the `ancilis` package: behavioral
+baselines and drift detection, custom control registration, the OSV-backed dependency scanner,
+remediation guidance, and anonymous opt-in telemetry.
+
+Every signature below is copied verbatim from `inspect.signature` introspection of the public
+`ancilis.__all__` surface. Symbols are grouped by their source module.
+
+---
+
+## Baselines
+
+A baseline captures the control posture observed over an evidence window so that later runs can
+be compared against it. Drift detection compares the current window against the stored baseline
+and reports per-control deviations.
+
+<Note>
+Baselines are operator-declared assertions about expected posture. They intentionally do **not**
+participate in the evidence-record hash chain — they represent expectations, while evidence records
+represent runtime observations.
+</Note>
+
+### `BaselineManager`
+
+- **Kind:** class
+- **Module:** `ancilis.baselines.manager`
+
+```python
+BaselineManager(evidence_store: 'EvidenceStore', config: 'ResolvedConfig') -> 'None'
+```
+
+Manages baseline snapshots and drift detection against the evidence store. Construct it with an
+`EvidenceStore` and a `ResolvedConfig`; it provisions its own `baselines` table in the underlying
+DuckDB store on construction.
+
+```python
+from ancilis import BaselineManager, EvidenceStore, load_config
+
+config = load_config()
+store = EvidenceStore(config)
+manager = BaselineManager(store, config)
+```
+
+### `DriftReport`
+
+- **Kind:** class (dataclass)
+- **Module:** `ancilis.baselines.models`
+
+```python
+DriftReport(drift_report_id: 'str', baseline_id: 'str', baseline_label: 'str', checked_at: 'str', agent_id: 'str', overall_status: 'str', summary: 'str', control_drifts: 'list[ControlDrift]' = <factory>, overlay_id: 'str | None' = None) -> None
+```
+
+Full drift analysis result. `overall_status` is `"STABLE"` or `"DRIFTED"`, `checked_at` is an ISO
+timestamp, and `control_drifts` holds one entry per control that deviated from the baseline.
+
+---
+
+## Controls
+
+Custom controls let you extend the built-in control set with schema-validated definitions that use
+local, non-executable evaluators (currently `regex` and `manual`). Registration is process-local.
+
+### `CustomControlDefinition`
+
+- **Kind:** class (dataclass)
+- **Module:** `ancilis.controls.custom`
+
+```python
+CustomControlDefinition(id: 'str', title: 'str', description: 'str', category: 'str', severity: 'str', evaluator_type: 'str', evaluator: 'dict[str, Any]', version: 'str | None' = None, owner: 'str | None' = None, framework_references: 'list[str]' = <factory>, overlay_ids: 'list[str]' = <factory>, tags: 'list[str]' = <factory>, evidence_selectors: 'list[dict[str, Any]]' = <factory>, remediation: 'str | None' = None, raw: 'dict[str, Any]' = <factory>) -> None
+```
+
+Validated custom control definition loaded from the shared schema shape. `evaluator_type` must be
+one of the supported local evaluators; `script` and `webhook` evaluator types are reserved and are
+never executed.
+
+### `register_control`
+
+- **Kind:** function
+- **Module:** `ancilis.controls.custom`
+
+```python
+register_control(custom_control: 'dict[str, Any] | CustomControlDefinition', *, replace: 'bool' = False) -> 'CustomControlDefinition'
+```
+
+Register a schema-valid custom control in the process-local registry. Accepts either a raw mapping
+or a `CustomControlDefinition`; validates it against the shared custom-control JSON schema and
+returns the parsed definition. Raises `ValueError` if the control id is already registered unless
+`replace=True`.
+
+```python
+from ancilis import register_control
+
+definition = register_control(
+    {
+        "id": "CC-01",
+        "title": "No secrets in tool output",
+        "description": "Flags outputs that look like API keys.",
+        "category": "data-protection",
+        "severity": "high",
+        "evaluator_type": "regex",
+        "evaluator": {"pattern": "sk-[a-zA-Z0-9]{20,}", "target": "output_summary"},
+    }
+)
+```
+
+---
+
+## Deps
+
+### `DependencyScanner`
+
+- **Kind:** class
+- **Module:** `ancilis.deps.scanner`
+
+```python
+DependencyScanner(config: 'ResolvedConfig') -> 'None'
+```
+
+Scan a project directory for dependency vulnerabilities via OSV.dev. It detects dependency
+manifests in the target directory, queries OSV.dev in batch, and returns `EvaluationResult` objects
+with `source_type="dependency_scan"`. The `DE-01` control gates scanning: if `DE-01` is explicitly
+disabled in config, scanning returns an empty list.
+
+```python
+from ancilis import DependencyScanner, load_config
+
+config = load_config()
+scanner = DependencyScanner(config)
+```
+
+---
+
+## Remediation
+
+Remediation utilities load human-authored fix guidance for controls and turn an evidence summary
+into prioritized, agent-specific recommendations.
+
+### `RemediationGuide`
+
+- **Kind:** class (dataclass)
+- **Module:** `ancilis.remediation`
+
+```python
+RemediationGuide(control_id: 'str', title: 'str', difficulty: 'str', time_estimate: 'str', evidence_needed: 'list[str]', fix_steps: 'list[str]', code_example: 'str', explanation: 'str', docs_url: 'str | None' = None) -> None
+```
+
+A single control's remediation guidance, parsed from a shared markdown file: difficulty,
+time estimate, required evidence, ordered fix steps, a code example, and an explanation body.
+
+### `RemediationRecommendation`
+
+- **Kind:** class (dataclass)
+- **Module:** `ancilis.remediation`
+
+```python
+RemediationRecommendation(guide: 'RemediationGuide', status: 'str', evaluations: 'int', failures: 'int', flags: 'int', pass_rate: 'float', code_example: 'str') -> None
+```
+
+A `RemediationGuide` paired with the current evidence stats for that control. `status` is one of
+`GAP`, `PARTIAL`, `NO_EVIDENCE`, or `HEALTHY`, and `code_example` is the guide's example with the
+configured agent name substituted in.
+
+### `build_remediation_recommendations`
+
+- **Kind:** function
+- **Module:** `ancilis.remediation`
+
+```python
+build_remediation_recommendations(config: 'ResolvedConfig', summary: 'dict[str, Any]', *, control_id: 'str | None' = None) -> 'list[RemediationRecommendation]'
+```
+
+Return remediation recommendations for current gaps or one requested control. Without `control_id`,
+it returns only controls whose status is `GAP` or `PARTIAL`, sorted with gaps first; with a
+`control_id`, it returns that control's recommendation regardless of status.
+
+### `load_remediation_guides`
+
+- **Kind:** function
+- **Module:** `ancilis.remediation`
+
+```python
+load_remediation_guides() -> 'dict[str, RemediationGuide]'
+```
+
+Load remediation guide markdown files from `shared/remediation/controls`, keyed by control id.
+
+### `render_remediation_recommendations`
+
+- **Kind:** function
+- **Module:** `ancilis.remediation`
+
+```python
+render_remediation_recommendations(recommendations: 'list[RemediationRecommendation]', *, control_id: 'str | None' = None) -> 'str'
+```
+
+Render a list of `RemediationRecommendation` objects into a human-readable, plain-text report. When
+the list is empty, it returns a short "no guidance needed" message (or a per-control variant when
+`control_id` is given).
+
+```python
+from ancilis import build_remediation_recommendations, render_remediation_recommendations
+
+recs = build_remediation_recommendations(config, summary)
+print(render_remediation_recommendations(recs))
+```
+
+---
+
+## Telemetry
+
+Anonymous, opt-in SDK usage telemetry. No file paths, file contents, evidence data, email
+addresses, or API keys are collected. Telemetry is disabled by default and honors the
+`DO_NOT_TRACK` environment variable.
+
+### `TelemetryConfig`
+
+- **Kind:** class (dataclass)
+- **Module:** `ancilis.telemetry`
+
+```python
+TelemetryConfig(enabled: 'bool' = False, installation_id: 'str | None' = None, endpoint: 'str' = 'https://api.ancilis.ai/api/telemetry/events', prompted_at: 'str | None' = None) -> None
+```
+
+Persisted telemetry settings (read from and written to `~/.ancilis/config.toml`): whether telemetry
+is enabled, the anonymous installation id, the ingest endpoint, and when consent was last prompted.
+
+### `TelemetryStatus`
+
+- **Kind:** class (dataclass)
+- **Module:** `ancilis.telemetry`
+
+```python
+TelemetryStatus(enabled: 'bool', effective_enabled: 'bool', reason: 'str | None', installation_id: 'str | None', endpoint: 'str', config_path: 'Path', queue_path: 'Path', queued_events: 'int', event_types: 'tuple[str, ...]' = ('scan_executed', 'report_generated', 'overlay_activated', 'adapter_used', 'cli_command')) -> None
+```
+
+Resolved telemetry status. `enabled` reflects the stored config; `effective_enabled` additionally
+accounts for `DO_NOT_TRACK`. `reason` explains why telemetry is off, and `queued_events` is the
+number of events waiting in the local queue.
+
+### `read_telemetry_config`
+
+- **Kind:** function
+- **Module:** `ancilis.telemetry`
+
+```python
+read_telemetry_config(*, home_dir: 'Path | None' = None, env: 'Mapping[str, str] | None' = None, endpoint: 'str | None' = None) -> 'TelemetryConfig'
+```
+
+Read the persisted `TelemetryConfig` from the user's `~/.ancilis/config.toml`, resolving the
+endpoint from the explicit argument, the `ANCILIS_TELEMETRY_ENDPOINT` environment variable, or the
+default.
+
+### `read_telemetry_status`
+
+- **Kind:** function
+- **Module:** `ancilis.telemetry`
+
+```python
+read_telemetry_status(*, home_dir: 'Path | None' = None, env: 'Mapping[str, str] | None' = None) -> 'TelemetryStatus'
+```
+
+Compute the current `TelemetryStatus`, combining the stored config with the `DO_NOT_TRACK`
+environment check and the size of the local event queue.
+
+### `format_telemetry_status`
+
+- **Kind:** function
+- **Module:** `ancilis.telemetry`
+
+```python
+format_telemetry_status(status: 'TelemetryStatus') -> 'str'
+```
+
+Render a `TelemetryStatus` into a human-readable, multi-line summary, including the collected event
+types and the privacy note about what is never collected.
+
+### `set_telemetry_enabled`
+
+- **Kind:** function
+- **Module:** `ancilis.telemetry`
+
+```python
+set_telemetry_enabled(enabled: 'bool', *, home_dir: 'Path | None' = None, env: 'Mapping[str, str] | None' = None, endpoint: 'str | None' = None) -> 'TelemetryConfig'
+```
+
+Enable or disable telemetry and persist the result to `~/.ancilis/config.toml`, generating an
+anonymous installation id when enabling for the first time. Returns the written `TelemetryConfig`.
+
+### `record_telemetry_event`
+
+- **Kind:** function
+- **Module:** `ancilis.telemetry`
+
+```python
+record_telemetry_event(event_type: 'str', properties: 'dict[str, Any] | None' = None, *, home_dir: 'Path | None' = None, env: 'Mapping[str, str] | None' = None, urlopen: 'Callable[..., Any] | None' = None) -> 'None'
+```
+
+Append a telemetry event to the local queue (a no-op unless telemetry is effectively enabled) and
+trigger a background flush.
+
+### `record_adapter_used`
+
+- **Kind:** function
+- **Module:** `ancilis.telemetry`
+
+```python
+record_adapter_used(adapter_type: 'str') -> 'None'
+```
+
+Convenience wrapper that records an `adapter_used` event tagged with the given `adapter_type`.
+
+### `flush_telemetry_events`
+
+- **Kind:** function
+- **Module:** `ancilis.telemetry`
+
+```python
+flush_telemetry_events(*, home_dir: 'Path | None' = None, env: 'Mapping[str, str] | None' = None, force: 'bool' = False, urlopen: 'Callable[..., Any] | None' = None) -> 'dict[str, Any]'
+```
+
+Send queued telemetry events to the ingest endpoint in batches. Respects the flush interval unless
+`force=True`, and returns a dict describing whether events were sent and how many.

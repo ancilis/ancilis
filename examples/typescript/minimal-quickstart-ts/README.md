@@ -61,8 +61,6 @@ security:
     allowed:
       - search_web
       - send_reply
-certification_targets:
-  - soc2
 my_agent_handles:
   - personal_info
 ```

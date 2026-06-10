@@ -18,6 +18,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
+from ancilis import __version__
 from ancilis.cli.main import cli
 from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.engine import Engine
@@ -262,7 +263,7 @@ class TestCLIFramework:
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        assert __version__ in result.output
 
 
 # ===== Config Validate Tests =====
@@ -303,6 +304,16 @@ class TestConfigValidate:
         result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
         assert result.exit_code == 1
         assert "Available types" in result.output or "Valid types" in result.output
+
+    def test_unknown_top_level_config_key_exits_nonzero(self, tmp_path: Path) -> None:
+        data = _minimal_config()
+        data["securty"] = {"mode": "enforce"}
+        cfg = _make_config_file(data, tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(cli, ["config", "validate", "--config", str(cfg)])
+        assert result.exit_code == 1
+        assert "Unknown top-level config key" in result.output
+        assert "securty" in result.output
 
     def test_missing_agent_name(self, tmp_path: Path) -> None:
         data = {"agent": {"name": ""}}
@@ -1241,7 +1252,9 @@ class TestReportRendererUX:
         assert "5 of 6 controls passing across 4 active overlays." in md
         assert "Active overlays: SOC 2, PCI-DSS v4.0, GLBA, GDPR" in md
         assert "Active certifications: AIUC-1 (87% ready)" in md
-        assert "Evidence chain: intact (1,234 records, SHA-256 verified)" in md
+        # No chain_status set on this fixture -> neutral "intact"; the misleading
+        # "SHA-256 verified" overclaim was removed (keyed status is shown when known).
+        assert "Evidence chain: intact (1,234 records)" in md
         assert "### Attention Required" in md
         assert "**Data Exposure Prevention**: 2 failures in reporting period" in md
 

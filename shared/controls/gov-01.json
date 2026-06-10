@@ -3,10 +3,10 @@
   "product_control_id": "AKSI-GOV-01",
   "framework_version": "0.6",
   "framework_source_commit": "aeda1839054090a8384f3d9d2700a656fab519a2",
-  "name": "Agent Identity & Authentication",
+  "name": "Agent Identity Declaration & Match",
   "function": "GOVERN",
   "csf_mapping": "",
-  "description": "Every governed AI action is attributable to a verifiable runtime identity and authentication flow.",
+  "description": "Every governed AI action carries a declared agent identity that is matched at runtime against the configured agent identity and owner. The runtime evaluator performs a declared-identity consistency check, not credential authentication; verifying an authentication flow is an organizational control evidenced by attestation.",
   "effort_level": "medium",
   "common": true,
   "trigger_classifications": [],
@@ -64,8 +64,8 @@
   "default_enabled": true,
   "baseline": true,
   "security_outcome": {
-    "pass": "Current evidence supports AKSI v0.6 GOV-01: Agent Identity & Authentication.",
-    "fail": "Required evidence for AKSI v0.6 GOV-01: Agent Identity & Authentication is missing, stale, or contradictory."
+    "pass": "The action's declared agent identity (and owner) matches the configured identity for AKSI v0.6 GOV-01.",
+    "fail": "The action's declared agent identity is missing or does not match the configured identity/owner, or required attestation evidence for the authentication flow is missing."
   },
   "evidence_fields": [
     "identity",
@@ -73,8 +73,104 @@
     "agent",
     "iam"
   ],
-  "regulatory_mappings": {},
-  "display_name": "Agent Identity and Authentication",
-  "display_detail": "Every governed AI action is attributable to a verifiable runtime identity and authentication flow.",
-  "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-01 (Agent Identity & Authentication) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.130(a)(5)",
+      "§1798.155"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 CA.L2-3.12.1",
+      "NIST SP 800-171 Rev. 3 03.12.01, 03.12.03"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(a)",
+      "Risk management policy"
+    ],
+    "csa_aicm": [
+      "IAM-19"
+    ],
+    "dora": [
+      "DORA Art. 5(1)",
+      "DORA Art. 6(1)",
+      "DORA Art. 6(5)"
+    ],
+    "eu-ai-act": [
+      "Art.9",
+      "Art.17"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 PL-1, PL-2",
+      "FedRAMP Moderate PL-1, PL-2, AC-1"
+    ],
+    "gdpr": [
+      "Art. 24",
+      "Art. 25"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(a), 314.4(i)",
+      "SOX §302, §406",
+      "DORA Art.5"
+    ],
+    "hipaa": [
+      "164.308(a)(1)",
+      "164.308(a)(2)"
+    ],
+    "imda-mgf": [
+      "MGF Area 1 §2.1",
+      "Internal Governance Structures"
+    ],
+    "iso-27001": [
+      "A.5.1"
+    ],
+    "iso-42001": [
+      "Clause 5.1",
+      "5.2",
+      "GOV 1.1"
+    ],
+    "itar-ear": [
+      "22 CFR 120.63",
+      "15 CFR 734.13"
+    ],
+    "mas-trm": [
+      "MAS TRM §3.1",
+      "§3.2",
+      "§3.3"
+    ],
+    "nis2": [
+      "NIS2 Art. 20(1)",
+      "NIS2 Art. 21(1)",
+      "NIS2 Art. 21(2)(a)"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 1.1",
+      "GOVERN 1.2",
+      "GOVERN 3.1"
+    ],
+    "nist-csf": [
+      "GV.PO-01",
+      "GV.PO-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.2"
+    ],
+    "nist_privacy_framework": [
+      "PR.AC-P1",
+      "PR.AC-P6"
+    ],
+    "pci-dss-v4": [
+      "Req 12.1",
+      "Req 12.3"
+    ],
+    "securities-mnpi": [
+      "SOX §302, §404",
+      "SEC Reg FD 17 CFR 243.100-103"
+    ],
+    "soc2": [
+      "CC1.1",
+      "CC1.2"
+    ]
+  },
+  "display_name": "Agent Identity Declaration and Match",
+  "display_detail": "Runtime check that an action's declared agent identity matches the configured identity and owner (a declared-identity consistency check, not credential authentication). The authentication flow itself is an organizational control evidenced by attestation.",
+  "remediation_hint_template": "Ensure each action carries a declared agent identity matching ancilis.yaml's agent.name/agent_id (and owner). For the authentication-flow portion of GOV-01, attach attestation evidence from a configured source, or record an explicit exception with owner and expiry."
 }

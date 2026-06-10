@@ -1,0 +1,250 @@
+{
+  "id": "fda_medical_device_cybersecurity",
+  "name": "fda_medical_device_cybersecurity",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": [
+    "DC-MEDDEV"
+  ],
+  "description": "SCAFFOLD overlay for 'fda_medical_device_cybersecurity' — created to resolve a dangling control->overlay reference (D3). No aksi-ultra research crosswalk exists for this id; control wiring only, no requirement-ID mappings asserted.",
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "GOV-02": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "GOV-03": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "GOV-04": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "GOV-05": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "GOV-06": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "GOV-07": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "ID-01": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "ID-02": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "ID-03": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "ID-04": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "ID-05": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-01": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-02": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-03": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-04": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-05": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-06": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-07": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-08": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-09": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-10": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-11": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "PR-12": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "DE-01": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "DE-02": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "DE-03": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "DE-04": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "DE-05": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "DE-06": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RS-01": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RS-02": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RS-03": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RS-04": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RS-05": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RS-06": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RC-01": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RC-02": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    },
+    "RC-03": {
+      "applicable": true,
+      "scaffold": true,
+      "evidence_requirements": [],
+      "framework_reference": ""
+    }
+  },
+  "framework_mapping": {},
+  "scaffold": true,
+  "notes": "SCAFFOLD (PROD-REPAIRS D3): wires the 39 controls that reference 'fda_medical_device_cybersecurity' but asserts NO requirement mappings (verified=false by construction). Populate from authoritative source before any production assertion. Referencing controls: GOV-01, GOV-02, GOV-03, GOV-04, GOV-05, GOV-06, GOV-07, ID-01, ID-02, ID-03, ID-04, ID-05, PR-01, PR-02, PR-03, PR-04, PR-05, PR-06, PR-07, PR-08, PR-09, PR-10, PR-11, PR-12, DE-01, DE-02, DE-03, DE-04, DE-05, DE-06, RS-01, RS-02, RS-03, RS-04, RS-05, RS-06, RC-01, RC-02, RC-03.",
+  "evidence_requirements": {}
+}

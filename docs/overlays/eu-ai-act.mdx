@@ -1,0 +1,97 @@
+---
+title: "EU AI Act Overlay"
+description: "AKSI compliance overlay for AI agents operating in or serving the EU market under the EU AI Act."
+---
+
+## Overview
+
+The EU AI Act is the first regulation directly governing AI agent behavior. It applies comprehensive requirements to high-risk AI systems — risk management, data governance, transparency, human oversight, and accuracy — as well as obligations for general-purpose AI (GPAI) models. Enforcement phases in over time: prohibited AI practices (Feb 2025), GPAI model obligations (Aug 2025), and high-risk AI system obligations (Aug 2026).
+
+The `eu-ai-act` overlay packages AKSI control evidence against the relevant Articles and Annexes of the EU AI Act. It enforces strict monitoring, logging, and human oversight, and maps each AKSI control to its framework reference and the evidence the control is expected to produce. Risk classification is an operator determination — Ancilis provides the evidence package but cannot classify the risk level for the operator.
+
+**Use this overlay when your agent:**
+- Operates in or serves the EU market
+- Produces general-purpose AI outputs or model-generated content for EU-serving use
+- Is part of a high-risk AI system subject to conformity assessment (Art.43) and EU database registration (Art.49)
+- Handles AI-classified, biometric, or general-purpose AI output data (`DC-AI`, `DC-BIO`, `DC-GEN`)
+- Requires automatic logging, post-market monitoring, and human oversight per Articles 12, 14, and 72
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - eu-ai-act
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares (via `my_agent_handles`) that it handles data in the classes that trigger it: `DC-AI`, `DC-BIO`, or `DC-GEN`. Any EU-serving agent producing general-purpose AI outputs (`DC-GEN`) is subject to the GPAI provisions of the EU AI Act regardless of specific data classification. See [Data Classification](/data-classification) for how to declare handled data classes.
+
+---
+
+## Control Mapping
+
+The table below lists every AKSI control packaged by this overlay (39 controls), with its EU AI Act framework reference and the primary evidence requirement. Controls added in v0.3+ (partial-coverage mappings) declare their framework reference but do not yet enumerate itemized runtime evidence requirements; their key evidence cell is left as `—`.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | Art.9, Art.17, Art.53 | Risk management system established and maintained throughout AI system lifecycle (Art.9.1) |
+| **GOV-02** | Art.26 | Deployer obligations documented — monitoring, human oversight, and reporting responsibilities assigned (Art.26) |
+| **GOV-03** | Art.9.2, Art.9.3, Art.55 | Risk management system identifies and analyzes known and foreseeable risks (Art.9.2) |
+| **GOV-04** | Art.14 | Human oversight measures enabling overseers to understand AI system capacities and limitations (Art.14.4a) |
+| **GOV-05** | Art. 5 lists prohibited AI practices; GOV-05 binds actions/data-uses to declared purpose, legal basis, consent and a prohibited-use policy | — |
+| **GOV-06** | Art. 49 + Art. 71 require registration of high-risk systems in the EU database; Art. 16 / Art. 53(1)(a) + Annex XI require keeping documentation/posture available to authorities on request | — |
+| **GOV-07** | Art. 13, Art. 50, Art. 26(7), Art. 86 — transparency, AI disclosure, informing affected persons, right to explanation | — |
+| **ID-01** | Art.49 | AI system registered in EU database before placing on market or putting into service (Art.49) |
+| **ID-02** | Art.11, Annex IV | Components and third-party elements documented in technical documentation (Art.11) |
+| **ID-03** | Art.10, Art.53(1)(b)+(c) | Training, validation, and testing datasets documented with data governance measures (Art.10) |
+| **ID-04** | Art.11, Annex IV | Third-party components and their impact on AI system documented |
+| **ID-05** | Art.6, Art.7, Art.9.2 | Risk assessment identifying known and foreseeable risks of AI system (Art.9.2) |
+| **PR-01** | Art.16, Art.50 | AI system identifiable as AI to persons interacting with it (Art.50 transparency) |
+| **PR-02** | Art.9.4 | AI system operates within intended purpose boundaries (Art.9.4) |
+| **PR-03** | Art.15 | AI system designed to achieve appropriate levels of accuracy, robustness, and cybersecurity (Art.15) |
+| **PR-04** | Art.10 | Data governance measures implemented for training and operational data (Art.10) |
+| **PR-05** | Art.12 | Automatic logging of AI system events throughout lifecycle (Art.12.1) |
+| **PR-06** | Art.11, Annex IV | System configurations documented in technical documentation (Annex IV) |
+| **PR-07** | Art.15.4 | Appropriate cybersecurity measures against unauthorized access and data poisoning (Art.15.4) |
+| **PR-08** | Art.15.3, Art.15.4 | AI system resilient against errors, faults, and attempts to alter output by unauthorized third parties (Art.15.3) |
+| **PR-09** | Controlled code execution / sandbox enforcement supporting robustness (Art. 15(4)) and cybersecurity resilience (Art. 15(5)) | — |
+| **PR-10** | Art. 15(5) resilience against data/model poisoning; Art. 10(2)/(3) data-quality/integrity — persistent memory/context provenance, integrity checks, quarantine | — |
+| **PR-11** | Art. 26(6) deployer log retention (≥6 months); Art. 12 logging — retains/deletes/disposes agent-held data per policy and legal obligation | — |
+| **PR-12** | Secrets/credential/key custody (inherited baseline) loosely supporting Art. 15(5) and Art. 55(1)(d) cybersecurity | — |
+| **DE-01** | Art.9.2, Art.72 | Post-market monitoring system tracks AI system performance over lifetime (Art.72) |
+| **DE-02** | Art.11, Annex IV | Configuration monitoring ensures system operates as documented in technical documentation |
+| **DE-03** | Art.43, Art.72 | Conformity assessment completed before placing AI system on market (Art.43) |
+| **DE-04** | Art.12 | Log integrity verified — automatic logging records not tampered with (Art.12) |
+| **DE-05** | Art. 15(1), Art. 9, Art. 72, Art. 14(4)(b) — evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias, and out-of-scope behavior | — |
+| **DE-06** | Art. 9(6)/(8) testing against metrics/thresholds; Art. 55(1)(a) model evaluation incl. adversarial testing; ingests vuln/adversarial/red-team results | — |
+| **RS-01** | Art.16g | Corrective actions taken when AI system presents risks (Art.16g) |
+| **RS-02** | Art.14, Art.73 | Human oversight allows intervention in or halt of AI system operation (Art.14.4f) |
+| **RS-03** | Art.18, Art.73, Art.55(1)(b) | Serious incident evidence preserved and reported to market surveillance authorities (Art.73) |
+| **RS-04** | Cascade containment / blast-radius control supporting the Art. 14(4)(e) stop capability and Art. 9 risk-control for multi-agent failure domains | — |
+| **RS-05** | Art. 73 serious-incident notification clocks; Art. 55(1)(c) reporting to the AI Office — starts jurisdictional incident clocks | — |
+| **RS-06** | Art. 55(1)(d) cybersecurity for systemic-risk GPAI; Art. 15(5) vulnerability resilience — vuln intake, coordinated disclosure, secure-update handling | — |
+| **RC-01** | Art.16g | Corrective actions and recovery procedures documented (Art.16g) |
+| **RC-02** | Art.9, Art.72 | Post-market monitoring feeds back into risk management system (Art.9, Art.72) |
+| **RC-03** | Art. 15(4) fail-safe/redundancy and Art. 9(8) testing — periodically exercises recovery/rollback/failover/continuity procedures and captures evidence | — |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** `eu` — applies to AI systems operating in or serving the EU market.
+- **Evidence retention minimum:** 3650 days (10 years). Evidence packaged by this overlay must be retained for at least this period.
+- **Human oversight:** required (Art.14) for high-risk AI systems — human overseers must be able to understand, interpret, and override system output, and intervene in or halt operation.
+- **Risk classification** is an operator determination. Ancilis provides the evidence package but cannot classify the risk level on the operator's behalf.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

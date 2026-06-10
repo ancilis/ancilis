@@ -1,0 +1,93 @@
+---
+title: "GDPR Overlay"
+description: "AKSI compliance overlay for AI agents processing personal data of EU data subjects."
+---
+
+## Overview
+
+The EU General Data Protection Regulation (GDPR) governs the processing of personal data of individuals in the European Union, setting requirements for lawful basis, data subject rights, security of processing, breach notification, and data protection by design and by default.
+
+The `gdpr` overlay packages AKSI control evidence against GDPR requirements. It is activated by personal data, health data, children's data, or biometric data declarations, and maps each AKSI control to the relevant GDPR Articles covering lawful basis, data subject rights, security of processing, breach notification, and data protection by design.
+
+**Use this overlay when your agent:**
+- Processes personal data (`DC-PII`) of EU data subjects
+- Handles health or patient data (`DC-PHI`)
+- Processes children's data (`DC-MINOR`)
+- Processes biometric data (`DC-BIO`)
+
+---
+
+## Activation
+
+Enable the overlay explicitly in your configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - gdpr
+```
+
+**Data classification trigger** — because this is a `data_classification` overlay, it also auto-activates when your agent declares that it handles the relevant data classifications (`DC-PII`, `DC-PHI`, `DC-MINOR`, or `DC-BIO`) via `my_agent_handles`. See [Data Classification](/data-classification) for how declared classifications drive overlay activation.
+
+---
+
+## Control Mapping
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | Art. 24, Art. 25 | Data protection policies implemented demonstrating compliance with GDPR principles (Art. 24) |
+| **GOV-02** | Art. 5(2), Art. 37, Art. 38 | Data Protection Officer (DPO) appointed where required and contact details published (Art. 37, Art. 38) |
+| **GOV-03** | Art. 35, Art. 36 | Data Protection Impact Assessment (DPIA) conducted for high-risk processing (Art. 35) |
+| **GOV-04** | Art. 22, Art. 22(3) | Human oversight mechanisms configured for agent operations where automated decisions significantly affect data subjects (Art. 22(3)) |
+| **ID-01** | Art. 30 | Records of processing activities maintained — controller and processor records per Art. 30 |
+| **ID-02** | Art. 28 | Data Processing Agreements (DPA) in place with all processors (Art. 28(3)) |
+| **ID-03** | Art. 5(1)(c), Art. 5(1)(e) | Data minimization principle applied — only personal data adequate, relevant, and limited to what is necessary (Art. 5(1)(c)) |
+| **ID-04** | Art. 28(1), Art. 28(2) | Processor inventory maintained — list of all processors and sub-processors with processing descriptions (Art. 28) |
+| **ID-05** | Art. 35, Art. 36 | Data Protection Impact Assessment (DPIA) conducted for agent operations likely to result in high risk to rights and freedoms of data subjects (Art. 35(1)) |
+| **PR-01** | Art. 5(1)(f), Art. 32 | Appropriate technical and organisational measures to ensure appropriate level of security for personal data (Art. 32) |
+| **PR-02** | Art. 5(1)(b), Art. 6, Art. 9 | Lawful basis documented for each processing activity — one of six lawful bases under Art. 6 applied |
+| **PR-03** | Art. 5(1)(d), Art. 25 | Data protection by design — appropriate technical measures integrated into processing at design stage (Art. 25(1)) |
+| **PR-04** | Art. 25, Art. 32(1)(a) | Pseudonymisation and encryption of personal data implemented where appropriate (Art. 32(1)(a)) |
+| **PR-05** | Art. 5(2), Art. 30 | Records of processing activities include data categories, purposes, recipients, and retention periods (Art. 30) |
+| **PR-06** | Art. 32(1)(b) | Physical security measures protect personal data from unauthorised physical access (Art. 32(1)(b)) |
+| **PR-07** | Art. 32(1)(b) | Endpoint security measures protect personal data on devices (Art. 32(1)(b)) |
+| **PR-08** | Art. 5(1)(f), Art. 32(1)(b) | Appropriate technical measures ensuring integrity and confidentiality of personal data — inputs to systems processing personal data validated and sanitised (Art. 5(1)(f)) |
+| **DE-01** | Art. 33, Art. 34 | Personal data breach detection capability — ability to identify and confirm breaches affecting personal data (Art. 33) |
+| **DE-02** | Art. 32(1)(d), Art. 39 | Ongoing monitoring of processing systems for security and compliance with GDPR obligations (Art. 32(1)(d)) |
+| **DE-03** | Art. 32(2) | Anomalous processing detection — identify unusual access patterns, bulk downloads, or exfiltration indicators |
+| **DE-04** | Art. 32(1)(d) | Process for regularly testing, assessing, and evaluating effectiveness of security measures (Art. 32(1)(d)) |
+| **RS-01** | Art. 33 | Personal data breach notification to supervisory authority without undue delay and within 72 hours of becoming aware (Art. 33(1)) |
+| **RS-02** | Art. 22, Art. 22(3) | Human escalation paths configured for agent actions that trigger data subject rights under Art. 22 — automated decisions with significant effect routed to human reviewer (Art. 22(3)) |
+| **RS-03** | Art. 34 | Data subject notification where breach likely results in high risk to rights and freedoms — notification without undue delay (Art. 34(1)) |
+| **RC-01** | Art. 32(1)(c) | Ability to restore availability and access to personal data in timely manner in event of physical or technical incident (Art. 32(1)(c)) |
+| **RC-02** | Art. 32(1)(c), Art. 35 | Post-incident review to update data protection impact assessments where needed |
+| **GOV-05** | Art. 5(1)(a), Art. 5(1)(b), Art. 6(1), Art. 9(1), Art. 9(2), Art. 7 | — |
+| **GOV-06** | Art. 30(1), Art. 30(2), Art. 28(3) | — |
+| **GOV-07** | Art. 12, Art. 13, Art. 14, Art. 15, Art. 16, Art. 18, Art. 20, Art. 21, Art. 22(3) | — |
+| **PR-10** | Art. 5(1)(d), Art. 5(1)(f), Art. 32(1)(b) | — |
+| **PR-11** | Art. 5(1)(e), Art. 17(1), Art. 18, Art. 25(2) | — |
+| **PR-12** | Art. 32(1), Art. 5(1)(f) | — |
+| **DE-05** | Art. 5(1)(a), Art. 5(1)(d), Art. 22 | — |
+| **RS-05** | Art. 33(1), Art. 33(3), Art. 34(1) | — |
+
+<Note>
+Controls **GOV-05**, **GOV-06**, **GOV-07**, **PR-10**, **PR-11**, **PR-12**, **DE-05**, and **RS-05** carry a `partial` or `inherited` coverage mapping and do not yet declare per-control evidence requirements in this overlay. The Framework Reference column above shows their GDPR Article citations from the overlay's framework mapping; treat their coverage as indicative until runtime evidence is bound.
+</Note>
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** `eu` — the overlay applies to processing of personal data of EU data subjects.
+- **Evidence retention minimum:** 365 days. Retain control evidence for at least this period to support GDPR accountability and supervisory-authority requests.
+
+Controls without overlay-specific adjustments inherit the base AKSI common-control definitions; this overlay adds GDPR-specific evidence fields and threshold adjustments on top of that catalog.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

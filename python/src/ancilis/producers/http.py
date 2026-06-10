@@ -18,6 +18,7 @@ from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
+from ancilis.producers.enforcement import OPT_IN
 from ancilis.producers.protocol import ProducerType
 from ancilis.producers.tool import BlockedActionError
 from ancilis.telemetry import record_adapter_used
@@ -57,6 +58,8 @@ class HTTPActionProducer:
     Observe/report mode is the primary path. Explicit transport wrapping can
     optionally enforce pre-request blocking, but it is opt-in by design.
     """
+
+    ENFORCEMENT = OPT_IN
 
     def __init__(self, config: ResolvedConfig, engine: Engine, registry: ToolRegistry | None = None, evidence_store: EvidenceStore | None = None) -> None:
         self._config = config

@@ -1,0 +1,89 @@
+---
+title: "ancilis export"
+description: "Export local evidence records as NDJSON or CSV."
+---
+
+## Overview
+
+`ancilis export` reads evidence records from the local DuckDB store and emits them as NDJSON (default) or CSV. Records print to stdout unless you pass `--output`, which writes them to a file instead. This is a read-only operation — it never mutates or deletes evidence.
+
+```bash
+ancilis export [OPTIONS]
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--format` | `ndjson` \| `csv` | `ndjson` | Output format |
+| `--since` | string | all records | Only include records at or after this ISO-8601 timestamp |
+| `--session` | string | all sessions | Only include records from this session ID |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent, per-cwd path (see below) | Path to evidence database |
+| `--output`, `-o` | string | stdout | Output file path |
+
+<Note>
+  When `--db` is omitted, the evidence store derives a per-agent, per-cwd path: `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb`. The cwd hash disambiguates agents with the same name across different projects; the database file is always named `evidence.duckdb`.
+</Note>
+
+<Note>
+  When `--db` points to an existing database, `--config` is optional — if no config is found, `export` falls back to a synthetic `evidence-export` agent so you can dump records from any database file directly.
+</Note>
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Export succeeded (including when zero records match) |
+| `1` | Database file passed via `--db` does not exist, or config is missing/invalid and no `--db` was supplied |
+
+## Examples
+
+**Export all records as NDJSON to stdout**
+```bash
+ancilis export
+```
+
+```
+{"active_certifications": [], "active_overlays": ["glba", "soc2"], "agent_id": "my-agent", "classification_context": {}, "control_results": [{"control_id": "DE-01", "control_name": "Behavioral Anomaly Detection", "detail": "Baseline not yet established — warming behavioral window (1/25).", "duration_ms": 0.010958989150822163, "evidence_data": {"baseline_established": false, "baseline_min_events": 25, "baseline_window_calls": 0, "behavior_schema_version": 1, "deviation_flags": [], "new_tools_detected": [], "observation_type": "tool_call", "observed_parameter_hash": "", "observed_tool_name": "lookup", "window_event_count": 0, "window_unique_tools": []}, "result": "PASS"}, {"control_id": "DE-02", "control_name": "Classification Drift and Boundary Validation", "detail": "Observed classifications are within declared processing boundaries.", "duration_ms": 0.019875005818903446, "evidence_data": {"boundary_violation": null, "compatible_data_classes": [], "declared_data_classes": ["DC-FIN"], "destination": null, "observed_data_classes": [], "undeclared_data_classes": []}, "result": "PASS"}, /* ... 37 more control results (DE-03 … RS-02) on the same line ... */ {"control_id": "RS-02", "control_name": "Containment, Quarantine and Kill Switch", "detail": "Containment required because prior controls failed, but no containment, quarantine, kill-switch, degrade, block, or credential revocation intent was declared.", "duration_ms": 0.004582980182021856, "evidence_data": {"containment_intent": null, "evidence_store_configured": false, "required_result_threshold": ["ERROR", "FAIL"], "triggering_failures": ["PR-03"]}, "result": "FAIL"}], "data_classifications": ["DC-FIN"], "decision": "ALLOW", "detected_data_types": [], "evaluation_id": "c5927a90-c6ae-4865-b1c7-2c2e9bd09e63", "framework_version": "0.6", "mode": "audit", "output_summary": null, "previous_hash": "88e8f3c0a790ac70926df2b91fe07ebb86421709ab8779312321245ed4b2f25d", "record_hash": "1f6330437d075311981d7c116a0e606d962a06c13679c2b6e01db80eefe7fa0e", "record_id": "ceec8989-6a98-46dc-ba6c-7ef1ea5a9f46", "sdk_version": "0.1.0", "session_id": null, "source_type": "agent", "tenant_id": null, "timestamp": "2026-06-06T10:00:00Z", "tool_name": "lookup", "total_duration_ms": 0.1818329910747707}
+```
+
+Each NDJSON line is a single JSON object spanning the full record, with keys sorted alphabetically and a space after each `:` and `,`. The `control_results` array above is the only abridged part — the real line carries all 41 control results inline (the `/* ... */` marker stands in for the 38 omitted between `DE-02` and `RS-02`).
+
+**Export as CSV to a file**
+```bash
+ancilis export --format csv --output evidence.csv
+```
+
+```
+Export written to evidence.csv
+```
+
+The CSV starts with a header row carrying these columns in order:
+
+```
+record_id,evaluation_id,timestamp,agent_id,session_id,source_type,tool_name,decision,mode,control_results,active_overlays,data_classifications,active_certifications,record_hash,previous_hash,total_duration_ms,output_summary,tenant_id,detected_data_types,sdk_version,framework_version,classification_context
+```
+
+Each subsequent row is one evidence record. The `control_results` column holds the full JSON array as a single quoted CSV field (with `""` escaping), so a row can be very wide; list and dict columns such as `active_overlays`, `data_classifications`, and `classification_context` are likewise serialized as JSON.
+
+**Export records from a specific session**
+```bash
+ancilis export --session sess_20260606_abc123 --output session.ndjson
+```
+
+**Export records since a timestamp**
+```bash
+ancilis export --since 2026-06-01T00:00:00Z
+```
+
+**Export directly from a database file (no config)**
+```bash
+ancilis export --db /path/to/evidence.duckdb --format csv -o dump.csv
+```
+
+## Related
+
+- [ancilis scan](/cli/scan) — evaluate evidence posture for CI/CD
+- [ancilis report](/cli/report) — full posture report in multiple formats
+- [ancilis status](/cli/status) — lightweight posture check

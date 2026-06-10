@@ -254,7 +254,7 @@ class TestWatchRunnerIntegration:
 
     def _make_config(self, tmp_path: Path):
         from ancilis.config import load_config
-        return load_config(raw={"agent": {"name": "test-agent"}, "mode": "audit"})
+        return load_config(raw={"agent": {"name": "test-agent"}, "security": {"mode": "audit"}})
 
     def test_initial_scan_runs_and_ctrl_c_exits(self, tmp_path: Path) -> None:
         """WatchRunner starts, completes initial scan, then stops on interrupt."""

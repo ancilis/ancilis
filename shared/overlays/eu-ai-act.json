@@ -273,6 +273,110 @@
       ],
       "threshold_adjustments": {},
       "framework_reference": "Art.9, Art.72"
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 5 lists prohibited AI practices (e.g. manipulative/subliminal techniques, social scoring, untargeted facial-image scraping, emotion recognition at work/education, certain biometric categorisation). GOV-05 binds actions/data-uses to declared purpose, legal basis, consent and a prohibited-use pol",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 49 + Art. 71 require registration of high-risk systems in the EU database; Art. 16 / Art. 53(1)(a) + Annex XI require keeping documentation/posture available to authorities on request. GOV-06 registers framework/contract/regulator obligations and links them to posture/evidence/owner reporting, ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 13 (transparency + instructions for use), Art. 50 (disclosure that a user interacts with AI / content is AI-generated), Art. 26(7) (informing workers/affected persons), Art. 86 (right to explanation of individual decisions). GOV-07 documents disclosures, privacy-rights routing, affected-party f",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Controlled code execution / sandbox enforcement supports robustness (fail-safe, technical safeguards under Art. 15(4)) and cybersecurity resilience (Art. 15(5)) by constraining unsafe generated-code execution. The AI Act does not name sandboxing of agent code execution; maps as a supporting robustne",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 15(5) covers resilience against data/model poisoning; Art. 10(2)/(3) require data-quality/integrity for inputs and context. PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks, and quarantine (RAG/memory poisoning), the agent-runtime integrity slice fo",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 26(6) requires deployers to keep auto-generated logs for at least six months (a retention obligation); Art. 12 governs the logging that PR-11 then retains/disposes. PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation, satisfying the agent-",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": false,
+      "framework_reference": "Secrets/credential/key custody is generic security hygiene already owned by ISO 27001 / SOC 2 / NIST 800-53 and only loosely supports Art. 15(5) and Art. 55(1)(d) cybersecurity at a baseline level. The AI Act has no AI-specific secrets-custody requirement, so this maps as inherited baseline rather t",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 15(1) (accuracy/robustness across lifetime), Art. 9 (risk of harm), Art. 72 (post-market monitoring of performance), Art. 14(4)(b) (awareness of automation bias / output monitoring). DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias, and out-of-scope beh",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 9(6)/(8) require testing of high-risk systems against metrics/thresholds; Art. 55(1)(a) requires model evaluation incl. adversarial testing of systemic-risk GPAI; GPAI Code of Practice Safety Commitment 3 (systemic risk analysis incl. model evaluations). DE-06 ingests vuln scans, adversarial/re",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Cascade containment / blast-radius control supports the Art. 14(4)(e) stop capability and Art. 9 risk-control for multi-agent failure domains. RS-04 provides multi-agent failure-domain isolation, circuit breakers, and coordinated kill-switch. The AI Act does not address multi-agent cascade explicitl",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 73 sets the serious-incident notification clocks (max 15 days; 10 days where a death occurs; 2 days for widespread infringement / critical-infrastructure safety) to market surveillance authorities; Art. 55(1)(c) requires reporting to the AI Office 'without undue delay'. RS-05 starts jurisdictio",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Art. 55(1)(d) requires adequate cybersecurity for systemic-risk GPAI; Art. 15(5) covers vulnerability resilience; GPAI Code of Practice Safety Commitment 9 addresses serious-incident reporting and handling. RS-06 handles vuln intake, coordinated disclosure, secure-update handling, support-period tra",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RC-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Art. 15(4) fail-safe/redundancy and Art. 9(8) testing of risk-control measures imply periodic validation of resilience/recovery procedures. RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedures and captures evidence. The AI Act does not name resilience exerc",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     }
   },
   "reporting_obligations": {
@@ -433,6 +537,76 @@
     "RC-02": [
       "Art.9",
       "Art.72"
+    ],
+    "GOV-05": [
+      "Art. 5",
+      "Art. 9(2)(a)",
+      "Art. 26(1)",
+      "Recital 27"
+    ],
+    "GOV-06": [
+      "Art. 49",
+      "Art. 71",
+      "Art. 16",
+      "Art. 53(1)(a)",
+      "Annex XI"
+    ],
+    "GOV-07": [
+      "Art. 13",
+      "Art. 50(1)",
+      "Art. 50(4)",
+      "Art. 26(7)",
+      "Art. 86",
+      "Art. 27"
+    ],
+    "PR-09": [
+      "Art. 15(4)",
+      "Art. 15(5)"
+    ],
+    "PR-10": [
+      "Art. 15(5)",
+      "Art. 10(2)",
+      "Art. 10(3)"
+    ],
+    "PR-11": [
+      "Art. 26(6)",
+      "Art. 12(1)"
+    ],
+    "PR-12": [
+      "Art. 15(5)",
+      "Art. 55(1)(d)"
+    ],
+    "DE-05": [
+      "Art. 15(1)",
+      "Art. 9(2)",
+      "Art. 72",
+      "Art. 14(4)(b)"
+    ],
+    "DE-06": [
+      "Art. 9(6)",
+      "Art. 9(8)",
+      "Art. 15(1)",
+      "Art. 55(1)(a)",
+      "CoP-Safety-C3.2"
+    ],
+    "RS-04": [
+      "Art. 14(4)(e)",
+      "Art. 9(2)"
+    ],
+    "RS-05": [
+      "Art. 73(2)",
+      "Art. 73(3)",
+      "Art. 73(4)",
+      "Art. 55(1)(c)"
+    ],
+    "RS-06": [
+      "Art. 55(1)(d)",
+      "Art. 15(5)",
+      "CoP-Safety-C9"
+    ],
+    "RC-03": [
+      "Art. 15(4)",
+      "Art. 9(8)"
     ]
   },
   "evidence_retention_minimum_days": 3650,

@@ -25,31 +25,34 @@ EXPECTED_AGENTS = {
         "runtime_type": "bedrock",
         "data_types": ["credit_cards", "financial_records", "personal_info"],
         "detected_data_types": ["DC-CHD", "DC-PII"],
-        "evidence_summary": {"allow": 5, "block": 1, "flag": 0},
+        # PR-04 now FLAGs sensitive data sent with no destination policy
+        # configured (previously a silent PASS), so unpoliced sensitive-data
+        # calls move from allow -> flag. Block counts (FAIL/ERROR) are unchanged.
+        "evidence_summary": {"allow": 3, "block": 1, "flag": 2},
     },
     "fraud-sentinel": {
         "runtime_type": "cli",
         "data_types": ["credit_cards", "financial_records", "personal_info"],
         "detected_data_types": ["DC-CHD", "DC-PII"],
-        "evidence_summary": {"allow": 4, "block": 2, "flag": 0},
+        "evidence_summary": {"allow": 2, "block": 2, "flag": 2},
     },
     "compliance-auditor": {
         "runtime_type": "framework",
         "data_types": ["financial_records", "health_records", "personal_info"],
         "detected_data_types": ["DC-PHI", "DC-PII"],
-        "evidence_summary": {"allow": 5, "block": 1, "flag": 0},
+        "evidence_summary": {"allow": 2, "block": 1, "flag": 3},
     },
     "invoice-extractor": {
         "runtime_type": "mcp",
         "data_types": ["financial_records", "personal_info"],
         "detected_data_types": ["DC-PII"],
-        "evidence_summary": {"allow": 5, "block": 1, "flag": 1},
+        "evidence_summary": {"allow": 3, "block": 1, "flag": 3},
     },
     "customer-assist": {
         "runtime_type": "http",
         "data_types": ["credit_cards", "health_records", "personal_info"],
         "detected_data_types": ["DC-CHD", "DC-PHI", "DC-PII"],
-        "evidence_summary": {"allow": 5, "block": 2, "flag": 0},
+        "evidence_summary": {"allow": 1, "block": 2, "flag": 4},
     },
 }
 

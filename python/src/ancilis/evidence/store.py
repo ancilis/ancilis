@@ -9,6 +9,7 @@ import logging
 import os
 import uuid
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -20,9 +21,18 @@ if TYPE_CHECKING:
 
 from ancilis.aksi.version import AKSI_FRAMEWORK_VERSION
 from ancilis.config import ResolvedConfig
+from ancilis.errors import StorageError
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.adapter import EvidenceAdapter, EvidenceAdapterPayload
-from ancilis.evidence.chain import GENESIS_SEED, canonical_payload, compute_hash
+from ancilis.evidence.chain import (
+    CHAIN_FORMAT_V1,
+    CHAIN_FORMAT_V2,
+    GENESIS_SEED,
+    canonical_payload,
+    compute_hash,
+    compute_keyed_hash,
+    resolve_chain_key,
+)
 from ancilis.evidence.record import EvidenceRecord
 from ancilis.evidence.sync_state import (
     SYNC_STATUS_FAILED,
@@ -37,10 +47,58 @@ logger = logging.getLogger("ancilis.evidence")
 DEFAULT_DB_DIR = Path.home() / ".ancilis"
 DEFAULT_DB_NAME = "evidence.duckdb"
 
+_UNSET = object()
+
+
+@dataclass
+class ChainVerificationReport:
+    """Structured result of an evidence-chain verification.
+
+    ``valid`` is True only when no tampering, broken links, or missing-key
+    conditions were found. Legacy (v1, pre-keyed) records that are structurally
+    intact are reported as ``legacy_unverified_count`` — never silently counted
+    as cryptographically verified, and never treated as a failure that would
+    invalidate retained data. ``status`` summarizes the chain:
+    verified | legacy-unverified | mixed | broken | empty | reset-or-purged.
+    """
+
+    valid: bool
+    errors: list[str]
+    verified_count: int
+    legacy_unverified_count: int
+    reset_events: int
+    purge_events: int
+    status: str
+
 
 def _normalize_decision_key(decision: str) -> str:
     """Normalize persisted decision values for reporting compatibility."""
     return decision.strip().upper()
+
+
+def _chain_event_canonical(
+    event_id: str,
+    event_type: str,
+    created_at: str,
+    hwm_seq: int,
+    hwm_hash: str,
+    record_count: int,
+    boundary_hash: str = "",
+) -> str:
+    """Deterministic canonical string for a reset/purge/migration checkpoint signature."""
+    return json.dumps(
+        {
+            "boundary_hash": boundary_hash,
+            "created_at": created_at,
+            "event_id": event_id,
+            "event_type": event_type,
+            "hwm_hash": hwm_hash,
+            "hwm_seq": int(hwm_seq),
+            "record_count": int(record_count),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
 
 
 def _agent_db_path(agent_name: str) -> Path:
@@ -82,7 +140,26 @@ CREATE TABLE IF NOT EXISTS evidence_records (
     detected_data_types JSON NOT NULL DEFAULT '[]',
     sdk_version VARCHAR,
     classification_context JSON NOT NULL DEFAULT '{}',
-    framework_version VARCHAR
+    framework_version VARCHAR,
+    chain_format_version INTEGER NOT NULL DEFAULT 1
+);
+"""
+
+# Signed audit log of reset/purge events. A wipe cannot pass verification as a
+# pristine empty chain: a high-water-mark checkpoint (last seq/hash + count) is
+# recorded and signed here before any deletion, so verify_chain reports that a
+# reset/purge occurred instead of returning a silently-clean empty chain.
+CREATE_CHAIN_EVENTS_SQL = """
+CREATE TABLE IF NOT EXISTS evidence_chain_events (
+    event_id VARCHAR PRIMARY KEY,
+    event_type VARCHAR NOT NULL,
+    created_at VARCHAR NOT NULL,
+    hwm_seq BIGINT NOT NULL,
+    hwm_hash VARCHAR NOT NULL,
+    record_count BIGINT NOT NULL,
+    keyed BOOLEAN NOT NULL DEFAULT FALSE,
+    boundary_hash VARCHAR NOT NULL DEFAULT '',
+    signature VARCHAR NOT NULL
 );
 """
 
@@ -92,15 +169,17 @@ INSERT INTO evidence_records (
     decision, mode, control_results, active_overlays,
     data_classifications, active_certifications,
     record_hash, previous_hash, total_duration_ms, output_summary, tenant_id,
-    detected_data_types, sdk_version, classification_context, framework_version
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    detected_data_types, sdk_version, classification_context, framework_version,
+    chain_format_version
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 """
 
 SELECT_COLUMNS = """
 seq_id, record_id, evaluation_id, timestamp, agent_id, session_id, source_type, tool_name,
 decision, mode, control_results, active_overlays, data_classifications,
 active_certifications, record_hash, previous_hash, total_duration_ms, output_summary,
-tenant_id, detected_data_types, sdk_version, classification_context, framework_version
+tenant_id, detected_data_types, sdk_version, classification_context, framework_version,
+chain_format_version
 """
 
 SYNC_SELECT_COLUMNS = """
@@ -109,7 +188,7 @@ er.session_id, er.source_type, er.tool_name, er.decision, er.mode,
 er.control_results, er.active_overlays, er.data_classifications,
 er.active_certifications, er.record_hash, er.previous_hash, er.total_duration_ms,
 er.output_summary, er.tenant_id, er.detected_data_types, er.sdk_version,
-er.classification_context, er.framework_version
+er.classification_context, er.framework_version, er.chain_format_version
 """
 
 CREATE_SYNC_TABLES_SQL = """
@@ -148,6 +227,7 @@ class EvidenceStore:
         evidence_adapter: EvidenceAdapter | None = None,
         evidence_adapter_name: str | None = None,
         evidence_adapter_metadata: Mapping[str, Any] | None = None,
+        chain_key: bytes | str | None = None,
     ) -> None:
         self._config = config
         self._certifications: list[str] = list(
@@ -160,6 +240,12 @@ class EvidenceStore:
         self._evidence_adapter = evidence_adapter
         self._evidence_adapter_name = evidence_adapter_name
         self._evidence_adapter_metadata = dict(evidence_adapter_metadata or {})
+        # Evidence-chain HMAC key, resolved lazily from (explicit arg > env >
+        # OS keyring) and NEVER stored in the DB. _UNSET means "not resolved".
+        self._chain_key_arg = chain_key
+        self._chain_key_cache: bytes | None | object = _UNSET
+        self._warned_unkeyed = False
+        self._migration_checked = False
 
         if in_memory:
             self._db_path = ":memory:"
@@ -181,13 +267,36 @@ class EvidenceStore:
             self._conn = duckdb.connect(":memory:")
         else:
             db_dir = os.path.dirname(self._db_path)
-            os.makedirs(db_dir, exist_ok=True)
-            self._conn = duckdb.connect(self._db_path)
+            try:
+                if db_dir:
+                    os.makedirs(db_dir, exist_ok=True)
+                self._conn = duckdb.connect(self._db_path)
+            except (duckdb.Error, OSError) as exc:
+                # Not a valid DuckDB file, corrupt, locked, or an unwritable/
+                # uncreatable directory — surface a clean E004, not a traceback.
+                raise StorageError(self._db_path) from exc
             logger.info("Evidence store: %s", self._db_path)
 
         self._connection.execute(CREATE_TABLE_SQL)
         self._connection.execute(CREATE_SYNC_TABLES_SQL)
+        self._connection.execute(CREATE_CHAIN_EVENTS_SQL)
+        event_columns = {
+            row[1]
+            for row in self._connection.execute("PRAGMA table_info('evidence_chain_events')").fetchall()
+        }
+        if "boundary_hash" not in event_columns:
+            self._connection.execute(
+                "ALTER TABLE evidence_chain_events ADD COLUMN boundary_hash VARCHAR DEFAULT ''"
+            )
         columns = {row[1] for row in self._connection.execute("PRAGMA table_info('evidence_records')").fetchall()}
+        if "chain_format_version" not in columns:
+            # Migration: pre-existing rows predate keyed chaining → mark them v1
+            # (legacy). verify_chain reports v1 records as "legacy-unverified".
+            # DuckDB ALTER cannot add NOT NULL columns; DEFAULT 1 backfills
+            # existing (legacy) rows to v1, which is the intended migration.
+            self._connection.execute(
+                "ALTER TABLE evidence_records ADD COLUMN chain_format_version INTEGER DEFAULT 1"
+            )
         if "session_id" not in columns:
             self._connection.execute(
                 "ALTER TABLE evidence_records ADD COLUMN session_id VARCHAR"
@@ -245,6 +354,46 @@ class EvidenceStore:
     def __exit__(self, *exc: Any) -> None:
         self.close()
 
+    def _chain_key(self) -> bytes | None:
+        """Resolve the chain HMAC key once (explicit arg > env > OS keyring)."""
+        if self._chain_key_cache is _UNSET:
+            self._chain_key_cache = resolve_chain_key(self._chain_key_arg)
+        return self._chain_key_cache  # type: ignore[return-value]
+
+    def _max_seq_id(self) -> int:
+        row = self._connection.execute(
+            "SELECT COALESCE(MAX(seq_id), 0) FROM evidence_records"
+        ).fetchone()
+        return int(row[0]) if row else 0
+
+    def _ensure_migration_checkpoint(self, boundary_seq: int) -> None:
+        """Record a signed migration boundary on the first keyed (v2) write.
+
+        After this boundary, any record still marked v1 is a downgrade attempt.
+        Recorded once; the boundary seq is the highest seq that existed before the
+        first v2 record (legacy records at or below it may legitimately be v1).
+        """
+        if self._migration_checked:
+            return
+        self._migration_checked = True
+        existing = self._connection.execute(
+            "SELECT 1 FROM evidence_chain_events WHERE event_type = 'migration' LIMIT 1"
+        ).fetchone()
+        if existing is not None:
+            return
+        self._record_chain_event("migration", boundary_seq_override=boundary_seq)
+
+    def _warn_unkeyed_once(self) -> None:
+        if not self._warned_unkeyed:
+            self._warned_unkeyed = True
+            logger.warning(
+                "ANCILIS_CHAIN_KEY is not set: evidence is written with the legacy "
+                "unkeyed SHA-256 chain (v1). Without a protected key, an attacker "
+                "with database write access can forge records and re-chain them. "
+                "Set ANCILIS_CHAIN_KEY (or an OS keyring entry) to enable keyed "
+                "HMAC chaining (v2)."
+            )
+
     def _get_last_hash(self) -> str:
         """Get the hash of the most recent record, or GENESIS_SEED if empty.
 
@@ -272,6 +421,7 @@ class EvidenceStore:
         self._ensure_initialized()
         record_id = str(uuid.uuid4())
         previous_hash = self._get_last_hash()
+        previous_max_seq = self._max_seq_id()
         session_id = getattr(evaluation, "session_id", None)
         agent_id = getattr(self._config, "agent_id", None) or evaluation.agent_id
 
@@ -325,7 +475,17 @@ class EvidenceStore:
             framework_version=framework_version,
             classification_context=classification_context,
         )
-        record_hash = compute_hash(canon)
+        # Keyed (v2) chaining when a chain key is available; otherwise legacy
+        # unkeyed v1 (with a one-time warning). The version is persisted and,
+        # for v2, bound into the HMAC so it cannot be silently downgraded.
+        key = self._chain_key()
+        if key is not None:
+            chain_format_version = CHAIN_FORMAT_V2
+            record_hash = compute_keyed_hash(canon, key, version=CHAIN_FORMAT_V2)
+        else:
+            chain_format_version = CHAIN_FORMAT_V1
+            record_hash = compute_hash(canon)
+            self._warn_unkeyed_once()
 
         record = EvidenceRecord(
             record_id=record_id,
@@ -350,7 +510,13 @@ class EvidenceStore:
             sdk_version=_sdk_ver,
             framework_version=framework_version,
             classification_context=classification_context,
+            chain_format_version=chain_format_version,
         )
+
+        # On the first keyed (v2) write, record a signed migration boundary so a
+        # later downgrade of a v2 record to v1 (by editing the column) is caught.
+        if chain_format_version == CHAIN_FORMAT_V2:
+            self._ensure_migration_checkpoint(previous_max_seq)
 
         self._connection.execute(INSERT_SQL, [
             record.record_id,
@@ -375,6 +541,7 @@ class EvidenceStore:
             record.sdk_version,
             json.dumps(record.classification_context),
             record.framework_version,
+            chain_format_version,
         ])
         self._create_sync_state_row(record.record_id)
 
@@ -719,22 +886,165 @@ class EvidenceStore:
         """
         self._ensure_initialized()
         n = self.count()
+        # Record a signed reset checkpoint BEFORE deleting, so the wipe is
+        # auditable and cannot pass verification as a pristine empty chain.
+        self._record_chain_event("reset")
         self._connection.execute("DELETE FROM evidence_sync_state")
         self._connection.execute("DELETE FROM evidence_sync_meta")
         self._connection.execute("DELETE FROM evidence_records")
         return n
 
-    def verify_chain(self, session_id: str | None = None) -> tuple[bool, list[str]]:
-        """Verify the hash chain integrity. Returns (valid, errors).
+    def _record_chain_event(
+        self,
+        event_type: str,
+        *,
+        boundary_hash: str = "",
+        boundary_seq_override: int | None = None,
+    ) -> None:
+        """Append a signed checkpoint (reset / purge / migration).
 
-        Records written before ANC-922 used a narrower canonical payload. Those
-        legacy hashes are accepted only when the stored hash matches that old
-        payload exactly; new writes protect the expanded metadata fields.
-        When session_id is provided, only records in that session are reported;
-        previous_hash links are still checked against the stored global chain.
+        Captures the current max seq_id, last record hash, and record count, and
+        signs the checkpoint with the chain key (HMAC) when available, falling
+        back to SHA-256 otherwise. ``boundary_hash`` records a purge's resume
+        point (the surviving chain's predecessor hash). ``boundary_seq_override``
+        sets the migration boundary seq. verify_chain reports these events so a
+        wiped/migrated chain is never silently "clean" and a v2->v1 downgrade is
+        caught.
+        """
+        row = self._connection.execute(
+            "SELECT COALESCE(MAX(seq_id), 0), COUNT(*) FROM evidence_records"
+        ).fetchone()
+        hwm_seq = boundary_seq_override if boundary_seq_override is not None else (int(row[0]) if row else 0)
+        record_count = int(row[1]) if row else 0
+        last = self._connection.execute(
+            "SELECT record_hash FROM evidence_records ORDER BY seq_id DESC LIMIT 1"
+        ).fetchone()
+        hwm_hash = last[0] if last else GENESIS_SEED
+        event_id = str(uuid.uuid4())
+        created_at = self._now_iso()
+        canonical = _chain_event_canonical(
+            event_id, event_type, created_at, hwm_seq, hwm_hash, record_count, boundary_hash
+        )
+        key = self._chain_key()
+        if key is not None:
+            keyed = True
+            signature = compute_keyed_hash(canonical, key)
+        else:
+            keyed = False
+            signature = compute_hash(canonical)
+        self._connection.execute(
+            "INSERT INTO evidence_chain_events "
+            "(event_id, event_type, created_at, hwm_seq, hwm_hash, record_count, keyed, boundary_hash, signature) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [event_id, event_type, created_at, hwm_seq, hwm_hash, record_count, keyed, boundary_hash, signature],
+        )
+
+    def _full_canonical(self, record: EvidenceRecord) -> str:
+        """Canonical payload over the full (expanded) field set for a record."""
+        return canonical_payload(
+            evaluation_id=record.evaluation_id,
+            timestamp=record.timestamp,
+            agent_id=record.agent_id,
+            source_type=record.source_type,
+            tool_name=record.tool_name,
+            decision=record.decision,
+            mode=record.mode,
+            control_results=record.control_results,
+            active_overlays=record.active_overlays,
+            data_classifications=record.data_classifications,
+            active_certifications=record.active_certifications,
+            total_duration_ms=record.total_duration_ms,
+            previous_hash=record.previous_hash,
+            output_summary=record.output_summary,
+            session_id=record.session_id,
+            tenant_id=record.tenant_id,
+            detected_data_types=record.detected_data_types,
+            sdk_version=record.sdk_version,
+            framework_version=record.framework_version,
+            classification_context=record.classification_context,
+        )
+
+    def _matches_legacy_v1(self, record: EvidenceRecord) -> bool:
+        """ANC-922 compatibility for GENUINE pre-expansion v1 records only.
+
+        Older v1 records were hashed over narrower canonical payloads (before the
+        framework_version / expanded-metadata additions). This is consulted ONLY
+        for v1 records, never for v2, so a keyed record can never be forged by
+        stripping the expanded fields.
+        """
+        pre_framework = canonical_payload(
+            evaluation_id=record.evaluation_id,
+            timestamp=record.timestamp,
+            agent_id=record.agent_id,
+            source_type=record.source_type,
+            tool_name=record.tool_name,
+            decision=record.decision,
+            mode=record.mode,
+            control_results=record.control_results,
+            active_overlays=record.active_overlays,
+            data_classifications=record.data_classifications,
+            active_certifications=record.active_certifications,
+            total_duration_ms=record.total_duration_ms,
+            previous_hash=record.previous_hash,
+            output_summary=record.output_summary,
+            session_id=record.session_id,
+            tenant_id=record.tenant_id,
+            detected_data_types=record.detected_data_types,
+            sdk_version=record.sdk_version,
+            classification_context=record.classification_context,
+        )
+        if record.record_hash == compute_hash(pre_framework):
+            return True
+        legacy = canonical_payload(
+            evaluation_id=record.evaluation_id,
+            timestamp=record.timestamp,
+            agent_id=record.agent_id,
+            source_type=record.source_type,
+            tool_name=record.tool_name,
+            decision=record.decision,
+            mode=record.mode,
+            control_results=record.control_results,
+            active_overlays=record.active_overlays,
+            data_classifications=record.data_classifications,
+            active_certifications=record.active_certifications,
+            total_duration_ms=record.total_duration_ms,
+            previous_hash=record.previous_hash,
+            output_summary=record.output_summary,
+            session_id=record.session_id,
+            tenant_id=record.tenant_id,
+        )
+        return record.record_hash == compute_hash(legacy)
+
+    def verify_chain(
+        self, session_id: str | None = None, *, key: bytes | str | None = None
+    ) -> tuple[bool, list[str]]:
+        """Verify the hash chain. Returns (valid, errors).
+
+        Backward-compatible facade over verify_chain_report. ``valid`` is False
+        on tampering, broken links, or a v2 record that cannot be verified
+        because no chain key is available. Intact legacy (v1) records are NOT
+        failures; call verify_chain_report() to surface their explicit
+        "legacy-unverified" status.
+        """
+        report = self.verify_chain_report(session_id=session_id, key=key)
+        return report.valid, report.errors
+
+    def verify_chain_report(
+        self, session_id: str | None = None, *, key: bytes | str | None = None
+    ) -> ChainVerificationReport:
+        """Verify records and reset/purge/migration checkpoints; return a report.
+
+        v2 records are verified with HMAC and REQUIRE the chain key. v1 records
+        are checked structurally and reported as legacy-unverified -- never
+        silently passed nor failed. A signed migration boundary catches a
+        v2->v1 downgrade; signed purge checkpoints authorize the surviving
+        chain's resume point so a legitimate prune does not read as broken;
+        reset/purge on an emptied store is reported as reset-or-purged, not as a
+        pristine empty chain.
         """
         self._ensure_initialized()
-        # SELECT_COLUMNS is a constant defined at module level, safe to concatenate
+        resolved_key = resolve_chain_key(key) if key is not None else self._chain_key()
+
         if self._tenant_id is not None:
             query = "SELECT " + SELECT_COLUMNS + " FROM evidence_records WHERE tenant_id = ? ORDER BY seq_id ASC"  # nosemgrep
             rows = self._connection.execute(query, [self._tenant_id]).fetchall()  # nosemgrep
@@ -742,103 +1052,174 @@ class EvidenceStore:
             query = "SELECT " + SELECT_COLUMNS + " FROM evidence_records ORDER BY seq_id ASC"  # nosemgrep
             rows = self._connection.execute(query).fetchall()  # nosemgrep
 
-        if not rows:
-            return True, []
+        events = self._connection.execute(
+            "SELECT event_id, event_type, created_at, hwm_seq, hwm_hash, record_count, keyed, boundary_hash, signature "
+            "FROM evidence_chain_events ORDER BY created_at ASC"
+        ).fetchall()
+        reset_events = sum(1 for e in events if e[1] == "reset")
+        purge_events = sum(1 for e in events if e[1] == "purge")
 
         errors: list[str] = []
+        authorized_resume_hashes: set[str] = set()
+        migration_boundary: int | None = None
+        has_keyed_migration = False
+
+        # Verify checkpoint signatures, and collect the purge resume points and
+        # migration boundary from cryptographically valid checkpoints only. A
+        # keyed checkpoint cannot be verified without the key (an error, like a
+        # keyed record).
+        for e in events:
+            event_id, event_type = e[0], e[1]
+            boundary_hash = e[7]
+            signature = e[8]
+            canonical = _chain_event_canonical(e[0], e[1], e[2], e[3], e[4], e[5], boundary_hash)
+            keyed = bool(e[6])
+            sig_ok = False
+            if keyed:
+                if resolved_key is None:
+                    errors.append(
+                        f"Chain event {event_id} ({event_type}): chain key required to "
+                        f"verify keyed checkpoint - set ANCILIS_CHAIN_KEY."
+                    )
+                elif signature != compute_keyed_hash(canonical, resolved_key):
+                    errors.append(f"Chain event {event_id} ({event_type}): signature invalid - audit log tampered.")
+                else:
+                    sig_ok = True
+            elif signature != compute_hash(canonical):
+                errors.append(f"Chain event {event_id} ({event_type}): signature invalid - audit log tampered.")
+            else:
+                sig_ok = True
+            if not sig_ok:
+                continue
+            # Trust model: when a key is present, only KEYED checkpoints may
+            # authorize a downgrade boundary or a purge gap — an unkeyed
+            # checkpoint is forgeable by a DB writer without the key, so it must
+            # not authorize anything in a keyed chain. When no key is present the
+            # chain is legacy-unverified regardless, so unkeyed checkpoints may
+            # authorize legacy purge gaps (they cannot grant "verified").
+            trusted = keyed if resolved_key is not None else not keyed
+            if not trusted:
+                continue
+            if event_type == "purge" and boundary_hash:
+                authorized_resume_hashes.add(boundary_hash)
+            elif event_type == "migration":
+                boundary = int(e[3])
+                migration_boundary = boundary if migration_boundary is None else max(migration_boundary, boundary)
+                if keyed:
+                    has_keyed_migration = True
+
+        if not rows:
+            status = "reset-or-purged" if (reset_events or purge_events) else "empty"
+            return ChainVerificationReport(
+                valid=len(errors) == 0,
+                errors=errors,
+                verified_count=0,
+                legacy_unverified_count=0,
+                reset_events=reset_events,
+                purge_events=purge_events,
+                status=status,
+            )
+
+        verified_count = 0
+        legacy_unverified_count = 0
+        has_v2 = False
         expected_previous = GENESIS_SEED
 
         for row in rows:
             record = self._row_to_record(row)
+            seq_id = int(row[0])
+            version = record.chain_format_version
             in_scope = session_id is None or record.session_id == session_id
 
-            # Check previous_hash links correctly
-            if in_scope and record.previous_hash != expected_previous:
+            # Linkage: accept the expected predecessor, or a signed purge resume
+            # point (an authorized gap left by a legitimate prune).
+            if (
+                in_scope
+                and record.previous_hash != expected_previous
+                and record.previous_hash not in authorized_resume_hashes
+            ):
                 errors.append(
                     f"Record {record.record_id}: previous_hash mismatch. "
                     f"Expected {expected_previous[:16]}..., got {record.previous_hash[:16]}..."
                 )
 
-            # Recompute hash
-            canon = canonical_payload(
-                evaluation_id=record.evaluation_id,
-                timestamp=record.timestamp,
-                agent_id=record.agent_id,
-                source_type=record.source_type,
-                tool_name=record.tool_name,
-                decision=record.decision,
-                mode=record.mode,
-                control_results=record.control_results,
-                active_overlays=record.active_overlays,
-                data_classifications=record.data_classifications,
-                active_certifications=record.active_certifications,
-                total_duration_ms=record.total_duration_ms,
-                previous_hash=record.previous_hash,
-                output_summary=record.output_summary,
-                session_id=record.session_id,
-                tenant_id=record.tenant_id,
-                detected_data_types=record.detected_data_types,
-                sdk_version=record.sdk_version,
-                framework_version=record.framework_version,
-                classification_context=record.classification_context,
-            )
-            expected_hash = compute_hash(canon)
-
-            if in_scope and record.record_hash != expected_hash:
-                pre_framework_canon = canonical_payload(
-                    evaluation_id=record.evaluation_id,
-                    timestamp=record.timestamp,
-                    agent_id=record.agent_id,
-                    source_type=record.source_type,
-                    tool_name=record.tool_name,
-                    decision=record.decision,
-                    mode=record.mode,
-                    control_results=record.control_results,
-                    active_overlays=record.active_overlays,
-                    data_classifications=record.data_classifications,
-                    active_certifications=record.active_certifications,
-                    total_duration_ms=record.total_duration_ms,
-                    previous_hash=record.previous_hash,
-                    output_summary=record.output_summary,
-                    session_id=record.session_id,
-                    tenant_id=record.tenant_id,
-                    detected_data_types=record.detected_data_types,
-                    sdk_version=record.sdk_version,
-                    classification_context=record.classification_context,
+            # Downgrade guard: past a signed migration boundary, a v1 record is a
+            # chain-format downgrade attempt (an HMAC bypass via the version column).
+            if (
+                in_scope
+                and migration_boundary is not None
+                and seq_id > migration_boundary
+                and version != CHAIN_FORMAT_V2
+            ):
+                errors.append(
+                    f"Record {record.record_id}: chain-format downgrade - record after the "
+                    f"keyed migration boundary is not v2 (possible HMAC bypass)."
                 )
-                pre_framework_hash = compute_hash(pre_framework_canon)
-                if record.record_hash == pre_framework_hash:
-                    expected_previous = record.record_hash
-                    continue
+                expected_previous = record.record_hash
+                continue
 
-                legacy_canon = canonical_payload(
-                    evaluation_id=record.evaluation_id,
-                    timestamp=record.timestamp,
-                    agent_id=record.agent_id,
-                    source_type=record.source_type,
-                    tool_name=record.tool_name,
-                    decision=record.decision,
-                    mode=record.mode,
-                    control_results=record.control_results,
-                    active_overlays=record.active_overlays,
-                    data_classifications=record.data_classifications,
-                    active_certifications=record.active_certifications,
-                    total_duration_ms=record.total_duration_ms,
-                    previous_hash=record.previous_hash,
-                    output_summary=record.output_summary,
-                    session_id=record.session_id,
-                    tenant_id=record.tenant_id,
-                )
-                legacy_hash = compute_hash(legacy_canon)
-                if record.record_hash != legacy_hash:
-                    errors.append(
-                        f"Record {record.record_id}: hash mismatch. "
-                        f"Expected {expected_hash[:16]}..., got {record.record_hash[:16]}..."
-                    )
+            canon = self._full_canonical(record)
+
+            if version == CHAIN_FORMAT_V2:
+                has_v2 = True
+                if resolved_key is None:
+                    if in_scope:
+                        errors.append(
+                            f"Record {record.record_id}: chain key required to verify "
+                            f"keyed (v2) record - set ANCILIS_CHAIN_KEY."
+                        )
+                else:
+                    expected_hash = compute_keyed_hash(canon, resolved_key, version=CHAIN_FORMAT_V2)
+                    if record.record_hash != expected_hash:
+                        if in_scope:
+                            errors.append(
+                                f"Record {record.record_id}: HMAC mismatch - record "
+                                f"tampered or signed with a different key."
+                            )
+                    elif in_scope:
+                        verified_count += 1
+                # No narrower-payload fallback for v2 (ANC-922 loophole closed).
+            else:
+                # Legacy v1: structural check only - not cryptographically attestable.
+                ok = record.record_hash == compute_hash(canon) or self._matches_legacy_v1(record)
+                if in_scope:
+                    if ok:
+                        legacy_unverified_count += 1
+                    else:
+                        errors.append(
+                            f"Record {record.record_id}: legacy (v1) hash mismatch - record altered."
+                        )
 
             expected_previous = record.record_hash
 
-        return len(errors) == 0, errors
+        # A keyed chain (any v2 record) MUST carry a signed keyed migration
+        # checkpoint. Its absence means the audit log was tampered — e.g. the
+        # checkpoint was deleted to try to re-interpret v2 records under the
+        # weaker v1 rules.
+        if resolved_key is not None and has_v2 and not has_keyed_migration:
+            errors.append(
+                "v2 (keyed) records are present but no signed keyed migration "
+                "checkpoint exists - audit log incomplete or tampered."
+            )
+
+        if errors:
+            status = "broken"
+        elif verified_count and legacy_unverified_count:
+            status = "mixed"
+        elif legacy_unverified_count:
+            status = "legacy-unverified"
+        else:
+            status = "verified"
+
+        return ChainVerificationReport(
+            valid=len(errors) == 0,
+            errors=errors,
+            verified_count=verified_count,
+            legacy_unverified_count=legacy_unverified_count,
+            reset_events=reset_events,
+            purge_events=purge_events,
+            status=status,
+        )
 
     def get_summary(
         self,
@@ -913,8 +1294,10 @@ class EvidenceStore:
         tool_rows = self._connection.execute(tool_query, params).fetchall()  # nosemgrep
         tools = [row[0] for row in tool_rows]
 
-        # Chain integrity (always full store — chain must be verified end-to-end)
-        chain_valid, chain_errors = self.verify_chain()
+        # Chain integrity (always full store — verified end-to-end)
+        chain_report = self.verify_chain_report()
+        chain_valid = chain_report.valid
+        chain_errors = chain_report.errors
 
         # Control pass rates (period-filtered)
         # where_clause is built from internal logic, safe to concatenate
@@ -945,10 +1328,19 @@ class EvidenceStore:
             "pattern_detections": pattern_detections,
             "chain_valid": chain_valid,
             "chain_errors": chain_errors,
+            "chain_status": chain_report.status,
+            "chain_verified": chain_report.verified_count,
+            "chain_legacy_unverified": chain_report.legacy_unverified_count,
+            "chain_reset_events": chain_report.reset_events,
+            "chain_purge_events": chain_report.purge_events,
         }
 
     def purge_before(self, before_timestamp: str) -> int:
-        """Remove records older than the given ISO timestamp. Returns count removed."""
+        """Remove records older than the given ISO timestamp. Returns count removed.
+
+        Records a signed purge checkpoint before deletion so the purge is
+        auditable and an emptied chain cannot pass verification as pristine.
+        """
         self._ensure_initialized()
         row = self._connection.execute(
             "SELECT COUNT(*) FROM evidence_records WHERE timestamp < ?",
@@ -957,6 +1349,18 @@ class EvidenceStore:
         count = row[0] if row else 0
 
         if count > 0:
+            # Capture the surviving chain's resume point (the previous_hash of
+            # the oldest record that will survive). The signed purge checkpoint
+            # authorizes verify_chain to accept that link instead of reporting
+            # the pruned prefix as a broken chain (which would invalidate
+            # retained data — forbidden by the hard constraint).
+            survivor = self._connection.execute(
+                "SELECT previous_hash FROM evidence_records WHERE timestamp >= ? "
+                "ORDER BY seq_id ASC LIMIT 1",
+                [before_timestamp],
+            ).fetchone()
+            resume_hash = survivor[0] if survivor else ""
+            self._record_chain_event("purge", boundary_hash=resume_hash)
             self._connection.execute(
                 "DELETE FROM evidence_sync_state WHERE record_id IN ("
                 "SELECT record_id FROM evidence_records WHERE timestamp < ?"
@@ -1012,4 +1416,5 @@ class EvidenceStore:
             sdk_version=row[20] if len(row) > 20 else None,
             classification_context=classification_context,
             framework_version=row[22] if len(row) > 22 else None,
+            chain_format_version=int(row[23]) if len(row) > 23 and row[23] is not None else CHAIN_FORMAT_V1,
         )

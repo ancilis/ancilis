@@ -69,8 +69,8 @@ A list of plain-language data type names. Each type maps to one or more regulato
 
 ```yaml
 my_agent_handles:
-  - health_records      # HIPAA, GDPR, SOC 2
-  - personal_info       # GDPR, SOC 2
+  - health_records      # CCPA, GDPR, HIPAA, SOC 2
+  - personal_info       # CCPA, GDPR, SOC 2
   - credit_cards        # PCI-DSS v4
 ```
 
@@ -78,32 +78,32 @@ my_agent_handles:
 
 | Type | Overlays activated |
 |------|-------------------|
-| `ai_training_data` | EU AI Act, ISO 42001 |
+| `ai_training_data` | agent-runtime-threats, aiuc-1, csa_aicm, eu-ai-act, eu_gpai_code, fda_ai_device_pccp, hitrust_ai_security, iso-23894, iso-42001, nist-ai-rmf, nist_ai_600_1_genai_profile |
 | `biometric_data` | EU AI Act |
 | `credit_cards` | PCI-DSS v4 |
-| `financial_data` | SOC 2 Type II |
-| `financial_records` | SOC 2 Type II |
-| `general` | SOC 2 Type II |
-| `government_cui` | CMMC Level 2 |
-| `government_documents` | CMMC Level 2 |
-| `government_system` | CMMC Level 2 |
-| `health_records` | HIPAA, GDPR, SOC 2 Type II |
-| `patient_data` | HIPAA, GDPR, SOC 2 Type II |
-| `personal_info` | GDPR, SOC 2 Type II |
-| `public_data` | SOC 2 Type II |
-| `childrens_data` | baseline only |
+| `financial_data` | GLBA + SOC 2 |
+| `financial_records` | GLBA + SOC 2 |
+| `general` | baseline only |
+| `government_cui` | CMMC Level 2 + FedRAMP |
+| `government_documents` | CMMC Level 2 + FedRAMP |
+| `government_system` | CMMC Level 2 + FedRAMP |
+| `health_records` | CCPA, GDPR, HIPAA, SOC 2 |
+| `patient_data` | CCPA, GDPR, HIPAA, SOC 2 |
+| `personal_info` | CCPA, GDPR, SOC 2 |
+| `public_data` | baseline only |
+| `childrens_data` | GDPR, ISO/IEC 27701, NIST Privacy Framework |
 | `controlled_unclassified` | CMMC Level 2 |
-| `critical_infrastructure` | baseline only |
+| `critical_infrastructure` | DORA, NIS2 |
 | `export_controlled` | baseline only |
-| `federal_contract` | baseline only |
-| `federal_contract_info` | baseline only |
+| `federal_contract` | FedRAMP |
+| `federal_contract_info` | FedRAMP |
 | `legal_data` | baseline only |
 | `legal_privileged` | baseline only |
 | `material_nonpublic` | Securities Markets (SEC Reg FD, SOX) |
 | `mnpi` | Securities Markets (SEC Reg FD, SOX) |
 | `trade_secrets` | baseline only |
 
-Types marked "baseline only" are recognized and classified but don't currently trigger an overlay beyond the 26 baseline controls. They will activate overlays as those profiles are implemented. Government and CUI-oriented types now activate the `cmmc-l2` overlay, and MNPI-oriented types now activate the `securities-mnpi` overlay.
+Types marked "baseline only" are recognized and classified but don't currently trigger an overlay beyond the 39 common baseline controls. They will activate overlays as those profiles are implemented. Government-oriented types now activate the `cmmc-l2` and `fedramp` overlays, CUI-oriented types activate the `cmmc-l2` overlay, and MNPI-oriented types now activate the `securities-mnpi` overlay.
 
 ### `certification_targets`
 
@@ -117,6 +117,9 @@ Currently available targets:
 | Target | Standard | Controls activated |
 |--------|----------|-------------------|
 | `aiuc-1` | AIUC-1 AI Agent Certification Standard | PR-01, PR-02, PR-03, PR-04, PR-05, DE-01 |
+| `gov-contractor` | Government Contractor Certification (CMMC L2 + FedRAMP Moderate) | GOV, ID, PR, DE, RS, and RC control families |
+| `AGENT_PAYMENTS` | Agent Payments | PAY-01, PAY-02 |
+| `X402` | x402 | PAY-01, PAY-02 |
 
 Certification targets compose with data classification — you can use both.
 
@@ -171,7 +174,8 @@ Produces actionable error messages for common mistakes:
 - Missing `agent.name`: `"Fix: add 'agent: { name: my-agent }' to ancilis.yaml"`
 - Unknown data type: `"Unknown data type in my_agent_handles: 'medical'. Valid types: ai_training_data, biometric_data, ..."`
 - Invalid mode: `"security.mode must be 'audit' or 'enforce'"`
-- Unrecognized certification target: `"certification_targets contains unrecognized value 'aiuc-2'. Available targets: aiuc-1"`
+
+An unrecognized certification target is reported as a **warning**, not an error: the config is still valid and `ancilis config validate` exits 0. The warning appears under a `Warnings:` section, for example: `"certification_targets contains unrecognized value 'aiuc-2'. Available targets: AGENT_PAYMENTS, X402, aiuc-1, gov-contractor"`
 
 ## Global SDK telemetry
 

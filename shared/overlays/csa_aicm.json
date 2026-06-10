@@ -1,0 +1,470 @@
+{
+  "id": "csa_aicm",
+  "name": "Cloud Security Alliance AI Controls Matrix (AICM), built on the CSA Cloud Controls Matrix (CCM v4)",
+  "version": "0.1",
+  "trigger_type": "always_on",
+  "triggered_by": [
+    "DC-AI"
+  ],
+  "description": "The CSA AI Controls Matrix (AICM v1.0, released 2025-07-10) is an industry-consensus AI control framework with 243 control objectives across 18 domains — 17 carried from the CSA Cloud Controls Matrix (CCM v4) plus a new AI-specific Model Security (MDS) domain of 13 controls — and ships with an AI-CAIQ, implementation and auditing guidelines, and mappings to ISO 42001, ISO 27001, NIST AI RMF, BSI AIC4 and the EU AI Act. It is current as of mid-2025 and actively maintained. AGENT-RESPONSIBILITY-BOUNDARY CAVEAT: AKSI controls map to the runtime/inference-time slice (agent identity, action authori",
+  "jurisdiction": "International (industry consensus standard; maps to ISO 42001, ISO 27001, NIST AI RMF 1.0, BSI AIC4, EU AI Act)",
+  "regime_version": "AICM v1.0 (released 2025-07-10; controls/guidance refreshed through late 2025, sometimes labeled v1.0.x); CCM v4.0",
+  "controls": {
+    "GOV-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "IAM-19 (Agent Access Restriction) requires restricting/governing the access an AI agent identity holds. GOV-01 matches every governed action's declared agent identity at runtime (the authentication flow is attested, not verified by the runtime evaluator), which is the identity-establishment half of agent access governance. Does NOT by itself enforce the scope-restricti",
+      "evidence_requirements": []
+    },
+    "GOV-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "GRC domain requires defined governance roles/accountability for the AI service and STA (Supply Chain, Transparency & Accountability) requires accountable ownership across AI components. GOV-02 names an accountable owner per AI system for operation/risk/remediation, satisfying the agent-owned slice o",
+      "evidence_requirements": []
+    },
+    "GOV-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "GRC governance/risk program requires risk-tolerance and policy baselines; GRC-15 (Human Supervision) presumes defined thresholds at which autonomous AI action requires oversight. GOV-03 defines autonomy limits + escalation thresholds in policy before autonomous action. Org-wide risk-program elements",
+      "evidence_requirements": []
+    },
+    "GOV-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "GRC-15 (Human Supervision) requires human oversight/intervention over autonomous AI decisions. GOV-04 provides human review/approval context + decision accountability for sensitive actions/exceptions, which fully covers the agent-runtime slice of human supervision. Title confirmed by AICM narrative ",
+      "evidence_requirements": []
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "GRC-09 (Acceptable Use of the AI Service) defines permitted/prohibited uses; DSP policies require purpose-bound, lawful data handling. GOV-05 binds actions/data-uses to declared purpose, contract limits, legal basis, consent and prohibited-use policy — the agent-owned slice of acceptable-use + lawfu",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "A&A (Audit & Assurance) and GRC require mapping external/regulatory obligations to controls and reporting posture. GOV-06 registers framework/contract/customer/regulator obligations and links them to posture/evidence/owner reporting — the agent-runtime evidence-linkage slice. Establishing the org-wi",
+      "evidence_requirements": []
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "GRC-13 (Explainability Requirement) and acceptable-use disclosure plus STA transparency/accountability obligations require disclosures and affected-party transparency. GOV-07 documents disclosures, privacy-rights routing, affected-party feedback + intervention channels and links them to runtime evid",
+      "evidence_requirements": []
+    },
+    "ID-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AICM expects an inventory of AI services/components for governance and supply-chain accountability (GRC asset/AI-service inventory; STA AI component cataloguing). ID-01 provides a complete current registry of governed AI systems + operating context — the agent-inventory slice. Exact inventory-contro",
+      "evidence_requirements": []
+    },
+    "ID-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "STA (Supply Chain, Transparency & Accountability) catalogues models/APIs/agents and their provenance; MDS-03 (Model Documentation) and MDS-09 (Model Signing/Ownership Verification) cover model artifact identity/provenance. ID-02 registers tools/MCP surfaces/models/prompt packs/integrations with prov",
+      "evidence_requirements": []
+    },
+    "ID-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "DSP (Data Security & Privacy Lifecycle) requires data classification, inventory and flow mapping. ID-03 maps inputs/context stores/outputs/destinations + observed data classes per system — the agent-runtime data-flow-mapping slice. Org-wide data classification program beyond agent data flows is inhe",
+      "evidence_requirements": []
+    },
+    "ID-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "STA addresses AI supply chain (models, APIs, agents) and third-party risk; MDS-12 (Open Model Risk Assessment) covers risk of third-party/open models; TVM-12 (Threat Analysis and Modelling) covers dependency threat modeling. ID-04 assesses models/tools/deps/prompts/orchestration for supply-chain ris",
+      "evidence_requirements": []
+    },
+    "ID-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "GRC-10 (AI Impact Assessment) and GRC-11 (Bias & Fairness Assessment) require pre-deployment profiling of an AI system's purpose/impact/risk. ID-05 profiles purpose/autonomy/data sensitivity/action authority/impact tier before use — the agent-runtime risk-profiling slice that feeds an impact assessm",
+      "evidence_requirements": []
+    },
+    "PR-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AIS-11 (Agents Security Boundaries) and IAM-19 (Agent Access Restriction) require constraining which actions an agent may take; GRC-15 gates sensitive actions to human supervision. PR-01 evaluates sensitive actions against policy and allows only when identity+context+target authorized — directly the",
+      "evidence_requirements": []
+    },
+    "PR-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "IAM-19 (Agent Access Restriction) requires least-privilege restriction of agent access; AIS-11 (Agents Security Boundaries) requires enforced action/permission boundaries. PR-02 enforces explicit least-privilege scopes per session + per action — squarely the agent permission-scope-enforcement slice.",
+      "evidence_requirements": []
+    },
+    "PR-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "MDS-08 (Model Integrity Checks), MDS-09 (Model Signing/Ownership Verification), MDS-13 (Secure Model Format) and MDS-02 (Model Artifact Scanning) require verifying model/tool artifacts against trusted baselines. PR-03 verifies tool descriptors/model artifacts/execution surfaces vs trusted baselines ",
+      "evidence_requirements": []
+    },
+    "PR-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "DSP data-leakage/privacy controls require preventing sensitive/regulated data exposure through AI inputs/outputs; DSP-21 (Data Poisoning Prevention & Detection) and LOG-15 (Output Monitoring) bracket data flowing in/out. PR-04 inspects + constrains sensitive/regulated/export-controlled data before c",
+      "evidence_requirements": []
+    },
+    "PR-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AIS-11 (Agents Security Boundaries) requires isolation of agent execution contexts; IVS (Infrastructure & Virtualization Security) requires tenant/workload isolation. PR-05 isolates execution context so system/task/tenant/user/jurisdiction/foreign-person boundaries cannot silently leak — the agent c",
+      "evidence_requirements": []
+    },
+    "PR-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "LOG (Logging & Monitoring) requires audit logging of activity; A&A supports auditability/evidence. PR-06 records the full evaluation chain (who/why/under-which-controls), hash-chained, for every governed action — the agent audit-trail-completeness slice. Org-wide log management/retention infrastruct",
+      "evidence_requirements": []
+    },
+    "PR-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AIS (Application & Interface Security) and CEK (Cryptography/Key Management) require authenticated, integrity-protected interfaces and channels. PR-07 provides authenticated, integrity-protected, replay-resistant channels + signed task context (A2A) — the agent secure-messaging slice. Transport cryp",
+      "evidence_requirements": []
+    },
+    "PR-08": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AIS-15 (Prompt Differentiation) requires separating/validating trusted instructions from untrusted input (the core prompt-injection control); LOG-14 (Input Monitoring) and TVM-11 (Guardrails) reinforce input filtering. PR-08 validates direct inputs, indirect content, tool payloads and retrieved cont",
+      "evidence_requirements": []
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AIS-11 (Agents Security Boundaries) requires constraining agent tool/code execution within boundaries; IVS isolation and TVM-11 (Guardrails) constrain risky execution. PR-09 runs generated code/shell/dynamic execution only in approved sandbox classes — the agent controlled-code-execution slice. Sand",
+      "evidence_requirements": []
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "DSP-21 (Data Poisoning Prevention & Detection) and MDS-08 (Model Integrity Checks) target data/RAG/memory poisoning and integrity. PR-10 gives persistent memory/retrieved context/shared task state provenance, integrity checks and quarantine (RAG/memory poisoning) — the agent memory/context-integrity",
+      "evidence_requirements": []
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "DSP (Data Security & Privacy Lifecycle) requires data retention, secure disposal and lifecycle controls. PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation — the agent-held-data disposal slice. Org-wide retention/disposal program is largely in",
+      "evidence_requirements": []
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": false,
+      "framework_reference": "CEK (Cryptography, Encryption & Key Management) and IAM cover secret/key custody, vaulting and rotation — generic security hygiene owned by ISO 27001 / SOC 2 / NIST 800-53. PR-12 inherits this baseline; its agent-native add (never exposing secrets to prompts/untrusted tools) is closest to AIS-15/DSP",
+      "evidence_requirements": []
+    },
+    "DE-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "MDS-10 (Model Continuous Monitoring) plus LOG-14/LOG-15 (Input/Output Monitoring) require continuous behavioral monitoring of AI systems vs expected behavior. DE-01 monitors agents vs expected behavioral baselines and detects suspicious deviations — the agent behavioral-anomaly-detection slice. MDS-",
+      "evidence_requirements": []
+    },
+    "DE-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "DSP classification/lifecycle and DSP-21 (Data Poisoning Prevention & Detection) require ongoing validation of data handling vs declared classes/boundaries. DE-02 continuously checks observed data handling vs declared classifications + processing boundaries — the agent classification-drift slice. Suf",
+      "evidence_requirements": []
+    },
+    "DE-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "CCC (Change Control & Configuration Management) requires detecting unauthorized config/baseline change; MDS-10 (Model Continuous Monitoring) covers model/version drift. DE-03 detects drift in config/deps/tools/models/policy baselines before it normalizes — the agent config/dependency-drift slice. Or",
+      "evidence_requirements": []
+    },
+    "DE-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "LOG (Logging & Monitoring) requires log integrity/protection and A&A supports evidence assurance. DE-04 monitors evidence chains, missing telemetry and tamper signals — the agent evidence-integrity-monitoring slice. Generic log-integrity tooling is partly inherited. Suffixes candidate.",
+      "evidence_requirements": []
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "MDS-10 (Model Continuous Monitoring), MDS-06 (Adversarial Attack Analysis), GRC-11 (Bias & Fairness Assessment) and GRC-14 (Explainability Evaluation) require evaluating AI outputs for reliability/bias/harm/adversarial behavior. DE-05 evaluates outputs/tool outcomes for reliability, hallucination, h",
+      "evidence_requirements": []
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "MDS-06 (Adversarial Attack Analysis), MDS-07 (Robustness/Model Hardening), TVM-12 (Threat Analysis & Modelling) and A&A assurance require red-team/adversarial testing and ingesting vulnerability/eval evidence. DE-06 ingests agent vuln scans, adversarial/red-team, resilience tests, third-party evals ",
+      "evidence_requirements": []
+    },
+    "RS-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "SEF (Security Incident Management / Events & Failures) requires defined incident response actions; TVM-11 (Guardrails) enables automated policy enforcement. RS-01 executes predefined policy responses when evidence crosses control/classification/overlay thresholds — the agent automated-response slice",
+      "evidence_requirements": []
+    },
+    "RS-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "MDS-11 (Model Failure) handling, TVM-11 (Guardrails) and AIS-11 (Agents Security Boundaries) require the ability to halt/contain/degrade misbehaving AI; SEF provides incident containment. RS-02 blocks/quarantines/degrades/halts agents/tools/memory/credentials/actions on risk conditions (kill switch)",
+      "evidence_requirements": []
+    },
+    "RS-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "SEF (Security Incident Management) requires incident escalation/reporting; GRC-15 (Human Supervision) routes exceptions to humans. RS-03 routes significant failures/exceptions/regulated incidents to responders with reporting context — the agent human-escalation slice. Org incident-response program i",
+      "evidence_requirements": []
+    },
+    "RS-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AIS-11 (Agents Security Boundaries), MDS-11 (Model Failure) and BCR (Business Continuity & Resilience) support failure-domain isolation. RS-04 provides multi-agent failure-domain isolation, circuit breakers and coordinated kill-switch — the agent blast-radius-control slice, which is largely AICM-nov",
+      "evidence_requirements": []
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "SEF (Security Incident Management / E-Discovery) requires breach notification and evidence/forensic preservation. RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence and routes authority/customer notification to humans — the agent notification-clock slice. Determining",
+      "evidence_requirements": []
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "TVM (Threat & Vulnerability Management) covers vulnerability intake/remediation; STA supports advisories to downstream parties. RS-06 handles vuln intake, coordinated disclosure, secure-update handling, support-period tracking and advisories for shipped agent products — the agent CVD slice. Only rel",
+      "evidence_requirements": []
+    },
+    "RC-01": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": false,
+      "framework_reference": "BCR (Business Continuity & Resilience) requires recovery/continuity planning; MDS-11 (Model Failure) covers model fallback. RC-01 documents and tests recovery plans/rollback paths/restoration dependencies. This is largely generic continuity hygiene owned by ISO 27001/SOC 2, with an agent-native add ",
+      "evidence_requirements": []
+    },
+    "RC-02": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": false,
+      "framework_reference": "SEF (Incident Management) requires post-incident review/lessons-learned and stakeholder communication. RC-02 performs post-incident review, corrective action, stakeholder notification and lessons-learned. Generic incident-postmortem hygiene owned by SOC 2/ISO 27001; mapped as baseline inheritance. S",
+      "evidence_requirements": []
+    },
+    "RC-03": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": false,
+      "framework_reference": "BCR (Business Continuity & Resilience) requires periodic testing of recovery/continuity/failover procedures. RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedures and captures evidence. Generic resilience-testing hygiene owned by ISO 27001/SOC 2; the agent-d",
+      "evidence_requirements": []
+    }
+  },
+  "framework_mapping": {
+    "GOV-01": [
+      "IAM-19"
+    ],
+    "GOV-02": [
+      "GRC-06",
+      "STA-09"
+    ],
+    "GOV-03": [
+      "GRC-01",
+      "GRC-15"
+    ],
+    "GOV-04": [
+      "GRC-15"
+    ],
+    "GOV-05": [
+      "GRC-09",
+      "DSP-01",
+      "DSP-02"
+    ],
+    "GOV-06": [
+      "A&A-01",
+      "GRC-07"
+    ],
+    "GOV-07": [
+      "GRC-13",
+      "GRC-09",
+      "STA-09"
+    ],
+    "ID-01": [
+      "GRC-08",
+      "STA-09"
+    ],
+    "ID-02": [
+      "STA-09",
+      "MDS-03",
+      "MDS-09"
+    ],
+    "ID-03": [
+      "DSP-01",
+      "DSP-04"
+    ],
+    "ID-04": [
+      "STA-09",
+      "MDS-12",
+      "TVM-12"
+    ],
+    "ID-05": [
+      "GRC-10",
+      "GRC-11"
+    ],
+    "PR-01": [
+      "AIS-11",
+      "IAM-19",
+      "GRC-15"
+    ],
+    "PR-02": [
+      "IAM-19",
+      "AIS-11"
+    ],
+    "PR-03": [
+      "MDS-08",
+      "MDS-09",
+      "MDS-13",
+      "MDS-02"
+    ],
+    "PR-04": [
+      "DSP-21",
+      "DSP-01",
+      "LOG-15"
+    ],
+    "PR-05": [
+      "AIS-11",
+      "DSP-01",
+      "IVS-01"
+    ],
+    "PR-06": [
+      "LOG-01",
+      "LOG-03",
+      "A&A-01"
+    ],
+    "PR-07": [
+      "AIS-01",
+      "CEK-03",
+      "IVS-03"
+    ],
+    "PR-08": [
+      "AIS-15",
+      "LOG-14",
+      "TVM-11"
+    ],
+    "PR-09": [
+      "AIS-11",
+      "IVS-01",
+      "TVM-11"
+    ],
+    "PR-10": [
+      "DSP-21",
+      "MDS-01",
+      "MDS-08"
+    ],
+    "PR-11": [
+      "DSP-01",
+      "DSP-04"
+    ],
+    "PR-12": [
+      "CEK-03",
+      "IAM-04",
+      "DSP-01"
+    ],
+    "DE-01": [
+      "MDS-10",
+      "LOG-15",
+      "LOG-14"
+    ],
+    "DE-02": [
+      "DSP-01",
+      "DSP-21"
+    ],
+    "DE-03": [
+      "CCC-01",
+      "MDS-10"
+    ],
+    "DE-04": [
+      "LOG-01",
+      "A&A-01"
+    ],
+    "DE-05": [
+      "MDS-10",
+      "GRC-11",
+      "GRC-14",
+      "MDS-06"
+    ],
+    "DE-06": [
+      "MDS-06",
+      "MDS-07",
+      "TVM-12",
+      "A&A-01"
+    ],
+    "RS-01": [
+      "SEF-01",
+      "TVM-11"
+    ],
+    "RS-02": [
+      "MDS-11",
+      "TVM-11",
+      "AIS-11",
+      "SEF-01"
+    ],
+    "RS-03": [
+      "SEF-01",
+      "SEF-03",
+      "GRC-15"
+    ],
+    "RS-04": [
+      "AIS-11",
+      "MDS-11",
+      "BCR-01"
+    ],
+    "RS-05": [
+      "SEF-02",
+      "SEF-03"
+    ],
+    "RS-06": [
+      "TVM-07",
+      "TVM-12",
+      "STA-09"
+    ],
+    "RC-01": [
+      "BCR-01",
+      "MDS-11"
+    ],
+    "RC-02": [
+      "SEF-05",
+      "BCR-01"
+    ],
+    "RC-03": [
+      "BCR-02",
+      "BCR-03"
+    ]
+  },
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/csa-aicm.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=medium, webVerified=True.",
+  "evidence_requirements": {}
+}

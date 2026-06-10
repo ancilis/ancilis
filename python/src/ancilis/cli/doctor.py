@@ -56,10 +56,12 @@ class DoctorReport:
 
     @property
     def exit_code(self) -> int:
+        # Errors are a hard failure (exit 2). Warnings are advisory only — a
+        # healthy setup that merely emits warnings (e.g. no platform connected,
+        # SDK update available) must exit 0 so `ancilis doctor` does not break
+        # CI or scripts on an otherwise-working install.
         if self.errors > 0:
             return 2
-        if self.warnings > 0:
-            return 1
         return 0
 
 
@@ -238,7 +240,7 @@ def check_platform_connectivity(config: ResolvedConfig | None, verbose: bool) ->
             status=CheckStatus.WARN,
             label="Platform API",
             detail="not connected (platform.json not found)",
-            fix_hint="Run: ancilis login  to connect to the Ancilis platform",
+            fix_hint="Run: ancilis connect --api-key <your-key>  to connect to the Ancilis platform",
         )
     try:
         data = json.loads(platform_json.read_text())
@@ -292,7 +294,7 @@ def check_api_key(config: ResolvedConfig | None, verbose: bool) -> CheckResult:
             status=CheckStatus.WARN,
             label="API key",
             detail="not configured (platform.json not found)",
-            fix_hint="Run: ancilis login  to connect to the Ancilis platform",
+            fix_hint="Run: ancilis connect --api-key <your-key>  to connect to the Ancilis platform",
         )
     try:
         data = json.loads(platform_json.read_text())
@@ -304,7 +306,7 @@ def check_api_key(config: ResolvedConfig | None, verbose: bool) -> CheckResult:
                 status=CheckStatus.WARN,
                 label="API key",
                 detail="not configured",
-                fix_hint="Run: ancilis login  to set up API authentication",
+                fix_hint="Run: ancilis connect --api-key <your-key>  to set up API authentication",
             )
         if not api_url:
             return CheckResult(
@@ -334,7 +336,7 @@ def check_api_key(config: ResolvedConfig | None, verbose: bool) -> CheckResult:
                 status=CheckStatus.FAIL,
                 label="API key",
                 detail="rejected (401/403) — key may be expired or invalid",
-                fix_hint="Run: ancilis login  to refresh credentials",
+                fix_hint="Run: ancilis connect --api-key <your-key>  to refresh credentials",
                 verbose_detail=str(exc),
             )
         return CheckResult(

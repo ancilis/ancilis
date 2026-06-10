@@ -1,0 +1,113 @@
+---
+title: "ancilis remediate"
+description: "Show step-by-step remediation guidance for current compliance gaps."
+---
+
+## Overview
+
+`ancilis remediate` reads collected evidence from the local DuckDB store, finds controls that are failing (`GAP`) or flagged (`PARTIAL`) in the chosen evidence window, and prints actionable remediation guidance for each — what is wrong, how to fix it, the evidence needed, and a code example. It is read-only: it never writes files, deletes data, or mutates evidence.
+
+```bash
+ancilis remediate [OPTIONS]
+```
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent, per-cwd path | Path to evidence database — when omitted, derived as `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` |
+| `--period` | string | `30d` | Evidence window — e.g. `24h`, `7d`, `30d` |
+| `--session` | string | latest session | Scope guidance to a specific session ID |
+| `--latest` / `--all` | flag | `--latest` | Use the latest session (default) or all sessions |
+| `--control` | string | all gaps | Show guidance for a single control ID (e.g. `PR-01`) |
+
+<Note>
+Without `--control`, only controls with current `GAP` or `PARTIAL` status are shown. Pass `--control <ID>` to see guidance for one control regardless of its current status — useful for reviewing a fix before evidence is collected.
+</Note>
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Guidance rendered (including the "no guidance needed" case) |
+| `1` | `ancilis.yaml` not found or invalid |
+
+## Examples
+
+**Show guidance for all current gaps (last 30 days)**
+```bash
+ancilis remediate
+```
+
+```
+PR-02 (Tool scope control) — GAP
+  Time: 15 minutes | Difficulty: Medium | Evidence: 5 evals, 1 failures, 0 flags
+  What is wrong: The agent used a tool outside its declared scope, or no usable scope exists for
+the control to evaluate.
+  How to fix:
+    - Add allowed tools for expected agent operations.
+    - Add blocked tools for operations the agent must never perform.
+    - Start in audit mode, review evidence, then switch to enforce once the allowlist is stable.
+  Evidence needed:
+    - Allowed or blocked tool scope declared in configuration
+    - Re-scan showing unauthorized tools blocked or flagged
+  Example:
+    security:
+      mode: audit
+      tools:
+        allowed:
+          - read_file
+          - search_docs
+        blocked:
+          - delete_production_data
+  Docs: https://docs.ancilis.ai/configuration
+
+  # ... (3 more control results: PR-03 GAP, PR-04 PARTIAL, PR-05 PARTIAL)
+```
+
+**Scope to a single control**
+```bash
+ancilis remediate --control PR-01
+```
+
+**Narrow the evidence window**
+```bash
+ancilis remediate --period 24h
+```
+
+**Guidance across all sessions instead of just the latest**
+```bash
+ancilis remediate --all
+```
+
+**Target a specific session and custom config/database**
+```bash
+ancilis remediate --session sess_20260412_abc123 \
+  --config /path/to/ancilis.yaml \
+  --db /path/to/evidence.duckdb
+```
+
+**No current gaps**
+```bash
+ancilis remediate
+```
+
+```
+No current remediation guidance needed for this evidence window.
+```
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `Error: No ancilis.yaml found and no config provided` | Create `ancilis.yaml`, pass `--config path/to/ancilis.yaml`, or run `ancilis doctor` for setup help |
+| `No remediation guidance found for <ID>` | The control ID has no published remediation guide — check the ID against `ancilis status` |
+| `No current remediation guidance needed for this evidence window` | No `GAP`/`PARTIAL` controls in this window; widen `--period` or use `--all` to look across sessions |
+
+## Related
+
+- [ancilis scan](/cli/scan) — evaluate posture and identify which controls are failing
+- [ancilis status](/cli/status) — lightweight control-by-control posture check
+- [ancilis report](/cli/report) — full compliance report in multiple formats
+- [ancilis doctor](/cli/doctor) — diagnose configuration and setup issues

@@ -1,0 +1,77 @@
+---
+title: "EU DORA — Digital Operational Resilience Act Overlay"
+description: "AKSI compliance overlay for AI agents at EU financial entities subject to DORA (Regulation (EU) 2022/2554)."
+---
+
+## Overview
+
+The Digital Operational Resilience Act (DORA, Regulation (EU) 2022/2554) is a directly applicable EU regulation governing the ICT risk management, incident reporting, resilience testing, and third-party risk obligations of EU financial entities. Enforcement began January 17, 2025. It applies to banks, investment firms, insurance undertakings, payment institutions, electronic money institutions, crypto-asset service providers, and critical ICT third-party service providers.
+
+The `dora` overlay packages AKSI control evidence against DORA-specific requirements for EU financial entities. It maps each AKSI control to the relevant DORA articles and provides DORA-specific evidence requirements beyond a combined GLBA/SOX/DORA bundle — including ICT incident notification timeline requirements (Art. 19), the DORA testing program (Arts. 24-26), and ICT third-party risk management (Arts. 28-30). Use it when the regulated entity is an EU financial entity and DORA-specific auditor evidence is required.
+
+**Use this overlay when your agent:**
+- Operates within an EU financial entity subject to DORA
+- Handles financial data or financial records as ICT assets supporting critical or important functions
+- Is part of an ICT environment requiring DORA-specific incident notification and resilience evidence
+- Supports management body accountability for ICT risk management under DORA Art. 5
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - dora
+```
+
+**Data classification trigger** — because this overlay's trigger type is `data_classification`, it also auto-activates when your agent declares handling of the relevant data classification (`DC-FIN`) via `my_agent_handles`. See [Data Classification](/data-classification) for the declaration syntax.
+
+---
+
+## Control Mapping
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | DORA Art. 5(1), Art. 5(2), Art. 6(1), Art. 6(5) | ICT risk management framework documented and approved by management body per DORA Art. 5(1) |
+| **GOV-02** | DORA Art. 5(2), Art. 5(4) | Roles and responsibilities for ICT risk management defined and assigned per Art. 5(2)(a) |
+| **GOV-03** | DORA Art. 6(2), Art. 8(1), Art. 8(3), Art. 8(7) | ICT risk assessment conducted covering threats, vulnerabilities, and impact per Art. 6(2) and Art. 8 |
+| **GOV-04** | DORA Art. 5(2)(c), Art. 5(2)(d), Art. 15 | Anomaly and deviation management process documented with management escalation path per Art. 15 |
+| **ID-01** | DORA Art. 8(1), Art. 8(4) | ICT asset inventory maintained covering all ICT assets supporting critical or important functions per Art. 8(1) |
+| **ID-02** | DORA Art. 8(1), Art. 8(7), Art. 9(4)(a) | Software and model inventory maintained as part of ICT asset management per Art. 8(1) |
+| **ID-03** | DORA Art. 8(1), Art. 8(4), Art. 28 | Data classification scheme applied per sensitivity and regulatory category (Art. 8(1)) |
+| **ID-04** | DORA Art. 28, Art. 29, Art. 30, Art. 31 | Register of all ICT third-party service provider arrangements maintained per Art. 28(3) |
+| **ID-05** | DORA Art. 6(2), Art. 6(5), Art. 8(3) | ICT risk assessment methodology documented per Art. 6(2) covering cyber threats and operational risks |
+| **PR-01** | DORA Art. 9(2) | IAM policies and access controls implemented per Art. 9(2) protecting ICT assets |
+| **PR-02** | DORA Art. 9(2) | Least privilege principle applied to ICT system access per Art. 9(2) |
+| **PR-03** | DORA Art. 9(4)(a) | ICT change management process documented covering testing, approval, and release (Art. 9(4)(a)) |
+| **PR-04** | DORA Art. 9(2) | Encryption applied to financial customer data at rest and in transit per Art. 9(2) |
+| **PR-05** | DORA Art. 10, Art. 12(6) | Logging and monitoring mechanisms implemented per Art. 10 covering ICT events and anomalies |
+| **PR-06** | DORA Art. 9(4)(a) | Configuration management process documented covering ICT assets per Art. 9(4)(a) |
+| **PR-07** | DORA Art. 9(2), Art. 9(4)(b) | Cryptographic key management policy documented covering key generation, rotation, and revocation (Art. 9(2)) |
+| **PR-08** | DORA Art. 9(4)(b) | Network security controls implemented per Art. 9(4)(b) protecting ICT infrastructure |
+| **DE-01** | DORA Art. 8(3), Art. 10, Art. 18 | Threat detection mechanisms implemented per Art. 10 for ICT systems supporting critical functions |
+| **DE-02** | DORA Art. 8(1), Art. 10 | Configuration change monitoring implemented for ICT systems per Art. 10 |
+| **DE-03** | DORA Art. 10, Art. 24 | Continuous monitoring program documented per Art. 10 for ICT environment |
+| **DE-04** | DORA Art. 6, Art. 10 | Audit log integrity protection implemented to prevent unauthorized modification (Art. 10) |
+| **RS-01** | DORA Art. 17, Art. 18, Art. 19 | ICT-related incident management process documented per Art. 17 including detection, classification, response |
+| **RS-02** | DORA Art. 19, Art. 20 | Major ICT-related incident notification submitted to competent authority per Art. 19 timeline |
+| **RS-03** | DORA Art. 17(4), Art. 19(3)(c) | ICT-related incident documentation preserved per Art. 17(4) including timeline, impact, and actions taken |
+| **RC-01** | DORA Art. 11, Art. 12 | ICT business continuity policy documented per Art. 11 covering critical function recovery |
+| **RC-02** | DORA Art. 13, Art. 25, Art. 26 | Post-incident review conducted per Art. 13 following major ICT-related incidents |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** EU (`eu`) — DORA is a directly applicable EU regulation requiring no national transposition.
+- **Evidence retention minimum:** 1825 days (5 years), aligned with the record-retention expectation for critical function records under DORA Art. 12(6).
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

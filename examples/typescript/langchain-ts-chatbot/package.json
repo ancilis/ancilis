@@ -9,7 +9,7 @@
     "scan": "tsx index.ts && ancilis scan --config ancilis.yaml"
   },
   "dependencies": {
-    "ancilis": "file:../../../ancilis-0.1.0.tgz",
+    "ancilis": "file:../../../ancilis-local.tgz",
     "@langchain/core": ">=0.3.0 <0.4.0",
     "@langchain/openai": ">=0.3.0 <0.4.0",
     "langchain": ">=0.3.0 <0.4.0"

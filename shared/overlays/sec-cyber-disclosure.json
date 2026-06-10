@@ -1,0 +1,127 @@
+{
+  "id": "sec-cyber-disclosure",
+  "name": "SEC Cybersecurity Risk Management, Strategy, Governance, and Incident Disclosure Rules (Regulation S-K Item 106; Form 8-K Item 1.05; Form 10-K Item 1C / Form 20-F / Form 6-K for foreign private issuers)",
+  "version": "0.1",
+  "trigger_type": "data_classification",
+  "triggered_by": [
+    "DC-MNPI",
+    "DC-FIN",
+    "DC-PII"
+  ],
+  "description": "The SEC Cybersecurity Disclosure Rules (final rule 33-11216/34-97989, July 2023, in effect since late 2023/mid-2024) are a public-company DISCLOSURE regime, not a prescriptive security-controls standard: they require timely Form 8-K Item 1.05 reporting of material cyber incidents (within 4 business days of the materiality determination) and annual Reg S-K Item 106 / Form 10-K Item 1C descriptions of cyber risk-management processes and board/management governance. The agent-responsibility boundary is narrow and indirect: an agent runtime can detect/escalate incidents, start and preserve evidenc",
+  "jurisdiction": "United States (SEC-registered public companies / Exchange Act registrants, including foreign private issuers)",
+  "regime_version": "Final rule Release Nos. 33-11216; 34-97989 (adopted July 26, 2023; effective Sept 5, 2023). Item 106 effective for FY ending on/after Dec 15, 2023; Form 8-K Item 1.05 effective Dec 18, 2023 (June 15, 2024 for smaller reporting companies). In effect as of 2026-06-01.",
+  "controls": {
+    "GOV-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Item 106(c)(2) requires describing management's role in assessing/managing material cyber risks, including the management positions or committees responsible and their relevant expertise. GOV-02 (named accountable owner for operation/risk/remediation of each AI system) supplies the agent-runtime evi",
+      "evidence_requirements": []
+    },
+    "GOV-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Item 106(c)(1)/(c)(2) require describing how the board and management are informed about and oversee cyber risks. GOV-04 (human oversight + decision accountability) provides the agent-runtime mechanism by which sensitive cyber-relevant decisions are escalated for human review and recorded, supplying",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "GOV-06 (external obligation registry + posture reporting) registers the SEC Item 106 disclosure obligations and links the agent's cyber risk-management posture, governance touchpoints, and evidence to owner reporting. This feeds the company's required Item 106(b)(1) description of risk-assessment/ma",
+      "evidence_requirements": []
+    },
+    "ID-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Item 106(b)(1) expressly calls for describing oversight of risks associated with the registrant's use of third-party service providers, and use of third-party cybersecurity assessors/auditors. ID-04 (supply chain & dependency risk: models/tools/deps/prompts via SBOM/provenance) covers the agent-runt",
+      "evidence_requirements": []
+    },
+    "ID-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Item 106(b)(1) requires describing processes for assessing/identifying material risks from cybersecurity threats. ID-05 (agent risk profiling: purpose/autonomy/data sensitivity/action authority/impact tier) is the agent-runtime risk-identification step that contributes to that process for governed a",
+      "evidence_requirements": []
+    },
+    "PR-06": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": false,
+      "framework_reference": "Determining materiality and disclosing 'material aspects of the nature, scope and timing' under Item 1.05 requires reliable, tamper-evident records of what happened and when. PR-06 (hash-chained audit trail completeness) preserves the who/why/under-which-controls evaluation chain for governed agent ",
+      "evidence_requirements": []
+    },
+    "DE-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Item 1.05 disclosure obligation is triggered only after an incident is detected and assessed; Item 106(b)(1) requires describing the process for identifying material cyber risks. DE-01 (behavioral anomaly detection) is the agent-runtime sensor that surfaces suspicious deviations which feed incident ",
+      "evidence_requirements": []
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Item 106(b)(1) requires describing processes for assessing/identifying material risks from cybersecurity threats, including risks arising from the registrant's own systems. DE-05 (AI outcome evaluation + harm monitoring) contributes evidence about agent-originated harmful/out-of-scope outputs and to",
+      "evidence_requirements": []
+    },
+    "RS-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "RS-03 (human escalation + incident reporting context) supports the agent slice of routing a detected/suspected material incident to the responders, disclosure committee, and board/management with the contextual reporting package that Item 106(c)(1) board-oversight and 106(c)(2) management-role proce",
+      "evidence_requirements": []
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Item 1.05(a) requires filing a Form 8-K within four business days AFTER the registrant determines a cybersecurity incident is material, describing material aspects of nature/scope/timing and material/reasonably-likely-material impact. RS-05 (regulated notification clock + authority routing) directly",
+      "evidence_requirements": []
+    }
+  },
+  "framework_mapping": {
+    "GOV-02": [
+      "Reg S-K Item 106(c)(2)"
+    ],
+    "GOV-04": [
+      "Reg S-K Item 106(c)(1)",
+      "Reg S-K Item 106(c)(2)"
+    ],
+    "GOV-06": [
+      "Reg S-K Item 106(b)(1)",
+      "Reg S-K Item 106(c)(1)",
+      "Reg S-K Item 106(c)(2)"
+    ],
+    "ID-04": [
+      "Reg S-K Item 106(b)(1)"
+    ],
+    "ID-05": [
+      "Reg S-K Item 106(b)(1)"
+    ],
+    "PR-06": [
+      "Form 8-K Item 1.05(a)",
+      "Reg S-K Item 106(b)(1)"
+    ],
+    "DE-01": [
+      "Form 8-K Item 1.05(a)",
+      "Reg S-K Item 106(b)(1)"
+    ],
+    "DE-05": [
+      "Reg S-K Item 106(b)(1)"
+    ],
+    "RS-03": [
+      "Form 8-K Item 1.05(a)",
+      "Reg S-K Item 106(c)(1)",
+      "Reg S-K Item 106(c)(2)"
+    ],
+    "RS-05": [
+      "Form 8-K Item 1.05(a)"
+    ]
+  },
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/sec-cyber-disclosure.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True.",
+  "evidence_requirements": {}
+}

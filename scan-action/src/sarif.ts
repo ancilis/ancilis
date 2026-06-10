@@ -121,7 +121,7 @@ export function convertToSarif(scan: ScanResult): SarifOutput {
           driver: {
             name: "Ancilis",
             version: scan.version,
-            informationUri: "https://ancilis.dev",
+            informationUri: "https://ancilis.ai",
             semanticVersion: scan.version,
             rules,
           },

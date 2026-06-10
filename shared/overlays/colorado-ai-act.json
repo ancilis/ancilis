@@ -6,7 +6,7 @@
   "triggered_by": [
     "DC-PII",
     "DC-AI",
-    "DC-HEALTH",
+    "DC-PHI",
     "DC-FIN"
   ],
   "description": "Colorado SB 24-205 (Consumer Protections for Artificial Intelligence Act) overlay. Effective June 30, 2026 (delayed from February 1, 2026 by SB 25B-004). First comprehensive US state AI governance law. Applies to 'deployers' that use high-risk AI systems to make consequential decisions affecting Colorado consumers in education, employment, financial services, health care, housing, insurance, and legal services. Key obligations: risk management policy, impact assessment before deployment, annual review, consumer notices, appeal mechanism. Safe harbor: compliance with a recognized AI risk management framework (ISO 42001, NIST AI RMF, or AG-designated equivalent) provides affirmative defense to algorithmic discrimination claims. Enforcement: Colorado AG exclusive; no private right of action; 60-day cure period; up to $2,000/violation.",
@@ -333,6 +333,62 @@
         "review_interval_days": 365
       },
       "framework_reference": "CRS \u00a76-1-1702(2)(d) \u2014 Annual review obligation (proactive, not incident-triggered)"
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "\u00a7 6-1-1701 defines 'consequential decision' (education, employment, financial/lending, essential government service, health care, housing, insurance, legal services) and 'high-risk artificial intelligence system' as one that materially influences such a decision; \u00a7\u00a7 6-1-1702(1)/1703(1) bind use to t",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "\u00a7 6-1-1702(4) requires developers to publish a public statement summarizing the high-risk systems they have developed and how they manage known/foreseeable algorithmic-discrimination risk; \u00a7 6-1-1703(5) requires the deployer equivalent public statement; \u00a7 6-1-1706(3) anchors posture to a recognized ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "\u00a7 6-1-1704 requires disclosure to each consumer that they are interacting with an AI system; \u00a7 6-1-1703(4)(a) requires a deployer to notify the consumer (purpose, nature of the consequential decision, plain-language description, contact for the appeal/correction process) at or before a consequential",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "\u00a7 6-1-1703(3) sets a minimum retention period for impact-assessment records (at least three years following final deployment of the high-risk system). PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy + legal obligation, which is the agent-runtime mechanism tha",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "\u00a7 6-1-1703(1) reasonable care against algorithmic discrimination and \u00a7 6-1-1703(3) the impact assessment's post-deployment monitoring element together require ongoing evaluation of outputs for discriminatory/biased outcomes; \u00a7 6-1-1702(5) requires developers to disclose known or reasonably foreseeab",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "\u00a7 6-1-1702(2) requires developers to make available evaluation/bias-testing results and the documentation needed to complete an impact assessment; \u00a7 6-1-1703(3) requires the deployer to incorporate testing/evaluation evidence into the impact assessment. DE-06 ingests vuln scans, adversarial/red-team",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "\u00a7 6-1-1703(7) (deployer) and \u00a7 6-1-1702(5) (developer) each impose a 90-day window to notify the Colorado Attorney General upon discovering algorithmic discrimination / a foreseeable discrimination risk. RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence, and routes ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     }
   },
   "reporting_obligations": {
@@ -455,11 +511,42 @@
     "RC-02": [
       "CRS \u00a76-1-1702(2)(d)",
       "Annual proactive review obligation"
+    ],
+    "GOV-05": [
+      "6-1-1701",
+      "6-1-1703(1)",
+      "6-1-1702(1)"
+    ],
+    "GOV-06": [
+      "6-1-1702(4)",
+      "6-1-1703(5)",
+      "6-1-1706(3)"
+    ],
+    "GOV-07": [
+      "6-1-1704",
+      "6-1-1703(4)(a)",
+      "6-1-1703(4)(c)"
+    ],
+    "PR-11": [
+      "6-1-1703(3)"
+    ],
+    "DE-05": [
+      "6-1-1703(1)",
+      "6-1-1703(3)",
+      "6-1-1702(5)"
+    ],
+    "DE-06": [
+      "6-1-1702(2)",
+      "6-1-1703(3)"
+    ],
+    "RS-05": [
+      "6-1-1703(7)",
+      "6-1-1702(5)"
     ]
   },
   "evidence_retention_minimum_days": 1825,
   "human_oversight_required": true,
-  "notes": "Colorado SB 24-205 (Consumer Protections for Artificial Intelligence Act) \u2014 first comprehensive US state AI governance law. Effective June 30, 2026 (delayed from February 1, 2026 by SB 25B-004, signed August 28, 2025). This overlay layers Colorado-specific evidence and threshold adjustments onto the AKSI v0.6 common-control catalog. Triggered by DC-PII, DC-AI, DC-HEALTH, DC-FIN \u2014 covering the primary domains where AI systems make consequential decisions affecting Colorado consumers. Key AKSI evidence gaps addressed by this overlay: (1) GOV-04 consumer notice obligation \u2014 evidence requirements add consumer notice delivery records; (2) RC-02 annual proactive review \u2014 threshold adjustment adds annual_review_required:true and review_interval_days:365; (3) RS-01 90-day AG notification \u2014 threshold adjustment adds discrimination_risk_notification_days:90. Safe harbor: organizations running AKSI with iso-42001 or nist-ai-rmf overlays active are building toward Colorado's affirmative defense. v0.2 planned: incorporate AG rulemaking guidance on impact assessment methodology once published; clarify small business exemption thresholds.",
+  "notes": "Colorado SB 24-205 (Consumer Protections for Artificial Intelligence Act) \u2014 first comprehensive US state AI governance law. Effective June 30, 2026 (delayed from February 1, 2026 by SB 25B-004, signed August 28, 2025). This overlay layers Colorado-specific evidence and threshold adjustments onto the AKSI v0.6 common-control catalog. Triggered by DC-PII, DC-AI, DC-PHI, DC-FIN \u2014 covering the primary domains where AI systems make consequential decisions affecting Colorado consumers. Key AKSI evidence gaps addressed by this overlay: (1) GOV-04 consumer notice obligation \u2014 evidence requirements add consumer notice delivery records; (2) RC-02 annual proactive review \u2014 threshold adjustment adds annual_review_required:true and review_interval_days:365; (3) RS-01 90-day AG notification \u2014 threshold adjustment adds discrimination_risk_notification_days:90. Safe harbor: organizations running AKSI with iso-42001 or nist-ai-rmf overlays active are building toward Colorado's affirmative defense. v0.2 planned: incorporate AG rulemaking guidance on impact assessment methodology once published; clarify small business exemption thresholds.",
   "evidence_requirements": {
     "PR-02": [
       "scope_limitation",

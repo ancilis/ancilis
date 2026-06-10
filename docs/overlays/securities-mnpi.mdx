@@ -1,0 +1,84 @@
+---
+title: "Securities Markets (MNPI, SEC Reg FD, SOX) Overlay"
+description: "AKSI compliance overlay for AI agents handling material non-public information (MNPI) under SEC Reg FD and SOX."
+---
+
+## Overview
+
+Securities-market regulation governs how issuers and their agents handle material non-public information (MNPI) — controlling selective disclosure, preserving market integrity, and mandating accountable internal controls and long-lived recordkeeping. SEC Regulation FD drives selective-disclosure prevention and simultaneous-public-disclosure expectations, while the Sarbanes-Oxley Act (SOX §302/§404/§802) drives accountable internal controls and seven-year evidence retention for market-sensitive workflows.
+
+The `securities-mnpi` overlay packages AKSI control evidence for agents handling MNPI. It provides an AKSI common-control framework mapping with citations to SEC Regulation FD, SOX §302/§404/§802, the SEC Cybersecurity Disclosure Rules, and SEC Rule 17a-4. It covers all control domains — governance, identification, protection, detection, response, and recovery — and addresses AI agent-specific MNPI risks including selective disclosure, market manipulation, and insider information leakage through automated workflows.
+
+**Use this overlay when your agent:**
+- Handles material non-public information (MNPI) in issuer, legal, finance, or investor-relations workflows
+- Prepares, summarizes, or assists with investor communications or earnings material
+- Operates within an organization subject to SEC Regulation FD selective-disclosure rules
+- Is part of a system subject to SOX internal-control and record-retention obligations
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - securities-mnpi
+```
+
+**Data classification trigger** — because this overlay's trigger type is `data_classification`, it also auto-activates when your agent declares handling of the relevant data class (`DC-MNPI`) via `my_agent_handles`:
+
+```yaml
+my_agent_handles:
+  - DC-MNPI
+```
+
+See [Data Classification](/data-classification) for how declared data classes map to overlays.
+
+---
+
+## Control Mapping
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **PR-01** | SEC Reg FD 17 CFR 243.100-103; SOX §302, §404 | Access to MNPI workflows is limited to approved issuer, legal, finance, and investor-relations identities with multi-factor authentication enforced |
+| **PR-02** | SEC Reg FD 17 CFR 243.100(b); SOX §302, §404 | Least-privilege entitlements and information barriers are enforced between insider teams and external-facing communication workflows |
+| **PR-03** | SEC Reg FD 17 CFR 243.100-103; SOX §302, §404 | Approved data sources, prompts, and model workflows for MNPI analysis are versioned and reviewed before production use |
+| **PR-04** | SEC Reg FD 17 CFR 243.100(a), 243.101(e); SOX §302, §404 | Outbound responses, generated artifacts, and integrated channels are scanned for unauthorized MNPI disclosure before release |
+| **PR-05** | SEC Reg FD 17 CFR 243.100-103; SOX §302, §404, §802; SEC Rule 17a-4 | Tamper-evident logs capture every access, summarization, approval, and disclosure action involving MNPI |
+| **DE-01** | SEC Reg FD 17 CFR 243.100(a); SOX §302, §404; SEC Rule 17a-4 | Monitoring detects unusual access patterns, bulk exports, or attempted dissemination of MNPI outside approved windows or channels |
+| **GOV-01** | SOX §302, §404; SEC Reg FD 17 CFR 243.100-103; SEC Cybersecurity Rules 17 CFR 229.106 | MNPI governance policy documented and approved by disclosure committee or senior compliance officer; policy covers AI agent handling of market-sensitive information per SOX §302/§404 |
+| **GOV-02** | SOX §302, §404; SEC Reg FD 17 CFR 243.100(a), 243.101(e) | Disclosure committee composition and authority documented; members identified by name and role with explicit accountability for MNPI handling decisions (SOX §302) |
+| **GOV-03** | SOX §404; SEC Reg FD 17 CFR 243.100(b); SEC Cybersecurity Rules 17 CFR 229.106(b) | Risk assessment conducted for AI agent components handling MNPI; insider trading, selective disclosure, and market manipulation scenarios assessed (SOX §404) |
+| **GOV-04** | SOX §302, §404; SEC Reg FD 17 CFR 243.101(e); SEC Cybersecurity Rules 17 CFR 229.106 | Human review gate mandated before any AI agent output involving MNPI reaches external parties or influences investor communications (SEC Reg FD 17 CFR 243.101(e)) |
+| **ID-01** | SOX §404; SEC Reg FD 17 CFR 243.100(b)(1) | Inventory of AI agent components with access to MNPI data sources, systems, or workflows maintained; inventory includes model versions, tool integrations, and data connection scope (SOX §404) |
+| **ID-02** | SOX §404; SEC Reg FD 17 CFR 243.100(b) | Information barriers (Chinese walls) implemented between MNPI-holding AI agent workflows and external-facing communication systems; boundary controls documented |
+| **ID-03** | SOX §404; SEC Reg FD 17 CFR 243.100-103 | MNPI classification procedures applied to all data accessed by AI agents; data classified as material, non-public, or restricted with handling instructions per SEC Reg FD |
+| **ID-04** | SOX §404; SEC Reg FD 17 CFR 243.100(b) | Third-party AI service providers with potential MNPI exposure assessed for disclosure risk; contractual confidentiality obligations documented |
+| **ID-05** | SOX §404; SEC Reg FD 17 CFR 243.100(a) | Risk profile for each AI agent with MNPI access documented: data categories accessible, authorized action scope, and potential disclosure impact (SOX §404) |
+| **PR-06** | SOX §404; SEC Reg FD 17 CFR 243.100(a) | AI agent output filtering prevents generation or transmission of MNPI-derived content to unauthorized recipients or channels (SEC Reg FD 17 CFR 243.100(a)) |
+| **PR-07** | SOX §404; SEC Reg FD 17 CFR 243.100(a) | MNPI data minimization enforced in AI agent workflows — only MNPI necessary for the approved business purpose is ingested; excess scope documented and approved by compliance (SOX §404) |
+| **PR-08** | SOX §802; SEC Rule 17a-4; SEC Cybersecurity Rules 17 CFR 229.106 | Input validation applied to MNPI-handling AI agent workflows; prompt injection and data poisoning attack patterns included in threat model (SOX §802) |
+| **DE-02** | SOX §404; SEC Reg FD 17 CFR 243.100(a) | Continuous monitoring of AI agent MNPI access patterns; automated alerts for anomalous data access volumes, off-hours activity, or unusual output distribution (SOX §404) |
+| **DE-03** | SOX §404; SEC Reg FD 17 CFR 243.100-103 | Annual SOX §404 assessment includes evaluation of AI agent controls in MNPI handling workflows; external auditor sign-off documented |
+| **DE-04** | SOX §404, §802; SEC Rule 17a-4 | Audit log analysis identifies unusual MNPI access patterns, bulk data retrievals, and unauthorized output generation attempts (SOX §404, §802) |
+| **RS-01** | SOX §302, §404; SEC Reg FD 17 CFR 243.100(a); SEC Cybersecurity Rules 17 CFR 229.106 | Incident response plan covers AI agent MNPI disclosure incidents: unauthorized dissemination, selective disclosure, and suspected market manipulation (SOX §302, §404) |
+| **RS-02** | SOX §302, §404; SEC Reg FD 17 CFR 243.101(e); SEC Cybersecurity Rules | Human escalation matrix for MNPI incidents identifies disclosure committee, legal, CFO, and investor relations contacts with response authority (SEC Reg FD 17 CFR 243.101(e)) |
+| **RS-03** | SOX §802; SEC Reg FD 17 CFR 243.100(a); SEC Rule 17a-4 | Automated response playbooks for MNPI incidents include AI agent session termination, MNPI data quarantine, and access revocation procedures |
+| **RC-01** | SOX §404; SEC Reg FD 17 CFR 243.100-103 | Recovery procedures for MNPI handling systems documented; restoration process verifies disclosure controls and access restrictions re-enabled before system returns to production |
+| **RC-02** | SOX §404, §802; SEC Rule 17a-4 | Post-incident review conducted following MNPI disclosure incidents; lessons learned documented and incorporated into governance and technical controls (SOX §404, §802) |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** `us`
+- **Minimum evidence retention:** 2555 days (seven years), aligned to SOX §802 and SEC Rule 17a-4 record-retention expectations for market-sensitive workflows.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

@@ -1,0 +1,72 @@
+---
+title: "Anthropic Usage Policy (AUP) Overlay"
+description: "AKSI compliance overlay mapping agent controls to Anthropic's binding Acceptable Use Policy."
+---
+
+## Overview
+
+The Anthropic Usage Policy (AUP) is Anthropic's binding acceptable-use policy governing all use of Anthropic products and services (Claude API, Claude.ai, Claude Code, Computer Use), enforced by Anthropic's Safeguards team. Effective September 15, 2025, it comprises a Universal Usage Standards prohibited-use catalog (14 "Do Not" categories), two High-Risk Use Case Requirements (qualified-human-in-the-loop review and AI disclosure for consumer-facing legal/health/insurance/finance/employment/admissions/journalism uses), and Additional Use Case Guidelines that explicitly subject agentic use (Claude Code, Computer Use, MCP) to the policy. It is a **provider policy** (contractual terms of service), not a statute or regulation.
+
+The `anthropic_usage_policy` overlay packages AKSI control evidence against the AUP's Universal Usage Standards (UUS-*), High-Risk Use Case Requirements (HRUC-*), and Additional Use Case Guidelines (AUG-*). It is an `always_on` overlay, so the mapping applies to every governed agent regardless of declared data classes.
+
+<Warning>
+This overlay is a review-first scaffold mapping that is **not yet backed by runtime evidence** — no evidence requirements are enumerated for any control, most mappings are `coverage: partial`, and several are `verified: false`. Treat coverage as **indicative** rather than production-asserted.
+</Warning>
+
+**Use this overlay when your agent:**
+- Uses any Anthropic product or service (Claude API, Claude.ai, Claude Code, Computer Use, MCP)
+- Produces advice, decisions, or recommendations in high-risk domains (legal, healthcare, insurance, finance, employment/housing, academic admissions, journalism)
+- Operates as a consumer-facing chatbot or external-facing AI agent
+- Exercises agentic capabilities (code execution, computer use, MCP tool calls) subject to the Usage Policy
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - anthropic_usage_policy
+```
+
+This overlay is `always_on`: it applies to every governed agent. Its declared data-class triggers are `DC-AI`, `DC-MINOR`, `DC-CRIT`, `DC-BIO`, and `DC-PII` (see [Data Classification](/data-classification)), but no explicit `my_agent_handles` declaration is required to activate it.
+
+---
+
+## Control Mapping
+
+The table lists every control in the overlay. The framework reference is the AUP provision text carried from the overlay; no per-control evidence requirements are enumerated yet (this is a scaffold mapping).
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-04** | HRUC-HITL requires that for advice/recommendations/subjective decisions directly affecting individuals or consumers in high-risk domains (legal, healthcare, insurance, finance, employment/housing, academic admissions, journalism), a qualified professional in that field must review the content | _Not yet enumerated (scaffold)_ |
+| **GOV-05** | The Universal Usage Standards are a prohibited-use catalog: GOV-05 binds agent actions/data-uses to a declared purpose and to a prohibited-use policy, preventing an agent from being driven toward UUS-prohibited ends (illegal activity, cyber compromise, weapons) | _Not yet enumerated (scaffold)_ |
+| **GOV-06** | AUG-MCP requires Model Context Protocol servers to comply with Anthropic's Directory Policy, and AUG-AGENTIC subjects all agentic integrations to the Usage Policy. GOV-06 is the external obligation registry + posture reporting (framework/contract/customer obligations registered and linked to posture/evidence) | _Not yet enumerated (scaffold)_ |
+| **GOV-07** | HRUC-DISC requires that if model outputs are presented directly to individuals or consumers, you must disclose that you are using AI to help produce your advice, decisions, or recommendations. AUG-CHATBOT requires all consumer-facing chatbots / external-facing AI agents to disclose AI use | _Not yet enumerated (scaffold)_ |
+| **ID-02** | AUG-MCP (MCP servers must comply with the Directory Policy) and AUG-AGENTIC imply agentic tool/MCP surfaces are governed and must meet approval/provenance expectations. ID-02 is the agent-runtime tool/model/integration registry with provenance + approval metadata (descriptor hash at approval) | _Not yet enumerated (scaffold)_ |
+| **PR-01** | The 2025 update added the dedicated standard prohibiting malicious computer, network, and infrastructure compromise activities (UUS-CYBER) and protection of critical infrastructure (UUS-CRITINFRA), explicitly targeting agentic tools (Claude Code, Computer Use). PR-01 is action authorization | _Not yet enumerated (scaffold)_ |
+| **PR-02** | UUS-CYBER (unauthorized access), UUS-PRIVACY (unauthorized data access, scraping personal data without authorization), and UUS-CRITINFRA require that agents not exceed authorized access boundaries. PR-02 is permission scope enforcement (explicit least-privilege scopes per session/action) | _Not yet enumerated (scaffold)_ |
+| **PR-04** | UUS-PRIVACY prohibits compromising privacy/identity rights (unauthorized personal-data access, impersonation) and UUS-CJSURV prohibits biometric categorization, predictive policing, and unauthorized tracking/surveillance. PR-04 is data exposure prevention (sensitive/regulated data inspected + constrained) | _Not yet enumerated (scaffold)_ |
+| **PR-05** | AUG-MINORS requires products serving minors to comply with Anthropic's Help Center / minor-safety guidelines, and UUS-CHILD prohibits sexualization/exploitation of children. PR-05 is context & tenant isolation so user/jurisdiction/audience boundaries cannot silently leak | _Not yet enumerated (scaffold)_ |
+| **PR-06** | Demonstrating compliance with the High-Risk Use Case Requirements (qualified-human review of high-risk output, AI disclosure) and with agentic-use obligations requires durable evidence. PR-06 is audit trail completeness (every governed action records the evaluation chain) | _Not yet enumerated (scaffold)_ |
+| **PR-08** | UUS-PLATFORM prohibits "Do Not Abuse our Platform" activities including jailbreaking/circumventing product guardrails and coordinating malicious activity to evade detection. AUG-AGENTIC extends Usage Policy compliance to agentic tool use. PR-08 is input validation & injection resistance | _Not yet enumerated (scaffold)_ |
+| **PR-09** | UUS-CYBER prohibits creating malware, DDoS tools, unauthorized access, and persistent-access mechanisms; the update calls out agentic coding/computer-use capabilities as the risk vector. PR-09 is controlled code execution & sandbox enforcement | _Not yet enumerated (scaffold)_ |
+| **DE-05** | Several Universal Usage Standards (incite violence/hate, psychologically/emotionally harmful content, misinformation incl. false health claims, sexually explicit content, child safety) are output-content prohibitions. DE-05 is AI outcome evaluation & harm monitoring | _Not yet enumerated (scaffold)_ |
+| **RS-02** | When an agent begins drifting toward prohibited compromise/abuse activity (UUS-CYBER, UUS-PLATFORM) or otherwise violates the Usage Policy in an agentic context, the runtime must be able to stop it. RS-02 is containment, quarantine & kill switch | _Not yet enumerated (scaffold)_ |
+
+---
+
+## Retention & Jurisdiction
+
+**Jurisdiction:** Global / private provider acceptable-use policy (contractual term of service, not statute or regulation). Applies to any party submitting inputs to Anthropic products/services. This is a provider policy, not law.
+
+**Evidence retention:** This overlay does not specify an evidence-retention minimum. Retention is governed by your agent's configured `compliance.evidence.retention_days` and any other applicable overlays.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

@@ -59,9 +59,25 @@ class DE04IntegrityEvaluator:
                 duration_ms=(time.perf_counter() - start) * 1000,
             )
 
-        chain_valid, errors = self._store.verify_chain()
+        # Prefer the structured report so legacy (v1) records are surfaced as
+        # legacy-unverified rather than silently passed. Fall back to the basic
+        # tuple contract for stores that don't expose a real report (e.g. mocks).
+        from ancilis.evidence.store import ChainVerificationReport
+
+        report = None
+        get_report = getattr(self._store, "verify_chain_report", None)
+        candidate = get_report() if callable(get_report) else None
+        if isinstance(candidate, ChainVerificationReport):
+            report = candidate
+            chain_valid, errors = report.valid, report.errors
+        else:
+            chain_valid, errors = self._store.verify_chain()
         evidence["chain_valid"] = chain_valid
         evidence["errors"] = errors
+        if report is not None:
+            evidence["chain_status"] = report.status
+            evidence["verified"] = report.verified_count
+            evidence["legacy_unverified"] = report.legacy_unverified_count
 
         if not chain_valid:
             return ControlResult(
@@ -73,11 +89,38 @@ class DE04IntegrityEvaluator:
                 duration_ms=(time.perf_counter() - start) * 1000,
             )
 
+        if report is not None and report.legacy_unverified_count:
+            if report.verified_count:
+                detail = (
+                    f"Mixed chain: {report.verified_count} record(s) HMAC-verified, "
+                    f"{report.legacy_unverified_count} legacy (v1) record(s) intact but not "
+                    f"cryptographically attestable. Set ANCILIS_CHAIN_KEY to key new writes."
+                )
+            else:
+                detail = (
+                    f"{report.legacy_unverified_count} legacy (v1) record(s) are intact but "
+                    f"not cryptographically attestable without a protected key. Set "
+                    f"ANCILIS_CHAIN_KEY to enable keyed (HMAC) integrity verification."
+                )
+            return ControlResult(
+                control_id=self.control_id,
+                control_name=self.control_name,
+                result="FLAG",
+                detail=detail,
+                evidence_data=evidence,
+                duration_ms=(time.perf_counter() - start) * 1000,
+            )
+
+        verified_note = (
+            f"{total} record(s) HMAC-verified, no tampering detected."
+            if report is not None
+            else f"{total} record(s), no tampering detected."
+        )
         return ControlResult(
             control_id=self.control_id,
             control_name=self.control_name,
             result="PASS",
-            detail=f"Evidence chain integrity verified — {total} record(s), no tampering detected.",
+            detail=f"Evidence chain integrity verified — {verified_note}",
             evidence_data=evidence,
             duration_ms=(time.perf_counter() - start) * 1000,
         )

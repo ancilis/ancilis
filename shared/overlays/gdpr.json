@@ -298,6 +298,70 @@
       ],
       "threshold_adjustments": {},
       "framework_reference": "Art. 32(1)(c), Art. 35"
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "GOV-05 binds every action/data-use to a declared purpose + legal basis + consent + prohibited-use policy, directly enforcing Art. 5(1)(b) purpose limitation, Art. 6(1) lawfulness (a valid legal basis must exist), Art. 9 prohibition on processing special categories absent an Art. 9(2) condition, and ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 30 requires controllers/processors to maintain records of processing activities (purposes, categories of data subjects/data, recipients, transfers, retention, security measures); Art. 28(3) requires a processing agreement. GOV-06 (external obligation registry + posture/evidence linkage) is the ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "GOV-07 (transparency disclosures, privacy-rights routing, affected-party feedback + intervention channels) covers the agent-runtime slice of Art. 12 transparent communication, Arts. 13-14 information-at-collection, and routing of data-subject rights requests under Art. 15 access, Art. 16 rectificati",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Memory & context integrity (provenance, integrity checks, quarantine for RAG/memory poisoning) supports the Art. 5(1)(d) accuracy principle (poisoned/corrupted context yields inaccurate personal data) and Art. 5(1)(f)/Art. 32(1)(b) integrity. PARTIAL: ensuring personal-data accuracy and the Art. 16 ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Retention, deletion & memory disposal of agent-held data/memory/context per policy + legal obligation directly enforces the Art. 5(1)(e) storage-limitation principle, the Art. 17 right to erasure within the agent's data stores, restriction of processing (Art. 18), and by-default storage-period limit",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": true,
+      "framework_reference": "Secrets/credential/key custody (vaulting, scoping, rotation, never exposed to prompts/untrusted tools) is an Art. 32 confidentiality measure. INHERITED: credential/key management is generic security hygiene owned by SOC 2 / ISO 27001; the prompt/tool-exposure dimension is agent-native but the GDPR o",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "AI outcome evaluation & harm monitoring (reliability, hallucination, harmful/biased output, out-of-scope behavior) supports fairness (Art. 5(1)(a)), accuracy (Art. 5(1)(d)), and the safeguards expected around automated decision-making/profiling (Art. 22, with Recital 71 anti-discrimination/accuracy ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Regulated notification clock & authority routing maps tightly to Art. 33(1) (notify supervisory authority without undue delay and where feasible within 72 hours of becoming aware), Art. 33(3) (content of the notification), and Art. 34 (communication to the data subject when high risk). RS-05 starts ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     }
   },
   "control_adjustments": {
@@ -448,6 +512,55 @@
     "RC-02": [
       "Art. 32(1)(c)",
       "Art. 35"
+    ],
+    "GOV-05": [
+      "Art. 5(1)(a)",
+      "Art. 5(1)(b)",
+      "Art. 6(1)",
+      "Art. 9(1)",
+      "Art. 9(2)",
+      "Art. 7"
+    ],
+    "GOV-06": [
+      "Art. 30(1)",
+      "Art. 30(2)",
+      "Art. 28(3)"
+    ],
+    "GOV-07": [
+      "Art. 12",
+      "Art. 13",
+      "Art. 14",
+      "Art. 15",
+      "Art. 16",
+      "Art. 18",
+      "Art. 20",
+      "Art. 21",
+      "Art. 22(3)"
+    ],
+    "PR-10": [
+      "Art. 5(1)(d)",
+      "Art. 5(1)(f)",
+      "Art. 32(1)(b)"
+    ],
+    "PR-11": [
+      "Art. 5(1)(e)",
+      "Art. 17(1)",
+      "Art. 18",
+      "Art. 25(2)"
+    ],
+    "PR-12": [
+      "Art. 32(1)",
+      "Art. 5(1)(f)"
+    ],
+    "DE-05": [
+      "Art. 5(1)(a)",
+      "Art. 5(1)(d)",
+      "Art. 22"
+    ],
+    "RS-05": [
+      "Art. 33(1)",
+      "Art. 33(3)",
+      "Art. 34(1)"
     ]
   },
   "reporting_obligations": {

@@ -1,0 +1,79 @@
+---
+title: "ancilis approve-tool"
+description: "Approve a tool so it passes scope and provenance checks."
+---
+
+## Overview
+
+`ancilis approve-tool` adds a tool name to `security.tools.allowed` in your `ancilis.yaml`. On the next middleware session the tool is recognized as operator-approved, so it passes scope confinement (PR-02) and provenance checks instead of being flagged.
+
+```bash
+ancilis approve-tool [OPTIONS] TOOL_NAME
+```
+
+`TOOL_NAME` is required — it is the name of the tool to approve.
+
+<Warning>
+This command writes to your config file. It loads `ancilis.yaml`, appends `TOOL_NAME` to `security.tools.allowed` (creating the `security`, `tools`, and `allowed` keys if absent), and rewrites the file. The rewrite re-serializes the YAML, so comments and exact formatting in the original file are not preserved.
+</Warning>
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | `ancilis.yaml` | Path to `ancilis.yaml` |
+| `--help` | flag | `false` | Show the help message and exit |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Tool approved, or it was already in the approved list |
+| `1` | Config file not found at the given path |
+
+## Examples
+
+**Approve a tool**
+```bash
+ancilis approve-tool web_search
+```
+
+```
+Approved 'web_search' in ancilis.yaml.
+  Scope: 'web_search' is in security.tools.allowed
+  Provenance: 'web_search' will be recognized on next middleware init
+  To review posture: ancilis status
+```
+
+**Approve a tool that is already approved (idempotent — no duplicate added)**
+```bash
+ancilis approve-tool web_search
+```
+
+```
+'web_search' was already in the approved tools list.
+  Scope: 'web_search' is in security.tools.allowed
+  Provenance: 'web_search' will be recognized on next middleware init
+  To review posture: ancilis status
+```
+
+**Approve a tool using a config in a non-default location**
+```bash
+ancilis approve-tool send_email --config /path/to/ancilis.yaml
+```
+
+<Note>
+The approval takes effect on the next middleware session — it does not retroactively re-evaluate evidence already in the store. After approving, restart your agent (or start a new session) so the middleware re-reads the config, then run `ancilis status` to confirm the new posture.
+</Note>
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `Config file not found: ancilis.yaml` | Run `ancilis init` to create a config, or pass `--config path/to/ancilis.yaml` |
+
+## Related
+
+- [ancilis status](/cli/status) — review posture after approving a tool
+- [ancilis scan](/cli/scan) — re-evaluate controls including scope confinement (PR-02)
+- [ancilis doctor](/cli/doctor) — confirm config is loadable and valid

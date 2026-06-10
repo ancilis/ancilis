@@ -339,6 +339,35 @@ class TestPR04Exposure:
         pr04 = next(r for r in result.control_results if r.control_id == "PR-04")
         assert pr04.result == "PASS"
 
+    def test_sensitive_data_no_destination_policy_flags(self):
+        # Audit finding F1: sensitive data detected with NO destination policy
+        # configured must FLAG (was a silent PASS), so it can never read as
+        # "all passing". It must NOT escalate to FAIL/BLOCK.
+        config = _make_config()  # no scope.allowed/blocked destinations
+        action = _make_action(
+            params={"body": "SSN: 123-45-6789", "url": "anywhere.example"}
+        )
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        pr04 = next(r for r in result.control_results if r.control_id == "PR-04")
+        assert pr04.result == "FLAG"
+        assert "no destination restrictions" in pr04.detail.lower()
+        # FLAG is not a failure: audit-mode decision stays ALLOW (no BLOCK).
+        assert result.decision != "BLOCK"
+
+    def test_sensitive_data_policy_but_no_destination_flags(self):
+        # A destination policy is configured but the action exposes sensitive
+        # data with no determinable destination → FLAG, never a false "authorized" PASS.
+        config = _make_config(
+            security={"scope": {"allowed_destinations": ["safe.com"]}}
+        )
+        action = _make_action(params={"data": "SSN: 123-45-6789"})  # no url/destination
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        pr04 = next(r for r in result.control_results if r.control_id == "PR-04")
+        assert pr04.result == "FLAG"
+        assert "no outbound destination could be determined" in pr04.detail.lower()
+
     def test_no_data_classifications_passes_with_note(self):
         config = _make_config()
         action = _make_action(params={"query": "clean data"})

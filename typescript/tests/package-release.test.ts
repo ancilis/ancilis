@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { afterEach, describe, expect, it } from "vitest";
+import { withNpmPackLock } from "./helpers/npm-pack-lock.js";
 
 const tempDirs: string[] = [];
 
@@ -16,12 +17,14 @@ function makeTempDir(prefix: string): string {
 function installPackedPackage(): string {
   const packDir = makeTempDir("ancilis-pack-");
   const installDir = makeTempDir("ancilis-install-");
-  const packed = JSON.parse(
-    execFileSync("npm", ["pack", "--json", "--pack-destination", packDir], {
-      cwd: process.cwd(),
-      encoding: "utf-8",
-    }),
-  ) as Array<{ filename: string }>;
+  const packed = withNpmPackLock(() =>
+    JSON.parse(
+      execFileSync("npm", ["pack", "--json", "--pack-destination", packDir], {
+        cwd: process.cwd(),
+        encoding: "utf-8",
+      }),
+    ) as Array<{ filename: string }>,
+  );
   const tarballPath = join(packDir, packed[0]!.filename);
 
   execFileSync("npm", ["init", "-y"], { cwd: installDir, stdio: "ignore" });

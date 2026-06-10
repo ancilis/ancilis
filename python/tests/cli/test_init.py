@@ -222,6 +222,47 @@ def test_init_gitignore_already_present(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 10b. .gitignore output honesty — only claim "updated .gitignore" when true
+# ---------------------------------------------------------------------------
+
+
+def _run_init(td_path: Path):
+    return CliRunner().invoke(
+        cli,
+        ["init", "--framework", "generic", "--overlay", "soc2",
+         "--agent-name", "agent", "--dir", str(td_path)],
+        catch_exceptions=False,
+    )
+
+
+def test_init_no_gitignore_does_not_claim_update(tmp_path: Path) -> None:
+    """No .gitignore: init must NOT create one and must NOT claim it updated one."""
+    with CliRunner().isolated_filesystem(temp_dir=tmp_path) as td:
+        td_path = Path(td)
+        result = _run_init(td_path)
+        assert not (td_path / ".gitignore").exists()  # never created
+        assert "updated .gitignore" not in result.output
+
+
+def test_init_gitignore_append_reports_update(tmp_path: Path) -> None:
+    """An actual append to an existing .gitignore IS reported."""
+    with CliRunner().isolated_filesystem(temp_dir=tmp_path) as td:
+        td_path = Path(td)
+        (td_path / ".gitignore").write_text("__pycache__/\n")
+        result = _run_init(td_path)
+        assert "updated .gitignore" in result.output
+
+
+def test_init_gitignore_already_present_does_not_claim_update(tmp_path: Path) -> None:
+    """When .ancilis/ is already ignored, init makes no change and claims none."""
+    with CliRunner().isolated_filesystem(temp_dir=tmp_path) as td:
+        td_path = Path(td)
+        (td_path / ".gitignore").write_text(".ancilis/\n")
+        result = _run_init(td_path)
+        assert "updated .gitignore" not in result.output
+
+
+# ---------------------------------------------------------------------------
 # 11. --no-sample skips scan script
 # ---------------------------------------------------------------------------
 

@@ -11,6 +11,7 @@ from typing import Any
 
 import click
 
+from ancilis import __version__
 from ancilis.config import ResolvedConfig, load_config, load_control_definitions
 from ancilis.deps.scanner import DependencyScanner
 from ancilis.evidence.store import EvidenceStore
@@ -38,12 +39,21 @@ def _default_config() -> ResolvedConfig:
     """Create a minimal in-memory config for zero-config scanning."""
     return load_config(raw={
         "agent": {"name": Path.cwd().name},
-        "mode": "audit",
+        "security": {"mode": "audit"},
     })
 
 
 def _period_to_since(period: str) -> str:
     return (datetime.now(timezone.utc) - _parse_period(period)).isoformat()
+
+
+def _validate_period(ctx: object, param: object, value: str) -> str:
+    """Click callback: reject a malformed --period with a clean usage error."""
+    try:
+        _parse_period(value)
+    except ValueError as exc:
+        raise click.BadParameter(str(exc)) from exc
+    return value
 
 
 def _print_human_summary(
@@ -79,7 +89,7 @@ def _print_human_summary(
             click.echo("Try the demo:")
             click.echo("  cd examples/demo && ancilis scan")
             click.echo()
-            click.echo("Docs: https://ancilis.dev/quickstart")
+            click.echo("Docs: https://docs.ancilis.ai/quickstart")
     else:
         lines = [
             f"Ancilis scan \u2014 {config.agent_name}",
@@ -119,7 +129,7 @@ def _print_human_summary(
 @click.option("--db", "db_path", default=None, help="Path to evidence database")
 @click.option("--session", "session_id", default=None, help="Scope to a specific session ID")
 @click.option("--latest/--all", "use_latest", default=True, help="Show latest session (default) or all sessions")
-@click.option("--period", default="24h", help="Evidence window (e.g. 1h, 24h, 7d)")
+@click.option("--period", default="24h", callback=_validate_period, help="Evidence window (e.g. 1h, 24h, 7d)")
 @click.option("--watch", "watch_mode", is_flag=True, help="Watch for file changes and re-evaluate posture in real-time")
 @click.option("--debounce", default=2.0, type=float, show_default=True, help="Seconds to wait after last change before re-scanning (watch mode)")
 @click.option("--clear", "clear_screen", is_flag=True, help="Clear terminal on each re-scan (watch mode)")
@@ -288,7 +298,7 @@ def scan(
 
         if ci:
             output = {
-                "version": "0.1.0",
+                "version": __version__,
                 "agent": config.agent_name,
                 "mode": config.mode,
                 "timestamp": datetime.now(timezone.utc).isoformat(),

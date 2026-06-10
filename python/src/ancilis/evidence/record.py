@@ -32,3 +32,6 @@ class EvidenceRecord:
     sdk_version: str | None = None
     framework_version: str | None = AKSI_FRAMEWORK_VERSION
     classification_context: dict[str, Any] = field(default_factory=dict)
+    # 1 = legacy unkeyed SHA-256; 2 = HMAC-keyed. Lets a platform distinguish and
+    # re-verify synced records.
+    chain_format_version: int = 1
