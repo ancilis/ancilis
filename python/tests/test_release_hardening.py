@@ -219,6 +219,20 @@ def test_ci_typescript_examples_keeps_deterministic_tarball_name():
     assert "npm ci --include=dev" in build_step["run"]
     assert 'PKG_VERSION=$(node -p "require(\'./package.json\').version")' in build_step["run"]
     assert 'test -f "ancilis-${PKG_VERSION}.tgz"' in build_step["run"]
+    assert 'cp "ancilis-${PKG_VERSION}.tgz" ancilis-local.tgz' in build_step["run"]
+
+
+def test_typescript_examples_use_stable_local_tarball_alias():
+    for example in [
+        ROOT / "examples" / "typescript" / "minimal-quickstart-ts",
+        ROOT / "examples" / "typescript" / "langchain-ts-chatbot",
+    ]:
+        package_json = json.loads((example / "package.json").read_text())
+        makefile = (example / "Makefile").read_text()
+
+        assert package_json["dependencies"]["ancilis"] == "file:../../../ancilis-local.tgz"
+        assert "ancilis-0.1.0.tgz" not in makefile
+        assert "../../../ancilis-local.tgz" in makefile
 
 
 def test_ci_typescript_example_score_steps_tolerate_non_compliant_scan_exit():

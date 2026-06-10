@@ -83,6 +83,7 @@ jobs:
           npm pack
           PKG_VERSION=$(node -p "require('./package.json').version")
           test -f "ancilis-${PKG_VERSION}.tgz"
+          cp "ancilis-${PKG_VERSION}.tgz" ancilis-local.tgz
       - name: minimal-quickstart-ts — setup
         run: npm install --include=dev
         working-directory: examples/typescript/minimal-quickstart-ts
