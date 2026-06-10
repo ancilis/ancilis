@@ -138,7 +138,7 @@ def resolve_chain_key(explicit: bytes | str | None = None) -> bytes | None:
     try:  # optional dependency; absence simply means "no keyring source"
         import keyring
 
-        stored = keyring.get_password(_KEYRING_SERVICE, _KEYRING_USERNAME)
+        stored: str | None = keyring.get_password(_KEYRING_SERVICE, _KEYRING_USERNAME)
         if stored:
             return stored.encode("utf-8")
     except Exception:  # noqa: BLE001 — keyring is best-effort, never fatal
