@@ -1,11 +1,11 @@
 .PHONY: setup run scan
 
-# Build the SDK tarball first if it doesn't exist
-../../../ancilis-0.1.0.tgz:
+# Build the SDK tarball first if it doesn't exist.
+../../../ancilis-local.tgz:
 	@echo "Building SDK tarball..."
-	cd ../../../ && npm install --include=dev --prefer-offline && npm run build && npm pack
+	cd ../../../ && npm install --include=dev --prefer-offline && npm run build && npm pack && cp "ancilis-$$(node -p "require('./package.json').version").tgz" ancilis-local.tgz
 
-setup: ../../../ancilis-0.1.0.tgz
+setup: ../../../ancilis-local.tgz
 	npm install --include=dev
 
 run:

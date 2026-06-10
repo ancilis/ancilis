@@ -88,8 +88,8 @@ ancilis status [OPTIONS]
 | Option | Description |
 |--------|-------------|
 | `-v, --verbose` | Show detailed status with per-control breakdown |
-| `--config TEXT` | Path to `ancilis.yaml` (default: `./ancilis.yaml`) |
-| `--db TEXT` | Path to evidence database (default: `./ancilis-evidence.duckdb`) |
+| `--config TEXT` | Path to `ancilis.yaml` |
+| `--db TEXT` | Path to evidence database |
 | `--session TEXT` | Scope to a specific session ID |
 | `--latest / --all` | Show latest session (default) or all sessions |
 
@@ -112,17 +112,13 @@ ancilis status --all
 **Example output:**
 
 ```
-Ancilis status for my-agent
-Evidence store: 847 records (DuckDB, hash-chained)
-Chain integrity: valid
-
-Active controls: PR-01, PR-02, PR-03, PR-04, PR-05, DE-01
-Active overlays: SOC 2, PCI-DSS
-
-Sessions: 1
-  session-abc123   847 records   2026-04-07 10:00 → 2026-04-07 11:30
-
-Posture: COMPLIANT (4 ALLOW, 2 BLOCK in last session)
+Ancilis — my-agent
+  Mode: audit
+  Controls: 39 active, 39 pending
+  Financial Services (GLBA, SOX, DORA): active — triggered by financial_records declaration
+  SOC 2 Type II: active — triggered by financial_records declaration
+  Tool calls: 5 evaluated, 0 blocked
+  Sync: 10 pending, 0 failed
 ```
 
 ---
@@ -150,7 +146,6 @@ ancilis scan [OPTIONS]
 |------|---------|
 | `0` | Compliant — all enabled controls pass |
 | `1` | Non-compliant — one or more controls have violations |
-| `2` | Configuration error — `ancilis.yaml` missing or invalid |
 
 **Examples:**
 
@@ -174,25 +169,35 @@ ancilis scan --ci --period 24h > ancilis-scan.json
 {
   "version": "0.1.0",
   "agent": "my-agent",
-  "mode": "enforce",
-  "posture": "compliant",
-  "summary": {
-    "total_controls": 6,
-    "passing": 6,
-    "failing": 0,
-    "skipped": 0,
-    "total_evaluations": 847
-  },
+  "mode": "audit",
+  "timestamp": "2026-06-07T11:47:57.717831+00:00",
   "controls": [
     {
       "id": "PR-01",
-      "name": "Tool Call Approval",
+      "name": "Action Authorization",
       "status": "pass",
-      "evaluations": 847,
+      "evaluations": 5,
       "failures": 0,
       "flags": 0
     }
   ],
+  "dependencies": {
+    "posture": "skip",
+    "findings": [
+      {
+        "result": "SKIP",
+        "detail": "No dependency manifests found"
+      }
+    ]
+  },
+  "summary": {
+    "total_controls": 39,
+    "passing": 1,
+    "failing": 0,
+    "skipped": 38,
+    "total_evaluations": 5
+  },
+  "posture": "compliant",
   "exit_code": 0
 }
 ```
@@ -267,7 +272,7 @@ ancilis report [OPTIONS] [COMMAND]
 | `--latest / --all` | Show latest session (default) or all sessions |
 | `--session TEXT` | Scope to a specific session ID |
 | `--period TEXT` | Reporting period: `7d`, `30d`, `90d`, `365d` |
-| `--format` | Output format: `terminal`, `markdown`, `pdf`, `aiuc1-readiness`, `ndjson`, `csv` |
+| `--format` | Output format: `terminal`, `markdown`, `pdf`, `aiuc1-readiness`, `ndjson`, `csv`, `oscal` |
 | `--config TEXT` | Path to `ancilis.yaml` |
 | `--db TEXT` | Path to evidence database |
 | `-o, --output TEXT` | Output file path |
@@ -329,7 +334,7 @@ ancilis approve-tool send-email
 ancilis approve-tool send-email --config path/to/ancilis.yaml
 ```
 
-After approval, the tool's description is hashed and stored. If the description changes later, PR-03 (Tool Provenance Verification) will detect the mismatch.
+After approval, the tool's description is hashed and stored. If the description changes later, PR-03 (Tool/Model Integrity and Provenance) will detect the mismatch.
 
 ---
 
@@ -430,10 +435,9 @@ ancilis evidence sessions [OPTIONS]
 **Example output:**
 
 ```
-Sessions in ancilis-evidence.duckdb:
-
-  session-abc123   847 records   2026-04-07 10:00 → 2026-04-07 11:30
-  session-def456   312 records   2026-04-06 09:15 → 2026-04-06 10:00
+SESSION ID                                RECORDS  FIRST SEEN                LAST SEEN
+----------------------------------------------------------------------------------------------------
+68a36bf9-fc42-4598-9b15-4a0b399233d3            5  2026-06-07T11:45:07.257386+00:00  2026-06-07T11:46:41.237236+00:00
 ```
 
 ### `ancilis evidence reset`
@@ -458,8 +462,10 @@ ancilis evidence reset [OPTIONS]
 ## `ancilis certify`
 
 Report dry-run framework coverage from local evidence. In v0.1 this command
-does not generate certification artifacts; it computes covered, partial, and
-gap controls for the selected target.
+does not generate certification artifacts; it computes a per-control
+`coverage_status` for the selected target. The possible values are `covered`,
+`gap`, `policy_gated`, `attestation_required`, `attestation_stale`, and
+`attestation_incomplete`.
 
 ```bash
 ancilis certify --target TARGET [OPTIONS]
@@ -480,8 +486,23 @@ ancilis certify --target soc2
 ancilis certify --target pci --format json --dry-run
 ```
 
-If no evidence exists, `certify` lists all in-scope AKSI controls for the target
-as gaps and exits successfully.
+**Example output (`--target soc2`):**
+
+```text
+control_id  framework_ref                         coverage_status           action_required           evidence_count  last_evidence_at
+--------------------------------------------------------------------------------------------------------------------------------------------------
+DE-01       CC7.2, CC7.3                          covered                   —                         20              2026-06-07T11:56:36.496535+00:00
+DE-04       CC7.3                                 policy_gated              enable in policy          5               2026-06-06T10:04:00Z
+GOV-04      CC1.4, CC4.1, CC4.2                   attestation_required      ancilis attest GOV-04     5               2026-06-06T10:04:00Z
+PR-03       CC8.1                                 gap                       remediate                 5               2026-06-06T10:04:00Z
+# ... rows truncated ...
+```
+
+Even with no evidence, `certify` does not list every control as a gap. An empty
+store evaluates synthetic dry-run results, so in-scope controls resolve to a mix
+of `covered`, `policy_gated`, and `attestation_required` (and zero `gap`
+controls). Gaps appear only once evidence produces a failing or flagged result
+for a control. The command exits successfully regardless.
 
 ---
 
@@ -518,13 +539,36 @@ ancilis config validate --config examples/demo/ancilis.yaml
 
 ## `ancilis connect`
 
-Connect to the Ancilis platform dashboard.
+Connect this SDK to the optional Ancilis platform dashboard. The platform is
+strictly optional — Ancilis evaluates actions and stores evidence fully locally
+with nothing connected.
 
 ```bash
-ancilis connect
+ancilis connect [OPTIONS]
 ```
 
-Opens the browser to the Ancilis platform and authenticates with your local evidence store. Requires an active platform account.
+| Option | Description |
+|--------|-------------|
+| `--api-key TEXT` | Platform API key (create one in the Ancilis dashboard Settings). When supplied, writes `~/.ancilis/platform.json`. |
+| `--api-url TEXT` | Ancilis platform API base URL (default: `https://api.ancilis.ai`) |
+
+With `--api-key`, the command writes `~/.ancilis/platform.json` (mode `0600`,
+since it holds a secret) containing `api_url` and `api_key` so that `ancilis
+doctor` and `ancilis sync` can reach the hosted platform. Without it, the command
+reports the current connection status. It does not open a browser.
+
+**Examples:**
+
+```bash
+# Report current connection status
+ancilis connect
+
+# Store platform credentials
+ancilis connect --api-key sk-ancilis-...
+
+# Point at a self-hosted platform
+ancilis connect --api-key sk-ancilis-... --api-url https://ancilis.internal.example.com
+```
 
 ---
 
@@ -543,5 +587,5 @@ All commands support:
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `ANCILIS_CONFIG` | Path to `ancilis.yaml` | `./ancilis.yaml` |
-| `ANCILIS_DB` | Path to evidence database | `./ancilis-evidence.duckdb` |
+| `ANCILIS_CHAIN_KEY` | HMAC key for the evidence hash chain (v2). When unset, evidence is written with the legacy-unverified chain. | unset |
+| `ANCILIS_NO_UPDATE_CHECK` | Disable the background CLI update check | unset |

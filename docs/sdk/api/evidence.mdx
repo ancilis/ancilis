@@ -1,0 +1,176 @@
+---
+title: Evidence
+description: The evidence store, records, the keyed hash chain, sync, and the evidence adapter API.
+---
+
+The evidence layer (`ancilis.evidence`) is the SDK's tamper-evident audit trail. Every control evaluation is converted into an immutable [`EvidenceRecord`](#evidencerecord), persisted by the DuckDB-backed [`EvidenceStore`](#evidencestore), and linked into a cryptographic hash chain. Records can be synced to the platform on demand with the [`SyncEngine`](#syncengine), and an optional plugin [`EvidenceAdapter`](#evidenceadapter) can forward canonical evidence to an external sink.
+
+All signatures below are introspected directly from `ancilis.__all__`. Only symbols whose module begins with `ancilis.evidence` are documented here.
+
+## The keyed hash chain
+
+Each record carries a `record_hash` and a `previous_hash`, forming an append-only chain seeded from a public genesis value. There are two chain formats, distinguished by `EvidenceRecord.chain_format_version`:
+
+- **v1** — legacy unkeyed SHA-256. Structurally checkable but not attestable against an adversary who can write the database. `verify_chain` reports intact v1 records as `legacy-unverified`, never as cryptographically verified.
+- **v2** — HMAC-SHA256 keyed chaining (current format). The format version is bound into the MAC input so a record cannot be silently downgraded to the weaker v1 rules.
+
+The HMAC key is resolved from outside the database — explicit argument, then the `ANCILIS_CHAIN_KEY` environment variable, then the OS keyring — and is **never** stored in the evidence DB. Pass it to the store via the `chain_key` parameter, or to `verify_chain`/`verify_chain_report` via `key`.
+
+---
+
+## EvidenceStore
+
+**Kind:** class &middot; **Module:** `ancilis.evidence.store`
+
+Persists evidence records in DuckDB with cryptographic hash chaining. Initialization is lazy: there are no filesystem side effects at construction time, and the DuckDB file is created on first write or query. The store also tracks per-record sync state and can fan records out to an optional plugin evidence adapter.
+
+```python
+EvidenceStore(config: 'ResolvedConfig', db_path: 'str | Path | None' = None, in_memory: 'bool' = False, tenant_id: 'str | None' = None, on_drift: 'Callable[[DriftReport], None] | None' = None, evidence_adapter: 'EvidenceAdapter | None' = None, evidence_adapter_name: 'str | None' = None, evidence_adapter_metadata: 'Mapping[str, Any] | None' = None, chain_key: 'bytes | str | None' = None) -> 'None'
+```
+
+When `db_path` is omitted and `in_memory` is `False`, the path is derived per-agent and per-project under `~/.ancilis/{agent_name}-{cwd_hash}/evidence.duckdb`.
+
+### Key methods
+
+These methods are defined on `EvidenceStore` in source; signatures are copied verbatim.
+
+- `db_path` *(property)* `-> str` — the resolved DuckDB path for this store.
+- `store(self, evaluation: 'EvaluationResult', tool_name: 'str', output_summary: 'str | None' = None) -> 'EvidenceRecord'` — convert an `EvaluationResult` into an evidence record and persist it (linking it into the hash chain).
+- `get_records(self, agent_id: 'str | None' = None, session_id: 'str | None' = None, tool_name: 'str | None' = None, decision: 'str | None' = None, since: 'str | None' = None, limit: 'int | None' = 100) -> 'list[EvidenceRecord]'` — query evidence records with optional filters.
+- `count(self, session_id: 'str | None' = None) -> 'int'` — total number of evidence records, optionally scoped to a session.
+- `list_sessions(self) -> 'list[dict[str, Any]]'` — known sessions with record counts and time ranges.
+- `latest_session_id(self) -> 'str | None'` — the most recent session identifier, if any.
+- `verify_chain(self, session_id: 'str | None' = None, *, key: 'bytes | str | None' = None) -> 'tuple[bool, list[str]]'` — verify the hash chain; returns `(valid, errors)`.
+- `verify_chain_report(self, session_id: 'str | None' = None, *, key: 'bytes | str | None' = None) -> 'ChainVerificationReport'` — verify records and reset/purge/migration checkpoints and return a structured report (verified vs. legacy-unverified counts, status).
+- `get_summary(self, since: 'str | None' = None, session_id: 'str | None' = None) -> 'dict[str, Any]'` — generate a summary for posture reports. Chain verification always runs against the full store.
+- `reset(self) -> 'int'` — reset the store, recording a signed chain checkpoint.
+- `purge_before(self, before_timestamp: 'str') -> 'int'` — prune records older than a timestamp, authorized with a signed purge checkpoint.
+- `close(self) -> 'None'` — flush and close the DuckDB connection.
+
+The store also exposes sync-state helpers consumed by the [`SyncEngine`](#syncengine): `get_pending_sync_records`, `get_sync_state`, `mark_sync_synced`, `mark_sync_failed`, and `get_sync_summary`.
+
+```python
+from ancilis.config import load_config
+from ancilis.evidence.store import EvidenceStore
+
+config = load_config()
+store = EvidenceStore(config, in_memory=True)
+```
+
+---
+
+## EvidenceRecord
+
+**Kind:** class (dataclass) &middot; **Module:** `ancilis.evidence.record`
+
+Immutable record of a single control evaluation. This is the unit persisted by the `EvidenceStore` and the canonical payload carried by the sync and adapter APIs. `record_hash` and `previous_hash` link the record into the hash chain; `chain_format_version` distinguishes legacy v1 (unkeyed SHA-256) records from v2 (HMAC-keyed) records so a platform can re-verify synced records.
+
+```python
+EvidenceRecord(record_id: 'str', evaluation_id: 'str', timestamp: 'str', agent_id: 'str', source_type: 'str', tool_name: 'str', decision: 'str', mode: 'str', control_results: 'list[dict[str, Any]]', active_overlays: 'list[str]', data_classifications: 'list[str]', active_certifications: 'list[str]', record_hash: 'str', previous_hash: 'str', detected_data_types: 'list[str]' = <factory>, total_duration_ms: 'float' = 0.0, output_summary: 'str | None' = None, session_id: 'str | None' = None, tenant_id: 'str | None' = None, sdk_version: 'str | None' = None, framework_version: 'str | None' = '0.6', classification_context: 'dict[str, Any]' = <factory>, chain_format_version: 'int' = 1) -> None
+```
+
+`decision` is one of `"ALLOW"`, `"BLOCK"`, or `"FLAG"`; `mode` is `"audit"` or `"enforce"`.
+
+---
+
+## SyncEngine
+
+**Kind:** class &middot; **Module:** `ancilis.evidence.sync`
+
+Synchronizes local DuckDB evidence to the platform on demand. The engine reads pending records from the store, batches them, posts each batch through an `EvidenceBatchClient`, and updates per-record sync state (synced, or failed with retry/backoff). Behavior is governed by the configuration's offline mode, batch size, and retry settings.
+
+```python
+SyncEngine(config: 'ResolvedConfig', store: 'EvidenceStore', *, client: 'EvidenceBatchClient | None' = None, now: 'Callable[[], datetime] | None' = None) -> 'None'
+```
+
+The primary entry point is `sync_once(self, *, limit: 'int | None' = None, dry_run: 'bool' = False) -> 'SyncResult'`, which performs one sync pass and returns a [`SyncResult`](#syncresult). When `client` is omitted, the engine builds a `PlatformClient` from the configured platform URL and API-key environment variable; if the platform is not configured, pending evidence remains local.
+
+---
+
+## SyncResult
+
+**Kind:** class (dataclass) &middot; **Module:** `ancilis.evidence.sync`
+
+Outcome of a single `SyncEngine.sync_once` pass. `status` summarizes the run (for example `noop`, `dry_run`, `synced`, `pending`, or `failed`) and `offline_mode` reflects the configured offline policy. The counters report how many records were pending, attempted, synced, or failed, plus the number of batches sent. A `to_dict()` method returns the dataclass as a plain dict.
+
+```python
+SyncResult(status: 'str', offline_mode: 'str', pending: 'int' = 0, attempted: 'int' = 0, synced: 'int' = 0, failed: 'int' = 0, batches: 'int' = 0, would_send: 'int' = 0, message: 'str' = '', errors: 'list[str]' = <factory>) -> None
+```
+
+---
+
+## EvidenceAdapter
+
+**Kind:** class (Protocol) &middot; **Module:** `ancilis.evidence.adapter`
+
+The plugin evidence adapter shape supported by the SDK runtime. An adapter forwards canonical SDK evidence to an external store or sink. No adapter is selected by default, leaving the DuckDB-backed `EvidenceStore` as the SDK-owned canonical store. A conforming adapter implements three methods:
+
+- `store(self, payload: EvidenceAdapterPayload) -> None` — store or forward a canonical evidence payload.
+- `query(self, query: EvidenceAdapterQuery | None = None) -> object` — query adapter-managed evidence.
+- `export(self, export: EvidenceAdapterExport | None = None) -> object` — export adapter-managed evidence.
+
+This is a `runtime_checkable` Protocol, so it cannot be instantiated directly.
+
+```python
+EvidenceAdapter(*args, **kwargs)
+```
+
+---
+
+## EvidenceAdapterPayload
+
+**Kind:** class (dataclass, frozen) &middot; **Module:** `ancilis.evidence.adapter`
+
+Canonical SDK evidence plus adapter-local metadata. Passed to `EvidenceAdapter.store`. Wraps an [`EvidenceRecord`](#evidencerecord) together with an arbitrary read-only metadata mapping.
+
+```python
+EvidenceAdapterPayload(record: 'EvidenceRecord', adapter_metadata: 'Mapping[str, Any]' = <factory>) -> None
+```
+
+---
+
+## EvidenceAdapterQuery
+
+**Kind:** class (dataclass, frozen) &middot; **Module:** `ancilis.evidence.adapter`
+
+Optional evidence query filters exposed to plugin adapters. Passed to `EvidenceAdapter.query`. All fields are optional; `limit` defaults to `100`.
+
+```python
+EvidenceAdapterQuery(agent_id: 'str | None' = None, session_id: 'str | None' = None, tool_name: 'str | None' = None, decision: 'str | None' = None, since: 'str | None' = None, limit: 'int | None' = 100) -> None
+```
+
+---
+
+## EvidenceAdapterExport
+
+**Kind:** class (dataclass, frozen) &middot; **Module:** `ancilis.evidence.adapter`
+
+Evidence export request exposed to plugin adapters. Passed to `EvidenceAdapter.export`. Pairs an output `format` (default `"json"`) with an [`EvidenceAdapterQuery`](#evidenceadapterquery) that selects the records to export.
+
+```python
+EvidenceAdapterExport(format: 'str' = 'json', query: 'EvidenceAdapterQuery' = <factory>) -> None
+```
+
+---
+
+## EvidenceAdapterSelection
+
+**Kind:** class (dataclass, frozen) &middot; **Module:** `ancilis.evidence.adapter`
+
+Resolved plugin evidence adapter plus non-fatal selection warnings. Returned by [`resolve_evidence_adapter`](#resolve-evidence-adapter). `adapter` is `None` when no adapter was requested or resolution failed; `warnings` carries human-readable diagnostics that do not abort resolution.
+
+```python
+EvidenceAdapterSelection(adapter: 'EvidenceAdapter | None', adapter_name: 'str | None' = None, warnings: 'tuple[str, ...]' = ()) -> None
+```
+
+---
+
+## resolve_evidence_adapter
+
+**Kind:** function &middot; **Module:** `ancilis.evidence.adapter`
+
+Resolve one explicitly selected plugin evidence adapter. No adapter is selected by default, leaving the DuckDB-backed `EvidenceStore` as the SDK-owned canonical evidence store. The `plugin_name` selector must be namespaced as `plugin:<name>`; if it is missing, malformed, undiscovered, incompatible, or fails to expose the adapter protocol, a non-fatal warning is recorded and an [`EvidenceAdapterSelection`](#evidenceadapterselection) with `adapter=None` is returned.
+
+```python
+resolve_evidence_adapter(config: 'ResolvedConfig', *, plugin_name: 'str | None' = None, plugin_configs: 'Mapping[str, Mapping[str, Any]] | None' = None, plugin_registry: 'PluginRegistry | None' = None) -> 'EvidenceAdapterSelection'
+```

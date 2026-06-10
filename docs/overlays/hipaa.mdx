@@ -1,0 +1,93 @@
+---
+title: "HIPAA Security Rule Overlay"
+description: "AKSI compliance overlay for AI agents handling electronic protected health information (ePHI)."
+---
+
+## Overview
+
+The HIPAA Security Rule (45 CFR Part 164) sets the requirements for safeguarding the confidentiality, integrity, and availability of electronic protected health information (ePHI) held or transmitted by covered entities and their business associates.
+
+The `hipaa` overlay packages AKSI control evidence against those requirements. It maps each AKSI control to the relevant HIPAA Security Rule administrative, physical, and technical safeguards, and adds healthcare-specific evidence fields and threshold adjustments on top of the AKSI common-control catalog. Controls without overlay-specific adjustments inherit the base AKSI definitions.
+
+**Use this overlay when your agent:**
+- Creates, receives, maintains, or transmits electronic protected health information (ePHI)
+- Handles health records or patient data
+- Operates as, or on behalf of, a business associate under a Business Associate Agreement (BAA)
+- Is part of a system subject to the HIPAA Security Rule (45 CFR Part 164)
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your agent configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - hipaa
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares that it handles the relevant classified data (`DC-PHI`) via `my_agent_handles`:
+
+```yaml
+my_agent_handles:
+  - DC-PHI
+```
+
+See [Data Classification](/data-classification) for how classification declarations drive overlay activation.
+
+---
+
+## Control Mapping
+
+The overlay maps **39** AKSI controls to HIPAA Security Rule citations. Controls shown with a "—" evidence requirement inherit the base AKSI evidence definition and carry no HIPAA-specific evidence requirement in this overlay.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | 164.308(a)(1), 164.308(a)(2) | Formal security management process implemented — policies and procedures to prevent, detect, contain, and correct security violations (164.308(a)(1)) |
+| **GOV-02** | 164.308(a)(3), 164.308(a)(5) | Workforce security procedures implemented — authorization, supervision, termination (164.308(a)(3)) |
+| **GOV-03** | 164.308(a)(1)(ii)(A), 164.308(a)(1)(ii)(B) | Risk analysis conducted — accurate and thorough assessment of potential risks and vulnerabilities to ePHI (164.308(a)(1)(ii)(A)) |
+| **GOV-04** | 164.308(a)(7), 164.308(a)(8) | Periodic technical and non-technical evaluation of security measures in response to environmental or operational changes (164.308(a)(8)) |
+| **ID-01** | 164.308(a)(1), 164.310(d) | Inventory of information systems that create, receive, maintain, or transmit ePHI (164.308(a)(1)(ii)(A) scope) |
+| **ID-02** | 164.308(b), 164.504(e) | Business Associate Agreements (BAA) in place with all business associates who create, receive, maintain, or transmit ePHI (164.308(b)) |
+| **ID-03** | 164.310(d)(2), 164.316(b)(2) | ePHI identified and classified within systems — data classification maintained (164.308(a)(1)(ii)(A)) |
+| **ID-04** | 164.308(b)(1), 164.504(e) | Business associate inventory maintained with contact information and BAA status |
+| **ID-05** | 164.308(a)(3) | Workforce clearance procedure — authorization process for access to ePHI based on job function (164.308(a)(3)(ii)(B)) |
+| **PR-01** | 164.312(a), 164.312(d) | Unique user identification assigned to each workforce member and system with ePHI access (164.312(a)(2)(i)) |
+| **PR-02** | 164.502(b), 164.514(d) | Minimum necessary standard applied — access limited to what is reasonably necessary to accomplish intended purpose (164.502(b)) |
+| **PR-03** | 164.312(c) | Electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized manner (164.312(c)(1)) |
+| **PR-04** | 164.312(e)(1), 164.312(e)(2) | Technical security measures to guard against unauthorized access to ePHI transmitted over electronic communications networks (164.312(e)(1)) |
+| **PR-05** | 164.312(b), 164.316(b)(2) | Hardware, software, and procedural mechanisms that record and examine activity in information systems containing ePHI (164.312(b)) |
+| **PR-06** | 164.308(a)(1)(ii)(B), 164.312(c)(1) | Security measures implemented to reduce risks to ePHI to a reasonable and appropriate level — configuration baseline is part of that risk reduction (164.308(a)(1)(ii)(B)) |
+| **PR-07** | 164.312(e)(1), 164.312(e)(2)(ii) | Transmission security implemented — technical security measures guard against unauthorized access to ePHI transmitted over electronic communications networks (164.312(e)(1)) |
+| **PR-08** | 164.312(c)(1), 164.312(c)(2) | Electronic mechanisms to corroborate that ePHI has not been altered or destroyed in an unauthorized manner — integrity controls implemented (164.312(c)(1)) |
+| **DE-01** | 164.308(a)(5)(ii)(B), 164.308(a)(6) | Security incident procedures to address suspected or known security incidents (164.308(a)(6)) |
+| **DE-02** | 164.308(a)(1)(ii)(D), 164.308(a)(5)(ii)(C) | Information system activity review — regular review of audit logs, access reports, and security incident tracking (164.308(a)(1)(ii)(D)) |
+| **DE-03** | 164.308(a)(5) | Anomalous access pattern detection — unusual ePHI access volumes, after-hours access, access from unexpected locations |
+| **DE-04** | 164.308(a)(1)(ii) | Audit log integrity maintained — logs cannot be altered or deleted by unauthorized persons |
+| **RS-01** | 164.308(a)(6), 42 U.S.C. §17932 | Security incident response procedures — response and reporting procedures for suspected and known security incidents (164.308(a)(6)(ii)) |
+| **RS-02** | 164.308(a)(6)(ii) | Mitigation procedures to document and mitigate harmful effects of security incidents (164.308(a)(6)(ii)) |
+| **RS-03** | 164.402, 164.404, 164.408, 164.414 | Breach notification rule compliance — breach of unsecured ePHI reported to affected individuals within 60 days of discovery (164.404) |
+| **RC-01** | 164.308(a)(7) | Contingency plan — data backup, disaster recovery, emergency mode, and testing/revision procedures (164.308(a)(7)) |
+| **RC-02** | 164.308(a)(7)(ii)(A), 164.308(a)(7)(ii)(B) | Data backup plan — exact retrievable copy of ePHI created before movement of equipment (164.308(a)(7)(ii)(A)) |
+| **GOV-05** | 164.502(b), 164.514(d), 164.502(a), 164.506 | — |
+| **GOV-06** | 164.314(a)(1), 164.504(e), 164.308(b)(1) | — |
+| **GOV-07** | 164.520, 164.524, 164.526, 164.528 | — |
+| **PR-09** | 164.306(a), 164.312(c)(1) | — |
+| **PR-10** | 164.312(c)(1), 164.312(c)(2) | — |
+| **PR-11** | 164.310(d)(2)(i), 164.310(d)(2)(ii), 164.502(b), 164.530(j) | — |
+| **PR-12** | 164.312(a)(1), 164.312(d), 164.308(a)(4) | — |
+| **DE-05** | 164.306(a), 164.312(c)(1) | — |
+| **DE-06** | 164.308(a)(8), 164.308(a)(1)(ii)(A) | — |
+| **RS-04** | 164.306(a), 164.308(a)(6)(ii) | — |
+| **RS-05** | 164.404, 164.404(b), 164.408, 164.410, 164.412 | — |
+| **RS-06** | 164.308(a)(6)(i), 164.308(a)(1)(ii)(B) | — |
+| **RC-03** | 164.308(a)(7)(ii)(D), 164.308(a)(7)(ii)(B) | — |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** US
+- **Evidence retention minimum:** 2190 days (6 years), aligning with the HIPAA Security Rule documentation retention requirement (164.316(b)(2)).

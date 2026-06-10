@@ -1,0 +1,87 @@
+---
+title: "ITAR / EAR Overlay"
+description: "AKSI compliance overlay for AI agents handling U.S. export-controlled technical data and technology."
+---
+
+## Overview
+
+U.S. export controls are split across two regimes. The **International Traffic in Arms Regulations (ITAR, 22 CFR 120–130)**, administered by DDTC/State, control defense articles, defense services, and technical data on the U.S. Munitions List. The **Export Administration Regulations (EAR, 15 CFR 730–774)**, administered by BIS/Commerce, control dual-use items on the Commerce Control List. Both are current and active (ITAR Subpart C definitions were restructured effective 2022-03-23; both are amended through 2025).
+
+The agent-relevant core of both regimes is the **"deemed export" rule** — the release of controlled technical data or technology to a foreign person, including within the United States. An agent runtime can materially enforce this at the data, context-isolation, and action-authorization boundary, because an export turns on **who** receives the data: a foreign person (22 CFR 120.63) versus a U.S. person (22 CFR 120.62).
+
+The `itar-ear` overlay packages AKSI control evidence against the ITAR and EAR provisions most relevant to an agent runtime, mapping each AKSI control to its governing CFR citations.
+
+**Use this overlay when your agent:**
+- Touches ITAR technical data (22 CFR 120.33) or EAR technology / source code (15 CFR 734.13)
+- Could release controlled data to a foreign person within shared context, memory, or multi-tenant state (deemed export, 22 CFR 120.50)
+- Operates inside a business registered as a manufacturer, exporter, or broker (22 CFR 122.1) or subject to EAR recordkeeping (15 CFR 762.2)
+- Handles Controlled Unclassified Information (CUI) or government data subject to export-control review
+
+<Warning>
+This overlay is a **scaffold / REVIEW-FIRST mapping** carried verbatim from upstream crosswalk research. Most control mappings are marked `partial` and several are `verified=false`; every control's `evidence_requirements` is currently empty and the overlay defines no runtime evidence set. Treat coverage as **indicative** — these mappings are not yet backed by runtime evidence and are not production-asserted. Item classification (USML/CCL determination) and license/exemption decisions remain human compliance judgments outside the runtime's scope.
+</Warning>
+
+---
+
+## Activation
+
+Enable the overlay explicitly:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - itar-ear
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares that it handles export-controlled or related data classes. The overlay is triggered by the `DC-ITAR`, `DC-EAR`, `DC-CUI`, and `DC-GOV` classifications declared via `my_agent_handles`:
+
+```yaml
+my_agent_handles:
+  - DC-ITAR
+```
+
+See [Data Classification](/data-classification) for the full list of `DC-*` codes and how declarations are resolved.
+
+---
+
+## Control Mapping
+
+The table below lists every AKSI control in the overlay (17 total). The **Framework Reference** column gives the CFR citations from the overlay's `framework_mapping`. The **Key Evidence Requirement** column is empty for every control because the overlay defines no `evidence_requirements` entries yet (see the scaffold warning above).
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | 22 CFR 120.63, 15 CFR 734.13 | — (no evidence requirement defined) |
+| **GOV-03** | 15 CFR 736.2, 22 CFR 120.50 | — (no evidence requirement defined) |
+| **GOV-04** | 15 CFR 736.2, 22 CFR 125.4 | — (no evidence requirement defined) |
+| **GOV-05** | 15 CFR 736.2, 15 CFR 744.1, 22 CFR 125.4, 22 CFR 120.16 | — (no evidence requirement defined) |
+| **GOV-06** | 22 CFR 122.1, 15 CFR 762.2 | — (no evidence requirement defined) |
+| **ID-03** | 22 CFR 120.33, 22 CFR 120.50, 15 CFR 734.13 | — (no evidence requirement defined) |
+| **ID-05** | 22 CFR 120.33, 15 CFR 734.13 | — (no evidence requirement defined) |
+| **PR-01** | 15 CFR 736.2, 15 CFR 744.1, 22 CFR 120.50 | — (no evidence requirement defined) |
+| **PR-02** | 15 CFR 736.2, 15 CFR 744.1, 22 CFR 120.16 | — (no evidence requirement defined) |
+| **PR-04** | 22 CFR 120.50, 15 CFR 734.13, 15 CFR 734.15, 22 CFR 120.33 | — (no evidence requirement defined) |
+| **PR-05** | 22 CFR 120.63, 22 CFR 120.62, 15 CFR 734.13, 15 CFR 734.15 | — (no evidence requirement defined) |
+| **PR-06** | 15 CFR 762.2 | — (no evidence requirement defined) |
+| **PR-11** | 15 CFR 762.2, 15 CFR 762.6 | — (no evidence requirement defined) |
+| **PR-12** | 22 CFR 120.33, 15 CFR 734.15 | — (no evidence requirement defined) |
+| **DE-02** | 22 CFR 120.50, 15 CFR 734.13, 22 CFR 120.63 | — (no evidence requirement defined) |
+| **RS-02** | 15 CFR 764.2, 22 CFR 120.50 | — (no evidence requirement defined) |
+| **RS-03** | 15 CFR 764.5, 22 CFR 127.12 | — (no evidence requirement defined) |
+
+---
+
+## Retention & Jurisdiction
+
+**Jurisdiction:** United States. ITAR is administered by DDTC/State; EAR is administered by BIS/Commerce. The overlay reflects ITAR as amended through 2025 (Subpart C definitions restructured eff. 2022-03-23) and EAR as amended through 2025 (current eCFR, verified 2026-06-01).
+
+**Retention:** The overlay does not set a top-level `evidence_retention_minimum_days` value. Retention obligations flow from the underlying EAR requirements mapped to **PR-11**: records of regulated transactions must be created (15 CFR 762.2) and retained (15 CFR 762.6). Configure your evidence retention to satisfy the applicable EAR/ITAR recordkeeping period for your transactions; this overlay does not assert a specific runtime-enforced minimum.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [FedRAMP Moderate Overlay](/overlays/fedramp) — for agents handling CUI in federal cloud environments
+- [Data Classification](/data-classification) — `DC-*` codes that trigger this overlay
+- [Reading Reports](/overlays/reading-reports)

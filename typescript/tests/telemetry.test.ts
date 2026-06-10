@@ -16,6 +16,10 @@ import {
   telemetryQueuePath,
 } from "../src/ancilis/telemetry/index.js";
 
+const packageVersion = JSON.parse(
+  readFileSync(new URL("../../package.json", import.meta.url), "utf-8"),
+) as { version: string };
+
 function tmpHome(): string {
   const dir = join(tmpdir(), `ancilis-telemetry-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
@@ -97,7 +101,7 @@ describe("anonymous telemetry", () => {
     const [line] = readFileSync(telemetryQueuePath({ homeDir }), "utf-8").trim().split("\n");
     const event = JSON.parse(line) as { sdk_version: string };
 
-    expect(event.sdk_version).toBe("0.1.0");
+    expect(event.sdk_version).toBe(packageVersion.version);
   });
 
   it("uses coarse buckets for scan metadata", () => {

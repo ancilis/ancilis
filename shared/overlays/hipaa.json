@@ -299,6 +299,110 @@
       ],
       "threshold_adjustments": {},
       "framework_reference": "164.308(a)(7)(ii)(A), 164.308(a)(7)(ii)(B)"
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "164.502(b) and 164.514(d) Minimum necessary require limiting use/disclosure/request of PHI to the minimum reasonably necessary for the purpose; 164.502(a) restricts uses/disclosures to permitted purposes (treatment/payment/operations per 164.506, authorization per 164.508, etc.). GOV-05 binds action",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "164.314(a)(1) Business associate contracts and 164.308(b)(1) BA arrangements require satisfactory written assurances that a business associate (BA) will safeguard ePHI; 164.504(e) sets BA-contract content. GOV-06 registers framework/contract/customer/regulator obligations and links them to posture/e",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Privacy Rule individual-rights provisions: 164.520 Notice of privacy practices, 164.524 Access to PHI, 164.526 Amendment of PHI, 164.528 Accounting of disclosures. GOV-07 documents disclosures, privacy-rights routing, affected-party feedback + intervention channels linked to runtime evidence - routi",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "164.306(a) requires protecting ePHI against reasonably anticipated threats and hazards; 164.312(c)(1) Integrity. PR-09 confines generated code/shell/dynamic execution to approved sandbox classes. Partial/interpretive: maps as a safeguard limiting the blast radius of agent code execution against ePHI",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "full",
+      "verified": true,
+      "framework_reference": "164.312(c)(1) Integrity requires protecting ePHI from improper alteration or destruction; 164.312(c)(2) Mechanism to authenticate ePHI (Addressable) requires corroborating ePHI has not been altered in an unauthorized manner. PR-10 ensures persistent memory/retrieved context/shared task state carry p",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "164.310(d)(2)(i) Disposal (Required) and (ii) Media re-use (Required) require addressing final disposition/removal of ePHI from media; 164.502(b) minimum necessary discourages over-retention; 164.530(j) requires retaining required documentation 6 years. PR-11 retains/deletes/evicts/disposes agent-he",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "164.312(a)(1) Access control, 164.312(d) authentication, and 164.308(a)(4) information access management require that only authorized programs reach ePHI and that authentication material is protected. PR-12 vaults/scopes/rotates secrets, API keys, signing keys and never exposes them to prompts/untru",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "164.306(a) requires ensuring confidentiality, integrity, and availability of ePHI and protecting against reasonably anticipated threats; 164.312(c)(1) Integrity. DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias, and clinical/safety drift. Partial/interpretiv",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "164.308(a)(8) Evaluation requires periodic technical and nontechnical evaluation of safeguards; 164.308(a)(1)(ii)(A) Risk analysis requires assessing vulnerabilities. DE-06 ingests agent vuln scans, adversarial/red-team, resilience tests, and third-party evals as evidence with remediation state - fe",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "164.306(a) (availability + protection against anticipated threats) and 164.308(a)(6)(ii) (mitigating harmful effects). RS-04 provides multi-agent failure-domain isolation, circuit breakers, and coordinated kill-switch to contain blast radius. Partial/interpretive: HIPAA does not name multi-agent cas",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "164.404 Notification to individuals (without unreasonable delay, no later than 60 calendar days after discovery - 164.404(b)); 164.408 Notification to the Secretary; 164.410 Notification by a business associate (to the covered entity without unreasonable delay, no later than 60 days); 164.412 Law en",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": false,
+      "framework_reference": "164.308(a)(6)(i) Security incident procedures and 164.308(a)(1)(ii)(B) Risk management (implementing measures to reduce vulnerabilities, including patching). RS-06 handles vuln intake, coordinated disclosure, secure-update handling, and advisories for shipped agent products. HIPAA has no coordinated",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RC-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "164.308(a)(7)(ii)(D) Testing and revision procedures (Addressable) requires implementing procedures for periodic testing and revision of contingency plans; (a)(7)(ii)(B) Disaster recovery plan. RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedures and captur",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     }
   },
   "control_adjustments": {
@@ -444,6 +548,69 @@
     "RC-02": [
       "164.308(a)(7)(ii)(A)",
       "164.308(a)(7)(ii)(B)"
+    ],
+    "GOV-05": [
+      "164.502(b)",
+      "164.514(d)",
+      "164.502(a)",
+      "164.506"
+    ],
+    "GOV-06": [
+      "164.314(a)(1)",
+      "164.504(e)",
+      "164.308(b)(1)"
+    ],
+    "GOV-07": [
+      "164.520",
+      "164.524",
+      "164.526",
+      "164.528"
+    ],
+    "PR-09": [
+      "164.306(a)",
+      "164.312(c)(1)"
+    ],
+    "PR-10": [
+      "164.312(c)(1)",
+      "164.312(c)(2)"
+    ],
+    "PR-11": [
+      "164.310(d)(2)(i)",
+      "164.310(d)(2)(ii)",
+      "164.502(b)",
+      "164.530(j)"
+    ],
+    "PR-12": [
+      "164.312(a)(1)",
+      "164.312(d)",
+      "164.308(a)(4)"
+    ],
+    "DE-05": [
+      "164.306(a)",
+      "164.312(c)(1)"
+    ],
+    "DE-06": [
+      "164.308(a)(8)",
+      "164.308(a)(1)(ii)(A)"
+    ],
+    "RS-04": [
+      "164.306(a)",
+      "164.308(a)(6)(ii)"
+    ],
+    "RS-05": [
+      "164.404",
+      "164.404(b)",
+      "164.408",
+      "164.410",
+      "164.412"
+    ],
+    "RS-06": [
+      "164.308(a)(6)(i)",
+      "164.308(a)(1)(ii)(B)"
+    ],
+    "RC-03": [
+      "164.308(a)(7)(ii)(D)",
+      "164.308(a)(7)(ii)(B)"
     ]
   },
   "reporting_obligations": {
@@ -453,5 +620,5 @@
   },
   "evidence_retention_minimum_days": 2190,
   "human_oversight_required": false,
-  "notes": "HIPAA Security Rule requires audit controls, access controls, transmission security, and integrity controls. This overlay tightens baseline thresholds and adds healthcare-specific evidence fields. All 26 AKSI controls mapped to HIPAA Security Rule provisions."
+  "notes": "HIPAA Security Rule requires audit controls, access controls, transmission security, and integrity controls. This overlay adds healthcare-specific evidence fields and threshold adjustments on top of the AKSI v0.6 common-control catalog; controls without overlay-specific adjustments inherit the base AKSI definitions."
 }

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ancilis._shared import shared_path
 from ancilis.activation.loader import load_overlay_profiles
@@ -30,7 +30,11 @@ CLASSIFICATIONS_FILE = SHARED_DIR / "classifications" / "taxonomy.json"
 # --- Pydantic Models ---
 
 
-class AgentConfig(BaseModel):
+class ConfigBaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class AgentConfig(ConfigBaseModel):
     name: str
     description: str = ""
     owner: str = ""
@@ -45,30 +49,30 @@ class AgentConfig(BaseModel):
         return v
 
 
-class ControlOverride(BaseModel):
+class ControlOverride(ConfigBaseModel):
     enabled: bool = True
 
 
-class ToolsConfig(BaseModel):
+class ToolsConfig(ConfigBaseModel):
     allowed: list[str] = Field(default_factory=list)
     blocked: list[str] = Field(default_factory=list)
 
 
-class ScopeConfig(BaseModel):
+class ScopeConfig(ConfigBaseModel):
     max_actions_per_minute: int | None = None
     allowed_destinations: list[str] = Field(default_factory=list)
     blocked_destinations: list[str] = Field(default_factory=list)
 
 
-class SandboxPolicyConfig(BaseModel):
+class SandboxPolicyConfig(ConfigBaseModel):
     approved_execution_classes: list[str] = Field(default_factory=list)
 
 
-class ResponsePolicyConfig(BaseModel):
+class ResponsePolicyConfig(ConfigBaseModel):
     containment_required_for_results: list[str] = Field(default_factory=lambda: ["FAIL", "ERROR"])
 
 
-class SecurityConfig(BaseModel):
+class SecurityConfig(ConfigBaseModel):
     mode: str = "audit"
     controls: dict[str, ControlOverride] = Field(default_factory=dict)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
@@ -84,22 +88,22 @@ class SecurityConfig(BaseModel):
         return v
 
 
-class EvidenceConfig(BaseModel):
+class EvidenceConfig(ConfigBaseModel):
     storage: str = "local"
     retention_days: int = 365
 
 
-class ComplianceConfig(BaseModel):
+class ComplianceConfig(ConfigBaseModel):
     overlays: list[str] | None = None
     evidence: EvidenceConfig = Field(default_factory=EvidenceConfig)
 
 
-class CliConfig(BaseModel):
+class CliConfig(ConfigBaseModel):
     update_check: bool = True
     update_check_interval: int = 86400
 
 
-class PlatformConfig(BaseModel):
+class PlatformConfig(ConfigBaseModel):
     url: str | None = None
     api_key_env: str = "ANCILIS_API_KEY"
 
@@ -107,7 +111,7 @@ class PlatformConfig(BaseModel):
 _VALID_SYNC_OFFLINE_MODES = {"auto", "always_offline", "always_online"}
 
 
-class SyncConfig(BaseModel):
+class SyncConfig(ConfigBaseModel):
     offline_mode: str = "auto"
     interval_seconds: int = 300
     max_retries: int = 8
@@ -150,7 +154,7 @@ class SyncConfig(BaseModel):
 _VALID_SEVERITY_THRESHOLDS = {"critical", "high", "medium", "low"}
 
 
-class ScanDepsConfig(BaseModel):
+class ScanDepsConfig(ConfigBaseModel):
     enabled: bool = True
     severity_threshold: str = "high"
     ignore: list[str] = Field(default_factory=list)
@@ -166,11 +170,11 @@ class ScanDepsConfig(BaseModel):
         return v
 
 
-class ScanConfig(BaseModel):
+class ScanConfig(ConfigBaseModel):
     dependencies: ScanDepsConfig = Field(default_factory=ScanDepsConfig)
 
 
-class AncilisConfig(BaseModel):
+class AncilisConfig(ConfigBaseModel):
     agent: AgentConfig
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     my_agent_handles: list[str] = Field(default_factory=list)
@@ -180,31 +184,6 @@ class AncilisConfig(BaseModel):
     sync: SyncConfig = Field(default_factory=SyncConfig)
     cli: CliConfig = Field(default_factory=CliConfig)
     scan: ScanConfig = Field(default_factory=ScanConfig)
-
-    @model_validator(mode="before")
-    @classmethod
-    def warn_unknown_keys(cls, values: Any) -> Any:
-        if isinstance(values, dict):
-            known = {
-                "agent",
-                "security",
-                "my_agent_handles",
-                "certification_targets",
-                "compliance",
-                "platform",
-                "sync",
-                "cli",
-                "scan",
-            }
-            unknown = set(values.keys()) - known
-            if unknown:
-                # Store warnings for later reporting
-                values.setdefault("_warnings", [])
-                for key in sorted(unknown):
-                    values["_warnings"].append(f"Unknown top-level key: '{key}'")
-        return values
-
-    model_config = {"extra": "ignore"}
 
 
 # --- Shared JSON Loaders ---
@@ -455,9 +434,20 @@ def _apply_overlay_effects(
 # --- Config Parser ---
 
 
+def _reject_unknown_top_level_keys(raw: dict[str, Any]) -> None:
+    known = set(AncilisConfig.model_fields)
+    unknown = sorted(key for key in raw if isinstance(key, str) and key not in known)
+    if not unknown:
+        return
+    label = "key" if len(unknown) == 1 else "keys"
+    formatted = ", ".join(repr(key) for key in unknown)
+    raise config_invalid(f"Unknown top-level config {label}: {formatted}.")
+
+
 def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     """Validate raw config dict and return (config, warnings)."""
-    warnings: list[str] = raw.pop("_warnings", [])
+    warnings: list[str] = []
+    _reject_unknown_top_level_keys(raw)
 
     # Validate control IDs in overrides
     security = raw.get("security", {})
@@ -467,6 +457,10 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
             custom_control_ids: set[str] | None = None
             valid_control_ids = set(load_control_definitions())
             for key in controls:
+                if not isinstance(key, str):
+                    raise config_invalid(
+                        f"Control IDs in security.controls must be strings, got {key!r}."
+                    )
                 if key.startswith("custom:"):
                     if custom_control_ids is None:
                         from ancilis.controls.custom import list_custom_controls
@@ -485,6 +479,10 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     my_agent_handles = raw.get("my_agent_handles", [])
     if isinstance(my_agent_handles, list):
         for dt in my_agent_handles:
+            if not isinstance(dt, str):
+                raise config_invalid(
+                    f"my_agent_handles entries must be strings, got {dt!r}."
+                )
             if dt not in valid_types:
                 raise config_invalid(
                     f"Unknown data type in my_agent_handles: '{dt}'. "
@@ -496,6 +494,10 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     if isinstance(cert_targets, list):
         valid_certs = _load_valid_certification_targets()
         for ct in cert_targets:
+            if not isinstance(ct, str):
+                raise config_invalid(
+                    f"certification_targets entries must be strings, got {ct!r}."
+                )
             if ct not in valid_certs:
                 available = ", ".join(sorted(valid_certs)) if valid_certs else "none available"
                 warnings.append(
@@ -503,6 +505,9 @@ def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
                     f"Available targets: {available}"
                 )
 
+    bad_keys = [k for k in raw if not isinstance(k, str)]
+    if bad_keys:
+        raise config_invalid(f"Top-level config keys must be strings; got {bad_keys!r}.")
     config = AncilisConfig(**raw)
     return config, warnings
 
@@ -726,6 +731,23 @@ def resolve_config(
     return result
 
 
+def _parse_config_yaml(text: str, source: Path) -> dict[str, Any]:
+    """Parse a config file's YAML into a dict, translating parse errors and
+    non-mapping roots into a clean ConfigError instead of a raw traceback."""
+    try:
+        loaded = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise config_invalid(f"Invalid YAML in {source}: {exc}") from exc
+    if loaded is None:
+        return {}
+    if not isinstance(loaded, dict):
+        raise config_invalid(
+            f"{source} must contain a YAML mapping at the top level, "
+            f"got {type(loaded).__name__}."
+        )
+    return loaded
+
+
 def load_config(
     path: str | Path | None = None,
     raw: dict[str, Any] | None = None,
@@ -747,7 +769,7 @@ def load_config(
         config_dict = dict(raw)
     elif path is not None:
         config_path = Path(path)
-        config_dict = yaml.safe_load(config_path.read_text()) or {}
+        config_dict = _parse_config_yaml(config_path.read_text(), config_path)
         from ancilis.controls.custom import load_custom_controls_from_directory
 
         custom_warnings.extend(
@@ -757,7 +779,7 @@ def load_config(
         # Try to find ancilis.yaml in current directory
         default_path = Path("ancilis.yaml")
         if default_path.exists():
-            config_dict = yaml.safe_load(default_path.read_text()) or {}
+            config_dict = _parse_config_yaml(default_path.read_text(), default_path)
             from ancilis.controls.custom import load_custom_controls_from_directory
 
             custom_warnings.extend(

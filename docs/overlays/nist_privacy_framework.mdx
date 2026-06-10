@@ -1,0 +1,93 @@
+---
+title: "NIST Privacy Framework: A Tool for Improving Privacy through Enterprise Risk Management Overlay"
+description: "AKSI compliance overlay mapping agent control evidence to the NIST Privacy Framework v1.0."
+---
+
+## Overview
+
+The NIST Privacy Framework v1.0 (Jan 16, 2020) is a voluntary US enterprise privacy-risk-management tool organized as 5 Functions (Identify-P, Govern-P, Control-P, Communicate-P, Protect-P), 18 Categories, and 100 Subcategories addressing privacy risks arising from data processing. Version 1.1 was released as an Initial Public Draft on April 14, 2025 (comment period closed June 13, 2025) and remained in draft as of June 2026, so v1.0 is the current finalized version. Most subcategories are organization-wide privacy-program outcomes; the AKSI mappings cover only the agent-responsibility boundary.
+
+The `nist_privacy_framework` overlay packages AKSI control evidence against the framework's Subcategories, mapping each AKSI control to the relevant Privacy Framework subcategory references (e.g., `PR.AC-P1`, `CT.DM-P8`, `GV.MT-P5`).
+
+<Warning>
+This overlay is a scaffold mapping not yet backed by runtime evidence. Every control's evidence requirements are currently empty and the underlying crosswalk is marked REVIEW-FIRST (most mappings are partial and many are unverified). Treat the coverage shown below as indicative, not production-asserted.
+</Warning>
+
+**Use this overlay when your agent:**
+- Operates within an enterprise applying the NIST Privacy Framework for privacy risk management
+- Processes data that creates privacy risks for individuals (PII, NPI, PHI, minors' data, biometric, or education records)
+- Needs to demonstrate agent-boundary coverage of Identify-P, Govern-P, Control-P, Communicate-P, and Protect-P outcomes
+- Supports a privacy program that maps technical controls to Privacy Framework Subcategories
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - nist_privacy_framework
+```
+
+**Data classification trigger** — because this overlay's trigger type is `data_classification`, it also auto-activates when your agent declares (via `my_agent_handles`) that it handles data in any of the relevant classifications: `DC-PII`, `DC-NPI`, `DC-PHI`, `DC-MINOR`, `DC-BIO`, or `DC-EDU`. See [Data Classification](/data-classification) for declaring handled data classes.
+
+---
+
+## Control Mapping
+
+The table lists every AKSI control mapped by this overlay (35 controls). The Key Evidence Requirement column is empty for all controls because this scaffold mapping does not yet carry runtime evidence requirements.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | PR.AC-P1, PR.AC-P6 | — |
+| **GOV-02** | ID.IM-P2, GV.PO-P3 | — |
+| **GOV-03** | GV.RM-P1, GV.RM-P2, GV.RM-P3, GV.PO-P6 | — |
+| **GOV-04** | CT.PO-P1, CT.PO-P3 | — |
+| **GOV-05** | ID.IM-P5, GV.PO-P1, GV.PO-P5, CT.PO-P1 | — |
+| **GOV-06** | GV.PO-P5, GV.MT-P3, GV.MT-P4, ID.DE-P3 | — |
+| **GOV-07** | CM.PO-P1, CM.PO-P2, CM.AW-P1, CM.AW-P2, CT.PO-P3 | — |
+| **ID-01** | ID.IM-P1, ID.IM-P2, ID.IM-P7, ID.BE-P3 | — |
+| **ID-02** | ID.IM-P1, ID.IM-P2 | — |
+| **ID-03** | ID.IM-P3, ID.IM-P4, ID.IM-P6, ID.IM-P8, CM.AW-P6 | — |
+| **ID-04** | ID.DE-P1, ID.DE-P2, ID.DE-P5 | — |
+| **ID-05** | ID.RA-P1, ID.RA-P3, ID.RA-P4, ID.RA-P5 | — |
+| **PR-01** | CT.PO-P1, PR.AC-P4 | — |
+| **PR-02** | PR.AC-P1, PR.AC-P4 | — |
+| **PR-03** | PR.DS-P6, PR.DS-P8 | — |
+| **PR-04** | PR.DS-P5, CT.DP-P4, PR.AC-P1 | — |
+| **PR-05** | PR.AC-P5, CT.DP-P1, CT.DP-P3, PR.DS-P7 | — |
+| **PR-06** | CT.DM-P8, CM.AW-P4 | — |
+| **PR-07** | PR.DS-P2, PR.PT-P3 | — |
+| **PR-10** | PR.DS-P6, CM.AW-P6 | — |
+| **PR-11** | CT.DM-P4, CT.DM-P5, PR.DS-P3, CT.PO-P2 | — |
+| **PR-12** | PR.AC-P1 | — |
+| **DE-02** | CT.DM-P9, GV.MT-P1 | — |
+| **DE-03** | PR.PO-P2, GV.MT-P1 | — |
+| **DE-04** | CT.DM-P8 | — |
+| **DE-05** | ID.RA-P2, CT.DM-P10 | — |
+| **DE-06** | CT.DM-P9, PR.PO-P10, ID.DE-P5 | — |
+| **RS-01** | GV.MT-P5, ID.RA-P5 | — |
+| **RS-02** | CT.PO-P1, GV.MT-P5 | — |
+| **RS-03** | GV.MT-P5, GV.MT-P7, CM.AW-P7 | — |
+| **RS-05** | CM.AW-P7, CM.AW-P8 | — |
+| **RS-06** | GV.MT-P5, PR.PO-P10 | — |
+| **RC-01** | PR.PO-P7, PR.DS-P4 | — |
+| **RC-02** | GV.MT-P6, CM.AW-P7 | — |
+| **RC-03** | PR.PO-P8 | — |
+
+---
+
+## Retention & Jurisdiction
+
+**Jurisdiction:** United States (NIST voluntary framework; used globally, sector-agnostic).
+
+The NIST Privacy Framework is a voluntary risk-management tool and does not itself prescribe a fixed evidence-retention period; this overlay declares no minimum retention day-count. Set evidence retention according to your organization's privacy program and any other binding overlays in effect.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

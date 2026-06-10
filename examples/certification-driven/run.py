@@ -79,7 +79,7 @@ summary = evidence.get_summary(session_id=producer.session_id)
 print(f"\n=== Evidence Summary ===")
 print(f"  Records: {summary['total_evaluations']}")
 print(f"  Decisions: {summary['decisions']}")
-print(f"  Hash chain: {'intact' if summary['chain_valid'] else 'BROKEN'}")
+print(f"  Hash chain: {summary.get('chain_status') or ('intact' if summary['chain_valid'] else 'BROKEN')}")
 print(f"  Tools: {summary['tools_evaluated']}")
 
 # --- Show what ancilis status would display ---

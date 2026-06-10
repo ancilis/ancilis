@@ -15,6 +15,27 @@ yarn add ancilis
 
 ---
 
+## Control parity with the Python SDK
+
+<Warning>
+The TypeScript SDK has **not yet completed the AKSI v0.6 control migration** that
+the Python SDK and the [Controls Reference](/controls-reference) describe. Until
+it does, a few controls evaluate differently — or are absent — in TypeScript:
+
+| Control | Python / catalog (v0.6) | TypeScript today |
+|---------|-------------------------|------------------|
+| `DE-02` | Classification Drift & Boundary Validation | **Config Drift** (pre-v0.6) |
+| `PR-05` | Context & Tenant Isolation | **Audit** (pre-v0.6) |
+| `PR-06` | Audit Trail Completeness | **Config Baseline** (pre-v0.6) |
+| `GOV-03`, `PR-09`, `DE-03`, `RS-02` | evaluated | **not yet implemented** |
+
+If you need the v0.6 control semantics today, use the Python SDK. The TypeScript
+v0.6 migration is tracked and will align these controls; this note will be
+removed when it lands.
+</Warning>
+
+---
+
 ## Configuration
 
 ### `loadConfig()`
@@ -24,8 +45,8 @@ Load and validate `ancilis.yaml` into a `ResolvedConfig` object.
 ```typescript
 import { loadConfig } from "ancilis";
 
-const config = await loadConfig();                          // auto-detect
-const config = await loadConfig({ path: "ancilis.yaml" }); // explicit path
+const config = loadConfig({ path: "ancilis.yaml" }); // explicit path
+const config = loadConfig({ raw: { agent: { name: "my-agent" } } }); // inline
 ```
 
 **`LoadConfigOptions`**
@@ -33,7 +54,7 @@ const config = await loadConfig({ path: "ancilis.yaml" }); // explicit path
 ```typescript
 interface LoadConfigOptions {
   path?: string;   // explicit path to ancilis.yaml
-  raw?: object;    // inline config object (testing)
+  raw?: Record<string, unknown>;   // inline config object (testing)
 }
 ```
 
@@ -52,17 +73,16 @@ import { ToolActionProducer, wrapTool, tool, loadConfig } from "ancilis";
 import { Engine } from "ancilis";
 import { EvidenceStore } from "ancilis";
 
-const config = await loadConfig();
+const config = loadConfig({ path: "ancilis.yaml" });
 const engine = new Engine(config);
 const store = new EvidenceStore(config);
-const producer = new ToolActionProducer(config, engine, { evidenceStore: store });
+const producer = new ToolActionProducer(config, engine, undefined, store);
 
 // Decorator-style via tool()
-const queryDatabase = tool(producer)(
+const queryDatabase = tool({ producer, toolName: "query_database" })(
   async (sql: string, database: string): Promise<Record<string, unknown>> => {
     return await db.execute(sql);
-  },
-  { toolName: "query_database" }
+  }
 );
 
 const result = await queryDatabase("SELECT * FROM users LIMIT 10", "reports");
@@ -73,7 +93,7 @@ const result = await queryDatabase("SELECT * FROM users LIMIT 10", "reports");
 ```typescript
 import { wrapTool } from "ancilis";
 
-const wrapped = wrapTool(originalFn, producer, { toolName: "shell_execute" });
+const wrapped = wrapTool(originalFn, { producer, toolName: "shell_execute" });
 const result = await wrapped("ls", "-la");
 ```
 
@@ -82,9 +102,9 @@ const result = await wrapped("ls", "-la");
 ```typescript
 import { evaluateAndExecute } from "ancilis";
 
-const result = await evaluateAndExecute({
-  fn: executeShellCommand,
+const result = await evaluateAndExecute(executeShellCommand, {
   producer,
+  agentName: "my-agent",
   args: ["ls", "-la"],
   toolName: "shell_execute",
 });
@@ -111,17 +131,18 @@ try {
 
 ```typescript
 import { HTTPActionProducer } from "ancilis";
-import type { HTTPObservation } from "ancilis";
+import type { HTTPRequest } from "ancilis";
 
-const producer = new HTTPActionProducer(config, engine, { evidenceStore: store });
+const producer = new HTTPActionProducer(config, engine, undefined, store);
 
-const observation: HTTPObservation = {
+const request: HTTPRequest = {
   method: "POST",
   url: "https://api.example.com/transfer",
+  agentName: "my-agent",
   headers: { Authorization: "Bearer ..." },
   body: { amount: 1000, to: "acct_123" },
 };
-const result = await producer.observe(observation);
+const { evaluation } = await producer.observe(request);
 ```
 
 ### `MCPActionProducer` — MCP tool calls
@@ -130,29 +151,25 @@ const result = await producer.observe(observation);
 import { MCPActionProducer, AncilisMiddleware } from "ancilis";
 import type { McpClientLike } from "ancilis";
 
-// Middleware approach (recommended)
-const middleware = new AncilisMiddleware(config, { evidenceStore: store });
+// Middleware approach (recommended) — wraps your MCP client
+const middleware = new AncilisMiddleware(yourMcpClient, { config, evidenceStore: store });
 
-// Direct MCP producer
-const mcpProducer = new MCPActionProducer(config, engine, {
-  mcpClient: yourMcpClient,
-  evidenceStore: store,
-});
+// Direct MCP producer — (config, registry)
+const mcpProducer = new MCPActionProducer(config, engine.registry);
 ```
 
 ### `CLIActionProducer` — subprocess commands
 
 ```typescript
 import { CLIActionProducer } from "ancilis";
-import type { CLIInvocation } from "ancilis";
 
-const producer = new CLIActionProducer(config, engine, { evidenceStore: store });
+const producer = new CLIActionProducer(config, engine, undefined, store);
 
-const invocation: CLIInvocation = {
-  command: ["git", "push", "origin", "main"],
-  cwd: "/workspace/project",
-};
-const result = await producer.observe(invocation);
+const result = await producer.execute(
+  ["git", "push", "origin", "main"],
+  "my-agent",
+  "/workspace/project", // workingDirectory
+);
 // result.blocked: boolean
 ```
 
@@ -163,13 +180,13 @@ import { AncilisMiddleware } from "ancilis";
 import type { AncilisMiddlewareOptions } from "ancilis";
 
 const options: AncilisMiddlewareOptions = {
+  config,             // or configPath: "ancilis.yaml"
   evidenceStore: store,
-  mode: "audit",  // override ancilis.yaml mode
 };
-const middleware = new AncilisMiddleware(config, options);
+// Wrap your MCP client — middleware intercepts callTool() / listTools()
+const middleware = new AncilisMiddleware(yourMcpClient, options);
 
-// Attach to your MCP server
-server.use(middleware.handler());
+const result = await middleware.callTool("query_database", { sql: "SELECT 1" });
 ```
 
 ### LLM SDK producers
@@ -252,7 +269,7 @@ The detector table covers `@anthropic-ai/sdk`, `openai`, `@google/genai` / `@goo
 ```typescript
 import { EvidenceStore, loadConfig } from "ancilis";
 
-const config = await loadConfig();
+const config = loadConfig({ path: "ancilis.yaml" });
 const store = new EvidenceStore(config);
 // Custom path:
 const store = new EvidenceStore(config, { dbPath: "/custom/evidence.duckdb" });
@@ -261,8 +278,8 @@ const store = new EvidenceStore(config, { dbPath: "/custom/evidence.duckdb" });
 **Key methods:**
 
 ```typescript
-// Store an evaluation result
-await store.store(evaluationResult, { toolName: "my_tool" });
+// Store an evaluation result (toolName is a positional string arg)
+await store.store(evaluationResult, "my_tool");
 
 // Get summary statistics
 const summary = await store.getSummary({
@@ -307,9 +324,9 @@ const record: EvidenceRecord = {
   agentId: "my-agent",
   sessionId: "sess_abc",
   toolName: "query_database",
-  decision: "ALLOW",    // "ALLOW" | "BLOCK" | "FLAG" | "PASS" | "FAIL"
-  hash: "sha256...",
-  prevHash: "sha256...",
+  decision: "ALLOW",    // "ALLOW" | "BLOCK" | "FLAG"
+  recordHash: "sha256...",
+  previousHash: "sha256...",
 };
 ```
 
@@ -320,25 +337,24 @@ const record: EvidenceRecord = {
 ### `ActivationResolver`
 
 ```typescript
-import { ActivationResolver, loadConfig } from "ancilis";
+import { ActivationResolver } from "ancilis";
 
-const config = await loadConfig();
-const resolver = new ActivationResolver(config);
+const resolver = new ActivationResolver();
 const resolved = resolver.resolve();
 // resolved.activeControls: string[]
-// resolved.activeOverlays: Map<string, OverlayActivation>
+// resolved.activeOverlays: string[]
 ```
 
 ### Control IDs
 
 | ID | Name |
 |----|------|
-| `PR-01` | Identity & Authorization |
-| `PR-02` | Scope Confinement |
-| `PR-03` | Output Integrity |
-| `PR-04` | Prompt Security |
-| `PR-05` | Audit Trail & Baseline |
-| `DE-01` | Dependency Vulnerabilities |
+| `PR-01` | Action Authorization |
+| `PR-02` | Permission Scope Enforcement |
+| `PR-03` | Tool/Model Integrity & Provenance |
+| `PR-04` | Data Exposure Prevention |
+| `PR-05` | Context & Tenant Isolation |
+| `DE-01` | Behavioral Anomaly Detection |
 
 ### Load Definitions
 
@@ -353,7 +369,8 @@ import {
 
 const controls = loadControlDefinitions();    // all control metadata
 const overlays = loadOverlayProfiles();       // all overlay profiles
-const soc2 = loadCertificationProfile("soc2-type2");
+// Certification profiles: "aiuc-1" or "gov-contractor"
+const aiuc1 = loadCertificationProfile("aiuc-1");
 ```
 
 ---
@@ -363,18 +380,19 @@ const soc2 = loadCertificationProfile("soc2-type2");
 ### `ReportGenerator`
 
 ```typescript
-import { ReportGenerator, renderTerminal, renderMarkdown, renderCsv } from "ancilis";
+import { ReportGenerator, renderTerminal, renderMarkdown, renderCsv, renderNdjson } from "ancilis";
 
-const generator = new ReportGenerator(config, store);
-const reportData = await generator.generate({
-  period: "30d",
-  reportFormat: "terminal",
-  sessionId: "sess_abc",
-});
+// ReportGenerator takes the summary object from store.getSummary()
+const summary = await store.getSummary({ since: "2026-04-01T00:00:00Z" });
+const generator = new ReportGenerator(config, summary);
+const reportData = generator.generate("30d", "terminal");
 
-// Render outputs
+// Render outputs (renderTerminal/renderMarkdown take ReportData)
 const terminal = renderTerminal(reportData);
 const markdown = renderMarkdown(reportData);
+
+// renderCsv/renderNdjson take EvidenceRecord[]
+const records = await store.getRecords();
 const csv = renderCsv(records);
 const ndjson = renderNdjson(records);
 ```
@@ -386,9 +404,9 @@ const ndjson = renderNdjson(records);
 ```typescript
 import { BaselineManager } from "ancilis";
 
-const manager = new BaselineManager(config, store);
-const baseline = await manager.capture({ sessionId: "sess_abc", label: "pre-deploy" });
-const report = await manager.diff({ baselineId: baseline.id });
+const manager = new BaselineManager(store, config);
+const baseline = await manager.create({ label: "pre-deploy" });
+const report = await manager.checkDrift({ baselineId: baseline.baselineId });
 ```
 
 ---
@@ -400,10 +418,10 @@ const report = await manager.diff({ baselineId: baseline.id });
 ```typescript
 import { SarifImporter } from "ancilis";
 
-const importer = new SarifImporter({ agentId: "sast-scan" });
-const evaluations = await importer.parse("results.sarif");
+const importer = new SarifImporter("sast-scan");
+const evaluations = importer.parse("results.sarif");
 for (const ev of evaluations) {
-  await store.store(ev, { toolName: "sast" });
+  await store.store(ev, "sast");
 }
 ```
 
@@ -412,8 +430,8 @@ for (const ev of evaluations) {
 ```typescript
 import { CycloneDxImporter } from "ancilis";
 
-const importer = new CycloneDxImporter({ agentId: "sbom-scan" });
-const evaluations = await importer.parse("sbom.cdx.json");
+const importer = new CycloneDxImporter("sbom-scan");
+const evaluations = importer.parse("sbom.cdx.json");
 ```
 
 ---
@@ -423,10 +441,10 @@ const evaluations = await importer.parse("sbom.cdx.json");
 ```typescript
 import { DependencyScanner, loadConfig } from "ancilis";
 
-const config = await loadConfig();
+const config = loadConfig({ path: "ancilis.yaml" });
 const scanner = new DependencyScanner(config);
 
-for await (const evaluation of scanner.scan()) {
+for (const evaluation of await scanner.scan()) {
   for (const result of evaluation.controlResults) {
     console.log(result.result, result.detail);
   }
@@ -469,7 +487,7 @@ engine = Engine(config)
 store = EvidenceStore(config)
 producer = ToolActionProducer(config, engine, evidence_store=store)
 
-@tool(producer)
+@tool(producer=producer)
 def send_email(to: str, subject: str, body: str) -> bool:
     return email_client.send(to, subject, body)
 
@@ -480,16 +498,15 @@ result = send_email("user@example.com", "Report", "See attached.")
 import { loadConfig, ToolActionProducer, tool, EvidenceStore } from "ancilis";
 import { Engine } from "ancilis";
 
-const config = await loadConfig();
+const config = loadConfig({ path: "ancilis.yaml" });
 const engine = new Engine(config);
 const store = new EvidenceStore(config);
-const producer = new ToolActionProducer(config, engine, { evidenceStore: store });
+const producer = new ToolActionProducer(config, engine, undefined, store);
 
-const sendEmail = tool(producer)(
+const sendEmail = tool({ producer, toolName: "send_email" })(
   async (to: string, subject: string, body: string): Promise<boolean> => {
     return await emailClient.send(to, subject, body);
-  },
-  { toolName: "send_email" }
+  }
 );
 
 const result = await sendEmail("user@example.com", "Report", "See attached.");

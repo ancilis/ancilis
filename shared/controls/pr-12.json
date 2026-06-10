@@ -77,7 +77,95 @@
     "wallet",
     "key"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "Cal. Civ. Code 1798.100(e)",
+      "11 CCR 7120(b)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
+    "csa_aicm": [
+      "CEK-03",
+      "IAM-04",
+      "DSP-01"
+    ],
+    "eu-ai-act": [
+      "Art. 15(5)",
+      "Art. 55(1)(d)"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(e)",
+      "Annex I Part I(2)(d)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(2)",
+      "Premarket-Cyber-SecArch"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
+    "gdpr": [
+      "Art. 32(1)",
+      "Art. 5(1)(f)"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ],
+    "hipaa": [
+      "164.312(a)(1)",
+      "164.312(d)",
+      "164.308(a)(4)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Encryption-of-AI-Assets",
+      "AISec.Access-to-the-AI-System"
+    ],
+    "imda-mgf": [
+      "Dim-6 Security",
+      "AgenticMGF-D3 Implement Technical Controls and Processes"
+    ],
+    "iso-27001": [
+      "A.8.24",
+      "A.5.17"
+    ],
+    "iso-27701": [
+      "A.7.4.9",
+      "B.8.4.3"
+    ],
+    "iso-42001": [
+      "A.4.5"
+    ],
+    "itar-ear": [
+      "22 CFR 120.33",
+      "15 CFR 734.15"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.7"
+    ],
+    "nist-csf": [
+      "PR.AA-01",
+      "PR.DS-01",
+      "PR.PS-01"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.7"
+    ],
+    "nist_privacy_framework": [
+      "PR.AC-P1"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PS.1.1",
+      "PW.1.1"
+    ],
+    "nydfs-500": [
+      "500.7(c)",
+      "500.12"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: PR-12 Secrets, Credential & Wallet Key Custody"
+    ]
+  },
   "display_name": "Secrets, Credential and Wallet Key Custody",
   "display_detail": "Secrets, API keys, signing keys, wallet material, access information, and payment credentials used by agents are vaulted, scoped, rotated, and never exposed to prompts or untrusted tools.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-12 (Secrets, Credential & Wallet Key Custody) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

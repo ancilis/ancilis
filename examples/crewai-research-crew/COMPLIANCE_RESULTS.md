@@ -62,7 +62,7 @@ Ancilis scan — crewai-research-crew
   ✓ Evidence Integrity Monitoring — pass (10 evals)
   ✓ AI Outcome Evaluation and Harm Monitoring — pass (10 evals)
   ✓ Assurance Testing and Vulnerability Evidence Ingestion — pass (10 evals)
-  ✓ Agent Identity and Authentication — pass (10 evals)
+  ✓ Agent Identity Declaration and Match — pass (10 evals)
   ✓ Ownership Accountability — pass (10 evals)
   ✓ Risk Tolerance and Policy Baseline — pass (10 evals)
   ✓ Human Oversight and Decision Accountability — pass (10 evals)
@@ -112,7 +112,7 @@ Next steps:
 - **PR-01 Action Authorization** — the simulated callbacks attribute work to `researcher`, `analyst`, and `reporter`, while `ancilis.yaml` authorizes only `crewai-research-crew`. In production, align the configured identities with the CrewAI agent identities.
 - **PR-03 Tool/Model Integrity and Provenance** — generated CrewAI callback tools are observed but not approved. Approve expected tools with `ancilis approve-tool`.
 - **RS-02 Containment, Quarantine and Kill Switch** — containment is required because `PR-01` and `PR-03` failed, but this demo does not declare containment, quarantine, kill-switch, degrade, block, or credential-revocation intent.
-- **PR-06 Audit Trail Completeness** — the demo writes tamper-evident evidence records, but the per-action evaluator flags that no evidence store was attached to verify pre-completion persistence during each simulated action.
+- **PR-06 Audit Trail Completeness** — the demo writes tamper-evident evidence records (a SHA-256 hash chain), but the per-action evaluator flags that no evidence store was attached to verify pre-completion persistence during each simulated action.
 
 These findings are informational in `audit` mode — tool calls are still allowed and recorded.
 

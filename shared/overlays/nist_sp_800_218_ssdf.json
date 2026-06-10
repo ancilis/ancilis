@@ -1,0 +1,258 @@
+{
+  "id": "nist_sp_800_218_ssdf",
+  "name": "NIST SP 800-218, Secure Software Development Framework (SSDF) Version 1.1: Recommendations for Mitigating the Risk of Software Vulnerabilities",
+  "version": "0.1",
+  "trigger_type": "certification",
+  "triggered_by": [
+    "DC-AI",
+    "DC-IP"
+  ],
+  "description": "NIST SP 800-218 (SSDF) v1.1 is a voluntary, outcome-based secure-software-development framework of 19 practices / 42 tasks across four groups (PO Prepare the Organization, PS Protect the Software, PW Produce Well-Secured Software, RV Respond to Vulnerabilities), referenced by EO 14028 and the OMB self-attestation regime; v1.1 (Feb 2022) remains current while SP 800-218 Rev. 1 (SSDF v1.2) sits in draft (IPD Dec 2025, comments closed Jan 2026) and the AI companion SP 800-218A was finalized Jul 2024. SSDF is fundamentally an organization-and-SDLC process framework, so the agent-responsibility bou",
+  "jurisdiction": "United States (NIST; referenced by EO 14028 / OMB M-22-18 / M-23-16 attestation and FedRAMP; voluntary framework adopted globally)",
+  "regime_version": "Version 1.1, February 2022 (current published version as of 2026-06-01; SP 800-218 Rev. 1 / SSDF v1.2 was issued as Initial Public Draft 2025-12-17, comment period closed 2026-01-30, not yet finalized; companion AI profile SP 800-218A finalized 2024-07-26)",
+  "controls": {
+    "GOV-02": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": true,
+      "framework_reference": "PO.2.1 (define/maintain SDLC roles and responsibilities, designate a code owner) and PO.2.3 (obtain management commitment, appoint a single accountable leader for the secure development process). GOV-02 (named accountable owner for operation/risk/remediation) maps as baseline accountability hygiene.",
+      "evidence_requirements": []
+    },
+    "GOV-03": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": true,
+      "framework_reference": "PO.1.1/PO.1.2 (identify, document, and maintain security requirements for development infrastructure and for organization-developed software) and PO.4.1 (define and track criteria for software security checks, including KPIs/KRIs and severity thresholds). GOV-03 (risk tolerance & policy baseline wit",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PO.1.1/PO.1.2 require collecting security requirements from internal and external sources (applicable laws, regulations, contracts) once and sharing them; PO.1.3 requires communicating those requirements to third parties. GOV-06 (external obligation registry & posture reporting: framework/contract/c",
+      "evidence_requirements": []
+    },
+    "ID-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PW.4.1 requires acquiring/maintaining well-secured third-party components with provenance (SBOM/SCA) and a list of approved components with provenance data; PS.3.2 requires collecting/safeguarding provenance data (SBOM) for all release components; PW.4.4 requires verifying acquired components comply",
+      "evidence_requirements": []
+    },
+    "ID-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "PW.1.1 example 4 requires using data classification methods to identify and characterize each type of data the software will interact with. ID-03 (data flow mapping & classification: inputs/context stores/outputs/destinations + observed data classes mapped per system) directly satisfies this data-ch",
+      "evidence_requirements": []
+    },
+    "ID-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PW.4.1 example 3 requires obtaining provenance (SBOM, source/binary composition analysis) and analyzing risk a component introduces; PS.3.2 requires SBOM provenance for all release components; PO.1.3 requires communicating security requirements to third parties supplying components. ID-04 (supply-ch",
+      "evidence_requirements": []
+    },
+    "ID-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "PW.1.1 (use threat/attack modeling and attack-surface mapping to assess security risk; example 4 use data classification to characterize each data type the software interacts with) and PW.1.2 (track and maintain the software's security requirements, risks, and design decisions). ID-05 (agent risk pr",
+      "evidence_requirements": []
+    },
+    "PR-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PS.1.1 (protect all forms of code from unauthorized access/tampering, integrity via hashes/signing), PS.2.1 (make integrity verification information / code signing available), PW.6.1 (regularly validate authenticity and integrity of build tools), PO.3.2 example 7 (regularly verify integrity and prov",
+      "evidence_requirements": []
+    },
+    "PR-05": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": true,
+      "framework_reference": "PO.5.1 requires separating and protecting each environment (dev/build/test/distribution) so a compromise of one cannot affect others. PR-05 (context/tenant isolation so system/task/tenant/jurisdiction boundaries cannot silently leak) maps as baseline environment-isolation hygiene. Marked inherited b",
+      "evidence_requirements": []
+    },
+    "PR-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PO.3.3 requires configuring tools to generate artifacts (an audit trail of secure-development actions) with retention/security policies; PO.4.2 example 4 requires only-authorized access to gathered information and preventing alteration or deletion. PR-06 (every governed action records the evaluation",
+      "evidence_requirements": []
+    },
+    "PR-08": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PW.5.1 example 1 requires validating all inputs and validating/encoding all outputs as a secure-coding practice. PR-08 (input validation & injection resistance across direct inputs, indirect content, tool payloads, retrieved context) implements input/output validation at runtime for the agent. Parti",
+      "evidence_requirements": []
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PW.8.1 example 1 explicitly references performing code testing 'within a sandboxed environment'; PO.5.1 requires separating and protecting each environment (development/build/test). PR-09 (controlled code execution / sandbox enforcement: generated code/shell/dynamic execution runs only in approved s",
+      "evidence_requirements": []
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PS.1.1 (least-privilege storage of code/config-as-code, commit signing, integrity protection) and PW.1.1 example 2 (rigorous protection of credential management and access control). PR-12 (secrets/API keys/signing keys/wallet material vaulted, scoped, rotated, never exposed to prompts/untrusted tool",
+      "evidence_requirements": []
+    },
+    "DE-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PO.3.2 example 6 requires continuously monitoring tools and tool logs for potential operational and security issues, including policy violations and anomalous behavior. DE-01 (behavioral anomaly detection vs expected baselines) implements anomaly detection for the agent runtime, satisfying this for ",
+      "evidence_requirements": []
+    },
+    "DE-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PW.4.4 example 1-2 (regularly/automatically detect publicly known vulnerabilities in components vendors have not yet fixed; ensure each component is still maintained), PO.3.2 example 6 (continuously monitor tools/tool logs for anomalous behavior and policy violations), PW.6.2 example 6 (continuously",
+      "evidence_requirements": []
+    },
+    "DE-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "PO.3.3 (create an audit trail / artifacts of secure-development actions with retention and security policies) and PO.4.2 example 4 (prevent any alteration or deletion of gathered security information). DE-04 (evidence integrity monitoring: evidence chains, missing telemetry, tamper signals) maps to ",
+      "evidence_requirements": []
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "PW.7 (review/analyze human-readable code, record and triage discovered issues) and PW.8 (test executable code: functional/dynamic/fuzz/penetration testing, record and triage results) and RV.1.2 (review/analyze/test code to confirm previously undetected vulnerabilities, run automated analysis continu",
+      "evidence_requirements": []
+    },
+    "RS-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "RV.2.2 example 1 (make a risk-based decision whether each vulnerability is remediated or addressed otherwise, prioritize actions), PO.4.2 example 3 (automate decision-making processes utilizing the security-check criteria). RS-01 (automated compliance response when evidence crosses control/classific",
+      "evidence_requirements": []
+    },
+    "RS-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "RV.1.3 example 2-3 (PSIRT and incident-response processes with communications plans for all stakeholders; security response playbook for reported vulnerabilities/zero-days/active exploitation), RV.2.1 (analyze each vulnerability to gather sufficient risk information to plan remediation). RS-03 (huma",
+      "evidence_requirements": []
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "RV.1.1 (gather information from acquirers/users/public sources on potential vulnerabilities and investigate credible reports), RV.1.3 (have a vulnerability disclosure & remediation policy, establish a vulnerability disclosure program and PSIRT, security response playbooks), RV.2.2 (plan/implement ri",
+      "evidence_requirements": []
+    },
+    "RC-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "RV.3.1 (analyze vulnerabilities to determine root causes), RV.3.2 (analyze root causes over time to identify patterns), RV.3.4 (review and update the SDLC process to prevent root-cause recurrence). RC-02 (post-incident review, corrective action, lessons-learned, repeatable) maps to the root-cause / ",
+      "evidence_requirements": []
+    }
+  },
+  "framework_mapping": {
+    "GOV-02": [
+      "PO.2.1",
+      "PO.2.3"
+    ],
+    "GOV-03": [
+      "PO.1.1",
+      "PO.1.2",
+      "PO.4.1"
+    ],
+    "GOV-06": [
+      "PO.1.1",
+      "PO.1.2",
+      "PO.1.3"
+    ],
+    "ID-02": [
+      "PW.4.1",
+      "PS.3.2",
+      "PW.4.4"
+    ],
+    "ID-03": [
+      "PW.1.1"
+    ],
+    "ID-04": [
+      "PW.4.1",
+      "PS.3.2",
+      "PO.1.3"
+    ],
+    "ID-05": [
+      "PW.1.1",
+      "PW.1.2"
+    ],
+    "PR-03": [
+      "PS.1.1",
+      "PS.2.1",
+      "PW.6.1",
+      "PO.3.2"
+    ],
+    "PR-05": [
+      "PO.5.1"
+    ],
+    "PR-06": [
+      "PO.3.3",
+      "PO.4.2"
+    ],
+    "PR-08": [
+      "PW.5.1"
+    ],
+    "PR-09": [
+      "PW.8.1",
+      "PO.5.1"
+    ],
+    "PR-12": [
+      "PS.1.1",
+      "PW.1.1"
+    ],
+    "DE-01": [
+      "PO.3.2"
+    ],
+    "DE-03": [
+      "PW.4.4",
+      "PO.3.2",
+      "PW.6.2"
+    ],
+    "DE-04": [
+      "PO.3.3",
+      "PO.4.2"
+    ],
+    "DE-06": [
+      "PW.7.1",
+      "PW.7.2",
+      "PW.8.1",
+      "PW.8.2",
+      "RV.1.2"
+    ],
+    "RS-01": [
+      "RV.2.2",
+      "PO.4.2"
+    ],
+    "RS-03": [
+      "RV.1.3",
+      "RV.2.1"
+    ],
+    "RS-06": [
+      "RV.1.1",
+      "RV.1.3",
+      "RV.2.2"
+    ],
+    "RC-02": [
+      "RV.3.1",
+      "RV.3.2",
+      "RV.3.4"
+    ]
+  },
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/nist-ssdf.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True.",
+  "evidence_requirements": {}
+}

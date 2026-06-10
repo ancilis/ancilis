@@ -36,7 +36,9 @@ from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
+from ancilis.producers.enforcement import ENFORCE_CAPABLE
 from ancilis.producers.protocol import ProducerType
+from ancilis.producers.tool import BlockedActionError
 from ancilis.telemetry import record_adapter_used
 
 PROVIDER = "semantic-kernel"
@@ -109,7 +111,14 @@ def _arguments_value(context: Any) -> Any:
 
 
 class SemanticKernelActionProducer:
-    """Producer for Microsoft Semantic Kernel (Python SDK)."""
+    """Producer for Microsoft Semantic Kernel (Python SDK).
+
+    Enforce-capable: the SK filter pipeline lets the filter refuse a call by
+    raising before awaiting ``next_fn``, so in enforce mode a BLOCK decision
+    stops the function invocation rather than merely recording it.
+    """
+
+    ENFORCEMENT = ENFORCE_CAPABLE
 
     def __init__(
         self,
@@ -233,7 +242,17 @@ class SemanticKernelActionProducer:
                 agent_name=agent,
                 arguments=_arguments_value(context),
             )
-            self.observe(event)
+            observation = self.observe(event)
+            # Enforce-capable surface: refuse the invocation on a BLOCK decision
+            # by raising BEFORE awaiting next_fn, so enforce mode actually
+            # prevents the call instead of only recording it.
+            if (
+                self._config.mode == "enforce"
+                and observation.evaluation.decision == "BLOCK"
+            ):
+                raise BlockedActionError(
+                    observation.action.tool.name, observation.evaluation
+                )
             return await next_fn(context)
 
         return filter_fn

@@ -1,0 +1,83 @@
+---
+title: "FDA AI/ML-Enabled Medical Device (PCCP + 524B) Overlay"
+description: "AKSI compliance overlay mapping controls to FDA's PCCP guidance and FD&C Act sec. 524B premarket cybersecurity for AI-enabled medical devices."
+---
+
+## Overview
+
+This regime combines FDA's PCCP framework for AI-enabled medical device software (final guidance 2025-08-18, three components: Description of Modifications, Modification Protocol, Impact Assessment) with statutory premarket cybersecurity for 'cyber devices' under FD&C Act sec. 524B (effective 2023-03-29) and its implementing Premarket Cybersecurity Guidance (final 2025-06-27), plus the AI-Enabled Device Software Functions lifecycle/transparency draft guidance (2025-01-07). It is a total-product-lifecycle regulatory regime, not a pure security standard; AKSI maps strongly to its postmarket cybersecurity expectations.
+
+The `fda_ai_device_pccp` overlay packages AKSI control coverage for this regime, mapping each AKSI control to the relevant 524B statutory provisions, PCCP components, premarket cybersecurity guidance sections, and the AI-Enabled Device Software Functions lifecycle draft guidance.
+
+**Use this overlay when your agent:**
+- Is or supports an AI/ML-enabled medical device software function regulated by FDA / CDRH
+- Falls within the FD&C Act sec. 524B definition of a 'cyber device'
+- Operates under a Predetermined Change Control Plan (PCCP) for permitted modifications
+- Is part of a system seeking or maintaining an FDA premarket submission with cybersecurity content
+- Requires total-product-lifecycle (TPLC) performance monitoring and postmarket vulnerability management
+
+<Warning>
+This overlay is a **REVIEW-FIRST** mapping, not production-asserted coverage. Most control mappings are marked `partial` and several are `verified=false`. None of the controls in this overlay currently carries runtime evidence requirements (every control's `evidence_requirements` list is empty), so coverage should be treated as **indicative** and validated against your device's regulatory submission before relying on it.
+</Warning>
+
+---
+
+## Activation
+
+Enable the overlay explicitly in your configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - fda_ai_device_pccp
+```
+
+This overlay uses a `certification` trigger type, so it activates explicitly via configuration rather than auto-activating on declared data handling.
+
+---
+
+## Control Mapping
+
+The overlay maps **23** AKSI controls to this regime. The framework reference summarizes each control's mapping; no per-control runtime evidence requirements are defined in this scaffold mapping.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-02** | 524B(b)(2) requires the manufacturer (a single accountable sponsor) to design, develop and MAINTAIN processes giving reasonable assurance the device and related systems are cybersecure across the lifecycle; the PCCP Modification Protocol presupposes a named manufacturer accountable for executing the | _(none defined)_ |
+| **GOV-03** | PCCP Description of Modifications must be 'detailed, specific, and limited in scope' and stay 'within intended use boundaries'; the Impact Assessment evaluates the benefit-risk of permitted changes. GOV-03 (autonomy limits + escalation thresholds in policy before autonomous action) encodes the runti | _(none defined)_ |
+| **GOV-04** | FDA expects human review/approval context for modifications that fall outside the PCCP envelope (which require a new marketing submission) and for benefit-risk decisions; the AI Lifecycle draft guidance frames human oversight across the TPLC. GOV-04 provides human review/approval and decision accoun | _(none defined)_ |
+| **GOV-06** | The regime imposes multiple registrable external obligations (a 524B(b)(1) postmarket vulnerability-management plan submitted to FDA, the PCCP commitments, security labeling/transparency to FDA and users). GOV-06 registers framework/contract/regulator obligations and links them to posture/evidence/o | _(none defined)_ |
+| **GOV-07** | The PCCP final guidance newly recommends manufacturers update labeling and public-facing documents as the device is modified (when/how implemented, how users were informed); the AI Lifecycle draft guidance centers transparency to users; the cybersecurity guidance requires security labeling. GOV-07 d | _(none defined)_ |
+| **ID-01** | TPLC management and a PCCP presuppose an authoritative inventory of the AI-enabled device software function(s), versions, and operating context being governed. ID-01 maintains a complete current registry of governed AI systems + operating context. Partial: the device-identity/UDI and FDA listing dim | _(none defined)_ |
+| **ID-02** | 524B(b)(3) requires an SBOM including commercial, open-source and off-the-shelf software components; the premarket cyber guidance requires the SBOM to identify components with support/EOL info. ID-02 registers tools/models/integrations with provenance + approval metadata and stores a descriptor hash | _(none defined)_ |
+| **ID-04** | The premarket cyber guidance requires assessing third-party/open-source software risk and a threat model; 524B(b)(3) SBOM exists to enable component-level vulnerability and supply-chain risk assessment. ID-04 assesses models/tools/deps/prompts/orchestration for supply-chain risk (SBOM, provenance). | _(none defined)_ |
+| **ID-05** | FDA risk-management expectations (AI Lifecycle draft) and the PCCP Impact Assessment require profiling intended use, intended-use population, risk tier, and benefit-risk before deployment; the cyber guidance requires security risk management. ID-05 profiles purpose/autonomy/data sensitivity/action a | _(none defined)_ |
+| **PR-03** | The cyber guidance requires a security architecture covering updateability/patchability and integrity of components, and 524B(b)(2) requires maintaining device security. PR-03 verifies tool descriptors/model artifacts/execution surfaces against trusted baselines (hash vs ID-02), giving integrity/pro | _(none defined)_ |
+| **PR-06** | Maintaining device security under 524B(b)(2), executing the PCCP Modification Protocol, and TPLC oversight all depend on a complete, tamper-evident record of what the device/model did and which version/controls were in effect. PR-06 records the full evaluation chain per governed action, hash-chained | _(none defined)_ |
+| **PR-08** | Threat modeling and security testing (incl. fuzz/penetration) under the premarket cyber guidance must address malicious or malformed inputs to the device, and 524B(b)(2) requires reasonable assurance the device is cybersecure. PR-08 validates direct inputs, indirect content, tool payloads and retrie | _(none defined)_ |
+| **PR-12** | 524B(b)(2)/secure architecture imply protection of cryptographic keys, signing material and credentials used by the device. PR-12 vaults/scopes/rotates secrets and keeps them out of prompts/untrusted tools. Marked inherited because secrets/key-custody is generic security hygiene already owned by SOC | _(none defined)_ |
+| **DE-03** | The PCCP Modification Protocol controls which configuration/model changes are permitted, and 524B(b)(1) requires identifying postmarket changes/vulnerabilities; FDA expects detection of unauthorized or out-of-envelope configuration/model drift. DE-03 detects drift in config/deps/tools/models/policy | _(none defined)_ |
+| **DE-04** | Maintaining device security and demonstrating PCCP adherence depend on intact telemetry/evidence. DE-04 monitors evidence chains, missing telemetry and tamper signals. Inherited: evidence-integrity monitoring is general assurance hygiene supporting many regimes rather than an FDA-AI-device-native re | _(none defined)_ |
+| **DE-05** | This is a core AI-device requirement: FDA recommends performance-monitoring plans to detect changes/causes in model performance across the TPLC, address bias across demographic groups, and trigger updates/mitigations; the PCCP Modification Protocol requires pre-defined acceptance criteria and contin | _(none defined)_ |
+| **DE-06** | The premarket cyber guidance requires security testing evidence (penetration testing, fuzz testing, static/dynamic code analysis, security risk management report); the PCCP requires verification/validation activities; the AI guidance requires clinical/performance validation. DE-06 ingests vuln scans | _(none defined)_ |
+| **RS-02** | 524B(b)(2)(B) requires addressing critical vulnerabilities that could cause uncontrolled risks 'as soon as possible out of cycle'; FDA expects mitigations/corrective actions when model performance degrades. RS-02 can block/quarantine/degrade/halt agents/tools/memory/actions on risk conditions, provi | _(none defined)_ |
+| **RS-03** | The 524B(b)(1) postmarket plan and the cyber guidance vulnerability-management plan require routing significant cybersecurity events to responders; performance-monitoring corrective-action plans require escalation of safety-relevant degradations. RS-03 routes significant failures/exceptions/regulate | _(none defined)_ |
+| **RS-05** | Cybersecurity incidents in medical devices can trigger Medical Device Reporting (MDR, 21 CFR 803) and FDA/coordinating-authority notification timelines; the 524B(b)(1) plan must address postmarket exploits in a reasonable time. RS-05 starts jurisdiction-specific notification clocks, preserves decisi | _(none defined)_ |
+| **RS-06** | This is the strongest, most direct mapping. 524B(b)(1) mandates a plan to monitor/identify/address postmarket vulnerabilities INCLUDING coordinated vulnerability disclosure and related procedures; 524B(b)(2)(A)/(B) require security updates/patches on a regular cycle and out-of-cycle for critical vul | _(none defined)_ |
+| **RC-01** | The PCCP Modification Protocol must include update procedures and (implicitly) the ability to revert a modification that fails acceptance criteria; rapid out-of-cycle remediation under 524B(b)(2)(B) benefits from tested rollback paths. RC-01 documents and tests recovery plans/rollback paths/restorat | _(none defined)_ |
+| **RC-03** | Maintaining cyber-resilience and demonstrating that update/rollback procedures actually work supports 524B(b)(2) and security testing expectations. RC-03 periodically exercises recovery/rollback/failover/agent-disablement procedures and captures evidence. Inherited: resilience-exercise discipline is | _(none defined)_ |
+
+---
+
+## Jurisdiction & Retention
+
+**Jurisdiction:** United States (FDA / HHS; FDA Center for Devices and Radiological Health).
+
+No `evidence_retention_minimum_days` is defined for this overlay; retention is governed by your device's applicable FDA recordkeeping and Medical Device Reporting (21 CFR 803) obligations.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Reading Reports](/overlays/reading-reports)

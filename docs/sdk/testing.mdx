@@ -38,12 +38,12 @@ Register fixtures automatically via the `ancilis` pytest plugin (included in `an
 |---------|------|-------------|
 | `ancilis_scan` | `ScanResult` | ScanResult from a default evaluation |
 | `ancilis_store` | `MockEvidenceStore` | In-memory evidence store, closed after test |
-| `ancilis_overlay` | `str` | Active overlay name from `pytest.ini` |
+| `ancilis_overlay` | `str \| None` | Active overlay name from `pytest.ini` (`None` if unset) |
 
 **Configure the overlay in `pytest.ini`:**
 ```ini
 [pytest]
-ancilis_overlay = financial
+ancilis_overlay = glba
 ```
 
 **Example with fixtures:**
@@ -52,10 +52,10 @@ def test_identity_control(ancilis_scan):
     assert_control_passes(ancilis_scan, "PR-01")
 
 def test_store_records(ancilis_store):
-    assert ancilis_store.record_count() == 0
+    assert ancilis_store.count() == 0
 
 def test_overlay_active(ancilis_overlay):
-    assert ancilis_overlay == "financial"
+    assert ancilis_overlay == "glba"
 ```
 
 ---
@@ -80,7 +80,7 @@ assert_control_passes(scenario, "PR-02")
 ```
 AssertionError: Expected control 'PR-01' to PASS but got 'FAIL'.
   Detail: Agent identity missing.
-  Evidence: {'agent_id': None, 'verification_result': 'failed'}
+  Evidence: {'agent_id': None, 'verification_result': 'failed', 'failure_reason': 'agent_id is empty or missing'}
 ```
 
 ### `assert_control_fails(scan, control_id)`
@@ -149,6 +149,8 @@ Pre-built `ScanResult` objects for common compliance states. All scenarios work 
 |--------|-------------|
 | `financial_compliant()` | All controls PASS, financial overlay active |
 | `missing_identity()` | PR-01 FAIL — agent identity missing |
+| `minimal_viable()` | Only PR-01 scored (PASS); all other controls SKIP |
+| `all_failing()` | All controls FAIL/FLAG — useful for testing assertion errors |
 
 ```python
 from ancilis.testing import ComplianceScenarios
@@ -181,35 +183,41 @@ store.store(evaluation_result, tool_name="test_tool")
 # Query
 summary = store.get_summary()
 records = store.get_records()
-count = store.record_count()
+count = store.count()
 
-# Session management
-session_id = store.latest_session_id()
-sessions = store.list_sessions()
+# Verify the hash chain (valid, errors)
+valid, errors = store.verify_chain()
 
-# Reset (also called automatically when used as fixture)
+# Reset (delete all records) or close the in-memory connection
 store.reset()
+store.close()
 ```
 
 ---
 
 ## `FakeProducer`
 
-Produces `EvaluationResult` objects from controlled inputs without running a real agent.
+Builds `Action` objects from controlled inputs without running a real agent. Emit synthetic evidence items, then call `make_action()` and feed the action to the engine to get an `EvaluationResult`.
 
 ```python
 from ancilis.testing import FakeProducer, make_test_config
+from ancilis.engine.engine import Engine
+from ancilis.engine.registry import ToolEntry, ToolRegistry
 
 config = make_test_config(mode="enforce")
-producer = FakeProducer(config)
+registry = ToolRegistry()
+registry.register(ToolEntry(name="query_database"))
+registry.approve("query_database", approved_by="pytest")
+engine = Engine(config, registry=registry)
 
-# Emit a passing evaluation
-result = producer.emit_pass("query_database")
+producer = FakeProducer("query_database", agent_id="test-agent")
+
+# Emit synthetic evidence items, then build an Action
+producer.emit("user.id", "alice")
+action = producer.make_action(tool_name="query_database")
+
+result = engine.evaluate(action)
 assert result.decision == "ALLOW"
-
-# Emit a failing evaluation
-result = producer.emit_fail("delete_file", control_id="PR-02")
-assert result.decision == "BLOCK"  # in enforce mode
 ```
 
 ---
@@ -275,17 +283,31 @@ def test_missing_identity_fails_pr01():
     assert_control_passes(scenario, "PR-02")
 
 def test_enforce_mode_blocks_on_failure():
+    from ancilis.engine.engine import Engine
+    from ancilis.engine.registry import ToolRegistry
+
     config = make_test_config(mode="enforce")
-    producer = FakeProducer(config)
-    result = producer.emit_fail("delete_file", control_id="PR-02")
+    engine = Engine(config, registry=ToolRegistry())
+    producer = FakeProducer("delete_file", agent_id="test-agent")
+
+    # An unapproved tool fails PR-03 (tool provenance) and blocks in enforce mode
+    action = producer.make_action(tool_name="delete_file")
+    result = engine.evaluate(action)
     assert result.decision == "BLOCK"
 
 def test_store_records_evidence():
-    config = make_test_config()
-    store = MockEvidenceStore()
-    producer = FakeProducer(config)
+    from ancilis.engine.engine import Engine
+    from ancilis.engine.registry import ToolEntry, ToolRegistry
 
-    ev = producer.emit_pass("query_database")
+    config = make_test_config()
+    registry = ToolRegistry()
+    registry.register(ToolEntry(name="query_database"))
+    registry.approve("query_database", approved_by="pytest")
+    engine = Engine(config, registry=registry)
+    store = MockEvidenceStore()
+    producer = FakeProducer("query_database", agent_id="test-agent")
+
+    ev = engine.evaluate(producer.make_action(tool_name="query_database"))
     store.store(ev, tool_name="query_database")
 
     summary = store.get_summary()
@@ -299,7 +321,7 @@ def my_store():
     store.reset()
 
 def test_with_fixture(my_store):
-    assert my_store.record_count() == 0
+    assert my_store.count() == 0
 ```
 
 ---

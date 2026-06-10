@@ -75,7 +75,90 @@
     "security_update",
     "support_period"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-06 Coordinated Vulnerability Disclosure & Security Update Handling"
+    ],
+    "csa_aicm": [
+      "TVM-07",
+      "TVM-12",
+      "STA-09"
+    ],
+    "eu-ai-act": [
+      "Art. 55(1)(d)",
+      "Art. 15(5)",
+      "CoP-Safety-C9"
+    ],
+    "eu_cra": [
+      "Annex I Part II(2)",
+      "Annex I Part II(4)",
+      "Annex I Part II(5)",
+      "Annex I Part II(7)",
+      "Annex I Part II(8)",
+      "Art. 13(8)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(1)",
+      "524B(b)(2)(A)",
+      "524B(b)(2)(B)",
+      "Premarket-Cyber-CVD",
+      "Premarket-Cyber-VulnMgmtPlan"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-06 Coordinated Vulnerability Disclosure & Security Update Handling"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RS-06 Coordinated Vulnerability Disclosure & Security Update Handling"
+    ],
+    "hipaa": [
+      "164.308(a)(6)(i)",
+      "164.308(a)(1)(ii)(B)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Supply-Chain",
+      "AISec.Development-of-AI-Software"
+    ],
+    "imda-mgf": [
+      "Dim-4 Incident Reporting",
+      "Dim-6 Security"
+    ],
+    "iso-27001": [
+      "A.8.8",
+      "A.5.5",
+      "A.5.6"
+    ],
+    "iso-42001": [
+      "A.8.4",
+      "A.10.4"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 4.3",
+      "GOVERN 6.2",
+      "MANAGE 4.3"
+    ],
+    "nist-csf": [
+      "ID.RA-08",
+      "RS.MA-01",
+      "ID.IM-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.7",
+      "GV-6.1",
+      "MG-3.1"
+    ],
+    "nist_privacy_framework": [
+      "GV.MT-P5",
+      "PR.PO-P10"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "RV.1.1",
+      "RV.1.3",
+      "RV.2.2"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RS-06 Coordinated Vulnerability Disclosure & Security Update Handling"
+    ]
+  },
   "display_name": "Coordinated Vulnerability Disclosure and Security Update Handling",
   "display_detail": "Vulnerability intake, coordinated disclosure, secure-update handling, support period tracking, and remediation advisories are routed and evidenced for governed agent products.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RS-06 (Coordinated Vulnerability Disclosure & Security Update Handling) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

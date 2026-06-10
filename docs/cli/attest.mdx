@@ -1,0 +1,267 @@
+---
+title: "ancilis attest"
+description: "Record, show, list, and revoke manual attestation evidence for AKSI controls."
+---
+
+## Overview
+
+`ancilis attest` manages **manual attestation evidence** for AKSI controls that cannot be evaluated automatically (governance, supply chain, recovery, response, and similar process controls). Each subcommand reads from or writes to the local DuckDB evidence store; recorded attestations are immutable evidence records that the engine evaluates as `fresh`, `stale`, or `missing_fields`.
+
+```bash
+ancilis attest [OPTIONS] COMMAND [ARGS]...
+```
+
+This is a command group. Run one of the subcommands below:
+
+| Subcommand | Purpose |
+|------------|---------|
+| [`list`](#attest-list) | List AKSI controls that require manual attestation |
+| [`show`](#attest-show) | Show the latest attestation for one control |
+| [`record`](#attest-record) | Record manual attestation evidence for a control |
+| [`revoke`](#attest-revoke) | Revoke the latest attestation for a control |
+
+<Note>
+Attestation status is one of `none` (no record or revoked), `missing_fields` (a required field is blank), `stale` (older than the control's staleness window), or `fresh`. The control's own staleness window (90–365 days, depending on the control) determines when a recorded attestation goes stale.
+</Note>
+
+## Subcommands
+
+### attest list
+
+List every AKSI control that requires manual attestation, along with its current status and the fields it expects.
+
+```bash
+ancilis attest list [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
+| `--format` | `table` \| `json` | `table` | Output format |
+
+**Example — table output**
+```bash
+ancilis attest list
+```
+
+```
+control_id  status           last_attested_at                  attested_by               required_fields
+----------------------------------------------------------------------------------------------------------------------
+GOV-04      none             -                                 -                         oversight_policy_url, approval_workflow_id, reviewer_role, exception_log_location, responsible_party, last_review_date
+GOV-05      none             -                                 -                         data_use_policy_url, legal_basis, consent_source, contract_reference, prohibited_use_review, accountable_owner
+DE-05       none             -                                 -                         evaluation_report_url, evaluation_method, monitored_risks, latest_evaluation_date, owner
+ID-05       none             -                                 -                         agent_id, risk_profile_url, purpose_statement, autonomy_level, data_sensitivity, action_authority, impact_tier, owner, review_date
+```
+
+**Example — JSON output for automation**
+```bash
+ancilis attest list --format json
+```
+
+```json
+[
+  {
+    "control_id": "GOV-04",
+    "status": "none",
+    "required_fields": [
+      "oversight_policy_url",
+      "approval_workflow_id",
+      "reviewer_role",
+      "exception_log_location",
+      "responsible_party",
+      "last_review_date"
+    ],
+    "optional_fields": [],
+    "record_id": null,
+    "attested_at": null,
+    "attested_by": null,
+    "fields": null,
+    "missing_fields": [],
+    "revoked": false,
+    "revoked_record_id": null
+  }
+]
+```
+
+### attest show
+
+Show the required fields and the latest recorded attestation for a single control. The `CONTROL_ID` argument is case-insensitive (e.g. `gov-04` resolves to `GOV-04`).
+
+```bash
+ancilis attest show CONTROL_ID [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
+| `--format` | `pretty` \| `json` | `pretty` | Output format |
+
+**Example — control with no attestation yet**
+```bash
+ancilis attest show GOV-04
+```
+
+```
+Attestation: GOV-04 (Human Oversight and Decision Accountability)
+------------------------------------------------------------------------
+Required Fields:
+- oversight_policy_url
+- approval_workflow_id
+- reviewer_role
+- exception_log_location
+- responsible_party
+- last_review_date
+
+No attestation recorded.
+```
+
+**Example — control with a fresh attestation**
+```bash
+ancilis attest show GOV-04
+```
+
+```
+Attestation: GOV-04 (Human Oversight and Decision Accountability)
+------------------------------------------------------------------------
+Required Fields:
+- oversight_policy_url
+- approval_workflow_id
+- reviewer_role
+- exception_log_location
+- responsible_party
+- last_review_date
+
+Latest Attestation
+Record ID: 68961cd7-9918-403e-b42a-51be406e91b1
+Status: fresh
+Attested At: 2026-06-07T04:59:01.152759+00:00
+Attested By: jane@example.com
+Fields:
+  approval_workflow_id: WF-204
+  exception_log_location: s3://logs/exceptions
+  last_review_date: 2026-05-01
+  oversight_policy_url: https://wiki/oversight
+  responsible_party: Jane Doe
+  reviewer_role: Compliance Lead
+```
+
+`ancilis attest show CONTROL_ID --format json` emits the full attestation state object (the same shape as one element of `attest list --format json`).
+
+### attest record
+
+Record manual attestation evidence for a control. Every required field for that control must be supplied via repeated `--field key=value` flags, or the command fails without writing anything.
+
+```bash
+ancilis attest record CONTROL_ID [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
+| `--field` | `key=value` (repeatable) | — | An attestation field. Repeat for each field |
+| `--by` | string | config owner, then `$USER`, else `unknown` | Identity recording the attestation |
+| `--agent-id` | string | config agent id/name, else `org` | Agent or organization identity for the evidence |
+
+<Warning>
+`record` writes a new immutable evidence record to the DuckDB store. There is no update-in-place — re-running `record` appends a new attestation that supersedes the previous one. Use the control's required-field list (from `attest list` or `attest show`) to make sure every required field is present, or the command exits with code `1` and writes nothing.
+</Warning>
+
+<Note>
+For per-agent controls (currently `ID-05`), `agent_id` is part of the required evidence. If you omit `--field agent_id=...`, the value resolved from `--agent-id` (or your config) is filled in automatically.
+</Note>
+
+**Example — record a complete GOV-04 attestation**
+```bash
+ancilis attest record GOV-04 \
+  --field oversight_policy_url=https://wiki/oversight \
+  --field approval_workflow_id=WF-204 \
+  --field reviewer_role="Compliance Lead" \
+  --field exception_log_location=s3://logs/exceptions \
+  --field responsible_party="Jane Doe" \
+  --field last_review_date=2026-05-01 \
+  --by jane@example.com
+```
+
+```
+Attestation recorded for GOV-04: 68961cd7-9918-403e-b42a-51be406e91b1
+```
+
+**Example — missing required fields (exits 1, nothing written)**
+```bash
+ancilis attest record GOV-05 --field legal_basis=consent
+```
+
+```
+Missing required attestation fields: data_use_policy_url, consent_source, contract_reference, prohibited_use_review, accountable_owner
+```
+
+### attest revoke
+
+Revoke the latest attestation for a control. This does not delete the prior record; it appends a new **revocation** evidence record that points back to the revoked record. After revocation the control's status returns to `none`.
+
+```bash
+ancilis attest revoke CONTROL_ID [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
+| `--by` | string | config owner, then `$USER`, else `unknown` | Identity revoking the attestation |
+| `--agent-id` | string | config agent id/name, else `org` | Agent or organization identity for the evidence |
+
+<Warning>
+`revoke` writes a signed revocation record to the evidence store. If there is no active attestation to revoke (none recorded, or the latest is already revoked), the command prints `No active attestation found for <control>.` and exits with code `1`.
+</Warning>
+
+**Example — revoke the active GOV-04 attestation**
+```bash
+ancilis attest revoke GOV-04 --by jane@example.com
+```
+
+```
+Attestation revoked for GOV-04: 68961cd7-9918-403e-b42a-51be406e91b1 (revocation record d2f5202e-c066-451d-9870-f68bd5653c29)
+```
+
+## Examples
+
+**Discover which controls still need attestation**
+```bash
+ancilis attest list --format json | jq '.[] | select(.status == "none") | .control_id'
+```
+
+**Inspect one control before attesting**
+```bash
+ancilis attest show ID-05
+```
+
+**Record, then verify**
+```bash
+ancilis attest record DE-05 \
+  --field evaluation_report_url=https://wiki/eval \
+  --field evaluation_method=red-team \
+  --field monitored_risks="bias, toxicity" \
+  --field latest_evaluation_date=2026-05-15 \
+  --field owner="Safety Team"
+ancilis attest show DE-05
+```
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `No attestation evaluator registered for <id>.` | The control ID is not a manual-attestation control. Run `ancilis attest list` to see valid IDs |
+| `Missing required attestation fields: ...` | Supply every listed field with `--field key=value`, then re-run `record` |
+| `Fields must use key=value syntax.` | A `--field` value lacks an `=` or has an empty key |
+| `No active attestation found for <control>.` | Nothing to revoke — record one first, or it was already revoked |
+| `ancilis.yaml not found` | Run `ancilis init`, or pass `--config path/to/ancilis.yaml` |
+
+## Related
+
+- [ancilis scan](/cli/scan) — evaluate posture; manual-attestation controls show as `SKIP` until attested, then `pass`/`fail`/`flag`
+- [ancilis status](/cli/status) — lightweight posture check
+- [ancilis report](/cli/report) — full posture report including attested controls
+- [ancilis doctor](/cli/doctor) — verify config and evidence store health

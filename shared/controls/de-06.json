@@ -79,7 +79,109 @@
     "red_team",
     "testing"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
+    "colorado-ai-act": [
+      "6-1-1702(2)",
+      "6-1-1703(3)"
+    ],
+    "csa_aicm": [
+      "MDS-06",
+      "MDS-07",
+      "TVM-12",
+      "A&A-01"
+    ],
+    "eu-ai-act": [
+      "Art. 9(6)",
+      "Art. 9(8)",
+      "Art. 15(1)",
+      "Art. 55(1)(a)",
+      "CoP-Safety-C3.2"
+    ],
+    "eu_cra": [
+      "Annex I Part II(3)",
+      "Annex I Part I(2)(a)"
+    ],
+    "fda_ai_device_pccp": [
+      "Premarket-Cyber-SecTesting",
+      "Premarket-Cyber-SRM",
+      "PCCP-ModProtocol",
+      "AI-LCM-Draft-PerfMonitoring"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ],
+    "hipaa": [
+      "164.308(a)(8)",
+      "164.308(a)(1)(ii)(A)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Threat-Management",
+      "AISec.Model-Robustness",
+      "AISec.Development-of-AI-Software"
+    ],
+    "imda-mgf": [
+      "Dim-5 Testing and Assurance",
+      "Dim-3 Trusted Development and Deployment",
+      "AIV-Robustness",
+      "AIV-Fairness"
+    ],
+    "iso-23894": [
+      "6.4.3",
+      "6.6"
+    ],
+    "iso-27001": [
+      "A.8.8",
+      "A.8.29"
+    ],
+    "iso-42001": [
+      "A.6.2.4",
+      "9.1",
+      "9.2"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.1",
+      "MEASURE 2.7",
+      "MEASURE 1.3",
+      "GOVERN 4.3"
+    ],
+    "nist-csf": [
+      "ID.RA-01",
+      "ID.RA-08",
+      "ID.IM-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-1.1",
+      "MS-1.3",
+      "MS-2.6",
+      "MS-2.7",
+      "GV-4.3"
+    ],
+    "nist_privacy_framework": [
+      "CT.DM-P9",
+      "PR.PO-P10",
+      "ID.DE-P5"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PW.7.1",
+      "PW.7.2",
+      "PW.8.1",
+      "PW.8.2",
+      "RV.1.2"
+    ],
+    "nydfs-500": [
+      "500.5",
+      "500.2(c)"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: DE-06 Assurance Testing & Vulnerability Evidence Ingestion"
+    ]
+  },
   "display_name": "Assurance Testing and Vulnerability Evidence Ingestion",
   "display_detail": "Agent-specific vulnerability scans, adversarial tests, red-team exercises, resilience tests, clinical/safety validations, and third-party evaluations are ingested as control evidence with remediation state.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for DE-06 (Assurance Testing & Vulnerability Evidence Ingestion) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

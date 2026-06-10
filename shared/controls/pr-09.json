@@ -75,7 +75,78 @@
     "command",
     "execution"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "UUS-CYBER",
+      "AUG-AGENTIC"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "csa_aicm": [
+      "AIS-11",
+      "IVS-01",
+      "TVM-11"
+    ],
+    "eu-ai-act": [
+      "Art. 15(4)",
+      "Art. 15(5)"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(j)",
+      "Annex I Part I(2)(k)"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ],
+    "hipaa": [
+      "164.306(a)",
+      "164.312(c)(1)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Development-of-AI-Software",
+      "AISec.Access-to-the-AI-System"
+    ],
+    "imda-mgf": [
+      "AgenticMGF-D3 Implement Technical Controls and Processes",
+      "Dim-6 Security"
+    ],
+    "iso-27001": [
+      "A.8.31",
+      "A.8.18",
+      "A.8.19"
+    ],
+    "iso-27701": [
+      "A.7.4.5"
+    ],
+    "iso-42001": [
+      "8.1",
+      "A.6.2.5",
+      "A.4.5"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.6",
+      "MEASURE 2.7"
+    ],
+    "nist-csf": [
+      "PR.PS-01",
+      "PR.IR-01"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.7",
+      "GV-1.3"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PW.8.1",
+      "PO.5.1"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: PR-09 Controlled Code Execution & Sandbox Enforcement"
+    ]
+  },
   "display_name": "Controlled Code Execution and Sandbox Enforcement",
   "display_detail": "Generated code, shell commands, and dynamic execution artifacts run only inside approved sandbox execution classes.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-09 (Controlled Code Execution & Sandbox Enforcement) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

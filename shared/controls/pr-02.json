@@ -73,7 +73,116 @@
     "least_privilege",
     "session"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "UUS-CYBER",
+      "UUS-PRIVACY",
+      "UUS-CRITINFRA"
+    ],
+    "ccpa": [
+      "§1798.100(a)",
+      "§1798.121"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 AC.L2-3.1.3, AC.L2-3.1.5, AC.L2-3.1.7",
+      "NIST SP 800-171 Rev. 3 03.01.03, 03.01.05, 03.01.07"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702",
+      "Purposeful use limitation"
+    ],
+    "csa_aicm": [
+      "IAM-19",
+      "AIS-11"
+    ],
+    "dora": [
+      "DORA Art. 9(2)"
+    ],
+    "eu-ai-act": [
+      "Art.9.4"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(d)",
+      "Annex I Part I(2)(j)"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 AC-5, AC-6, AC-14, AC-17",
+      "FedRAMP Moderate AC-5, AC-6, AC-14, AC-17"
+    ],
+    "gdpr": [
+      "Art. 5(1)(b)",
+      "Art. 6",
+      "Art. 9"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(1)",
+      "SOX §302, §404",
+      "DORA Art.9"
+    ],
+    "hipaa": [
+      "164.312(a)(1)",
+      "164.308(a)(3)",
+      "164.502(b)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Access-to-the-AI-System"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 (implied)",
+      "Minimal Access Principle"
+    ],
+    "iso-27001": [
+      "A.8.3",
+      "A.8.2",
+      "A.5.15",
+      "A.5.18"
+    ],
+    "iso-42001": [
+      "Clause 8.4"
+    ],
+    "itar-ear": [
+      "15 CFR 736.2",
+      "15 CFR 744.1",
+      "22 CFR 120.16"
+    ],
+    "mas-trm": [
+      "MAS TRM §7.1"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(i)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 1.6"
+    ],
+    "nist-csf": [
+      "PR.AA-01",
+      "PR.AA-05"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MG-1.3",
+      "MS-2.7"
+    ],
+    "nist_privacy_framework": [
+      "PR.AC-P1",
+      "PR.AC-P4"
+    ],
+    "nydfs-500": [
+      "500.7(a)"
+    ],
+    "pci-dss-v4": [
+      "Req 7.2.1",
+      "Req 7.2.2",
+      "Req 7.2.5"
+    ],
+    "securities-mnpi": [
+      "SOX §302, §404",
+      "SEC Reg FD 17 CFR 243.100(b)"
+    ],
+    "soc2": [
+      "CC6.1",
+      "CC6.3"
+    ]
+  },
   "display_name": "Permission Scope Enforcement",
   "display_detail": "Each agent operates inside explicit least-privilege scopes checked per session and per action.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-02 (Permission Scope Enforcement) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

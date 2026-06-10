@@ -25,12 +25,12 @@ Direct runtime evaluator controls:
 | DE-02 | Classification drift | Declared-vs-observed data classification and boundary drift |
 | DE-03 | Configuration/dependency drift | Tool, dependency, and policy baseline drift |
 | DE-04 | Evidence integrity | Evidence chain and missing telemetry checks |
-| GOV-01 | Agent identity authentication | Verifiable runtime identity and authentication signals |
+| GOV-01 | Agent identity declaration and match | Declared agent identity matched at runtime (consistency check, not credential authentication) |
 | GOV-02 | Ownership accountability | Named owner and accountability metadata |
 | GOV-03 | Risk tolerance baseline | Policy thresholds, autonomy limits, and escalation requirements |
 | ID-01 | Agent inventory | Registry metadata for governed agents and tool surfaces |
-| PR-01 | Identity verification | Agent identity present and valid |
-| PR-02 | Scope enforcement | Tool in allowed list, not in blocked list, rate limits |
+| PR-01 | Action authorization | Agent identity authorized, target not blocked, policy gate satisfied |
+| PR-02 | Permission scope enforcement | Tool in allowed list, not in blocked list, rate limits |
 | PR-03 | Tool provenance | Tool registered and hash-verified |
 | PR-04 | Data exposure scan | Sensitive data patterns in parameters |
 | PR-05 | Context isolation | Tenant and context-boundary isolation signals |
@@ -73,36 +73,83 @@ Overlays produce compliance posture reports and only reference known AKSI v0.6 c
 
 ## Evidence trust boundary
 
-The SHA-256 hash chain provides tamper detection — if someone modifies a record in the DuckDB database, verification will fail. However:
+The hash chain over evidence records protects integrity. New records use
+**HMAC-SHA256 (chain format v2)**, keyed with a secret held OUTSIDE the database
+— the `ANCILIS_CHAIN_KEY` environment variable or an OS keyring entry.
+`verify_chain` requires that key to verify v2 records.
 
-- An attacker with host access could replace the **entire** database with a new one that has a valid chain
-- The hash chain does not prevent deletion, only detects modification
-- Evidence integrity ultimately depends on protecting the underlying host and database file
+- **With the key (v2):** modification or per-record forgery is detected — an
+  attacker who can write the database cannot recompute a valid HMAC, or re-chain
+  the following records, without the key. This holds only while the key is kept
+  off the database host's persistent storage.
+- **Without a key (legacy v1, unkeyed SHA-256):** the chain detects accidental
+  corruption but is NOT cryptographically attestable against a writer-capable
+  adversary. Anyone who can write the database can alter a record, recompute its
+  SHA-256 hash, and re-chain every following record into a fully valid chain —
+  **this is per-record forgery, not merely whole-database replacement.**
+  `verify_chain` reports such records as **legacy-unverified**, never as verified.
+- The chain does not by itself prevent deletion. `ancilis evidence reset` and
+  `ancilis evidence prune` first record a signed high-water-mark checkpoint, so a
+  wipe is reported by `verify_chain` rather than passing as a pristine empty chain.
+- **Downgrade resistance and its limit.** A signed keyed migration checkpoint
+  marks where keyed (v2) chaining began; `verify_chain` rejects a v1 record after
+  that boundary, and trusts only *keyed* checkpoints to authorize a purge gap, so
+  an attacker cannot bypass HMAC by editing the version column or forging an
+  unkeyed checkpoint. The residual limit is inherent to in-database integrity: an
+  attacker who can write the DB *and* deletes every keyed record and checkpoint
+  reduces the store to an all-legacy chain — which `verify_chain` then reports as
+  `legacy-unverified` (not `verified`), so an operator who has been writing keyed
+  evidence will see the downgrade. Exporting to an append-only external store
+  removes this residual entirely.
 
-For stronger guarantees, export evidence to an append-only external store.
+Migration: records created before keyed chaining stay v1 (reported as
+legacy-unverified). Set `ANCILIS_CHAIN_KEY` to write v2 records going forward;
+the chain continues from the last record. For the strongest guarantee, also
+export evidence to an append-only external store.
 
 ### Hash chain field coverage
 
-All evidence record fields relevant to a control decision are included in the SHA-256 hash:
-`evaluation_id`, `timestamp`, `agent_id`, `source_type`, `tool_name`, `decision`, `mode`,
-`control_results`, `active_overlays`, `data_classifications`, `active_certifications`,
-`total_duration_ms`, `previous_hash`, and `output_summary` (when present).
+The canonical payload that is hashed covers every field relevant to a control
+decision: `evaluation_id`, `timestamp`, `agent_id`, `source_type`, `tool_name`,
+`decision`, `mode`, `control_results`, `active_overlays`, `data_classifications`,
+`active_certifications`, `total_duration_ms`, `previous_hash`, and (when present)
+`output_summary`, `session_id`, `tenant_id`, `detected_data_types`, `sdk_version`,
+`framework_version`, and `classification_context`. Only storage addresses
+(`record_id`, `seq_id`) and the `record_hash` output itself are excluded.
 
-Fields excluded from the hash by design: `record_id`, `sdk_version`, `detected_data_types`,
-`classification_context`. These are supplemental metadata and their modification does not alter
-the tamper-evidence of the control decision record.
+**Backward compatibility (ANC-922):** older v1 records were hashed over a narrower
+payload (before the expanded metadata fields were added). `verify_chain` accepts
+those narrower payloads ONLY for v1 (legacy) records and reports them as
+legacy-unverified. v2 (keyed) records must match the full payload exactly, so the
+narrower-payload path can never be used to forge a keyed record by stripping fields.
 
-**Backward compatibility:** Records created before `output_summary` was added to the hash scheme
-store `NULL` for that field. `verify_chain` uses conditional-inclusion logic — `output_summary`
-is added to the canonical payload only when non-null. This means:
-- Legacy records with `output_summary=NULL` verify correctly against their stored hash.
-- Post-hoc injection of a non-null value into a legacy record is still detected as a hash
-  mismatch, because the recomputed canonical includes the injected value while the stored hash
-  does not.
+## Local-first; optional hosted platform
 
-## No GUI, no SaaS
+Ancilis is an SDK and CLI that runs fully local by default: every action is
+evaluated locally, evidence is written to a local DuckDB store, and reports are
+generated locally. Core evaluation requires no network and no hosted service.
 
-Ancilis is an SDK and CLI. There is no web dashboard, no hosted service, no cloud sync. Evidence is local. Reports are generated locally.
+There is an **optional** hosted platform (dashboard), and it is strictly opt-in:
+
+- Sync is enabled by setting `platform.url` in `ancilis.yaml` together with an
+  API key in the environment variable named by `platform.api_key_env` (default
+  `ANCILIS_API_KEY`). With no `platform.url` configured, `ancilis sync` does
+  nothing and there is no background sync.
+- `ancilis connect --api-key <key>` writes `~/.ancilis/platform.json`; that file
+  is what `ancilis doctor`'s connectivity/API-key checks read. (Evidence sync
+  itself reads `platform.url` + the env-var key, not `platform.json`.)
+- `ancilis sync` then POSTs evidence batches to `<platform.url>/api/evidence/batches`
+  (use an `https://` platform URL for transport security — the client posts to
+  whatever URL you configure) so the dashboard can show posture across environments.
+
+What leaves your machine: only when `platform.url` is configured and you run
+`ancilis sync`, the serialized evidence records are uploaded — that includes the
+record/previous hashes, agent and tool identifiers, decision and mode, per-control
+results, active overlays, data classifications, certifications, session and tenant
+IDs, SDK/framework versions, detected data types, classification context, and any
+`output_summary` you recorded. With no `platform.url` set, nothing is uploaded. To
+guarantee fully offline operation even if a URL is present, set
+`sync.offline_mode: always_offline` in `ancilis.yaml`.
 
 ## PDF export
 

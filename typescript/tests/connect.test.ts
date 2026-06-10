@@ -42,7 +42,7 @@ describe("runConnect", () => {
     const result = await runConnect([], io, { homeDir });
     expect(result.ok).toBe(true);
     expect(stdout()).toMatch(/Status: not connected/);
-    expect(stdout()).toMatch(/ancilis\.dev/);
+    expect(stdout()).toMatch(/ancilis\.ai/);
   });
 
   it("shows connected status when platform.json exists", async () => {
@@ -50,14 +50,14 @@ describe("runConnect", () => {
     mkdirSync(ancilisDir, { recursive: true });
     writeFileSync(
       join(ancilisDir, "platform.json"),
-      JSON.stringify({ platform: "ancilis.dev" }),
+      JSON.stringify({ platform: "app.ancilis.ai" }),
     );
 
     const { io, stdout } = captureIo();
     const result = await runConnect([], io, { homeDir });
     expect(result.ok).toBe(true);
     expect(stdout()).toMatch(/Status: connected/);
-    expect(stdout()).toMatch(/ancilis\.dev/);
+    expect(stdout()).toMatch(/ancilis\.ai/);
     expect(stdout()).toMatch(/platform\.json/);
   });
 

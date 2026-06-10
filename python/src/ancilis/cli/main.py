@@ -8,6 +8,7 @@ from typing import Any
 
 import click
 
+from ancilis import __version__
 from ancilis.cli.status import status
 from ancilis.cli.report import report
 from ancilis.cli.remediate import remediate
@@ -46,6 +47,8 @@ class AncilisCLIGroup(click.Group):
         standalone_mode: bool = True,
         **extra: Any,
     ) -> Any:
+        from ancilis.errors import AncilisError, print_error
+
         tokens = list(args) if args is not None else sys.argv[1:]
         command = _top_level_command([str(token) for token in tokens])
         exit_code = 0
@@ -64,6 +67,16 @@ class AncilisCLIGroup(click.Group):
         except click.ClickException as exc:
             exit_code = exc.exit_code
             raise
+        except AncilisError as exc:
+            # The installed console script invokes this group directly (not the
+            # module-level main()), so the clean AncilisError handler must live
+            # here too — otherwise a ConfigError/StorageError tracebacks. Respect
+            # standalone_mode: programmatic/nested callers get the exception.
+            exit_code = 1
+            if not standalone_mode:
+                raise
+            print_error(exc)
+            sys.exit(1)
         finally:
             if command != "telemetry":
                 from ancilis.telemetry import record_telemetry_event
@@ -72,7 +85,7 @@ class AncilisCLIGroup(click.Group):
 
 
 @click.group(cls=AncilisCLIGroup)
-@click.version_option(version="0.1.0", prog_name="ancilis")
+@click.version_option(version=__version__, prog_name="ancilis")
 @click.option("--no-update-check", is_flag=True, default=False, hidden=True,
               help="Suppress update check.")
 @click.pass_context

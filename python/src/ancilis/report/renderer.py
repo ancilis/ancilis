@@ -18,6 +18,20 @@ from ancilis.evidence.record import EvidenceRecord
 from ancilis.report.generator import ReportData
 
 
+def _chain_status_label(status: str) -> str:
+    """Honest evidence-chain label for a *valid* chain.
+
+    Distinguishes keyed-verified from legacy-unverified so reports never claim
+    cryptographic verification for an unkeyed (legacy) chain.
+    """
+    return {
+        "verified": "verified (HMAC)",
+        "legacy-unverified": "legacy-unverified (set ANCILIS_CHAIN_KEY)",
+        "mixed": "mixed (HMAC-verified + legacy)",
+        "reset-or-purged": "reset/purged (see audit log)",
+    }.get(status, "intact")
+
+
 @dataclass(frozen=True)
 class RenderPdfResult:
     format: str
@@ -157,7 +171,7 @@ def render_markdown(data: ReportData) -> str:
     lines.append("")
     lines.append("## Evidence Integrity")
     lines.append("")
-    chain = "intact (verified)" if data.chain_valid else "**BROKEN**"
+    chain = _chain_status_label(data.chain_status) if data.chain_valid else "**BROKEN**"
     lines.append(f"- Evidence records: {data.total_evaluations:,}")
     lines.append(f"- Hash chain: {chain}")
     lines.append("")
@@ -329,7 +343,7 @@ def _build_posture_summary(data: ReportData) -> dict[str, Any]:
         "overlay_label": ", ".join(section["overlay_name"] for section in data.compliance_sections) or "none",
         "certification_label": certification_label,
         "chain_mark": "\u2713" if data.chain_valid else "\u2717",
-        "chain_label": "intact" if data.chain_valid else "BROKEN",
+        "chain_label": _chain_status_label(data.chain_status) if data.chain_valid else "BROKEN",
         "chain_color": "green" if data.chain_valid else "red",
     }
 
@@ -456,7 +470,7 @@ def _render_certification_terminal(
     ready = cert.get("ready_count", 0)
     lines.append(f"  Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
     lines.append(f"  Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
-    chain = "intact" if cert.get("chain_valid", True) else "BROKEN"
+    chain = _chain_status_label(cert.get("chain_status", "")) if cert.get("chain_valid", True) else "BROKEN"
     lines.append(f"  Evidence records: {cert.get('evidence_count', 0):,}, hash chain {chain}")
 
 
@@ -506,6 +520,12 @@ def _render_executive_summary_markdown(lines: list[str], data: ReportData) -> No
     )
     lines.append("")
     lines.append(
+        "This count covers both runtime-evaluated controls and attestation-backed "
+        "organizational controls; each overlay section below leads with how many "
+        "of its criteria Ancilis evaluates at runtime versus by attestation."
+    )
+    lines.append("")
+    lines.append(
         f"- {data.total_evaluations:,} evaluations in period | "
         f"{posture['blocked_evaluations']} blocked | "
         f"{posture['allowed_evaluations']} allowed"
@@ -513,7 +533,7 @@ def _render_executive_summary_markdown(lines: list[str], data: ReportData) -> No
     lines.append(f"- Active overlays: {posture['overlay_label']}")
     lines.append(f"- Active certifications: {posture['certification_label']}")
     if data.chain_valid:
-        lines.append(f"- Evidence chain: intact ({data.total_evaluations:,} records, SHA-256 verified)")
+        lines.append(f"- Evidence chain: {_chain_status_label(data.chain_status)} ({data.total_evaluations:,} records)")
     else:
         lines.append(f"- Evidence chain: **BROKEN** ({data.total_evaluations:,} records)")
 
@@ -563,19 +583,54 @@ def _render_compliance_markdown(lines: list[str], section: dict[str, Any]) -> No
         lines.append(f"**Controls at strict threshold:** {', '.join(strict)}  ")
     lines.append("")
 
-    lines.append("| Citation | Control | Evaluations | Pass Rate |")
-    lines.append("|----------|---------|-------------|-----------|")
-    for c in section.get("controls", []):
-        citations = ", ".join(c.get("citations", []))
-        if c["total"] > 0:
-            lines.append(f"| {citations} | {c['control_id']} | {c['total']} | {c['pass_rate']}% |")
-        else:
-            lines.append(f"| {citations} | {c['control_id']} | 0 | - |")
+    # Lead with honest scope: how much of this overlay Ancilis evaluates at
+    # runtime vs. what is organizational (attestation-only).
+    if section.get("scaffold"):
+        lines.append(
+            "> **Scaffold mapping — not yet verified.** Ancilis does not provide "
+            "runtime evidence for this overlay yet; its control crosswalk is a "
+            "placeholder. Treat any coverage below as indicative only."
+        )
+        lines.append("")
+    else:
+        runtime_n = section.get("runtime_criteria", 0)
+        total_m = section.get("total_criteria", 0)
+        org_n = section.get("organizational_criteria", 0)
+        lines.append(
+            f"Ancilis provides runtime evidence for {runtime_n} of {total_m} mapped "
+            f"criteria; the remaining {org_n} are organizational controls it does not "
+            f"assess (evidenced by attestation)."
+        )
+        lines.append("")
+
+    controls = section.get("controls", [])
+    if controls:
+        lines.append("| Citation | Control | Type | Evaluations | Pass Rate |")
+        lines.append("|----------|---------|------|-------------|-----------|")
+        for c in controls:
+            citations = ", ".join(c.get("citations", []))
+            ctype = "runtime" if c.get("runtime_testable") else "attestation"
+            if c["total"] > 0:
+                lines.append(f"| {citations} | {c['control_id']} | {ctype} | {c['total']} | {c['pass_rate']}% |")
+            else:
+                lines.append(f"| {citations} | {c['control_id']} | {ctype} | 0 | - |")
+    else:
+        lines.append("No verified criteria mapped yet.")
 
     retention = section.get("evidence_retention_days", 365)
+    configured = section.get("evidence_retention_days_configured")
     met = "\u2713" if section.get("retention_met", True) else "\u2717"
     lines.append("")
-    lines.append(f"Evidence retention: {retention} days {met}")
+    if configured is not None:
+        # Honest: show the configured window vs the framework-required minimum,
+        # and how to actually enforce it. retention_met reflects policy-meets-
+        # minimum; pruning is what bounds stored data to the window.
+        lines.append(
+            f"Evidence retention: {configured} days configured, {retention} required {met}"
+        )
+        lines.append("Enforce the window with: ancilis evidence prune")
+    else:
+        lines.append(f"Evidence retention: {retention} days {met}")
 
     gaps = section.get("gaps", [])
     if gaps:
@@ -594,7 +649,7 @@ def _render_certification_markdown(lines: list[str], cert: dict[str, Any]) -> No
     coverage = cert.get("coverage_percentage", 0)
     lines.append(f"- Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
     lines.append(f"- Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
-    chain = "intact (verified)" if cert.get("chain_valid", True) else "**BROKEN**"
+    chain = _chain_status_label(cert.get("chain_status", "")) if cert.get("chain_valid", True) else "**BROKEN**"
     lines.append(f"- Evidence records: {cert.get('evidence_count', 0):,}")
     lines.append(f"- Hash chain: {chain}")
 
@@ -681,7 +736,7 @@ def _render_aiuc1_readiness_markdown(lines: list[str], data: ReportData) -> None
     lines.append(f"- Readiness: {readiness}% ({ready} of {cert['total_requirements']} requirements passing)")
     lines.append(f"- Coverage: {coverage}% ({cert['automated_count']} automated, {cert['operator_count']} operator)")
     lines.append(f"- Evidence records: {cert.get('evidence_count', 0):,} over reporting period")
-    chain = "intact (verified)" if cert.get("chain_valid", True) else "**BROKEN**"
+    chain = _chain_status_label(cert.get("chain_status", "")) if cert.get("chain_valid", True) else "**BROKEN**"
     lines.append(f"- Hash chain: {chain}")
 
     # Automated coverage

@@ -1,0 +1,99 @@
+---
+title: "agent-runtime-threats Overlay"
+description: "AKSI scaffold overlay wiring agent-runtime-threat controls for agents handling AI-classified data."
+---
+
+<Warning>
+This overlay is a **scaffold mapping** that is not yet backed by runtime evidence. It wires the controls that reference `agent-runtime-threats` but asserts **no** framework references or requirement-ID mappings (`framework_mapping` is empty). Treat its coverage as **indicative only** — populate from an authoritative source before relying on it for any production compliance assertion.
+</Warning>
+
+## Overview
+
+The `agent-runtime-threats` overlay packages AKSI control wiring for runtime threats that apply to AI agents. It exists to resolve a dangling control-to-overlay reference: it connects the 39 AKSI controls that reference `agent-runtime-threats` to the overlay, without asserting any requirement-ID crosswalk. No framework references or evidence requirements are defined yet — the overlay carries control wiring only.
+
+**Use this overlay when your agent:**
+- Handles data classified as `DC-AI` (AI-classified data)
+- Needs the `agent-runtime-threats` controls wired into its compliance configuration
+- Is being prepared for a future runtime-threat evidence mapping (scaffold stage)
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - agent-runtime-threats
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares handling of the relevant data class (`DC-AI`) via `my_agent_handles`:
+```yaml
+my_agent_handles:
+  - DC-AI
+```
+See [Data Classification](/data-classification) for how classification codes map to overlays.
+
+---
+
+## Control Mapping
+
+The overlay wires every control below. Framework references and evidence requirements are empty at this scaffold stage (no authoritative source has populated them yet), so those columns are shown as `—`.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| GOV-01 | — | — |
+| GOV-02 | — | — |
+| GOV-03 | — | — |
+| GOV-04 | — | — |
+| GOV-05 | — | — |
+| GOV-06 | — | — |
+| GOV-07 | — | — |
+| ID-01 | — | — |
+| ID-02 | — | — |
+| ID-03 | — | — |
+| ID-04 | — | — |
+| ID-05 | — | — |
+| PR-01 | — | — |
+| PR-02 | — | — |
+| PR-03 | — | — |
+| PR-04 | — | — |
+| PR-05 | — | — |
+| PR-06 | — | — |
+| PR-07 | — | — |
+| PR-08 | — | — |
+| PR-09 | — | — |
+| PR-10 | — | — |
+| PR-11 | — | — |
+| PR-12 | — | — |
+| DE-01 | — | — |
+| DE-02 | — | — |
+| DE-03 | — | — |
+| DE-04 | — | — |
+| DE-05 | — | — |
+| DE-06 | — | — |
+| RS-01 | — | — |
+| RS-02 | — | — |
+| RS-03 | — | — |
+| RS-04 | — | — |
+| RS-05 | — | — |
+| RS-06 | — | — |
+| RC-01 | — | — |
+| RC-02 | — | — |
+| RC-03 | — | — |
+
+39 controls wired.
+
+---
+
+## Retention & Jurisdiction
+
+This overlay defines no jurisdiction and no minimum evidence-retention period. As a scaffold, it asserts no retention or jurisdictional requirements of its own — retention and jurisdiction are governed by your agent's other active overlays and configuration until this overlay is populated from an authoritative source.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

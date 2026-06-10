@@ -11,6 +11,7 @@ import { EvidenceStore } from "../evidence/store.js";
 import { parsePeriod } from "../report/generator.js";
 import { sharedPathFrom } from "../shared-path.js";
 import { scanDependencies } from "../dependencies/index.js";
+import { __version__ } from "../index.js";
 import type { VulnerabilityFinding } from "../dependencies/index.js";
 import type { EvaluationResult, ControlResult } from "../engine/result.js";
 import {
@@ -127,7 +128,7 @@ function printFirstRunGuidance(out: (m: string) => void): void {
   out("Try the demo:");
   out("  cd examples/demo && npx ancilis scan");
   out("");
-  out("Docs: https://ancilis.dev/quickstart");
+  out("Docs: https://docs.ancilis.ai/quickstart");
 }
 
 function printNextSteps(out: (m: string) => void): void {
@@ -516,7 +517,7 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
         : { status: "disabled" };
 
       const output = {
-        version: "0.1.0",
+        version: __version__,
         agent: config.agentName,
         mode: config.mode,
         timestamp: new Date().toISOString(),

@@ -74,7 +74,95 @@
     "integrity",
     "replay"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.150"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 SC.L2-3.13.5, SC.L2-3.13.8",
+      "NIST SP 800-171 Rev. 3 03.13.05, 03.13.08, 03.13.11"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(a)",
+      "Risk management program"
+    ],
+    "csa_aicm": [
+      "AIS-01",
+      "CEK-03",
+      "IVS-03"
+    ],
+    "dora": [
+      "DORA Art. 9(2)",
+      "DORA Art. 9(4)(b)"
+    ],
+    "eu-ai-act": [
+      "Art.15.4"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(e)",
+      "Annex I Part I(2)(f)"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 SC-5, SC-7",
+      "FedRAMP Moderate SC-5, SC-7, SC-7(3)"
+    ],
+    "gdpr": [
+      "Art. 32(1)(b)"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(3)",
+      "SOX §404",
+      "DORA Art.9"
+    ],
+    "hipaa": [
+      "164.312(e)(1)",
+      "164.312(e)(2)(ii)"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 (implied)",
+      "Data Security in Operations"
+    ],
+    "iso-27001": [
+      "A.8.24",
+      "A.5.14"
+    ],
+    "iso-27701": [
+      "A.7.4.9",
+      "B.8.4.3"
+    ],
+    "iso-42001": [
+      "Clause 8.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §7.2",
+      "§13.2"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(h)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 2.2"
+    ],
+    "nist-csf": [
+      "PR.DS-01",
+      "PR.DS-02"
+    ],
+    "nist_privacy_framework": [
+      "PR.DS-P2",
+      "PR.PT-P3"
+    ],
+    "pci-dss-v4": [
+      "Req 3.5.1",
+      "Req 4.2.1"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "soc2": [
+      "CC6.7"
+    ]
+  },
   "display_name": "Secure Communication and Agent Messaging",
   "display_detail": "Agent communication uses authenticated, integrity-protected, replay-resistant channels and signed task context.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for PR-07 (Secure Communication & Agent Messaging) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

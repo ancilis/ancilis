@@ -1,0 +1,108 @@
+---
+title: "Config & Middleware"
+description: "Load Ancilis configuration, wrap an MCP session with policy enforcement, ship evidence to the platform, and read the AKSI framework version."
+---
+
+## Overview
+
+This page documents the entry points for getting an Ancilis runtime wired up: loading and resolving an `ancilis.yaml` configuration, the MCP middleware that intercepts and evaluates tool calls, the optional platform client for evidence ingest, and the frozen AKSI framework-version constant.
+
+All signatures below are copied verbatim from Python introspection (`inspect.signature`) of `ancilis.__all__`. Each symbol is importable from the top-level `ancilis` package.
+
+```python
+from ancilis import (
+    AKSI_FRAMEWORK_VERSION,
+    AncilisMiddleware,
+    PlatformClient,
+    load_config,
+)
+```
+
+## Configuration
+
+### `load_config`
+
+<ParamField path="kind" type="function">function</ParamField>
+
+```python
+load_config(path: 'str | Path | None' = None, raw: 'dict[str, Any] | None' = None, *, plugin_registry: 'PluginRegistry | None' = None, plugin_configs: 'dict[str, dict[str, Any]] | None' = None) -> 'ResolvedConfig'
+```
+
+Load and resolve an Ancilis configuration.
+
+Pass a `path` to an `ancilis.yaml` file, or a `raw` config dict as an alternative to a file path. If neither is given, `load_config` looks for `ancilis.yaml` in the current directory and raises `FileNotFoundError` if none is found. When loading from a path, custom controls under `.ancilis/controls` next to the config file are loaded as well.
+
+Returns a `ResolvedConfig` with all controls, overlays, and classifications resolved. The optional `plugin_registry` and `plugin_configs` keyword arguments let you resolve plugin-provided configuration during the load.
+
+```python
+from ancilis import load_config
+
+# From a file
+config = load_config(path="ancilis.yaml")
+
+# From an in-memory dict (no file required)
+config = load_config(raw={"agent": {"name": "ancilis-agent"}})
+```
+
+## MCP Middleware
+
+### `AncilisMiddleware`
+
+<ParamField path="kind" type="class">class</ParamField>
+
+```python
+AncilisMiddleware(session: 'ClientSession', config_path: 'str | Path | None' = None, config: 'ResolvedConfig | None' = None, evidence_store: 'EvidenceStore | None' = None) -> 'None'
+```
+
+Wraps an MCP `ClientSession` to intercept and evaluate tool calls.
+
+The middleware sits in front of an MCP `ClientSession`: it builds an `Action` for each tool call, evaluates it through the engine, enforces the resulting decision (blocked calls raise rather than reaching the server), forwards approved calls to the underlying session, and records evidence. Discovered tools are auto-registered, and tool responses are scanned for sensitive-data patterns.
+
+Configuration is resolved in priority order: an explicit `config` (a `ResolvedConfig`) is used as-is; otherwise a `config_path` is loaded via `load_config`; otherwise a minimal default config (`agent.name = "ancilis-agent"`) is used. Pass an `evidence_store` to reuse an existing store instead of letting the middleware create one.
+
+It is usable as an async context manager and exposes read-only properties for the resolved `config`, `session_id`, `registry`, `evidence_store`, `evaluation_log`, `scan_results`, and `drift_events`.
+
+```python
+from ancilis import AncilisMiddleware
+
+async with AncilisMiddleware(session, config_path="ancilis.yaml") as mw:
+    result = await mw.call_tool("web_search", {"query": "ancilis"})
+```
+
+## Platform Client
+
+### `PlatformClient`
+
+<ParamField path="kind" type="class">class</ParamField>
+
+```python
+PlatformClient(base_url: 'str', api_key: 'str', *, timeout: 'int' = 10) -> 'None'
+```
+
+Post evidence batches to the platform ingest endpoint.
+
+A small HTTP client for the optional Ancilis platform. Construct it with the platform `base_url` and an `api_key` (sent as a `Bearer` token); the trailing slash on `base_url` is stripped automatically. The `timeout` keyword sets the per-request timeout in seconds (default `10`).
+
+```python
+from ancilis import PlatformClient
+
+client = PlatformClient("https://platform.ancilis.ai", api_key="ak_...")
+```
+
+## Framework Version
+
+### `AKSI_FRAMEWORK_VERSION`
+
+<ParamField path="kind" type="constant">constant</ParamField>
+
+```python
+AKSI_FRAMEWORK_VERSION: str  # e.g. "0.6"
+```
+
+The frozen AKSI framework version string, resolved from packaged shared assets (`aksi_version.json`) at import time and falling back to the default `"0.6"` when those assets are absent. Use it to stamp or compare the framework version used to produce evidence and evaluation results.
+
+```python
+from ancilis import AKSI_FRAMEWORK_VERSION
+
+print(AKSI_FRAMEWORK_VERSION)  # "0.6"
+```

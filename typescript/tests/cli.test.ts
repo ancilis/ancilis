@@ -22,6 +22,7 @@ import * as ancilis from "../src/ancilis/index.js";
 import { ReportGenerator, renderTerminal, renderMarkdown, renderPdf, renderNdjson, renderCsv, renderOscalJson } from "../src/ancilis/report/index.js";
 import type { EvidenceSummary, ReportData } from "../src/ancilis/report/index.js";
 import type { DE04StoreAdapter, RenderPdfResult } from "../src/ancilis/index.js";
+import { withNpmPackLock } from "./helpers/npm-pack-lock.js";
 
 // --- Helpers ---
 
@@ -764,23 +765,27 @@ describe("package metadata", () => {
 
     expect(pkg.bin).toEqual({ ancilis: "./dist/cli.js" });
 
-    const packed = JSON.parse(
-      execFileSync("npm", ["pack", "--dry-run", "--json"], {
-        cwd: process.cwd(),
-        encoding: "utf-8",
-      }),
-    ) as Array<{ files: Array<{ path: string }> }>;
+    const packed = withNpmPackLock(() =>
+      JSON.parse(
+        execFileSync("npm", ["pack", "--dry-run", "--json"], {
+          cwd: process.cwd(),
+          encoding: "utf-8",
+        }),
+      ) as Array<{ files: Array<{ path: string }> }>,
+    );
 
     expect(packed[0]?.files.some((file) => file.path === "dist/cli.js")).toBe(true);
   });
 
   it("does not ship Python build artifacts in the npm tarball", { timeout: 30_000 }, () => {
-    const packed = JSON.parse(
-      execFileSync("npm", ["pack", "--dry-run", "--json"], {
-        cwd: process.cwd(),
-        encoding: "utf-8",
-      }),
-    ) as Array<{ files: Array<{ path: string }> }>;
+    const packed = withNpmPackLock(() =>
+      JSON.parse(
+        execFileSync("npm", ["pack", "--dry-run", "--json"], {
+          cwd: process.cwd(),
+          encoding: "utf-8",
+        }),
+      ) as Array<{ files: Array<{ path: string }> }>,
+    );
 
     const paths = packed[0]?.files.map((file) => file.path) ?? [];
 

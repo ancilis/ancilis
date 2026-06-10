@@ -80,7 +80,119 @@
     "registry",
     "integration"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "anthropic_usage_policy": [
+      "AUG-MCP",
+      "AUG-AGENTIC"
+    ],
+    "ccpa": [
+      "§1798.140(ag)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 SC.L2-3.13.1",
+      "NIST SP 800-171 Rev. 3 03.13.01, 03.13.03"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(3)(a)",
+      "Developer documentation furnishing"
+    ],
+    "csa_aicm": [
+      "STA-09",
+      "MDS-03",
+      "MDS-09"
+    ],
+    "dora": [
+      "DORA Art. 8(1)",
+      "DORA Art. 8(7)",
+      "DORA Art. 9(4)(a)"
+    ],
+    "eu-ai-act": [
+      "Art.11",
+      "Annex IV"
+    ],
+    "eu_cra": [
+      "Annex I Part II(1)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(3)",
+      "Premarket-Cyber-SBOM",
+      "PCCP-DescMod"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 SC-7, SC-7(5)",
+      "FedRAMP Moderate SC-7, SC-7(5), SC-7(8)"
+    ],
+    "gdpr": [
+      "Art. 28"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(f)",
+      "SOX §404",
+      "DORA Art.28"
+    ],
+    "hipaa": [
+      "164.308(b)",
+      "164.504(e)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Documenting-and-Inventorying-AI-Systems",
+      "AISec.Supply-Chain"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 §4.3",
+      "Vendor Management"
+    ],
+    "iso-27001": [
+      "A.5.23",
+      "A.5.19",
+      "A.5.21"
+    ],
+    "iso-42001": [
+      "Clause 7.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §11.1"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(d)",
+      "NIS2 Art. 21(2)(e)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 3.5"
+    ],
+    "nist-csf": [
+      "ID.AM-02",
+      "ID.AM-05"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-6.1",
+      "MP-4.1",
+      "MG-3.2"
+    ],
+    "nist_privacy_framework": [
+      "ID.IM-P1",
+      "ID.IM-P2"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PW.4.1",
+      "PS.3.2",
+      "PW.4.4"
+    ],
+    "nydfs-500": [
+      "500.13(a)"
+    ],
+    "pci-dss-v4": [
+      "Req 6.3.2",
+      "Req 2.2.4"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100(b)"
+    ],
+    "soc2": [
+      "CC6.6"
+    ]
+  },
   "display_name": "Tool, Model and Integration Registry",
   "display_detail": "Tools, MCP surfaces, models, prompt packs, and integrations are registered with provenance and approval metadata.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for ID-02 (Tool, Model & Integration Registry) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
