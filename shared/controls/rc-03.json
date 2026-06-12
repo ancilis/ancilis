@@ -74,7 +74,71 @@
     "continuity",
     "failover"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ],
+    "csa_aicm": [
+      "BCR-02",
+      "BCR-03"
+    ],
+    "eu-ai-act": [
+      "Art. 15(4)",
+      "Art. 9(8)"
+    ],
+    "eu_cra": [
+      "Annex I Part II(3)",
+      "Annex I Part I(2)(h)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(2)",
+      "Premarket-Cyber-SecTesting",
+      "PCCP-ModProtocol"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ],
+    "hipaa": [
+      "164.308(a)(7)(ii)(D)",
+      "164.308(a)(7)(ii)(B)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Resilience-of-the-AI-System"
+    ],
+    "iso-27001": [
+      "A.5.30",
+      "A.5.29",
+      "A.8.13"
+    ],
+    "iso-42001": [
+      "A.6.2.4",
+      "A.6.2.6"
+    ],
+    "nist-ai-rmf": [
+      "MANAGE 2.3",
+      "MANAGE 4.1",
+      "MEASURE 2.6"
+    ],
+    "nist-csf": [
+      "RC.RP-05",
+      "ID.IM-02",
+      "RC.RP-03"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MS-2.6",
+      "MS-2.7",
+      "MG-2.3"
+    ],
+    "nist_privacy_framework": [
+      "PR.PO-P8"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RC-03 Resilience Exercise & Recovery Test Evidence"
+    ]
+  },
   "display_name": "Resilience Exercise and Recovery Test Evidence",
   "display_detail": "Recovery, rollback, failover, continuity, and agent-disablement procedures are periodically exercised and captured as evidence.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RC-03 (Resilience Exercise & Recovery Test Evidence) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

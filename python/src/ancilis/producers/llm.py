@@ -24,6 +24,7 @@ from ancilis.engine.engine import Engine
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
+from ancilis.producers.enforcement import OPT_IN
 from ancilis.producers.protocol import ProducerType
 from ancilis.producers.tool import BlockedActionError
 from ancilis.telemetry import record_adapter_used
@@ -66,9 +67,13 @@ class LLMActionProducer:
     normalize provider-specific kwargs into ``LLMInvocation``. The default
     extractor handles the common Anthropic/OpenAI shape (``model``,
     ``messages``, ``system``, ``tools``).
+
+    Opt-in enforcement: blocks on a BLOCK decision only when constructed with
+    ``enforce=True``; otherwise observe/report only.
     """
 
     provider: str = "llm"
+    ENFORCEMENT = OPT_IN
 
     def __init__(
         self,

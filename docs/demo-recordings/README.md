@@ -8,4 +8,4 @@ These files are checked-in snapshots of demo output. Rerun the matching example 
 - `cover-mcp-gap-assessment.cast`
 - `cover-mcp-gap-assessment.txt`
 
-This recording reflects the pre-v0.3 AKSI catalog state. In particular, the captured `controls_total` value is a snapshot, not a compatibility guarantee. Regenerate the recording after the v0.3 catalog migration lands so the displayed control count matches the current release.
+This recording reflects an older AKSI catalog state (it shows `controls_total: 26`). The current release ships **41 controls (39 common)**, so the captured `controls_total` is a historical snapshot, not the current count. Regenerate the recording from the cover MCP gap-assessment demo before publishing so the displayed control count matches the current release.

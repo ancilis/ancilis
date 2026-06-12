@@ -67,9 +67,9 @@ class ComplianceScenarios:
         results = [
             ControlResult(
                 control_id="PR-01",
-                control_name="Agent Identity & Authentication",
+                control_name="Action Authorization",
                 result="PASS",
-                detail="Agent identity verified.",
+                detail="Action authorized for the configured agent.",
                 evidence_data={"agent_id": "test-agent", "verification_result": "verified"},
             ),
             ControlResult(
@@ -125,7 +125,7 @@ class ComplianceScenarios:
         results = [
             ControlResult(
                 control_id="PR-01",
-                control_name="Agent Identity & Authentication",
+                control_name="Action Authorization",
                 result="FAIL",
                 detail="Agent identity missing.",
                 evidence_data={
@@ -183,9 +183,9 @@ class ComplianceScenarios:
         results = [
             ControlResult(
                 control_id="PR-01",
-                control_name="Agent Identity & Authentication",
+                control_name="Action Authorization",
                 result="PASS",
-                detail="Agent identity verified.",
+                detail="Action authorized for the configured agent.",
                 evidence_data={"agent_id": "test-agent", "verification_result": "verified"},
             ),
             ControlResult(
@@ -233,7 +233,7 @@ class ComplianceScenarios:
         results = [
             ControlResult(
                 control_id="PR-01",
-                control_name="Agent Identity & Authentication",
+                control_name="Action Authorization",
                 result="FAIL",
                 detail="Agent identity missing.",
                 evidence_data={"failure_reason": "agent_id is empty or missing"},

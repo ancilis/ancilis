@@ -1,0 +1,90 @@
+---
+title: "ancilis connect"
+description: "Connect this SDK to the optional Ancilis platform dashboard, or report current connection status."
+---
+
+## Overview
+
+`ancilis connect` links this SDK to the optional Ancilis platform dashboard. With `--api-key` it writes `~/.ancilis/platform.json` (mode `0600`, since it holds a secret) so `ancilis doctor` and `ancilis sync` can reach the hosted platform. Without `--api-key`, it simply reports the current connection status.
+
+```bash
+ancilis connect [OPTIONS]
+```
+
+<Note>
+The platform is strictly optional and opt-in. Ancilis evaluates actions and stores evidence fully locally with nothing connected — you never need to run `ancilis connect` to use the SDK.
+</Note>
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--api-key` | string | none | Platform API key. Create one in the Ancilis dashboard Settings. When supplied, writes `~/.ancilis/platform.json`. |
+| `--api-url` | string | `https://api.ancilis.ai` | Ancilis platform API base URL. A trailing slash is stripped before it is saved. |
+
+<Warning>
+`--api-key` writes a secret to disk. The file `~/.ancilis/platform.json` is created owner-only (`0600`) and its parent directory is set to `0700`. Do not commit it; keep `.ancilis/` in your `.gitignore`.
+</Warning>
+
+## Examples
+
+**Check connection status (no flags)**
+```bash
+ancilis connect
+```
+
+When not connected:
+```
+Ancilis platform connection
+
+Status: not connected
+
+To connect your SDK to the Ancilis dashboard:
+  1. Sign up at https://app.ancilis.ai
+  2. Create an API key in Settings
+  3. Run: ancilis connect --api-key <your-key>
+
+The dashboard shows your agent security posture
+across all environments in one view.
+
+The platform is optional — Ancilis runs fully local without it.
+```
+
+When already connected:
+```
+Ancilis platform connection
+
+Status: connected
+Config: /Users/you/.ancilis/platform.json
+```
+
+**Connect with an API key**
+```bash
+ancilis connect --api-key sk_live_xxxxxxxxxxxxxxxx
+```
+
+```
+Ancilis platform connection
+
+Status: connected
+Config: /Users/you/.ancilis/platform.json
+API URL: https://api.ancilis.ai
+
+Verify with: ancilis doctor
+```
+
+**Connect to a self-hosted or staging platform**
+```bash
+ancilis connect --api-key sk_live_xxxxxxxxxxxxxxxx --api-url https://platform.internal.example.com
+```
+
+**Verify the connection**
+```bash
+ancilis doctor
+```
+
+## Related
+
+- [ancilis doctor](/cli/doctor) — verifies platform connectivity and that the API key is accepted
+- [ancilis sync](/cli/sync) — pushes evidence to the connected platform
+- [ancilis status](/cli/status) — local posture check, no platform required

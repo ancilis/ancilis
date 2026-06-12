@@ -1,0 +1,94 @@
+---
+title: "NIST AI Risk Management Framework Overlay"
+description: "AKSI compliance overlay mapping agent controls to the GOVERN, MAP, MEASURE, and MANAGE functions of the NIST AI RMF v1.0."
+---
+
+## Overview
+
+The NIST AI Risk Management Framework (AI RMF v1.0, January 2023) is a voluntary framework for managing risks across the AI lifecycle, organized into four core functions — **GOVERN**, **MAP**, **MEASURE**, and **MANAGE**. It applies to all AI system deployments regardless of data classification.
+
+The `nist-ai-rmf` overlay packages AKSI control evidence against these four functions. It maps each AKSI control to the relevant AI RMF subcategories so that an agent deployment can demonstrate AI trustworthiness alignment. The overlay is always-on: it activates for any AI agent deployment because the AI RMF applies to all AI systems. Jurisdiction is **US (voluntary framework, federal procurement increasingly expected)**.
+
+**Use this overlay when your agent:**
+- Is any AI agent deployment for which you need to demonstrate NIST AI RMF alignment
+- Supports federal procurement or contracts increasingly requiring AI RMF alignment documentation
+- Undergoes structured AI trustworthiness assessment across the Govern, Map, Measure, and Manage functions
+- Relies on third-party model infrastructure where upstream AI developers/providers share accountability
+
+---
+
+## Activation
+
+The overlay is enabled explicitly in your project configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - nist-ai-rmf
+```
+
+This overlay is **always-on** (`trigger_type: always_on`) — it applies to any AI agent deployment regardless of the data classes the agent declares. The framework recognizes data classes `DC-AI`, `DC-GEN`, `DC-PII`, `DC-PHI`, `DC-FIN`, `DC-FCI`, `DC-GOV`, and `DC-CUI`; see [Data Classification](/data-classification) for how these are declared.
+
+---
+
+## Control Mapping
+
+The table below maps every AKSI control in this overlay to its NIST AI RMF framework reference and a key evidence requirement.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | GOVERN 1.1, GOVERN 1.2, GOVERN 3.1 | Policies, processes, and procedures for AI risk management are documented and in place across the organization… |
+| **GOV-02** | GOVERN 1.3, GOVERN 2.1, GOVERN 2.2 | Organizational teams are committed to a culture that considers and communicates AI risk — training records, aw… |
+| **GOV-03** | GOVERN 1.1, GOVERN 1.6, MAP 1.1, MAP 1.5 | Context established for AI risk assessment including intended purpose, deployment context, and affected popula… |
+| **GOV-04** | GOVERN 1.2, GOVERN 1.4, GOVERN 1.5, GOVERN 6.2 | Organizational teams document the risks and potential impacts of AI technology they design, develop, deploy, e… |
+| **ID-01** | MAP 1.1, MAP 1.5 | Context established for AI risk assessment including inventory of all AI systems and their intended purposes (… |
+| **ID-02** | MAP 3.5 | Organizational processes consider the impacts of AI systems on people, processes, and planet — tool and MCP re… |
+| **ID-03** | MAP 1.5 | Likelihood of unintended consequences assessed with specific attention to data sensitivity and classification… |
+| **ID-04** | MAP 5.1, MAP 1.6 | Likelihood of unintended consequences from third-party AI components assessed, including supply chain risks (M… |
+| **ID-05** | MAP 1.1, MAP 2.1 | Context established for risk assessment including identification of potential harms to people, organizations,… |
+| **PR-01** | GOVERN 1.7, GOVERN 1.2 | Processes for decommissioning and phasing out AI systems safely established — agent retirement and credential… |
+| **PR-02** | MAP 1.6 | Risks or impacts from third-party entities, including AI-generated data or systems, are documented — scope enf… |
+| **PR-03** | MAP 2.2 | Scientific findings, user needs, and contextual factors informing deployment identified — including data acces… |
+| **PR-04** | MAP 2.2 | Scientific findings and contextual factors informing data retention and disposal practices (MAP 2.2) |
+| **PR-05** | MEASURE 2.1 | Test sets and evaluation methods reflect anticipated deployment contexts — audit log quality validated against… |
+| **PR-06** | MAP 1.6, GOVERN 1.4 | Risks from third-party entities and AI-generated configuration changes documented and controlled (MAP 1.6) |
+| **PR-07** | MAP 2.2 | Scientific findings and contextual factors informing transmission security for AI agent communications (MAP 2.… |
+| **PR-08** | MAP 2.3 | AI system development supported by teams with knowledge of context including input manipulation risks (MAP 2.3… |
+| **DE-01** | MEASURE 2.2 | Evaluations of AI systems conducted to characterize performance and identify behavioral anomalies (MEASURE 2.2… |
+| **DE-02** | MEASURE 2.5 | AI system performance or assurance criteria measured against configuration and tool integrity baselines (MEASU… |
+| **DE-03** | MEASURE 2.1 | Test sets reflect anticipated deployment contexts for ongoing compliance monitoring (MEASURE 2.1) |
+| **DE-04** | MEASURE 2.6 | The risk or impact of AI system actions evaluated through evidence integrity monitoring (MEASURE 2.6) |
+| **RS-01** | MANAGE 4.1 | Post-deployment AI risks and incidents addressed based on feedback, monitoring, and evaluation (MANAGE 4.1) |
+| **RS-02** | MANAGE 4.2, GOVERN 6.2 | Measurable improvements or remediations achieved following AI incidents — documented and verified (MANAGE 4.2) |
+| **RS-03** | MANAGE 4.3 | Responses to identified risks communicated to relevant stakeholders and authorized personnel (MANAGE 4.3) |
+| **RC-01** | MANAGE 4.4 | Deployed AI systems regularly reviewed and updated based on operational experience — rollback capability suppo… |
+| **RC-02** | MANAGE 4.4 | Deployed AI systems regularly reviewed — post-incident improvement cycle documented (MANAGE 4.4) |
+| **GOV-05** | GOVERN 1.1, MAP 1.1, MAP 1.6, MEASURE 2.10 | Binding actions/data-uses to declared purpose, legal basis, consent, and prohibited-use policy operationalizes… |
+| **GOV-06** | GOVERN 1.1, GOVERN 4.2, MAP 4.1 | An external obligation registry linking framework/contract/regulator obligations to posture/evidence/owner rep… |
+| **GOV-07** | GOVERN 4.2, GOVERN 5.1, GOVERN 5.2, MAP 5.2, MEASURE 3.3, MANAGE 4.3 | Disclosures, privacy-rights routing, and affected-party feedback/intervention channels linked to runtime evide… |
+| **PR-09** | MEASURE 2.6, MEASURE 2.7 | Confining generated code/shell/dynamic execution to approved sandbox classes is a safety+security control supp… |
+| **PR-10** | MEASURE 2.7, MEASURE 2.5, MANAGE 2.3 | Provenance/integrity/quarantine for persistent memory, retrieved context, and shared task state (RAG/memory po… |
+| **PR-11** | GOVERN 1.7, MEASURE 2.10, MANAGE 4.1 | Retention/deletion/eviction/disposal of agent-held data/memory/context/evidence per policy + legal obligation… |
+| **PR-12** | MEASURE 2.7 | Vaulting/scoping/rotating secrets, API keys, signing keys, and wallet material and never exposing them to prom… |
+| **DE-05** | MEASURE 2.3, MEASURE 2.5, MEASURE 2.6, MEASURE 2.9, MEASURE 2.11, MEASURE 3.1 | Evaluating outputs/tool outcomes for reliability, hallucination, harmful output, bias, clinical/safety drift,… |
+| **DE-06** | MEASURE 2.1, MEASURE 2.7, MEASURE 1.3, GOVERN 4.3 | Ingesting vuln scans, adversarial/red-team, resilience tests, clinical/safety validations, and third-party eva… |
+| **RS-04** | MEASURE 2.6, MANAGE 2.4 | Multi-agent failure-domain isolation, circuit breakers, and coordinated kill-switch implement fail-safe / resp… |
+| **RS-05** | GOVERN 1.1, MANAGE 4.3 | Starting jurisdiction-specific regulated-notification clocks, preserving decision evidence, and routing author… |
+| **RS-06** | GOVERN 4.3, GOVERN 6.2, MANAGE 4.3 | Vuln intake, coordinated disclosure, secure-update handling, support-period tracking, and advisories for shipp… |
+| **RC-03** | MANAGE 2.3, MANAGE 4.1, MEASURE 2.6 | Periodically exercising recovery/rollback/failover/continuity/agent-disablement procedures and capturing evide… |
+
+---
+
+## Retention & Jurisdiction
+
+- **Evidence retention minimum:** 1095 days (3 years).
+- **Jurisdiction:** US (voluntary framework, federal procurement increasingly expected).
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [FedRAMP Moderate Overlay](/overlays/fedramp) — federal cloud authorization controls
+- [Reading Reports](/overlays/reading-reports)

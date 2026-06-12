@@ -1,0 +1,95 @@
+---
+title: "csa_ccm Overlay"
+description: "Scaffold AKSI compliance overlay wiring controls referencing csa_ccm; no requirement mappings asserted."
+---
+
+## Overview
+
+The Cloud Security Alliance (CSA) Cloud Controls Matrix (CCM) is a cybersecurity control framework for cloud computing. The `csa_ccm` overlay packages the AKSI controls that reference this framework so they can be activated together for an agent.
+
+<Warning>
+This overlay is a **scaffold mapping** and is not yet backed by runtime evidence. It was created to resolve a dangling control-to-overlay reference: it wires the controls that reference `csa_ccm` but asserts **no** framework requirement mappings (`framework_mapping` is empty, and every control's `framework_reference` and `evidence_requirements` are unset). Treat coverage as **indicative only** — populate from an authoritative source before relying on it for any production compliance assertion.
+</Warning>
+
+**Use this overlay when your agent:**
+- Operates in a cloud environment governed by the CSA Cloud Controls Matrix
+- Declares that it handles AI data classified as `DC-AI`
+- Needs the controls referencing `csa_ccm` activated as a group
+- Is establishing scaffold coverage ahead of an authoritative framework crosswalk
+
+---
+
+## Activation
+
+Activate explicitly by adding the overlay to your `ancilis.yaml`:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - csa_ccm
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares that it handles the relevant data classification (`DC-AI`) via `my_agent_handles`. See [Data Classification](/data-classification) for how to declare the `DC-AI` code.
+
+---
+
+## Control Mapping
+
+This overlay wires the 39 controls below. The framework reference and evidence requirement columns are unset in the scaffold (`—`); no requirement-ID mappings are asserted.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | — | — |
+| **GOV-02** | — | — |
+| **GOV-03** | — | — |
+| **GOV-04** | — | — |
+| **GOV-05** | — | — |
+| **GOV-06** | — | — |
+| **GOV-07** | — | — |
+| **ID-01** | — | — |
+| **ID-02** | — | — |
+| **ID-03** | — | — |
+| **ID-04** | — | — |
+| **ID-05** | — | — |
+| **PR-01** | — | — |
+| **PR-02** | — | — |
+| **PR-03** | — | — |
+| **PR-04** | — | — |
+| **PR-05** | — | — |
+| **PR-06** | — | — |
+| **PR-07** | — | — |
+| **PR-08** | — | — |
+| **PR-09** | — | — |
+| **PR-10** | — | — |
+| **PR-11** | — | — |
+| **PR-12** | — | — |
+| **DE-01** | — | — |
+| **DE-02** | — | — |
+| **DE-03** | — | — |
+| **DE-04** | — | — |
+| **DE-05** | — | — |
+| **DE-06** | — | — |
+| **RS-01** | — | — |
+| **RS-02** | — | — |
+| **RS-03** | — | — |
+| **RS-04** | — | — |
+| **RS-05** | — | — |
+| **RS-06** | — | — |
+| **RC-01** | — | — |
+| **RC-02** | — | — |
+| **RC-03** | — | — |
+
+---
+
+## Retention & Jurisdiction
+
+This scaffold overlay does not define an evidence retention minimum or a jurisdiction. Evidence retention follows your agent's configured default until an authoritative `csa_ccm` crosswalk is populated.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

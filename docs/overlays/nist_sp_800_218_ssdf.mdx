@@ -1,0 +1,71 @@
+---
+title: "NIST SP 800-218 SSDF Overlay"
+description: "Ancilis compliance overlay mapping agent control evidence to the NIST Secure Software Development Framework (SSDF) v1.1."
+---
+
+## Overview
+
+NIST SP 800-218, the Secure Software Development Framework (SSDF) v1.1, is a voluntary, outcome-based secure-software-development framework of 19 practices / 42 tasks across four groups — PO (Prepare the Organization), PS (Protect the Software), PW (Produce Well-Secured Software), and RV (Respond to Vulnerabilities) — referenced by EO 14028 and the OMB self-attestation regime. SSDF is fundamentally an organization-and-SDLC process framework, so the agent-responsibility boundary is narrow.
+
+The `nist_sp_800_218_ssdf` overlay packages Ancilis control evidence against the SSDF practices and tasks, mapping each Ancilis control to the SSDF tasks (PO/PS/PW/RV task IDs) it speaks to.
+
+<Warning>
+This overlay is an indicative crosswalk mapping that is not yet backed by runtime evidence. Every control's evidence requirements are still unspecified, and most underlying mappings are marked partial with many unverified (REVIEW-FIRST, not production-asserted). Treat coverage as indicative, not as an authoritative SSDF attestation.
+</Warning>
+
+**Use this overlay when your agent:**
+- Is part of a software product or service that must attest to SSDF practices under EO 14028 / OMB M-22-18 / M-23-16
+- Produces, builds, or releases software components where provenance and integrity matter
+- Operates within a FedRAMP or federal supply-chain context that references SSDF
+- Needs to evidence vulnerability response, root-cause analysis, and secure-development hygiene for an AI agent
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - nist_sp_800_218_ssdf
+```
+
+This overlay is a certification-triggered overlay (`trigger_type: certification`) and is activated explicitly by listing it under `compliance.overlays`.
+
+---
+
+## Control Mapping
+
+The table below lists every control in the overlay. Framework references are the SSDF task IDs each control maps to. Evidence requirements are not yet specified in this overlay, so the runtime evidence column is marked accordingly.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| GOV-02 | PO.2.1, PO.2.3 | Not yet specified |
+| GOV-03 | PO.1.1, PO.1.2, PO.4.1 | Not yet specified |
+| GOV-06 | PO.1.1, PO.1.2, PO.1.3 | Not yet specified |
+| ID-02 | PW.4.1, PS.3.2, PW.4.4 | Not yet specified |
+| ID-03 | PW.1.1 | Not yet specified |
+| ID-04 | PW.4.1, PS.3.2, PO.1.3 | Not yet specified |
+| ID-05 | PW.1.1, PW.1.2 | Not yet specified |
+| PR-03 | PS.1.1, PS.2.1, PW.6.1, PO.3.2 | Not yet specified |
+| PR-05 | PO.5.1 | Not yet specified |
+| PR-06 | PO.3.3, PO.4.2 | Not yet specified |
+| PR-08 | PW.5.1 | Not yet specified |
+| PR-09 | PW.8.1, PO.5.1 | Not yet specified |
+| PR-12 | PS.1.1, PW.1.1 | Not yet specified |
+| DE-01 | PO.3.2 | Not yet specified |
+| DE-03 | PW.4.4, PO.3.2, PW.6.2 | Not yet specified |
+| DE-04 | PO.3.3, PO.4.2 | Not yet specified |
+| DE-06 | PW.7.1, PW.7.2, PW.8.1, PW.8.2, RV.1.2 | Not yet specified |
+| RS-01 | RV.2.2, PO.4.2 | Not yet specified |
+| RS-03 | RV.1.3, RV.2.1 | Not yet specified |
+| RS-06 | RV.1.1, RV.1.3, RV.2.2 | Not yet specified |
+| RC-02 | RV.3.1, RV.3.2, RV.3.4 | Not yet specified |
+
+---
+
+## Retention & Jurisdiction
+
+**Jurisdiction:** United States (NIST; referenced by EO 14028 / OMB M-22-18 / M-23-16 attestation and FedRAMP; voluntary framework adopted globally).
+
+**Evidence retention:** This overlay does not specify a minimum evidence retention period. Set retention according to the requirements of the program or attestation regime that references SSDF for your deployment.

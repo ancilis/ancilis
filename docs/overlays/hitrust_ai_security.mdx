@@ -1,0 +1,91 @@
+---
+title: "HITRUST CSF + AI Security Assessment and Certification (AI Security for Deployed AI Systems) Overlay"
+description: "AKSI compliance overlay mapping agent-runtime controls to the HITRUST CSF AI Security Assessment and Certification."
+---
+
+## Overview
+
+HITRUST CSF v11.8.0 (current as of mid-2026) is a prescriptive, certifiable security/privacy control framework; its AI Security Assessment and Certification (introduced v11.4.0, available as `ai1` paired with `e1`/`i1` or `ai2` paired with `r2`) adds up to 44 curated AI-specific requirement statements across 12 topic categories, harmonized to NIST, ISO, OWASP LLM Top 10 2025, and MITRE ATLAS mitigations, and requires the in-scope AI system to be in production deployment. AKSI maps strongly to the runtime-facing categories (access, logging/monitoring, filtering/sanitizing inputs-outputs, model robustness).
+
+The `hitrust_ai_security` overlay packages AKSI control evidence against the AI Security Assessment categories, binding each AKSI control to one or more `AISec.*` requirement categories so that runtime agent posture can be presented against the certification's AI-specific requirement statements.
+
+<Warning>
+This overlay is a scaffold mapping that is not yet backed by runtime evidence — treat coverage as indicative only. Every control in the source mapping carries `verified: false` and no evidence requirements, and most category mappings are marked partial coverage. Per the source crosswalk, this is REVIEW-FIRST, not production-asserted (confidence: medium).
+</Warning>
+
+**Use this overlay when your agent:**
+- Is an in-scope AI system in production deployment pursuing or maintaining a HITRUST AI Security Assessment and Certification (`ai1`/`ai2`)
+- Handles AI-classified data (`DC-AI`)
+- Handles protected health information (`DC-PHI`)
+- Must demonstrate runtime posture against the HITRUST AI Security categories (access, logging/monitoring, input/output filtering, model robustness)
+
+---
+
+## Activation
+
+This overlay is a `certification` trigger and is activated explicitly:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - hitrust_ai_security
+```
+
+---
+
+## Control Mapping
+
+The table below lists every control in the overlay's mapping (34 controls). The **Framework Reference** column shows the `AISec.*` requirement categories each AKSI control is mapped to. The **Key Evidence Requirement** column is empty in the source mapping for all controls (—), consistent with this overlay's scaffold status.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| GOV-02 | AISec.Governance-and-Oversight | — |
+| GOV-03 | AISec.Governance-and-Oversight, AISec.Legal-and-Compliance | — |
+| GOV-04 | AISec.Governance-and-Oversight | — |
+| GOV-05 | AISec.Legal-and-Compliance | — |
+| GOV-06 | AISec.Legal-and-Compliance, AISec.Governance-and-Oversight | — |
+| GOV-07 | AISec.Legal-and-Compliance | — |
+| ID-01 | AISec.Documenting-and-Inventorying-AI-Systems | — |
+| ID-02 | AISec.Documenting-and-Inventorying-AI-Systems, AISec.Supply-Chain | — |
+| ID-03 | AISec.Documenting-and-Inventorying-AI-Systems, AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs | — |
+| ID-04 | AISec.Supply-Chain | — |
+| ID-05 | AISec.Threat-Management, AISec.Governance-and-Oversight | — |
+| PR-01 | AISec.Access-to-the-AI-System | — |
+| PR-02 | AISec.Access-to-the-AI-System | — |
+| PR-03 | AISec.Model-Robustness, AISec.Supply-Chain | — |
+| PR-04 | AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs, AISec.Encryption-of-AI-Assets | — |
+| PR-05 | AISec.Access-to-the-AI-System, AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs | — |
+| PR-06 | AISec.Logging-and-Monitoring | — |
+| PR-08 | AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs, AISec.Model-Robustness | — |
+| PR-09 | AISec.Development-of-AI-Software, AISec.Access-to-the-AI-System | — |
+| PR-10 | AISec.Model-Robustness, AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs | — |
+| PR-11 | AISec.Legal-and-Compliance, AISec.Documenting-and-Inventorying-AI-Systems | — |
+| PR-12 | AISec.Encryption-of-AI-Assets, AISec.Access-to-the-AI-System | — |
+| DE-01 | AISec.Logging-and-Monitoring, AISec.Threat-Management | — |
+| DE-02 | AISec.Filtering-and-Sanitizing-AI-Data-Inputs-and-Outputs | — |
+| DE-03 | AISec.Logging-and-Monitoring, AISec.Model-Robustness | — |
+| DE-04 | AISec.Logging-and-Monitoring | — |
+| DE-05 | AISec.Model-Robustness, AISec.Resilience-of-the-AI-System | — |
+| DE-06 | AISec.Threat-Management, AISec.Model-Robustness, AISec.Development-of-AI-Software | — |
+| RS-01 | AISec.Threat-Management, AISec.Logging-and-Monitoring | — |
+| RS-02 | AISec.Threat-Management, AISec.Access-to-the-AI-System | — |
+| RS-03 | AISec.Threat-Management | — |
+| RS-06 | AISec.Supply-Chain, AISec.Development-of-AI-Software | — |
+| RC-01 | AISec.Resilience-of-the-AI-System | — |
+| RC-03 | AISec.Resilience-of-the-AI-System | — |
+
+---
+
+## Retention & Jurisdiction
+
+**Jurisdiction:** United States / Global (private-sector certification regime; healthcare-origin, sector-agnostic). HITRUST Alliance.
+
+**Evidence retention:** No minimum evidence-retention period is specified in this overlay's mapping. Set retention to satisfy your HITRUST assessment scope and any applicable contractual or regulatory obligations.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Reading Reports](/overlays/reading-reports)

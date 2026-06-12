@@ -1,0 +1,88 @@
+---
+title: "EU Cyber Resilience Act Overlay"
+description: "AKSI compliance overlay mapping agent-runtime controls to the EU Cyber Resilience Act (Regulation (EU) 2024/2847)."
+---
+
+## Overview
+
+The EU Cyber Resilience Act (Regulation (EU) 2024/2847) sets horizontal essential cybersecurity requirements (Annex I: Part I product properties points 1 and 2(a)–(m); Part II vulnerability-handling points (1)–(8)) and reporting duties (Art. 14) for manufacturers of products with digital elements. It entered into force 10 Dec 2024, with reporting obligations applying from 11 Sep 2026 and full application from 11 Dec 2027. CRA obligations attach to the **manufacturer** and the **product** as placed on the market, so AKSI controls map only to the agent-runtime slice (secure-by-design properties, vulnerability handling).
+
+The `eu_cra` overlay packages AKSI control evidence against the CRA essential requirements and reporting duties, mapping each in-scope AKSI control to its relevant Annex I points and Articles. The overlay is a `certification`-type overlay scoped to the **European Union** jurisdiction.
+
+**Use this overlay when your agent:**
+- Is part of a product with digital elements placed on the EU market
+- Is operated by a manufacturer subject to CRA essential cybersecurity requirements (Annex I)
+- Must support CRA vulnerability-handling and coordinated-disclosure obligations
+- Is in scope of CRA reporting duties (Art. 14) for actively exploited vulnerabilities and severe incidents
+
+<Warning>
+  This overlay is built from a REVIEW-FIRST crosswalk (PROD-REPAIRS D3, aksi-ultra `eu-cra.crosswalk.json`). Most control mappings are marked **partial** and several are **not yet verified**; no control carries evidence requirements in the overlay definition. Treat coverage as **indicative**, not production-asserted, and confirm scope against the regulation before relying on it for conformity.
+</Warning>
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your project configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - eu_cra
+```
+
+This is a `certification`-type overlay: it does not auto-activate from declared data handling and must be enabled explicitly. (For reference, the crosswalk associates the regime with the `DC-CRIT`, `DC-IP`, and `DC-PII` data classifications — see [Data Classification](/data-classification).)
+
+---
+
+## Control Mapping
+
+The overlay maps the following AKSI controls to the EU Cyber Resilience Act. No control in the overlay definition carries evidence requirements yet, so the **Key Evidence Requirement** column is shown as *not yet specified* pending crosswalk verification.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| GOV-02 | CRA places obligations on the manufacturer (legal entity), not on a runtime; Art. 13 manufacturer accountability and the coordinated vulnerability disclosure policy (Annex I Part II(5)) presume a named accountable owner. | *Not yet specified* |
+| GOV-03 | Annex I Part I(1) requires products designed/developed/produced to ensure an appropriate level of cybersecurity based on the risks, grounded in a manufacturer risk assessment. | *Not yet specified* |
+| GOV-06 | CRA creates standing external obligations (CE conformity, support-period commitments, advisory publication, regulator/CSIRT/ENISA reporting); GOV-06 tracks these obligations and their evidence. | *Not yet specified* |
+| GOV-07 | Annex I Part II(6) (mechanisms incl. contact address to receive/share vulnerability info); Art. 13(18) (accompanying information/instructions to users per Annex II); Annex I Part II(4) (public disclosure of fixed vulnerabilities). | *Not yet specified* |
+| ID-02 | Annex I Part II(1) requires identifying/documenting components and vulnerabilities, including an SBOM in a commonly used machine-readable format. | *Not yet specified* |
+| ID-04 | Annex I Part II(1) (component identification + SBOM) and Annex I Part I(2)(j) (limit attack surfaces incl. external interfaces) drive supply-chain/dependency risk understanding. | *Not yet specified* |
+| ID-05 | Annex I Part I(1) requires an appropriate level of cybersecurity based on the risks, tied to a manufacturer cybersecurity risk assessment. | *Not yet specified* |
+| PR-01 | Annex I Part I(2)(d) requires protection from unauthorised access via appropriate control mechanisms, including authentication, identity or access management systems. | *Not yet specified* |
+| PR-02 | Annex I Part I(2)(d) (access-control mechanisms) and (2)(j) (limit attack surfaces incl. external interfaces). | *Not yet specified* |
+| PR-03 | Annex I Part I(2)(f) requires protecting the integrity of stored/transmitted/processed data, commands, programs and configuration against unauthorised manipulation. | *Not yet specified* |
+| PR-04 | Annex I Part I(2)(e) (confidentiality of stored/transmitted/processed data, e.g. encryption) and (2)(g) (data minimisation). | *Not yet specified* |
+| PR-06 | Annex I Part I(2)(l) requires recording and monitoring relevant internal activity (security logging/monitoring, with user opt-out). | *Not yet specified* |
+| PR-07 | Annex I Part I(2)(e) (confidentiality incl. encryption in transit) and (2)(f) (integrity of transmitted data and commands against manipulation). | *Not yet specified* |
+| PR-08 | Annex I Part I(2)(f) (protect integrity against manipulation, incl. commands and inputs) and (2)(k) (reduce incident impact via exploitation-mitigation mechanisms). | *Not yet specified* |
+| PR-09 | Annex I Part I(2)(j) (limit attack surfaces) and (2)(k) (mitigate exploitation impact). | *Not yet specified* |
+| PR-10 | Annex I Part I(2)(f) requires protecting the integrity of stored/processed data against unauthorised manipulation. | *Not yet specified* |
+| PR-11 | Annex I Part I(2)(m) (secure permanent removal of data/settings and secure transfer) and (2)(g) (minimisation/retention). | *Not yet specified* |
+| PR-12 | Annex I Part I(2)(e) (confidentiality of processed data, incl. credentials) and (2)(d) (access-control mechanisms). | *Not yet specified* |
+| DE-01 | Annex I Part I(2)(l) requires monitoring/recording relevant internal activity to provide security-relevant information. | *Not yet specified* |
+| DE-03 | Annex I Part I(2)(b) (secure-by-default configuration incl. reset to original state) and (2)(a) (no known exploitable vulnerabilities at availability). | *Not yet specified* |
+| DE-06 | Annex I Part II(3) (effective and regular tests/reviews of product security) and Part I(2)(a) (no known exploitable vulnerabilities). | *Not yet specified* |
+| RS-02 | Annex I Part I(2)(k) (mechanisms to mitigate incident impact, incl. exploitation mitigation) and (2)(h) (protect availability of essential/basic functions, incl. DoS resilience). | *Not yet specified* |
+| RS-03 | Art. 14 (reporting actively exploited vulnerabilities and severe incidents) and Annex I Part II(6) (mechanisms to receive vulnerability reports). | *Not yet specified* |
+| RS-05 | Art. 14 imposes a strict notification clock: early warning within 24 hours of awareness, full notification within 72 hours, and a final report, via the Single Reporting Platform. | *Not yet specified* |
+| RS-06 | Core mapping. Annex I Part II(2) (remediate without delay via security updates), Part II(4) (publicly disclose fixed vulnerabilities), Part II(5) (coordinated vulnerability disclosure policy), Part II(7) (securely distribute updates). | *Not yet specified* |
+| RC-01 | Annex I Part I(2)(b) (possibility to reset the product to its original secure state) and (2)(h) (protect availability of essential/basic functions through resilience). | *Not yet specified* |
+| RC-03 | Annex I Part II(3) (effective and regular tests/reviews of security) and Part I(2)(h) (availability resilience). | *Not yet specified* |
+
+This table lists all **27** controls defined in the `eu_cra` overlay.
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** European Union — Regulation (EU) 2024/2847 (OJ 20 Nov 2024). In force 10 Dec 2024; reporting obligations (Art. 14) apply from 11 Sep 2026; full application from 11 Dec 2027.
+- **Evidence retention:** The `eu_cra` overlay definition does not set a minimum evidence-retention period. Set `compliance.evidence.retention_days` to satisfy your applicable CRA conformity, support-period, and reporting obligations.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

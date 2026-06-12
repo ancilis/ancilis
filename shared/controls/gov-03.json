@@ -73,7 +73,133 @@
     "threshold",
     "policy"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.185(a)(15)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 RA.L2-3.11.1",
+      "NIST SP 800-171 Rev. 3 03.11.01, 03.11.02"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(b)",
+      "Impact assessment — risk section"
+    ],
+    "csa_aicm": [
+      "GRC-01",
+      "GRC-15"
+    ],
+    "dora": [
+      "DORA Art. 6(2)",
+      "DORA Art. 8(1)",
+      "DORA Art. 8(3)"
+    ],
+    "eu-ai-act": [
+      "Art.9.2",
+      "Art.9.3"
+    ],
+    "eu_cra": [
+      "Annex I Part I(1)"
+    ],
+    "fda_ai_device_pccp": [
+      "PCCP-DescMod",
+      "PCCP-ImpactAssessment"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 RA-1, RA-3",
+      "FedRAMP Moderate RA-1, RA-3, RA-5"
+    ],
+    "gdpr": [
+      "Art. 35",
+      "Art. 36"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(b)",
+      "SOX §404",
+      "DORA Art.6"
+    ],
+    "hipaa": [
+      "164.308(a)(1)(ii)(A)",
+      "164.308(a)(1)(ii)(B)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Governance-and-Oversight",
+      "AISec.Legal-and-Compliance"
+    ],
+    "imda-mgf": [
+      "MGF Area 1 §2.3",
+      "AI Risk Assessment"
+    ],
+    "iso-23894": [
+      "6.3",
+      "6.3.4",
+      "5.4"
+    ],
+    "iso-27001": [
+      "A.5.3"
+    ],
+    "iso-27701": [
+      "A.7.2.5"
+    ],
+    "iso-42001": [
+      "Clause 6.1",
+      "GOV 1.1"
+    ],
+    "itar-ear": [
+      "15 CFR 736.2",
+      "22 CFR 120.50"
+    ],
+    "mas-trm": [
+      "MAS TRM §5.1",
+      "§5.2"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(1)",
+      "NIS2 Art. 21(2)(a)",
+      "NIS2 Art. 21(2)(d)"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 1.1",
+      "GOVERN 1.6",
+      "MAP 1.1",
+      "MAP 1.5"
+    ],
+    "nist-csf": [
+      "GV.RM-01",
+      "GV.RM-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.3",
+      "GV-1.4"
+    ],
+    "nist_privacy_framework": [
+      "GV.RM-P1",
+      "GV.RM-P2",
+      "GV.RM-P3",
+      "GV.PO-P6"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PO.1.1",
+      "PO.1.2",
+      "PO.4.1"
+    ],
+    "nydfs-500": [
+      "500.3",
+      "500.2(a)"
+    ],
+    "pci-dss-v4": [
+      "Req 12.3.1",
+      "Req 12.3.2"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100(b)"
+    ],
+    "soc2": [
+      "CC3.1",
+      "CC3.2"
+    ]
+  },
   "display_name": "Risk Tolerance and Policy Baseline",
   "display_detail": "Risk tolerance, autonomy limits, and escalation thresholds are defined in policy before autonomous actions run.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-03 (Risk Tolerance & Policy Baseline) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

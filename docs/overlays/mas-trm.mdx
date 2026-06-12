@@ -1,0 +1,81 @@
+---
+title: "MAS Technology Risk Management Guidelines v2.0 Overlay"
+description: "AKSI compliance overlay for AI agents operated by MAS-regulated financial institutions in Singapore."
+---
+
+## Overview
+
+The `mas-trm` overlay packages AKSI control evidence for the Monetary Authority of Singapore (MAS) Technology Risk Management (TRM) Guidelines v2.0 (2021) — a prescriptive technology risk governance framework covering IT governance, application security, cyber surveillance, vendor management, and data management. It is mandatory for all MAS-regulated financial institutions in Singapore: banks, insurers, capital market intermediaries, and payment services providers. For institutions deploying AI/ML in customer-facing or risk-decisive functions, the MAS FEAT Principles (2018) and MAS AI governance guidance apply as companion obligations.
+
+The overlay maps each AKSI control to the relevant MAS TRM sections (and, where applicable, the MAS FEAT Principles), packaging the evidence requirements MAS examiners expect across governance, identification, protection, detection, response, and recovery.
+
+**Use this overlay when your agent:**
+- Operates within a MAS-regulated financial institution in Singapore (bank, insurer, capital markets intermediary, or payment services provider)
+- Handles financial data (`DC-FIN`)
+- Deploys AI/ML in customer-facing or risk-decisive functions (`DC-AI`) such as credit assessment, fraud detection, customer advice, or AML/KYC screening
+- Is subject to MAS technology risk examination or annual self-assessment against MAS TRM
+
+---
+
+## Activation
+
+Activate the overlay explicitly in your configuration:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - mas-trm
+```
+
+**Data classification trigger** — because this overlay has a `data_classification` trigger type, it also auto-activates when your agent declares (via `my_agent_handles`) that it handles the data classes that drive MAS TRM scope: `DC-FIN` (financial data) or `DC-AI` (AI/ML systems). See [Data Classification](/data-classification) for how declared data classes activate overlays.
+
+---
+
+## Control Mapping
+
+The table below maps every AKSI control in this overlay to its MAS TRM framework reference and the primary evidence requirement.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | MAS TRM §3.1–3.3 (IT Governance) | IT and technology risk governance framework documented and approved by board of directors (MAS TRM §3.1) |
+| **GOV-02** | MAS TRM §3.2–3.3 (Board and Senior Management Responsibilities) | Chief Information Officer (CIO) and/or Chief Information Security Officer (CISO) appointed with defined responsibilities (MAS TRM §3.3) |
+| **GOV-03** | MAS TRM §5.1–5.2 (Technology Risk Assessment and Appetite) | Technology risk assessment conducted at least annually and on material changes (MAS TRM §5.1) |
+| **GOV-04** | MAS TRM §5 (Risk Management); MAS FEAT Principles §Accountability | Human oversight configuration for AI systems documented — particularly for credit decisions, fraud detection, customer advice, and other regulated functions |
+| **ID-01** | MAS TRM §4.1 (IT Asset Management) | Technology asset inventory maintained covering all systems in scope of MAS TRM (MAS TRM §4.1) |
+| **ID-02** | MAS TRM §11.1 (Technology Outsourcing — Vendor Inventory) | Third-party technology components and tools inventoried (MAS TRM §11.1) |
+| **ID-03** | MAS TRM §13.1–13.2 (Data Classification and Protection) | Data classification policy implemented — sensitivity levels defined and applied to customer and operational data (MAS TRM §13.1) |
+| **ID-04** | MAS TRM §11.2–11.3 (Technology Outsourcing — Due Diligence) | Technology vendor risk assessment conducted before engagement and periodically thereafter (MAS TRM §11.2) |
+| **ID-05** | MAS TRM §5.1 (Technology Risk Classification) | Technology risk classification applied to each system — critical, important, or general systems (MAS TRM §5.1) |
+| **PR-01** | MAS TRM §7.1 (Access Control and Privileged Access) | Privileged access management (PAM) controls implemented for critical systems including AI infrastructure (MAS TRM §7.1) |
+| **PR-02** | MAS TRM §7.1 (Principle of Least Privilege) | Principle of least privilege applied to all system accounts including AI service accounts (MAS TRM §7.1) |
+| **PR-03** | MAS TRM §6.1 (Change Management) and §7.3 (Patch Management) | Software integrity verification implemented — checksums or signatures verified for third-party AI components (MAS TRM §7.3) |
+| **PR-04** | MAS TRM §13.2 (Data Protection and Encryption) | Customer and sensitive data encrypted at rest and in transit in AI processing pipelines (MAS TRM §13.2) |
+| **PR-05** | MAS TRM §9.1 (Security Monitoring and Audit Logging) | Audit logging implemented for all critical system actions including AI inference requests and model changes (MAS TRM §9.1) |
+| **PR-06** | MAS TRM §6.1–6.2 (IT Project and Change Management) | Configuration management process documented — baseline configurations for AI infrastructure and model serving (MAS TRM §6.1) |
+| **PR-07** | MAS TRM §7.2 (Network Security and Encryption) | TLS 1.2 or higher enforced for all AI API communications — certificate management documented (MAS TRM §7.2) |
+| **PR-08** | MAS TRM §7.2 (Application Security) and §7.4 (Security Testing) | Secure software development lifecycle (SSDLC) applied to AI applications — includes security code review and testing (MAS TRM §7.2) |
+| **DE-01** | MAS TRM §9.1–9.2 (Cyber Surveillance and Security Monitoring) | Security information and event management (SIEM) deployed with coverage of AI infrastructure (MAS TRM §9.1) |
+| **DE-02** | MAS TRM §6.2 (Change Detection and Configuration Monitoring) | Configuration drift detection implemented for critical AI infrastructure — alerts on unauthorised changes (MAS TRM §6.2) |
+| **DE-03** | MAS TRM §5 (Technology Risk Management) — ongoing compliance monitoring | Technology risk compliance review conducted periodically — AI systems included in scope (MAS TRM §5.1) |
+| **DE-04** | MAS TRM §9.1 (Audit Log Integrity) | Audit log integrity protected — tamper-evident logging with access controls on log stores (MAS TRM §9.1) |
+| **RS-01** | MAS TRM §10.1 (Cyber Incident Response) | Cyber incident response plan documented and tested annually — AI system incidents in scope (MAS TRM §10.1) |
+| **RS-02** | MAS TRM §10.1–10.2 (Incident Escalation and MAS Notification) | Escalation procedure for AI system incidents to senior management and board where material (MAS TRM §10.1) |
+| **RS-03** | MAS TRM §10.1 (Incident Evidence and Forensics) | Forensic evidence preservation for cyber incidents — evidence integrity maintained for regulatory investigation (MAS TRM §10.1) |
+| **RC-01** | MAS TRM §8.1 (Business Continuity and Recovery) | Business continuity plan (BCP) and IT disaster recovery plan (DRP) documented and tested for AI systems (MAS TRM §8.1) |
+| **RC-02** | MAS TRM §10.1–10.2 (Post-Incident Review and Regulatory Reporting) | Post-incident review conducted for material technology incidents including AI system failures (MAS TRM §10.1) |
+
+---
+
+## Retention and Jurisdiction
+
+- **Jurisdiction:** SGP (Singapore) — MAS-regulated financial institutions.
+- **Evidence retention minimum:** 1825 days (5 years), per MAS regulatory record-keeping expectations for financial services.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

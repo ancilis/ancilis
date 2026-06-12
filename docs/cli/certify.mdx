@@ -1,0 +1,151 @@
+---
+title: "ancilis certify"
+description: "Report control coverage for a target compliance framework or certification."
+---
+
+## Overview
+
+`ancilis certify` evaluates the evidence in your local store against the controls required by a specific framework or certification target (SOC 2, HIPAA, PCI, AIUC-1, or the EU AI Act) and reports per-control coverage. It is a read-only command — it never writes certification artifacts.
+
+```bash
+ancilis certify --target <framework> [OPTIONS]
+```
+
+<Note>
+`certify` always runs in dry-run mode. It computes coverage and prints a report but never writes certification artifacts, regardless of the `--dry-run` flag. JSON output always reports `"dry_run": true`.
+</Note>
+
+## Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--target` | choice | required | Framework or certification target to evaluate: `soc2`, `hipaa`, `pci`, `aiuc1`, or `eu_ai_act` |
+| `--dry-run` | flag | always on | Compute coverage without writing certification artifacts. Accepted for compatibility; the command is already dry-run unconditionally |
+| `--format` | choice | `table` | Output format: `table` or `json` |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent, per-cwd path | Path to evidence database. When omitted, the store derives `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` (the file is always named `evidence.duckdb`) |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Coverage report produced successfully |
+| `1` | Config could not be loaded (no `ancilis.yaml` found and no `--config`/`--db` provided, or an invalid config) |
+
+## Coverage Statuses
+
+Each control in the report carries a `coverage_status` and an `action_required` hint:
+
+| `coverage_status` | Meaning | `action_required` |
+|-------------------|---------|-------------------|
+| `covered` | The control is satisfied by collected or attestation evidence | `—` |
+| `gap` | No passing evidence — the control is unmet | `remediate` |
+| `policy_gated` | The control is not runtime-active under the explicit/certification policy gate | `enable in policy` |
+| `attestation_required` | A manual attestation is needed for this control | `ancilis attest <control_id>` |
+| `attestation_stale` | A prior attestation has expired and must be renewed | `ancilis attest <control_id>` |
+| `attestation_incomplete` | An attestation exists but does not cover all required agents/scope | `ancilis attest <control_id>` |
+
+## Examples
+
+**Coverage report for SOC 2 (human-readable table)**
+```bash
+ancilis certify --target soc2
+```
+
+```
+control_id  framework_ref                         coverage_status           action_required           evidence_count  last_evidence_at
+--------------------------------------------------------------------------------------------------------------------------------------------------
+DE-01       CC7.2, CC7.3                          covered                   —                         5               2026-06-06T10:04:00Z
+DE-02       CC7.1, CC8.1                          covered                   —                         5               2026-06-06T10:04:00Z
+DE-03       CC4.1                                 covered                   —                         5               2026-06-06T10:04:00Z
+DE-04       CC7.3                                 policy_gated              enable in policy          5               2026-06-06T10:04:00Z
+GOV-01      CC1.1, CC1.2                          policy_gated              enable in policy          5               2026-06-06T10:04:00Z
+GOV-04      CC1.4, CC4.1, CC4.2                   attestation_required      ancilis attest GOV-04     5               2026-06-06T10:04:00Z
+PR-01       CC6.1, CC6.2                          covered                   —                         5               2026-06-06T10:04:00Z
+PR-02       CC6.1, CC6.3                          covered                   —                         5               2026-06-06T10:04:00Z
+PR-03       CC8.1                                 gap                       remediate                 5               2026-06-06T10:04:00Z
+# ... (17 more control results)
+```
+
+**JSON output for automation**
+```bash
+ancilis certify --target hipaa --format json
+```
+
+```json
+{
+  "controls": [
+    {
+      "action_required": "\u2014",
+      "control_id": "DE-01",
+      "coverage_status": "covered",
+      "detail": "Baseline not yet established \u2014 warming behavioral window (5/25).",
+      "evidence_count": 5,
+      "framework_ref": "164.308(a)(5)(ii)(B), 164.308(a)(6)",
+      "last_evidence_at": "2026-06-06T10:04:00Z",
+      "latest_result": "PASS"
+    },
+    {
+      "action_required": "\u2014",
+      "control_id": "DE-02",
+      "coverage_status": "covered",
+      "detail": "Observed classifications are within declared processing boundaries.",
+      "evidence_count": 5,
+      "framework_ref": "164.308(a)(1)(ii)(D), 164.308(a)(5)(ii)(C)",
+      "last_evidence_at": "2026-06-06T10:04:00Z",
+      "latest_result": "PASS"
+    },
+    {
+      "action_required": "enable in policy",
+      "control_id": "DE-04",
+      "coverage_status": "policy_gated",
+      "detail": "Control is not runtime-active under the explicit/certification policy gate.",
+      "evidence_count": 5,
+      "framework_ref": "164.308(a)(1)(ii)",
+      "last_evidence_at": "2026-06-06T10:04:00Z",
+      "latest_result": "SKIP"
+    },
+    {
+      "action_required": "ancilis attest GOV-04",
+      "control_id": "GOV-04",
+      "coverage_status": "attestation_required",
+      "detail": "MANUAL: attestation required",
+      "evidence_count": 5,
+      "framework_ref": "164.308(a)(7), 164.308(a)(8)",
+      "last_evidence_at": "2026-06-06T10:04:00Z",
+      "latest_result": "SKIP"
+    }
+    # ... (35 more control results)
+  ],
+  "dry_run": true,
+  "target": "hipaa",
+  "target_id": "hipaa",
+  "target_name": "HIPAA Security Rule"
+}
+```
+
+**Evaluate the EU AI Act target with an explicit config and database**
+```bash
+ancilis certify --target eu_ai_act --config ./ancilis.yaml --db ~/.ancilis/my-agent.duckdb
+```
+
+**Other supported targets**
+```bash
+ancilis certify --target pci
+ancilis certify --target aiuc1
+```
+
+## Common Errors
+
+| Error | Fix |
+|-------|-----|
+| `No ancilis.yaml found and no config provided` | Run `ancilis init`, or pass `--config path/to/ancilis.yaml` |
+| `Error: <validation message>` (invalid config) | Fix `ancilis.yaml`, or pass a valid `--config` path |
+| Controls show `gap` | Run your agent with Ancilis middleware active to collect evidence, then re-run `certify` |
+| Controls show `attestation_required` | Complete the manual attestation for the listed control |
+
+## Related
+
+- [ancilis scan](/cli/scan) — pass/fail posture evaluation for CI/CD
+- [ancilis report](/cli/report) — full posture report in multiple formats
+- [ancilis status](/cli/status) — lightweight posture check

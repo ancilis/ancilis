@@ -11,6 +11,7 @@ from ancilis.engine.action import Action
 from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
 from ancilis.middleware.action_builder import build_action
 from ancilis.middleware.discovery import DriftEvent, register_tools_from_list
+from ancilis.producers.enforcement import ENFORCE_CAPABLE
 from ancilis.producers.protocol import ProducerType
 from ancilis.telemetry import record_adapter_used
 
@@ -19,8 +20,11 @@ class MCPActionProducer:
     """Produces Action objects from MCP tool calls.
 
     Delegates to existing action_builder and discovery modules.
-    This class satisfies the ActionProducer protocol.
+    This class satisfies the ActionProducer protocol. Enforce-capable: the MCP
+    middleware refuses a tool call on a BLOCK decision before forwarding it.
     """
+
+    ENFORCEMENT = ENFORCE_CAPABLE
 
     def __init__(self, config: ResolvedConfig, registry: ToolRegistry) -> None:
         self._config = config

@@ -16,7 +16,7 @@ ancilis doctor [OPTIONS]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--config` | string | auto-detect | Path to `ancilis.yaml` |
-| `--db` | string | `~/.ancilis/<agent>.duckdb` | Path to evidence database |
+| `--db` | string | `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` | Path to evidence database |
 | `--verbose`, `-v` | flag | `false` | Show full diagnostic details per check |
 | `--json` | flag | `false` | Machine-readable JSON output |
 | `--fix` | flag | `false` | Auto-fix common issues (gitignore entry, cache directory) |
@@ -69,8 +69,8 @@ Ancilis Doctor
 8 checks passed, 2 warnings
 
 To fix issues:
-  • Run: ancilis login  to connect to the Ancilis platform
-  • Run: ancilis login  to set up API authentication
+  • Run: ancilis connect --api-key <your-key>  to connect to the Ancilis platform
+  • Run: ancilis connect --api-key <your-key>  to set up API authentication
 ```
 
 **Verbose output with full diagnostic details**
@@ -118,7 +118,7 @@ ancilis doctor --json
 |-------|-----|
 | `ancilis.yaml not found or invalid` | Run `ancilis init` to create a config |
 | `overlay(s) not found` | Check overlay IDs against supported list in `ancilis init` |
-| `platform API unreachable` | Run `ancilis login` or check your network |
+| `platform API unreachable` | Run `ancilis connect --api-key <your-key>` or check your network |
 | `SDK version outdated` | `pip install --upgrade ancilis` |
 
 ## Related

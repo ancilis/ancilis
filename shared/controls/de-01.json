@@ -75,7 +75,116 @@
     "monitoring",
     "baseline"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.150",
+      "Cal. Civ. Code §1798.82"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 IR.L2-3.6.1, IR.L2-3.6.2, SI.L2-3.14.6",
+      "NIST SP 800-171 Rev. 3 03.06.01, 03.06.02, 03.06.03, 03.14.06"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(b)",
+      "§6-1-1702(2)(d)",
+      "Monitoring plan + annual review"
+    ],
+    "csa_aicm": [
+      "MDS-10",
+      "LOG-15",
+      "LOG-14"
+    ],
+    "dora": [
+      "DORA Art. 8(3)",
+      "DORA Art. 10",
+      "DORA Art. 18"
+    ],
+    "eu-ai-act": [
+      "Art.9.2",
+      "Art.72"
+    ],
+    "eu_cra": [
+      "Annex I Part I(2)(l)",
+      "Annex I Part I(2)(k)"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 IR-4, IR-5, IR-6, IR-8, SI-4",
+      "FedRAMP Moderate IR-4, IR-5, IR-6, IR-8, SI-4"
+    ],
+    "gdpr": [
+      "Art. 33",
+      "Art. 34"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(8), 314.4(h)",
+      "SOX §404",
+      "DORA Art.10, Art.17, Art.19"
+    ],
+    "hipaa": [
+      "164.308(a)(5)(ii)(B)",
+      "164.308(a)(6)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Logging-and-Monitoring",
+      "AISec.Threat-Management"
+    ],
+    "imda-mgf": [
+      "MGF Area 3 §4.2",
+      "Model Monitoring"
+    ],
+    "iso-23894": [
+      "6.6"
+    ],
+    "iso-27001": [
+      "A.8.16"
+    ],
+    "iso-42001": [
+      "MEA 2.2"
+    ],
+    "mas-trm": [
+      "MAS TRM §9.1",
+      "§9.2"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(b)",
+      "NIS2 Art. 23"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.2"
+    ],
+    "nist-csf": [
+      "DE.AE-02",
+      "DE.AE-06"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MG-4.1",
+      "MS-2.6"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PO.3.2"
+    ],
+    "nydfs-500": [
+      "500.14(a)",
+      "500.2(a)"
+    ],
+    "pci-dss-v4": [
+      "Req 10.4.1",
+      "Req 10.4.2"
+    ],
+    "sec-cyber-disclosure": [
+      "Form 8-K Item 1.05(a)",
+      "Reg S-K Item 106(b)(1)"
+    ],
+    "securities-mnpi": [
+      "SOX §302, §404",
+      "SEC Reg FD 17 CFR 243.100(a)",
+      "SEC Rule 17a-4"
+    ],
+    "soc2": [
+      "CC7.2",
+      "CC7.3"
+    ]
+  },
   "display_name": "Behavioral Anomaly Detection",
   "display_detail": "Agents are monitored against expected behavioral baselines so suspicious deviations are detected quickly.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for DE-01 (Behavioral Anomaly Detection) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

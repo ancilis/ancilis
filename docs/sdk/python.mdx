@@ -13,13 +13,14 @@ pip install ancilis
 
 | Extra | Installs | Use When |
 |-------|----------|----------|
-| `ancilis[langchain]` | LangChain integration | Using LangChain agents |
-| `ancilis[watch]` | watchdog | Using `ancilis scan --watch` |
-| `ancilis[pdf]` | WeasyPrint | Generating PDF reports |
-| `ancilis[testing]` | pytest fixtures | Writing compliance tests |
-| `ancilis[all]` | All extras | Full installation |
+| `ancilis[mcp]` | MCP SDK | Running `ancilis serve` (MCP tool server) |
+| `ancilis[watch]` | watchdog, pathspec | Using `ancilis scan --watch` |
+| `ancilis[testing]` | pytest, pytest-benchmark, jsonschema | Writing compliance tests |
+| `ancilis[dev]` | Full dev toolchain (ruff, mypy, pytest, …) | Contributing / running the test suite |
 
-**Requirements:** Python ≥ 3.9, pydantic ≥ 2.0, duckdb ≥ 0.10.0
+The LangChain integration ships as a separate package: `pip install ancilis-langchain`.
+
+**Requirements:** Python ≥ 3.10, pydantic ≥ 2.0, duckdb ≥ 1.0
 
 ---
 
@@ -59,9 +60,9 @@ security:
     allowed_destinations: []
     blocked_destinations: []
 
-my_agent_handles: []      # framework type hints (e.g. [langchain])
+my_agent_handles: []      # data classifications the agent handles (e.g. [financial_data, health_records])
 
-certification_targets: [] # e.g. [soc2-type2]
+certification_targets: [] # e.g. [aiuc-1]  (soc2/hipaa/etc. are overlays, auto-activated by my_agent_handles)
 
 compliance:
   overlays: []            # compliance overlays (e.g. [glba, fedramp])
@@ -101,7 +102,7 @@ engine = Engine(config)
 store = EvidenceStore(config)
 producer = ToolActionProducer(config, engine, evidence_store=store)
 
-@tool(producer)
+@tool(producer=producer)
 def query_database(sql: str, database: str) -> dict:
     """Query the reporting database."""
     return db.execute(sql)
@@ -115,7 +116,7 @@ result = query_database("SELECT * FROM users LIMIT 10", "reports")
 from ancilis import wrap_tool
 
 original_fn = lambda sql, db: execute(sql, db)
-wrapped = wrap_tool(original_fn, producer, tool_name="query_database")
+wrapped = wrap_tool(original_fn, producer=producer, tool_name="query_database")
 result = wrapped("SELECT ...", "reports")
 ```
 
@@ -124,9 +125,10 @@ result = wrapped("SELECT ...", "reports")
 from ancilis import evaluate_and_execute
 
 result = evaluate_and_execute(
-    func=execute_shell_command,
+    execute_shell_command,
     producer=producer,
-    args=["ls", "-la"],
+    agent_name="my-agent",
+    args=("ls", "-la"),
     kwargs={},
     tool_name="shell_execute",
 )
@@ -141,7 +143,10 @@ try:
     result = query_database(sql, db)
 except BlockedActionError as e:
     print(e.display_message)
-    # "Ancilis [blocked]: Action 'query_database' blocked — scope violation."
+    # Multi-line; the reason lists the failed controls by lowercased display name:
+    # Ancilis [blocked]: Action 'query_database' blocked — permission scope enforcement, tool/model integrity and provenance.
+    #   To approve: ancilis approve-tool query_database
+    #   To review: ancilis status
 ```
 
 ### `HTTPActionProducer` — HTTP/REST calls
@@ -149,17 +154,19 @@ except BlockedActionError as e:
 Records outbound HTTP requests as evidence.
 
 ```python
-from ancilis import HTTPActionProducer, HTTPObservation
+from ancilis import HTTPActionProducer, HTTPRequest
 
 producer = HTTPActionProducer(config, engine, evidence_store=store)
 
-observation = HTTPObservation(
+request = HTTPRequest(
     method="POST",
     url="https://api.example.com/transfer",
+    agent_name="my-agent",
     headers={"Authorization": "Bearer ..."},
     body={"amount": 1000, "to": "acct_123"},
 )
-result = producer.observe(observation)
+observation = producer.observe(request)
+# observation.evaluation: EvaluationResult  (observe() returns an HTTPObservation)
 ```
 
 ### `MCPActionProducer` — MCP tool calls
@@ -168,12 +175,15 @@ Intercepts MCP (Model Context Protocol) tool calls.
 
 ```python
 from ancilis import MCPActionProducer, AncilisMiddleware
+from ancilis.engine import ToolRegistry
 
-# Middleware integration (recommended)
-middleware = AncilisMiddleware(config=config, evidence_store=store)
+# Middleware integration (recommended): wrap an MCP ClientSession
+middleware = AncilisMiddleware(session, config=config, evidence_store=store)
 
-# Use as MCP client wrapper
-mcp_producer = MCPActionProducer(config, engine, mcp_client=your_mcp_client)
+# Lower-level producer: translate MCP callTool params into evaluated Actions
+registry = ToolRegistry()
+mcp_producer = MCPActionProducer(config, registry)
+action = mcp_producer.translate({"name": "search", "arguments": {"q": "..."}})
 ```
 
 ### `CLIActionProducer` — subprocess / shell commands
@@ -185,28 +195,42 @@ from ancilis import CLIActionProducer, CLIInvocation
 
 producer = CLIActionProducer(config, engine, evidence_store=store)
 
-invocation = CLIInvocation(
+# Evaluate + run in one call -> CLIExecutionResult
+result = producer.execute(
     command=["git", "push", "origin", "main"],
-    cwd="/workspace/project",
-    env={},
+    agent_name="my-agent",
+    working_directory="/workspace/project",
 )
-result = producer.observe(invocation)
 # result.blocked: bool
 # result.evaluation: EvaluationResult
+# result.stdout / result.stderr / result.return_code
+
+# Or evaluate without executing (dry run):
+action = producer.translate(CLIInvocation(
+    command=["git", "push", "origin", "main"],
+    agent_name="my-agent",
+    working_directory="/workspace/project",
+    environment={},
+))
+evaluation = engine.evaluate(action)
 ```
 
-### `AncilisMiddleware` — MCP server middleware
+### `AncilisMiddleware` — MCP client session wrapper
 
-Drop-in middleware for MCP servers. Wraps all tool calls transparently.
+Wraps an MCP `ClientSession` to intercept and evaluate tool calls transparently.
+The session is the required first positional argument; call tools through the
+middleware instead of the raw session.
 
 ```python
 from ancilis import AncilisMiddleware, load_config
 
 config = load_config()
-middleware = AncilisMiddleware(config=config)
+# `session` is an mcp.ClientSession (the first positional argument)
+middleware = AncilisMiddleware(session, config=config)
 
-# In your MCP server setup:
-server.add_middleware(middleware)
+# Route tool calls through the middleware (it evaluates, then forwards/blocks):
+await middleware.list_tools()
+result = await middleware.call_tool("search", {"q": "..."})
 ```
 
 ---
@@ -258,7 +282,7 @@ Every evidence record is chained with SHA-256. The chain ensures tamper-evidence
 from ancilis.evidence import GENESIS_SEED, canonical_payload, compute_hash
 
 # The genesis block hash (first record's prev_hash)
-print(GENESIS_SEED)  # "ancilis-genesis-0"
+print(GENESIS_SEED)  # a 64-char SHA-256 hex digest derived from a fixed genesis label
 
 # Verify chain integrity
 summary = store.get_summary()
@@ -275,11 +299,20 @@ record = EvidenceRecord(
     evaluation_id="uuid",
     timestamp="2026-04-12T10:00:00Z",
     agent_id="my-agent",
-    session_id="sess_abc",
+    source_type="agent",                  # producer source type
     tool_name="query_database",
-    decision="ALLOW",    # ALLOW | BLOCK | FLAG | PASS | FAIL
-    hash="sha256...",
-    prev_hash="sha256...",
+    decision="ALLOW",                     # ALLOW | BLOCK | FLAG
+    mode="audit",                         # audit | enforce
+    control_results=[                     # list of per-control result dicts
+        {"control_id": "PR-01", "control_name": "Action Authorization",
+         "result": "PASS", "detail": "..."},
+    ],
+    active_overlays=["glba", "soc2"],
+    data_classifications=["DC-FIN"],
+    active_certifications=[],
+    record_hash="sha256...",
+    previous_hash="sha256...",
+    session_id="sess_abc",                # optional
 )
 ```
 
@@ -293,25 +326,27 @@ Resolves which controls and overlays are active based on config, data classifica
 
 ```python
 from ancilis.activation import ActivationResolver
-from ancilis import load_config
 
-config = load_config()
-resolver = ActivationResolver(config)
-resolved = resolver.resolve()
-# resolved.active_controls: list of active control IDs
-# resolved.active_overlays: dict[overlay_id, OverlayActivation]
+resolver = ActivationResolver()
+resolved = resolver.resolve(
+    my_agent_handles=["financial_data"],
+    certification_targets=["aiuc-1"],
+    compliance_overlays=["glba", "fedramp"],
+)
+# resolved.active_controls: list[str] of active control IDs
+# resolved.active_overlays: list[str] of active overlay IDs
 ```
 
 ### Control IDs
 
 | ID | Name |
 |----|------|
-| `PR-01` | Identity & Authorization |
-| `PR-02` | Scope Confinement |
-| `PR-03` | Output Integrity |
-| `PR-04` | Prompt Security |
-| `PR-05` | Audit Trail & Baseline |
-| `DE-01` | Dependency Vulnerabilities |
+| `PR-01` | Action Authorization |
+| `PR-02` | Permission Scope Enforcement |
+| `PR-03` | Tool/Model Integrity & Provenance |
+| `PR-04` | Data Exposure Prevention |
+| `PR-05` | Context & Tenant Isolation |
+| `DE-01` | Behavioral Anomaly Detection |
 
 ### Overlay Activation in `ancilis.yaml`
 
@@ -322,9 +357,9 @@ compliance:
     - glba
     - fedramp
 
-# Certification-driven activation
+# Certification-driven activation (valid targets: aiuc-1, gov-contractor, AGENT_PAYMENTS, X402)
 certification_targets:
-  - soc2-type2
+  - aiuc-1
 ```
 
 ---
@@ -339,14 +374,14 @@ from ancilis import EvidenceStore
 
 config = load_config()
 store = EvidenceStore(config)
-manager = BaselineManager(config, store)
+manager = BaselineManager(store, config)
 
 # Capture a baseline
-baseline = manager.capture(session_id="sess_abc", label="pre-deploy")
+baseline = manager.create(label="pre-deploy")
 
 # Compare current state to baseline
-report = manager.diff(baseline_id=baseline.id)
-print(report.drift_summary)
+report = manager.check_drift(baseline_id=baseline.baseline_id)
+print(report.summary)
 ```
 
 ---
@@ -398,11 +433,14 @@ evaluations = importer.parse("sbom.cdx.json")
 | Exception | When Raised |
 |-----------|-------------|
 | `BlockedActionError` | Tool call blocked in `enforce` mode |
-| `ConfigError` | `ancilis.yaml` invalid or not found |
-| `OverlayNotFoundError` | Overlay ID not recognized |
+| `ConfigError` | `ancilis.yaml` invalid/not found, or overlay ID not recognized |
 | `StorageError` | DuckDB I/O error |
 | `AuthError` | Platform API authentication failure |
 
+`BlockedActionError` is exported from the top-level `ancilis` package; the
+remaining exceptions live in `ancilis.errors` (all subclass `AncilisError`):
+
 ```python
-from ancilis import BlockedActionError, ConfigError, OverlayNotFoundError
+from ancilis import BlockedActionError
+from ancilis.errors import ConfigError, StorageError, AuthError
 ```

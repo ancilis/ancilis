@@ -25,7 +25,7 @@ Producers translate protocol-specific invocations into Action objects that the e
 | `CrewAIActionProducer` | CrewAI | `step_callback` / `task_callback` / crew-level callbacks |
 | `AutoGenActionProducer` | AutoGen / AG2 | `process_message_before_send` + `process_last_received_message` hooks |
 | `SemanticKernelActionProducer` | Microsoft Semantic Kernel | `function_invocation` / `prompt_rendering` / `auto_function_invocation` filters |
-| `auto_register(config, engine)` | Any installed SDK above | Auto-detect and instantiate one producer per detected SDK |
+| `auto_register(config, engine)` | Any installed SDK with a detector slug | Auto-detect and instantiate one producer per detected SDK (xAI/DeepSeek and other OpenAI-compatible subclasses are not auto-detected — instantiate manually) |
 
 All producers are duck-typed against their upstream SDKs — no hard import dependency. Tool-name convention is stable: `llm:{provider}:{model}` for direct LLM SDKs, `aws-bedrock:{operation}` for Bedrock, `{framework}:{kind}:{name}` for framework producers. Allowlists in `ancilis.yaml` reference these names directly.
 
@@ -353,7 +353,7 @@ Filters via `include=` / `exclude=`:
 
 ```python
 producers = auto_register(config, engine, include={"anthropic", "openai"})
-producers = auto_register(config, engine, exclude={"deepseek"})
+producers = auto_register(config, engine, exclude={"openai"})
 ```
 
 Diagnostics-only helpers:

@@ -1,0 +1,102 @@
+---
+title: "fda_medical_device_cybersecurity Overlay"
+description: "Scaffold AKSI compliance overlay wiring controls for FDA medical device cybersecurity, declared via the DC-MEDDEV data classification."
+---
+
+## Overview
+
+The `fda_medical_device_cybersecurity` overlay packages AKSI control wiring for agents operating in the FDA medical device cybersecurity domain. Per the overlay definition, it is a scaffold created to resolve a dangling control-to-overlay reference: it wires the 39 AKSI controls that reference this overlay id, but asserts **no** requirement-ID mappings. The overlay activates when an agent declares handling of medical device data (`DC-MEDDEV`) and attaches the referencing controls to your posture surface.
+
+<Warning>
+This overlay is a **scaffold mapping** and is not yet backed by runtime evidence. It carries `scaffold: true` and an empty `framework_mapping` — no authoritative crosswalk has been wired, and the controls below have empty framework references and evidence requirements by construction. Treat any coverage shown here as **indicative only**; populate from an authoritative source before relying on it for production assertions.
+</Warning>
+
+**Use this overlay when your agent:**
+- Handles medical device data classified as `DC-MEDDEV`
+- Operates within an FDA medical device cybersecurity program
+- Needs the referencing AKSI controls attached to its compliance posture
+- Is being prepared for a future, authoritative FDA medical device cybersecurity crosswalk
+
+---
+
+## Activation
+
+Activate explicitly by listing the overlay in your config:
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - fda_medical_device_cybersecurity
+```
+
+**Data classification trigger** — because this overlay has `trigger_type: data_classification`, it also auto-activates when your agent declares it handles the relevant data classification (`DC-MEDDEV`) via `my_agent_handles`:
+
+```yaml
+my_agent_handles:
+  - DC-MEDDEV
+```
+
+See [Data Classification](/data-classification) for how declared classifications map to overlay activation.
+
+---
+
+## Control Mapping
+
+The overlay wires the following 39 controls. Framework references and evidence requirements are empty in the scaffold and are shown as `—`.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| GOV-01 | — | — |
+| GOV-02 | — | — |
+| GOV-03 | — | — |
+| GOV-04 | — | — |
+| GOV-05 | — | — |
+| GOV-06 | — | — |
+| GOV-07 | — | — |
+| ID-01 | — | — |
+| ID-02 | — | — |
+| ID-03 | — | — |
+| ID-04 | — | — |
+| ID-05 | — | — |
+| PR-01 | — | — |
+| PR-02 | — | — |
+| PR-03 | — | — |
+| PR-04 | — | — |
+| PR-05 | — | — |
+| PR-06 | — | — |
+| PR-07 | — | — |
+| PR-08 | — | — |
+| PR-09 | — | — |
+| PR-10 | — | — |
+| PR-11 | — | — |
+| PR-12 | — | — |
+| DE-01 | — | — |
+| DE-02 | — | — |
+| DE-03 | — | — |
+| DE-04 | — | — |
+| DE-05 | — | — |
+| DE-06 | — | — |
+| RS-01 | — | — |
+| RS-02 | — | — |
+| RS-03 | — | — |
+| RS-04 | — | — |
+| RS-05 | — | — |
+| RS-06 | — | — |
+| RC-01 | — | — |
+| RC-02 | — | — |
+| RC-03 | — | — |
+
+---
+
+## Retention & Jurisdiction
+
+This overlay does not specify an evidence retention minimum (`evidence_retention_minimum_days` is not defined) or a jurisdiction. As a scaffold with no asserted requirement mappings, it inherits retention from your agent's broader evidence configuration and does not impose an overlay-specific retention window or jurisdictional scope.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

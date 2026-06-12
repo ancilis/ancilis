@@ -32,6 +32,15 @@ def _parse_period_start(period: str) -> str:
     return (datetime.now(timezone.utc) - _parse_period(period)).isoformat()
 
 
+def _validate_period(ctx: object, param: object, value: str) -> str:
+    """Click callback: reject a malformed --period with a clean usage error."""
+    try:
+        _parse_period(value)
+    except ValueError as exc:
+        raise click.BadParameter(str(exc)) from exc
+    return value
+
+
 def _report_options(func: F) -> F:
     func = click.option("--output", "-o", "output_path", default=None, help="Output file path")(func)
     func = click.option("--db", "db_path", default=None, help="Path to evidence database")(func)
@@ -42,7 +51,10 @@ def _report_options(func: F) -> F:
         default="terminal",
         type=click.Choice(["terminal", "markdown", "pdf", "aiuc1-readiness", "ndjson", "csv", "oscal"]),
     )(func)
-    func = click.option("--period", default="30d", help="Reporting period (e.g. 7d, 30d, 90d, 365d)")(func)
+    func = click.option(
+        "--period", default="30d", callback=_validate_period,
+        help="Reporting period (e.g. 7d, 30d, 90d, 365d)",
+    )(func)
     func = click.option("--session", "session_id", default=None, help="Scope to a specific session ID")(func)
     func = click.option("--latest/--all", "use_latest", default=True, help="Show latest session (default) or all sessions")(func)
     return func
@@ -237,7 +249,7 @@ def report_generate(
     default="oscal",
     type=click.Choice(["csv", "ndjson", "oscal"]),
 )
-@click.option("--period", default="30d", help="Reporting period (e.g. 7d, 30d, 90d, 365d)")
+@click.option("--period", default="30d", callback=_validate_period, help="Reporting period (e.g. 7d, 30d, 90d, 365d)")
 @click.option("--api-url", required=True, help="Platform API base URL")
 @click.option("--auth-token", required=True, help="Platform JWT auth token")
 @click.option("--output", "-o", "output_path", default=None, help="Output file path")

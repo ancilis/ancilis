@@ -8,7 +8,7 @@ Run from the repository root:
 PYTHONPATH=python/src python examples/cover-mcp-gap-assessment/run.py
 ```
 
-Recorded output is available in `docs/demo-recordings/cover-mcp-gap-assessment.mp4`, with `.cast` and `.txt` variants beside it. The recording reflects the pre-v0.3 AKSI catalog state; rerun this demo after the v0.3 catalog migration to refresh displayed control counts.
+Recorded output is available in `docs/demo-recordings/cover-mcp-gap-assessment.mp4`, with `.cast` and `.txt` variants beside it. Those recordings show an older catalog (`controls_total: 26`); the current release ships **41 controls (39 common)**, so the recorded count is a historical snapshot. Rerun this demo to refresh the recordings before publishing.
 
 Expected result:
 

@@ -5,8 +5,8 @@ certification_targets:
 my_agent_handles:
   - personal_info
   - financial_records
-mode: audit
 security:
+  mode: audit
   tools:
     allowed:
       - search_research

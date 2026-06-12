@@ -1,0 +1,81 @@
+---
+title: "EU NIS2 Directive — Network and Information Security Overlay"
+description: "AKSI compliance overlay for AI agents operating in or for EU NIS2-covered essential and important entities."
+---
+
+## Overview
+
+The NIS2 Directive (Directive (EU) 2022/2555) is the EU's cybersecurity framework for essential and important entities, with an EU member state transposition deadline of October 18, 2024. It applies to essential entities (energy, transport, banking, financial market infrastructure, health, drinking water, digital infrastructure) and important entities (postal, waste, chemicals, food, manufacturing, digital providers) with 50+ employees or €10M+ annual turnover. AI agent systems operating in or for NIS2-covered sectors must evidence the security measures required under Art. 21 and incident notification under Art. 23.
+
+The `nis2` overlay packages AKSI control evidence for these obligations. It maps each AKSI control to the relevant NIS2 articles — the ten minimum security measures under Art. 21(2), management accountability under Art. 20, and incident notification timelines under Art. 23 — so that an agent's runtime evidence can be aligned to the Directive's requirements.
+
+**Use this overlay when your agent:**
+- Operates in or for an EU essential or important entity subject to Directive (EU) 2022/2555
+- Handles public administration or government data (DC-GOV)
+- Handles critical infrastructure operational data (DC-CRIT)
+- Must evidence Art. 21 security measures or Art. 23 incident notification
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - nis2
+```
+
+**Data classification trigger** — because this overlay's `trigger_type` is `data_classification`, it also auto-activates when your agent declares handling of the relevant data via `my_agent_handles`. The overlay's `triggered_by` codes are `DC-GOV` (public administration and government data) and `DC-CRIT` (critical infrastructure operational data). See [Data Classification](/data-classification) for how to declare handled data classes.
+
+Operators in other NIS2-covered sectors should evaluate triggering based on the data classification of their sector-specific operational data.
+
+---
+
+## Control Mapping
+
+Every control in the `nis2` overlay is listed below (26 controls).
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-01** | NIS2 Art. 20(1), Art. 21(1), Art. 21(2)(a) | Cybersecurity risk management policy approved by management body per Art. 21(1) and Art. 20(1) |
+| **GOV-02** | NIS2 Art. 20(1), Art. 20(2) | Management body member(s) responsible for cybersecurity oversight identified (Art. 20(1)) |
+| **GOV-03** | NIS2 Art. 21(1), Art. 21(2)(a), Art. 21(2)(d) | Risk analysis conducted per Art. 21(2)(a) covering network and information systems security |
+| **GOV-04** | NIS2 Art. 20(1), Art. 21(2)(b) | Human oversight mechanisms implemented for automated decisions with significant impact on essential services |
+| **ID-01** | NIS2 Art. 21(2)(a), Art. 21(2)(d) | Asset inventory maintained covering network and information systems supporting essential or important services |
+| **ID-02** | NIS2 Art. 21(2)(d), Art. 21(2)(e) | Software inventory maintained covering systems supporting essential or important functions |
+| **ID-03** | NIS2 Art. 21(2)(a) | Data classification scheme applied to data processed by network and information systems (Art. 21(2)(a)) |
+| **ID-04** | NIS2 Art. 21(2)(d), Art. 22 | Supply chain security policy documented covering ICT product and service providers per Art. 21(2)(d) |
+| **ID-05** | NIS2 Art. 21(1), Art. 21(2)(a) | Risk assessment methodology documented per Art. 21(2)(a) appropriate to size, exposure, and services |
+| **PR-01** | NIS2 Art. 21(2)(i) | Multi-factor authentication implemented per Art. 21(2)(i) for access to network and information systems |
+| **PR-02** | NIS2 Art. 21(2)(i) | Access control policies implemented per Art. 21(2)(i) applying least privilege principle |
+| **PR-03** | NIS2 Art. 21(2)(e) | Security requirements integrated into system acquisition and development processes per Art. 21(2)(e) |
+| **PR-04** | NIS2 Art. 21(2)(h) | Encryption and cryptographic controls implemented per Art. 21(2)(h) for data at rest and in transit |
+| **PR-05** | NIS2 Art. 21(2)(b), Art. 21(2)(j) | Security event logging implemented for network and information systems per Art. 21(2)(b) |
+| **PR-06** | NIS2 Art. 21(2)(e) | Configuration management procedures documented for systems supporting essential or important services |
+| **PR-07** | NIS2 Art. 21(2)(h) | Encryption policy documented per Art. 21(2)(h) covering cryptographic algorithm selection and key management |
+| **PR-08** | NIS2 Art. 21(2)(e) | Security measures for network and information system acquisition per Art. 21(2)(e) include input security |
+| **DE-01** | NIS2 Art. 21(2)(b), Art. 23 | Incident detection capabilities implemented per Art. 21(2)(b) for significant cyber incidents |
+| **DE-02** | NIS2 Art. 21(2)(b) | Configuration change monitoring implemented for systems supporting essential or important services |
+| **DE-03** | NIS2 Art. 20(1), Art. 21(2)(b) | Continuous monitoring program documented and operational per Art. 21(2)(b) |
+| **DE-04** | NIS2 Art. 21(2)(b), Art. 21(2)(c) | Audit log integrity protection implemented to prevent unauthorized modification or deletion |
+| **RS-01** | NIS2 Art. 21(2)(b), Art. 23 | Incident handling policy and procedures documented per Art. 21(2)(b) |
+| **RS-02** | NIS2 Art. 23 | Early warning notification to CSIRT/competent authority within 24 hours (Art. 23(1)(a)) |
+| **RS-03** | NIS2 Art. 23(1)(d) | Significant incident documentation preserved with timeline, impact assessment, and response actions |
+| **RC-01** | NIS2 Art. 21(2)(c) | Business continuity and disaster recovery plan documented per Art. 21(2)(c) |
+| **RC-02** | NIS2 Art. 20(1), Art. 21(2)(b) | Post-incident review conducted following significant incidents with lessons learned documented |
+
+---
+
+## Retention & Jurisdiction
+
+- **Jurisdiction:** EU (`eu`) — Directive (EU) 2022/2555, as transposed by member states.
+- **Evidence retention minimum:** 1825 days (5 years). Significant incident records, including root cause analysis under Art. 23(1)(d), should be retained for at least this period or as required by the applicable national transposition.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

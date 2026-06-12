@@ -64,15 +64,16 @@ Running tool calls...
 === Evidence Summary ===
   Records: 8
   Decisions: {'ALLOW': 8}
-  Hash chain: intact
+  Hash chain: legacy-unverified
   Tools: ['get_customer', 'send_notification', 'update_preferences']
 
 === What `ancilis status` shows ===
 Ancilis — demo-agent
   Mode: audit
-  Controls: 26 active, all passing
+  Controls: 39 active, 11 runtime-verified, 27 pending, 1 flagged
   AIUC-1: active
   Tool calls: 8 evaluated, 0 blocked
+  Sync: 8 pending, 0 failed
 
 === What `ancilis report` shows (terminal) ===
 Ancilis Posture Report — demo-agent
@@ -80,9 +81,9 @@ Ancilis Posture Report — demo-agent
 AIUC-1 AI Agent Certification Standard Readiness
   Readiness: 85% (17 of 20 requirements passing)
   Coverage: 85% (17 automated, 3 operator)
-  Evidence records: 8, hash chain intact
+  Evidence records: 8, hash chain legacy-unverified (set ANCILIS_CHAIN_KEY)
 
-Evidence: 8 records, hash chain ✓ intact
+Evidence chain: ✓ legacy-unverified (set ANCILIS_CHAIN_KEY) (8 records)
 
 Done. One config line. AIUC-1 readiness assessment from real tool call evidence.
 ```

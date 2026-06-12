@@ -1,6 +1,6 @@
 {
   "name": "ancilis",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TypeScript SDK for Ancilis runtime evaluation and policy enforcement",
   "type": "module",
   "main": "./dist/ancilis/index.js",
@@ -99,9 +99,10 @@
   },
   "overrides": {
     "@hono/node-server": "1.19.14",
+    "brace-expansion": "5.0.6",
     "express-rate-limit": "8.5.1",
     "fast-uri": "3.1.2",
-    "hono": "4.12.18",
+    "hono": "4.12.21",
     "ip-address": "10.2.0"
   },
   "directories": {

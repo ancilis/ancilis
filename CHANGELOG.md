@@ -10,6 +10,8 @@ The project follows a conservative pre-1.0 release posture:
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-10
+
 ### Added
 - **15 net-new SDK producers** covering the highest-leverage day-one runtime evidence gaps for the 2026 AI agent ecosystem:
   - **Direct LLM provider SDKs (10):** `AnthropicActionProducer`, `OpenAIActionProducer` (chat completions + responses APIs), `GeminiActionProducer` (google-genai), `MistralActionProducer`, `CohereActionProducer` (folds `message`/`chat_history`/`preamble` into unified messages), `XAIActionProducer`, plus four OpenAI-compatible serverless inference subclasses: `GroqActionProducer`, `TogetherActionProducer`, `FireworksActionProducer`, `DeepSeekActionProducer`.

@@ -73,7 +73,109 @@
     "lessons",
     "stakeholder"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.150",
+      "§1798.185(a)(15)"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 CA.L2-3.12.3",
+      "NIST SP 800-171 Rev. 3 03.12.03, 03.12.06"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(d)",
+      "Annual proactive review obligation"
+    ],
+    "csa_aicm": [
+      "SEF-05",
+      "BCR-01"
+    ],
+    "dora": [
+      "DORA Art. 13",
+      "DORA Art. 25",
+      "DORA Art. 26"
+    ],
+    "eu-ai-act": [
+      "Art.9",
+      "Art.72"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 CA-7, CP-2",
+      "FedRAMP Moderate CA-7, CP-2, CP-2(8)"
+    ],
+    "gdpr": [
+      "Art. 32(1)(c)",
+      "Art. 35"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(g), 314.4(h)(7)",
+      "SOX §404",
+      "DORA Art.13"
+    ],
+    "hipaa": [
+      "164.308(a)(7)(ii)(A)",
+      "164.308(a)(7)(ii)(B)"
+    ],
+    "imda-mgf": [
+      "MGF Areas 1+3",
+      "Post-Incident Review and Continuous Improvement"
+    ],
+    "iso-23894": [
+      "5.7",
+      "6.6"
+    ],
+    "iso-27001": [
+      "A.5.27",
+      "A.6.3"
+    ],
+    "iso-42001": [
+      "Clause 10.1",
+      "10.2",
+      "MAN 4.2"
+    ],
+    "mas-trm": [
+      "MAS TRM §10.1",
+      "§10.2"
+    ],
+    "nis2": [
+      "NIS2 Art. 20(1)",
+      "NIS2 Art. 21(2)(b)"
+    ],
+    "nist-ai-rmf": [
+      "MANAGE 4.4"
+    ],
+    "nist-csf": [
+      "RC.IM-01",
+      "RC.IM-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MG-4.3",
+      "GV-1.5",
+      "MG-4.2"
+    ],
+    "nist_privacy_framework": [
+      "GV.MT-P6",
+      "CM.AW-P7"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "RV.3.1",
+      "RV.3.2",
+      "RV.3.4"
+    ],
+    "nydfs-500": [
+      "500.16(a)(1)"
+    ],
+    "pci-dss-v4": [
+      "Req 12.10.6"
+    ],
+    "securities-mnpi": [
+      "SOX §404, §802",
+      "SEC Rule 17a-4"
+    ],
+    "soc2": [
+      "CC4.2"
+    ]
+  },
   "display_name": "Post-Incident Review and Communications",
   "display_detail": "Post-incident review, corrective action, stakeholder notification, and lessons-learned workflows are repeatable.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RC-02 (Post-Incident Review & Communications) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

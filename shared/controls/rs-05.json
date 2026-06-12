@@ -74,7 +74,99 @@
     "authority",
     "regulated"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "Cal. Civ. Code 1798.150",
+      "Cal. Civ. Code 1798.29",
+      "Cal. Civ. Code 1798.82"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "colorado-ai-act": [
+      "6-1-1703(7)",
+      "6-1-1702(5)"
+    ],
+    "csa_aicm": [
+      "SEF-02",
+      "SEF-03"
+    ],
+    "eu-ai-act": [
+      "Art. 73(2)",
+      "Art. 73(3)",
+      "Art. 73(4)",
+      "Art. 55(1)(c)"
+    ],
+    "eu_cra": [
+      "Art. 14"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(1)",
+      "Premarket-Cyber-VulnMgmtPlan"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "gdpr": [
+      "Art. 33(1)",
+      "Art. 33(3)",
+      "Art. 34(1)"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ],
+    "hipaa": [
+      "164.404",
+      "164.404(b)",
+      "164.408",
+      "164.410",
+      "164.412"
+    ],
+    "imda-mgf": [
+      "Dim-4 Incident Reporting"
+    ],
+    "iso-27001": [
+      "A.5.5",
+      "A.5.26",
+      "A.5.28"
+    ],
+    "iso-27701": [
+      "B.8.5.4",
+      "B.8.5.5",
+      "A.7.5.4"
+    ],
+    "iso-42001": [
+      "A.8.4",
+      "A.8.3"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 1.1",
+      "MANAGE 4.3"
+    ],
+    "nist-csf": [
+      "RS.CO-02",
+      "RS.CO-03",
+      "GV.OC-03"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.1",
+      "GV-2.1"
+    ],
+    "nist_privacy_framework": [
+      "CM.AW-P7",
+      "CM.AW-P8"
+    ],
+    "nydfs-500": [
+      "500.17(a)",
+      "500.17(c)"
+    ],
+    "sec-cyber-disclosure": [
+      "Form 8-K Item 1.05(a)"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RS-05 Regulated Notification Clock & Authority Routing"
+    ]
+  },
   "display_name": "Regulated Notification Clock and Authority Routing",
   "display_detail": "Potentially regulated incidents start jurisdiction-specific notification clocks, preserve decision evidence, and route authority/customer notification tasks to accountable humans.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RS-05 (Regulated Notification Clock & Authority Routing) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

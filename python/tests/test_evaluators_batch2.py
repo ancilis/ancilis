@@ -220,7 +220,8 @@ class TestGOV01IdentityAuth:
         action.agent_owner = "security-team"
         result = self.eval.evaluate(action, config)
         assert result.result == "PASS"
-        assert result.evidence_data["verification_result"] == "verified"
+        # GOV-01 matches a declared identity; it does not authenticate a credential.
+        assert result.evidence_data["verification_result"] == "matched"
 
     def test_missing_agent_id_fails(self):
         config = self._full_config()

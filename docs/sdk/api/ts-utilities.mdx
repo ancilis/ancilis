@@ -1,0 +1,917 @@
+---
+title: "TypeScript API: Testing, Dependencies, Telemetry & Importers"
+description: "Reference for the Ancilis TypeScript testing helpers, dependency scanners, telemetry functions, SARIF/CycloneDX importers, and activation/overlay helpers."
+---
+
+Reference for the supporting TypeScript surface of the Ancilis SDK: test utilities, dependency vulnerability scanning, anonymous usage telemetry, finding importers, and activation/overlay helpers.
+
+Every symbol on this page is a top-level export of the `ancilis` package. Signatures are copied verbatim from the compiled type declarations.
+
+```typescript
+import {
+  MockEvidenceStore,
+  scanDependencies,
+  SarifImporter,
+  ActivationResolver,
+} from "ancilis";
+```
+
+## Testing
+
+Mocks, assertion helpers, and pre-built scenarios for writing unit tests against compliance requirements without hitting the platform API or writing to disk.
+
+### MockEvidenceStore
+
+**Kind:** class
+
+In-memory evidence store for testing. Drop-in replacement for `EvidenceStore` that uses DuckDB `:memory:` mode — no filesystem writes, no DuckDB files. Safe to use in any test environment.
+
+```typescript
+class MockEvidenceStore {
+  constructor(agentName?: string, mode?: "audit" | "enforce", overlay?: string);
+  /** Store an evaluation result. */
+  store(evaluation: EvaluationResult, toolName?: string): Promise<EvidenceRecord>;
+  /** Count stored records. */
+  count(): Promise<number>;
+  /** Get summary of stored records. */
+  getSummary(): Promise<Record<string, unknown>>;
+  /** Verify the hash chain integrity. */
+  verifyChain(): Promise<{ valid: boolean; errors: string[] }>;
+  /** Reset all evidence records. */
+  reset(): Promise<number>;
+  /** Close the underlying DuckDB connection. */
+  close(): Promise<void>;
+}
+```
+
+```typescript
+const store = new MockEvidenceStore();
+await store.store(evaluation, "my_tool");
+expect(store.count()).resolves.toBe(1);
+await store.close();
+```
+
+### FakeProducer
+
+**Kind:** class
+
+Injects synthetic evidence without running real agent code. Implements the `ActionProducer` protocol. Use in tests to produce `Action` objects with controlled data, without any real tool connectivity.
+
+```typescript
+class FakeProducer implements ActionProducer {
+  constructor(producerName?: string, agentId?: string, agentOwner?: string | null);
+  get producerType(): ProducerType;
+  get producerVersion(): string;
+  /** Record a synthetic evidence item. */
+  emit(key: string, value: unknown): void;
+  /** All emitted evidence items (read-only copy). */
+  get emittedData(): Record<string, unknown>;
+  /** Reset all emitted items. */
+  clear(): void;
+  /** Create an Action for engine evaluation. */
+  makeAction(options?: {
+    toolName?: string;
+    parameters?: Record<string, unknown>;
+    sessionId?: string | null;
+    dataClassifications?: string[];
+    sourceType?: string;
+  }): Action;
+  translate(rawInvocation: unknown): Action;
+  computeToolHash(toolIdentifier: unknown): string;
+  registerTools(registry: ToolRegistry): string[];
+}
+```
+
+```typescript
+const producer = new FakeProducer("identity");
+producer.emit("user.id", "alice");
+producer.emit("session.start", { timestamp: "2026-04-11T10:00:00Z" });
+
+const action = producer.makeAction();
+const result = engine.evaluate(action);
+```
+
+### ComplianceScanResult
+
+**Kind:** class
+
+Exported at the top level as `ComplianceScanResult` (the underlying class is `ScanResult` in `ancilis/testing`). Wraps one or more `EvaluationResult` objects with a computed posture score. Returned by `ComplianceScenarios` factory methods and accepted by the compliance assertion helpers.
+
+```typescript
+class ScanResult {
+  readonly evaluations: EvaluationResult[];
+  constructor(evaluations: EvaluationResult[]);
+  static fromSingle(evaluation: EvaluationResult): ScanResult;
+  /** Pass rate across all scored controls in all evaluations. SKIP excluded from denominator. */
+  get score(): number;
+  /** Return the ControlResult for the given controlId (latest evaluation). */
+  getControlResult(controlId: string): ControlResult | undefined;
+  /** Decision from the most recent evaluation. */
+  decision(): string;
+  toString(): string;
+}
+```
+
+### ComplianceScenarios
+
+**Kind:** class
+
+Factory for pre-built compliance test scenarios. All scenarios work fully offline — no platform API, no DuckDB file. Each static method returns a `ScanResult` (`ComplianceScanResult`).
+
+```typescript
+class ComplianceScenarios {
+  /**
+   * All controls passing for a financial services overlay context.
+   * Simulates a well-configured agent with identity, scope, provenance,
+   * and exposure controls all PASS. Active overlays: financial.
+   */
+  static financialCompliant(): ScanResult;
+  /**
+   * PR-01 fails — agent identity is missing. All other controls pass.
+   */
+  static missingIdentity(): ScanResult;
+  /**
+   * Bare minimum passing scenario — only PR-01 scored, rest skipped.
+   */
+  static minimalViable(): ScanResult;
+  /**
+   * All controls failing — useful for testing assertion error messages.
+   */
+  static allFailing(): ScanResult;
+  /**
+   * Enforce mode with a failing control — decision is BLOCK.
+   */
+  static enforceBlocked(): ScanResult;
+}
+```
+
+```typescript
+const scenario = ComplianceScenarios.financialCompliant();
+assertControlPasses(scenario, "PR-01");
+assertPostureAbove(scenario, 0.80);
+```
+
+### assertControlPasses
+
+**Kind:** function
+
+Assert that the given control passed. Throws `AssertionError` with detailed context if the control did not pass. `ScanOrResult` is `ScanResult | EvaluationResult`.
+
+```typescript
+function assertControlPasses(scan: ScanOrResult, controlId: string): void;
+```
+
+### assertControlFails
+
+**Kind:** function
+
+Assert that the given control failed (result is FAIL or ERROR).
+
+```typescript
+function assertControlFails(scan: ScanOrResult, controlId: string): void;
+```
+
+### assertControlFlags
+
+**Kind:** function
+
+Assert that the given control raised a FLAG.
+
+```typescript
+function assertControlFlags(scan: ScanOrResult, controlId: string): void;
+```
+
+### assertPostureAbove
+
+**Kind:** function
+
+Assert that the overall posture score is above a threshold. Score is the pass rate across all scored controls (SKIP excluded). `threshold` is a float in `[0.0, 1.0]` — for example, `0.80` means an 80% pass rate.
+
+```typescript
+function assertPostureAbove(scan: ScanOrResult, threshold: number): void;
+```
+
+### assertDecisionAllows
+
+**Kind:** function
+
+Assert that the most recent evaluation decision is ALLOW.
+
+```typescript
+function assertDecisionAllows(scan: ScanOrResult): void;
+```
+
+### assertDecisionBlocks
+
+**Kind:** function
+
+Assert that the most recent evaluation decision is BLOCK.
+
+```typescript
+function assertDecisionBlocks(scan: ScanOrResult): void;
+```
+
+### makeTestConfig
+
+**Kind:** function
+
+Create a minimal `ResolvedConfig` for testing without a YAML file.
+
+```typescript
+function makeTestConfig(options?: MakeTestConfigOptions): ResolvedConfig;
+```
+
+### makeAction
+
+**Kind:** function
+
+Create a test `Action` with sensible defaults.
+
+```typescript
+function makeAction(options?: MakeActionOptions): Action;
+```
+
+### MakeTestConfigOptions
+
+**Kind:** interface
+
+Options for [`makeTestConfig`](#maketestconfig).
+
+```typescript
+interface MakeTestConfigOptions {
+  agentName?: string;
+  mode?: "audit" | "enforce";
+  overlay?: string;
+  raw?: Record<string, unknown>;
+}
+```
+
+### MakeActionOptions
+
+**Kind:** interface
+
+Options for [`makeAction`](#makeaction).
+
+```typescript
+interface MakeActionOptions {
+  toolName?: string;
+  agentId?: string;
+  agentOwner?: string | null;
+  frameworkVersion?: string;
+  parameters?: Record<string, unknown>;
+  sessionId?: string | null;
+  dataClassifications?: string[];
+  sourceType?: string;
+}
+```
+
+## Dependencies
+
+Two complementary dependency-scanning surfaces are exported at the top level: a class-based API (`DependencyScanner`, `ManifestDetector`, `OSVClient`) that produces `EvaluationResult[]`, and a functional API (`scanDependencies`, `detectDependencies`, `buildSbom`, `queryOsvBatch`) that returns plain result objects and a CycloneDX SBOM.
+
+### DependencyScanner
+
+**Kind:** class
+
+Dependency vulnerability scanner — wires `ManifestDetector` and `OSVClient` into `EvaluationResult`s.
+
+```typescript
+class DependencyScanner {
+  constructor(config: ResolvedConfig);
+  scan(projectDir?: string): Promise<EvaluationResult[]>;
+}
+```
+
+### ManifestDetector
+
+**Kind:** class
+
+Manifest detection and dependency parsing for Node.js package formats.
+
+```typescript
+class ManifestDetector {
+  detect(projectDir: string): Manifest[];
+}
+```
+
+### OSVClient
+
+**Kind:** class
+
+OSV.dev batch vulnerability lookup client.
+
+```typescript
+class OSVClient {
+  get lastError(): string | null;
+  queryBatch(deps: Dependency[], ecosystem?: string): Promise<Record<string, Vuln[]>>;
+}
+```
+
+### Dependency (deps)
+
+**Kind:** interface
+
+Shared dependency type used by the class-based `deps` API.
+
+```typescript
+interface Dependency {
+  name: string;
+  version: string | null;
+  sourceFile: string;
+}
+```
+
+### Manifest
+
+**Kind:** interface
+
+A detected manifest and its parsed dependencies.
+
+```typescript
+interface Manifest {
+  path: string;
+  format: string;
+  dependencies: Dependency[];
+}
+```
+
+### Vuln
+
+**Kind:** interface
+
+A vulnerability returned by `OSVClient`.
+
+```typescript
+interface Vuln {
+  id: string;
+  summary: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  aliases: string[];
+  affectedVersions: string;
+  fixedVersion: string | null;
+}
+```
+
+### scanDependencies
+
+**Kind:** function
+
+Scan a project directory for npm dependency vulnerabilities. Detects the first lockfile found (pnpm > yarn > npm), generates a CycloneDX SBOM in-memory, and queries OSV.dev for known CVEs.
+
+- `projectDir` — Absolute path to the project root. Defaults to `process.cwd()`.
+- Returns a `DependencyScanResult` with findings and SBOM.
+
+```typescript
+function scanDependencies(projectDir?: string): Promise<DependencyScanResult>;
+```
+
+```typescript
+import { scanDependencies } from "ancilis";
+
+const result = await scanDependencies(process.cwd());
+console.log(`Found ${result.vulnerabilities.length} vulnerabilities`);
+```
+
+### detectDependencies
+
+**Kind:** function
+
+Lockfile detection and dependency parsing for npm ecosystems. Returns `null` when no supported lockfile is found.
+
+```typescript
+function detectDependencies(projectDir: string): DetectionResult | null;
+```
+
+### buildSbom
+
+**Kind:** function
+
+Generate a CycloneDX SBOM from detected npm dependencies (in-memory, no disk writes).
+
+```typescript
+function buildSbom(dependencies: Dependency[]): CycloneDxBom;
+```
+
+### queryOsvBatch
+
+**Kind:** function
+
+OSV.dev batch vulnerability lookup for npm packages.
+
+```typescript
+function queryOsvBatch(dependencies: Dependency[]): Promise<{
+  findings: VulnerabilityFinding[];
+  error: string | null;
+}>;
+```
+
+### Dependency (dependencies)
+
+**Kind:** interface
+
+Dependency type used by the functional `dependencies` API.
+
+```typescript
+interface Dependency {
+  name: string;
+  version: string;
+  ecosystem: "npm";
+}
+```
+
+### VulnerabilityFinding
+
+**Kind:** interface
+
+A single vulnerability finding from the functional dependency API.
+
+```typescript
+interface VulnerabilityFinding {
+  cveId: string;
+  packageName: string;
+  installedVersion: string;
+  severity: "critical" | "high" | "medium" | "low";
+  cvssScore: number | null;
+  fixedVersion: string | null;
+  summary: string;
+}
+```
+
+### CycloneDxComponent
+
+**Kind:** interface
+
+A single component within a CycloneDX SBOM.
+
+```typescript
+interface CycloneDxComponent {
+  type: "library";
+  name: string;
+  version: string;
+  purl: string;
+}
+```
+
+### CycloneDxBom
+
+**Kind:** interface
+
+An in-memory CycloneDX v1.5 SBOM.
+
+```typescript
+interface CycloneDxBom {
+  bomFormat: "CycloneDX";
+  specVersion: "1.5";
+  serialNumber: string;
+  version: 1;
+  metadata: {
+    timestamp: string;
+    tools: Array<{ vendor: string; name: string; version: string }>;
+  };
+  components: CycloneDxComponent[];
+}
+```
+
+### DetectionResult
+
+**Kind:** interface
+
+The result of lockfile detection.
+
+```typescript
+interface DetectionResult {
+  manifestPath: string;
+  manifestFormat: "package-lock.json" | "yarn.lock" | "pnpm-lock.yaml";
+  dependencies: Dependency[];
+}
+```
+
+### DependencyScanResult
+
+**Kind:** interface
+
+The full result returned by [`scanDependencies`](#scandependencies).
+
+```typescript
+interface DependencyScanResult {
+  manifestPath: string | null;
+  dependencies: Dependency[];
+  sbom: CycloneDxBom | null;
+  vulnerabilities: VulnerabilityFinding[];
+  osvError: string | null;
+}
+```
+
+## Telemetry
+
+Anonymous, opt-in SDK usage telemetry.
+
+### bucketCount
+
+**Kind:** function
+
+Bucket a raw count into a coarse range for anonymized reporting.
+
+```typescript
+function bucketCount(count: number): "0" | "1-10" | "10-100" | "100+";
+```
+
+### bucketDuration
+
+**Kind:** function
+
+Bucket a duration (in milliseconds) into a coarse range for anonymized reporting.
+
+```typescript
+function bucketDuration(durationMs: number): "<1s" | "1-5s" | "5-30s" | "30s+";
+```
+
+### flushTelemetryEvents
+
+**Kind:** function
+
+Flush queued telemetry events to the configured endpoint.
+
+```typescript
+function flushTelemetryEvents(options?: TelemetryOptions): Promise<{
+  sent: boolean;
+  count: number;
+  error?: string;
+}>;
+```
+
+### formatTelemetryStatus
+
+**Kind:** function
+
+Format a `TelemetryStatus` into a human-readable string.
+
+```typescript
+function formatTelemetryStatus(status: TelemetryStatus): string;
+```
+
+### maybePromptForTelemetryConsent
+
+**Kind:** function
+
+Prompt the user for telemetry consent if not already decided. Resolves to the resulting enabled state.
+
+```typescript
+function maybePromptForTelemetryConsent(options?: TelemetryOptions & {
+  input?: NodeJS.ReadableStream & { isTTY?: boolean };
+  output?: NodeJS.WritableStream & { isTTY?: boolean };
+}): Promise<boolean>;
+```
+
+### recordAdapterUsed
+
+**Kind:** function
+
+Record that a given adapter type was used.
+
+```typescript
+function recordAdapterUsed(adapterType: string): void;
+```
+
+### readTelemetryConfig
+
+**Kind:** function
+
+Read the persisted telemetry configuration.
+
+```typescript
+function readTelemetryConfig(options?: TelemetryOptions): TelemetryConfig;
+```
+
+### readTelemetryStatus
+
+**Kind:** function
+
+Read the effective telemetry status, including queued event count and config/queue paths.
+
+```typescript
+function readTelemetryStatus(options?: TelemetryOptions): TelemetryStatus;
+```
+
+### recordTelemetryEvent
+
+**Kind:** function
+
+Record a telemetry event of the given type with optional properties.
+
+```typescript
+function recordTelemetryEvent(
+  eventType: TelemetryEventType,
+  properties?: Record<string, unknown>,
+  options?: TelemetryOptions,
+): Promise<void>;
+```
+
+### setTelemetryEnabled
+
+**Kind:** function
+
+Enable or disable telemetry, persisting the change to config.
+
+```typescript
+function setTelemetryEnabled(enabled: boolean, options?: TelemetryOptions): TelemetryConfig;
+```
+
+### TelemetryConfig
+
+**Kind:** interface
+
+The persisted telemetry configuration.
+
+```typescript
+interface TelemetryConfig {
+  enabled: boolean;
+  installationId: string | null;
+  endpoint: string;
+  promptedAt: string | null;
+}
+```
+
+### TelemetryEvent
+
+**Kind:** interface
+
+A single telemetry event payload.
+
+```typescript
+interface TelemetryEvent {
+  event_type: TelemetryEventType;
+  timestamp: string;
+  sdk_language: "typescript";
+  sdk_version: string;
+  runtime_version: string;
+  os_platform: string;
+  properties: Record<string, unknown>;
+}
+```
+
+### TelemetryEventType
+
+**Kind:** type
+
+The set of recordable telemetry event types.
+
+```typescript
+type TelemetryEventType =
+  "scan_executed" | "report_generated" | "overlay_activated" | "adapter_used" | "cli_command";
+```
+
+### TelemetryStatus
+
+**Kind:** interface
+
+The effective telemetry status.
+
+```typescript
+interface TelemetryStatus {
+  enabled: boolean;
+  effectiveEnabled: boolean;
+  reason: string | null;
+  installationId: string | null;
+  endpoint: string;
+  configPath: string;
+  queuePath: string;
+  queuedEvents: number;
+  eventTypes: readonly TelemetryEventType[];
+}
+```
+
+## Importers
+
+Importers parse external security artifacts and map their findings to AKSI controls, returning `EvaluationResult[]`.
+
+### SarifImporter
+
+**Kind:** class
+
+SARIF v2.1.0 importer — parses findings and maps them to AKSI controls.
+
+```typescript
+class SarifImporter {
+  constructor(agentId?: string, mode?: "audit" | "enforce");
+  parse(path: string): EvaluationResult[];
+  parseString(content: string): EvaluationResult[];
+}
+```
+
+### CycloneDxImporter
+
+**Kind:** class
+
+CycloneDX v1.5+ SBOM importer — maps components and vulnerabilities to AKSI controls.
+
+```typescript
+class CycloneDxImporter {
+  constructor(agentId?: string, mode?: "audit" | "enforce");
+  parse(path: string): EvaluationResult[];
+  parseString(content: string): EvaluationResult[];
+}
+```
+
+## Activation
+
+The activation resolver reads config, handles both the data-handling and certification paths, and produces a unified `ActivationSpec`. The advisory generator turns detected patterns into classification recommendations and certification upgrade advisories.
+
+### ActivationResolver
+
+**Kind:** class
+
+Activation resolver. Reads config and produces a unified `ActivationSpec`.
+
+```typescript
+class ActivationResolver {
+  constructor();
+  resolve(options?: {
+    dataHandling?: string[];
+    certificationTargets?: string[];
+  }): ActivationSpec;
+}
+```
+
+### BASELINE_CONTROLS
+
+**Kind:** const
+
+The set of baseline AKSI control IDs.
+
+```typescript
+const BASELINE_CONTROLS: Set<string>;
+```
+
+### EXTENDED_CONTROLS
+
+**Kind:** const
+
+The set of extended AKSI control IDs.
+
+```typescript
+const EXTENDED_CONTROLS: Set<string>;
+```
+
+### ActivationSpec
+
+**Kind:** interface
+
+The unified activation specification produced by `ActivationResolver.resolve()`.
+
+```typescript
+interface ActivationSpec {
+  activeControls: string[];
+  activeOverlays: string[];
+  activeCertifications: string[];
+  dataClassifications: string[];
+  controlThresholds: Record<string, string>;
+  evidenceRequirements: Record<string, string[]>;
+  activationSource: Record<string, string>;
+  activationSummary: string[];
+  evidenceRetentionDays: number;
+  humanOversightRequired: boolean;
+}
+```
+
+### ClassificationAdvisory
+
+**Kind:** class
+
+Classification advisory and certification upgrade advisory generator.
+
+```typescript
+class ClassificationAdvisory {
+  constructor();
+  generate(patternDetections: PatternDetection[], options?: {
+    activeDataHandling?: string[];
+    activeCertifications?: string[];
+  }): {
+    recommendations: ClassificationRecommendation[];
+    upgradeAdvisories: CertificationUpgradeAdvisory[];
+  };
+}
+```
+
+### loadCertificationProfile
+
+**Kind:** function
+
+Load a single certification profile from the shared JSON data files. Returns `null` if not found.
+
+```typescript
+function loadCertificationProfile(certId: string): Record<string, unknown> | null;
+```
+
+### loadCertificationProfiles
+
+**Kind:** function
+
+Load multiple certification profiles by ID.
+
+```typescript
+function loadCertificationProfiles(certIds: string[]): Map<string, Record<string, unknown>>;
+```
+
+### loadControlDefinitions
+
+**Kind:** function
+
+Load control definitions from the shared JSON data files.
+
+```typescript
+function loadControlDefinitions(): Map<string, Record<string, unknown>>;
+```
+
+### loadOverlayProfiles
+
+**Kind:** function
+
+Load overlay profiles from the shared JSON data files.
+
+```typescript
+function loadOverlayProfiles(): Map<string, Record<string, unknown>>;
+```
+
+### ClassificationRecommendation
+
+**Kind:** interface
+
+A classification recommendation produced by `ClassificationAdvisory.generate()`.
+
+```typescript
+interface ClassificationRecommendation {
+  detectedPattern: string;
+  suggestedConfigField: string;
+  suggestedValue: string;
+  projectedOverlays: string[];
+  projectedControls: string[];
+  detectionCount: number;
+  confidence: string;
+  severity: string;
+  exampleConfig: string;
+}
+```
+
+### CertificationUpgradeAdvisory
+
+**Kind:** interface
+
+A certification upgrade advisory.
+
+```typescript
+interface CertificationUpgradeAdvisory {
+  certificationId: string;
+  message: string;
+  suggestedConfigAddition: Record<string, unknown>;
+  aiuc1DomainsStrengthened: string[];
+  severity: string;
+}
+```
+
+### PatternDetection
+
+**Kind:** interface
+
+A detected pattern fed into `ClassificationAdvisory.generate()`.
+
+```typescript
+interface PatternDetection {
+  patternType: string;
+  count: number;
+}
+```
+
+## Overlays
+
+Helpers for normalizing overlay identifiers.
+
+### OVERLAY_ID_ALIASES
+
+**Kind:** const
+
+A mapping of overlay ID aliases to their canonical IDs.
+
+```typescript
+const OVERLAY_ID_ALIASES: Record<string, string>;
+```
+
+### normalizeOverlayId
+
+**Kind:** function
+
+Normalize a single overlay ID to its canonical form.
+
+```typescript
+function normalizeOverlayId(overlayId: string): string;
+```
+
+### normalizeOverlayIds
+
+**Kind:** function
+
+Normalize an iterable of overlay IDs to their canonical forms.
+
+```typescript
+function normalizeOverlayIds(overlayIds: Iterable<string>): string[];
+```

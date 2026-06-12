@@ -25,8 +25,8 @@ source .venv/bin/activate && pytest python/tests/ -v
 # Install Python package in dev mode
 source .venv/bin/activate && pip install -e ".[dev]"
 
-# Validate config
-ancilis config validate --config ancilis.yaml
+# Validate demo config
+source .venv/bin/activate && ancilis config validate examples/demo/ancilis.yaml
 ```
 
 ## Codex Integration — Independent Review Protocol
@@ -46,7 +46,7 @@ Prefer grounded observations over speculation, and say explicitly when something
 - **Evidence store:** DuckDB-backed with SHA-256 hash chain integrity
 - **Config flow:** ancilis.yaml → Pydantic validation → ResolvedConfig → Engine evaluation
 - **Activation paths:** (1) data_handling → DC codes → overlay activation, (2) certification_targets → certification profiles → control activation
-- **Controls:** PR-01 (Identity), PR-02 (Scope), PR-03 (Provenance), PR-04 (Exposure), PR-05 (Audit Trail), DE-01 (Baseline Detection)
+- **Controls:** AKSI v0.6 ships 41 shared controls: 39 common controls are active for governed agents, while `PAY-01` and `PAY-02` activate only for payment scope. Python support is split between 18 direct runtime evaluators and 23 attestation-backed controls.
 - **Modes:** `audit` (evaluate + log, allow all) and `enforce` (evaluate + block violations)
 
 ## Tool Preferences — Desktop Commander vs Computer Use

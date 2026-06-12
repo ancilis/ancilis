@@ -1,0 +1,440 @@
+---
+title: "ancilis evidence"
+description: "Inspect, verify, prune, and import records in the local evidence store."
+---
+
+## Overview
+
+`ancilis evidence` is a command group for managing the local evidence store — the append-only, hash-chained DuckDB database that records every evaluated tool call. Use its subcommands to list and inspect records, verify hash-chain integrity, manage sessions, prune or reset the store, and import external findings (SARIF / CycloneDX).
+
+```bash
+ancilis evidence [OPTIONS] COMMAND [ARGS]...
+```
+
+## Flags
+
+The top-level group takes no options other than `--help`. All behavior lives in the subcommands below.
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--help` | flag | `false` | Show the command group help and exit |
+
+## Subcommands
+
+| Command | What it does |
+|---------|--------------|
+| `list` | List evidence records from the configured store |
+| `show` | Show a full evidence record by exact ID or short prefix |
+| `verify` | Verify evidence hash-chain integrity |
+| `sessions` | List known sessions with record counts and time ranges |
+| `reset` | Clear ALL records and restart the hash chain from genesis (destructive) |
+| `prune` | Delete records older than the retention window (destructive) |
+| `import` | Import SARIF or CycloneDX findings into the store |
+
+<Note>
+Most subcommands accept `--config` and `--db`. The `--db` Click default is
+unset (`None`); when omitted, the store derives a per-agent, per-cwd path of the
+form `~/.ancilis/<agent-name>-<8-char-cwd-hash>/evidence.duckdb` (the file is
+always named `evidence.duckdb`; the directory disambiguates same-named agents
+across working directories). If neither flag is given, the store location is
+resolved from the auto-detected `ancilis.yaml`.
+
+Only `list`, `show`, `verify`, and `prune` fall back to a default in-memory
+config — and only when `--db` is supplied **and** no `ancilis.yaml` is found
+(a `FileNotFoundError`). `import`, `sessions`, and `reset` do not fall back: a
+missing config exits with code `1`. In all subcommands, a present-but-invalid
+config exits with code `1`.
+</Note>
+
+---
+
+### evidence list
+
+List evidence records from the configured evidence store.
+
+```bash
+ancilis evidence list [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent (see note) | Path to evidence database |
+| `--limit` | integer (≥1) | `20` | Maximum number of records to return |
+| `--since` | string | none | Only include records at or after this ISO8601 timestamp |
+| `--agent-id` | string | none | Filter to a single agent ID |
+| `--classification` | string | none | Filter by data classification code |
+| `--control-id` | string | none | Filter by AKSI control ID |
+| `--format` | `json` \| `table` | `table` | Output format |
+
+**Example**
+```bash
+ancilis evidence list --limit 5
+```
+
+```
+timestamp                  evidence_id  agent_id              source_type  classification        control_id  status
+--------------------------------------------------------------------------------------------------------------
+2026-06-06T10:04:00Z       b9e9bb7      my-agent              agent        DC-FIN                DE-01       PASS  
+2026-06-06T10:04:00Z       b9e9bb7      my-agent              agent        DC-FIN                DE-02       PASS  
+2026-06-06T10:04:00Z       b9e9bb7      my-agent              agent        DC-FIN                DE-03       SKIP  
+2026-06-06T10:04:00Z       b9e9bb7      my-agent              agent        DC-FIN                DE-04       SKIP  
+2026-06-06T10:04:00Z       b9e9bb7      my-agent              agent        DC-FIN                DE-05       SKIP  
+  # ... (more control-result rows for this record)
+```
+
+When no records match, the command prints `No evidence records found.`. Use `--format json` to emit the full records as a JSON array.
+
+---
+
+### evidence show
+
+Show a full evidence record by exact ID or short prefix.
+
+```bash
+ancilis evidence show [OPTIONS] EVIDENCE_ID
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent (see note) | Path to evidence database |
+| `--format` | `json` \| `pretty` | `pretty` | Output format |
+
+`EVIDENCE_ID` may be a full record ID or a short prefix (such as the 7-character `evidence_id` shown by `ancilis evidence list`). An unknown or ambiguous prefix exits with code `1` and an error on stderr.
+
+**Example**
+```bash
+ancilis evidence show 2363761
+```
+
+```
+Evidence Record
+---------------
+Record ID: 23637613-647b-4ccd-8e2b-5ba464fc0957
+Evaluation ID: 524dc4d4-b882-4924-b410-e66105195d54
+Timestamp: 2026-06-06T10:02:00Z
+Agent ID: my-agent
+Session ID: -
+Source Type: agent
+Tool Name: send_email
+Decision: ALLOW
+Mode: audit
+Record Hash: 9d485c769e94faf4813b8fc544af3bfb5df7f8cf92061a0ff67f629ea051faca
+Previous Hash: b6513b8a2942e68fbadca7a1538668692d73d6cf005793d7dfe60903fb6f0a77
+Total Duration (ms): 0.1812080154195428
+Output Summary: -
+Tenant ID: -
+SDK Version: 0.1.0
+Active Overlays: glba, soc2
+Active Certifications: -
+Data Classifications: DC-FIN
+Detected Data Types: DC-PII
+
+Control Results:
+- DE-01 PASS (Behavioral Anomaly Detection)
+  Detail: Baseline not yet established — warming behavioral window (3/25).
+  Evidence:
+    {
+      "baseline_established": false,
+      "baseline_min_events": 25,
+      "baseline_window_calls": 2,
+      "behavior_schema_version": 1,
+      "deviation_flags": [],
+      "new_tools_detected": [],
+      "observation_type": "tool_call",
+      "observed_parameter_hash": "",
+      "observed_tool_name": "send_email",
+      "window_event_count": 2,
+      "window_unique_tools": [
+        "http_get",
+        "lookup"
+      ]
+    }
+  Framework Mappings:
+    - glba (Financial Services (GLBA, SOX, DORA)): GLBA 16 CFR 314.4(c)(8), 314.4(h); SOX §404; DORA Art.10, Art.17, Art.19
+    - soc2 (SOC 2 Type II): CC7.2, CC7.3
+- DE-02 FAIL (Classification Drift and Boundary Validation)
+  Detail: Classification drift detected: observed undeclared data classes DC-PII.
+  Evidence:
+    {
+      "boundary_violation": null,
+      "compatible_data_classes": [],
+      "declared_data_classes": [
+        "DC-FIN"
+      ],
+      "destination": null,
+      "observed_data_classes": [
+        "DC-PII"
+      ],
+      "undeclared_data_classes": [
+        "DC-PII"
+      ]
+    }
+  Framework Mappings:
+    - glba (Financial Services (GLBA, SOX, DORA)): GLBA 16 CFR 314.4(d); SOX §404; DORA Art.9, Art.15
+    - soc2 (SOC 2 Type II): CC7.1, CC8.1
+- PR-01 PASS (Action Authorization)
+  Detail: Action authorized for identity, context, and target.
+  Evidence:
+    {
+      "action_type": "tool_call",
+      "agent_id": "my-agent",
+      "allowed_agent_ids": [
+        "my-agent"
+      ],
+      "destination": null,
+      "expected_agent_id": "my-agent",
+      "identity_authorized": true,
+      "policy_gate_satisfied": true,
+      "sensitive": true,
+      "sensitive_reasons": [
+        "overlay_active",
+        "sensitive_parameter_pattern"
+      ],
+      "target_authorized": true
+    }
+  Framework Mappings:
+    - glba (Financial Services (GLBA, SOX, DORA)): GLBA 16 CFR 314.4(c)(1), 314.4(c)(5); SOX §302, §404; DORA Art.9
+    - soc2 (SOC 2 Type II): CC6.1, CC6.2
+- PR-04 FLAG (Data Exposure Prevention)
+  Detail: Sensitive data patterns detected (ssn, email) but no destination restrictions are configured. Add scope.allowed_destinations or scope.blocked_destinations so outbound destinations can be authorized.
+  Evidence:
+    {
+      "destination": null,
+      "destination_authorized": false,
+      "patterns_detected": [
+        {
+          "count": 1,
+          "redacted_sample": "***-**-6789",
+          "type": "ssn"
+        },
+        {
+          "count": 1,
+          "redacted_sample": "e***@vendor.com",
+          "type": "email"
+        }
+      ],
+      "scan_result": "patterns_found"
+    }
+  Framework Mappings:
+    - glba (Financial Services (GLBA, SOX, DORA)): GLBA 16 CFR 314.4(c)(3); SOX §404; DORA Art.9
+    - soc2 (SOC 2 Type II): CC6.7, C1.1, PI1.1
+  # ... (37 more control results: DE-03..DE-06, GOV-01..GOV-07, ID-01..ID-05, PAY-01..PAY-02, PR-02..PR-12, RC-01..RC-03, RS-01..RS-06)
+```
+
+Add `--format json` to print the full record (including classification context and control results) as JSON.
+
+---
+
+### evidence verify
+
+Verify evidence hash-chain integrity.
+
+```bash
+ancilis evidence verify [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent (see note) | Path to evidence database |
+| `--session-id` | string | all sessions | Scope verification output to a single session |
+| `--json` | flag | `false` | Emit machine-readable JSON |
+
+<Note>
+Keyed (v2) records are cryptographically verified with HMAC and reported as
+`cryptographically verified (HMAC)`. Legacy (v1, pre-key) records cannot be
+key-attested and are reported separately as `legacy-unverified` — they are
+never silently counted as a pass. Set the `ANCILIS_CHAIN_KEY` environment
+variable so new records are written as keyed (v2); existing legacy records
+remain reported as legacy-unverified.
+</Note>
+
+A broken chain prints the error(s) to stderr and exits with code `1`. An intact chain exits `0` and also surfaces any `reset` / `purge` checkpoints recorded in the audit log.
+
+**Example**
+```bash
+ancilis evidence verify
+```
+
+```
+Evidence chain intact: 5 legacy-unverified (pre-migration v1, not key-attestable).
+  Set ANCILIS_CHAIN_KEY to write keyed (v2) records; existing legacy records remain reported as legacy-unverified.
+```
+
+When the store holds keyed (v2) records, the first line also reports the
+`N cryptographically verified (HMAC)` count, and any recorded `reset` / `purge`
+checkpoints surface on an additional `Audit log:` line.
+
+**JSON output**
+```bash
+ancilis evidence verify --json
+```
+
+```json
+{
+  "errors": [],
+  "legacy_unverified": 5,
+  "purge_events": 0,
+  "record_count": 5,
+  "reset_events": 0,
+  "session_id": null,
+  "status": "legacy-unverified",
+  "valid": true,
+  "verified": 0
+}
+```
+
+---
+
+### evidence sessions
+
+List known evidence sessions with record counts and time ranges.
+
+```bash
+ancilis evidence sessions [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent (see note) | Path to evidence database |
+
+Unlike most subcommands, `sessions` requires a loadable config; if `ancilis.yaml` is missing or invalid it exits with code `1`.
+
+**Example**
+```bash
+ancilis evidence sessions
+```
+
+When records carry a session ID, each distinct session is listed with its record count and first/last-seen timestamps:
+
+```
+SESSION ID                                RECORDS  FIRST SEEN                LAST SEEN
+----------------------------------------------------------------------------------------------------
+<session-id>                                  <n>  <first-seen>              <last-seen>
+```
+
+When no records carry a session ID — the default for SDK-evaluated evidence — it prints:
+
+```
+No sessions recorded yet.
+```
+
+---
+
+### evidence reset
+
+Clear ALL evidence records and restart the hash chain from genesis.
+
+```bash
+ancilis evidence reset [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent (see note) | Path to evidence database |
+| `--yes`, `-y` | flag | `false` | Skip the confirmation prompt |
+
+<Warning>
+`reset` permanently deletes **every** evidence record and restarts the hash
+chain from genesis. The reset is recorded as a signed checkpoint in the audit
+log (surfaced later by `ancilis evidence verify`). Without `--yes` you are
+prompted to confirm; aborting leaves the store untouched.
+</Warning>
+
+**Example**
+```bash
+ancilis evidence reset --yes
+```
+
+```
+Evidence store reset: 5 record(s) deleted. Hash chain restarted from genesis.
+```
+
+---
+
+### evidence prune
+
+Delete evidence records older than the retention window.
+
+```bash
+ancilis evidence prune [OPTIONS]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent (see note) | Path to evidence database |
+| `--days` | integer | config `evidence_retention_days` (else `365`) | Override the retention window, in days |
+| `--before` | string | none | Explicit ISO timestamp cutoff; delete records strictly older than this. Overrides `--days` |
+| `--yes`, `-y` | flag | `false` | Skip the confirmation prompt |
+
+`prune` enforces the retention policy reported by `ancilis report` (the `retention_met` line) and is the command referenced by the evidence-cache size warning and `ancilis doctor`. If no positive retention window is configured and neither `--days` nor `--before` is given, it exits with code `1`.
+
+<Warning>
+`prune` permanently deletes records older than the cutoff and records a signed
+purge checkpoint in the audit log. A partial prune removes the oldest records,
+so `ancilis evidence verify` will report a chain gap at the new earliest record
+until the surviving chain is re-anchored — run `verify` afterward to confirm the
+remaining state. Without `--yes` you are prompted to confirm.
+</Warning>
+
+**Example — prune records older than a cutoff**
+```bash
+ancilis evidence prune --before 2026-06-06T10:02:00Z --yes
+```
+
+```
+Evidence pruned: 2 record(s) older than 2026-06-06T10:02:00Z deleted.
+Note: a partial prune removes the oldest records, so `ancilis evidence verify` will report a chain gap at the new earliest record until the surviving chain is re-anchored. Run it to confirm the remaining state.
+```
+
+With no `--days`/`--before` override, the cutoff is the resolved `evidence_retention_days` (an active overlay can raise this above the configured value — for example SOC 2 and GLBA raise it to 2555 days / 7 years).
+
+**Example — explicit cutoff**
+```bash
+ancilis evidence prune --before 2026-01-01T00:00:00+00:00 --yes
+```
+
+---
+
+### evidence import
+
+Import SARIF or CycloneDX findings into the evidence store.
+
+```bash
+ancilis evidence import [OPTIONS] FILE
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--format` | `sarif` \| `cyclonedx` \| `auto` | `auto` | Input format |
+| `--config` | string | auto-detect | Path to `ancilis.yaml` |
+| `--db` | string | per-agent (see note) | Path to evidence database |
+| `--agent-id` | string | `import` | Agent ID to tag imported records |
+
+`FILE` must exist and be a regular file. With `--format auto` (the default), the format is detected from the extension (`.sarif`, `.sarif.json`, `.cdx.json`, `.bom.json`, or names containing `cyclonedx` / `sbom`), then by sniffing the JSON contents (`runs` → SARIF, `bomFormat` / `components` → CycloneDX). If the format cannot be detected, the command exits with code `1` and asks you to pass `--format` explicitly.
+
+**Example**
+```bash
+ancilis evidence import results.sarif --agent-id ci-scanner
+```
+
+```
+Imported 14 evidence record(s) from SARIF file: results.sarif
+```
+
+**Example — explicit CycloneDX format**
+```bash
+ancilis evidence import sbom.json --format cyclonedx
+```
+
+## Related
+
+- [ancilis scan](/cli/scan) — evaluate posture from the evidence store
+- [ancilis report](/cli/report) — full posture report, including the `retention_met` line that `prune` enforces
+- [ancilis doctor](/cli/doctor) — diagnostics, including the evidence-cache size warning that points to `prune`
+- [ancilis status](/cli/status) — lightweight posture check

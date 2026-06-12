@@ -257,6 +257,102 @@
       ],
       "threshold_adjustments": {},
       "framework_reference": "Clause 10.1, 10.2, Annex A MAN 4.2"
+    },
+    "GOV-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "A.9.4 (intended use) bounds actions to declared purpose; A.7.3 (acquisition of data) requires data acquired for and used within scope; A.5.2 (impact-assessment process) examines purpose/legal-basis-adjacent impacts. GOV-05 binds agent actions/data-uses to declared purpose, contract limits, legal bas",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "4.2 (needs and expectations of interested parties) and A.8.3 (external reporting) / A.8.5 (information for interested parties) require registering external obligations/expectations and reporting posture externally. GOV-06 provides the agent slice: an external-obligation registry linked to posture/ev",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "A.8.2 (system documentation and information for users), A.8.5 (information for interested parties) and A.3.3 (reporting of concerns) require user-facing disclosures, transparency and feedback/concern channels. GOV-07 covers disclosures, privacy-rights routing, affected-party feedback + intervention ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "8.1 (operational planning and control), A.6.2.5 (AI-system deployment) and A.4.5 (system and computing resources) support controlled execution environments. PR-09 confines generated code/shell/dynamic execution to approved sandbox classes — an operational control implementing safe deployment/runtime",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "A.7.4 (quality of data), A.7.5 (data provenance) and A.7.6 (data preparation) require provenance and integrity of data used by AI systems. PR-10 ensures persistent memory/retrieved context/shared task state carry provenance, integrity checks and quarantine (RAG/memory poisoning) — the runtime applic",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "A.7.2 (data for development and enhancement of AI systems) and 7.5.3 (control of documented information, incl. retention/disposition) imply data/records be retained and disposed per policy. PR-11 retains/deletes/evicts/disposes agent-held data/memory/context/evidence per policy and legal obligation.",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": false,
+      "framework_reference": "Secrets/credential/key custody is generic security hygiene fully owned by ISO 27001 / SOC 2 (cryptographic key management, secrets handling). ISO 42001 A.4.5 (system and computing resources) only implies protecting compute/system resources. PR-12 maps as baseline inheritance, not an ISO 42001-native",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "A.6.2.4 (verification and validation), A.6.2.6 (operation and monitoring) and 9.1 (monitoring/measurement/evaluation) require evaluating whether AI outputs/behavior remain reliable and within intended bounds. DE-05 evaluates outputs/tool outcomes for reliability, hallucination, harmful output, bias ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "A.6.2.4 (verification and validation), 9.1 (monitoring/measurement) and 9.2 (internal audit) consume test/assurance evidence about AI systems. DE-06 ingests agent vuln scans, adversarial/red-team, resilience tests and third-party evals as evidence with remediation state — feeding V&V and audit. Inte",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "A.8.4 (communication of incidents) and A.8.3 (external reporting) require communicating incidents to relevant parties (which can include authorities/customers). RS-05 starts jurisdiction-specific notification clocks, preserves decision evidence and routes authority/customer notification to humans. I",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "A.8.4 (communication of incidents) and A.10.4 (customers) support handling/disclosing security issues and updates to customers of shipped AI products. RS-06 covers vuln intake, coordinated disclosure, secure-update handling, support-period tracking and advisories for shipped agent products. This is ",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
+    },
+    "RC-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "A.6.2.4 (verification and validation) and A.6.2.6 (operation and monitoring) support periodic exercising/validation of AI-system resilience and recovery behavior. RC-03 periodically exercises recovery/rollback/failover/continuity/agent-disablement procedures and captures evidence. ISO 42001 has no d",
+      "source": "PROD-REPAIRS-D1",
+      "evidence_requirements": []
     }
   },
   "reporting_obligations": {
@@ -362,6 +458,60 @@
       "Clause 10.1",
       "10.2",
       "MAN 4.2"
+    ],
+    "GOV-05": [
+      "A.9.4",
+      "A.7.3",
+      "A.5.2"
+    ],
+    "GOV-06": [
+      "4.2",
+      "A.8.3",
+      "A.8.5"
+    ],
+    "GOV-07": [
+      "A.8.2",
+      "A.8.5",
+      "A.3.3"
+    ],
+    "PR-09": [
+      "8.1",
+      "A.6.2.5",
+      "A.4.5"
+    ],
+    "PR-10": [
+      "A.7.4",
+      "A.7.5",
+      "A.7.6"
+    ],
+    "PR-11": [
+      "A.7.2",
+      "7.5.3"
+    ],
+    "PR-12": [
+      "A.4.5"
+    ],
+    "DE-05": [
+      "A.6.2.4",
+      "A.6.2.6",
+      "9.1"
+    ],
+    "DE-06": [
+      "A.6.2.4",
+      "9.1",
+      "9.2"
+    ],
+    "RS-05": [
+      "A.8.4",
+      "A.8.3"
+    ],
+    "RS-06": [
+      "A.8.4",
+      "A.10.4"
+    ],
+    "RC-03": [
+      "A.6.2.4",
+      "A.6.2.6"
     ]
   },
   "evidence_retention_minimum_days": 1095,

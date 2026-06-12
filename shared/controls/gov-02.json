@@ -73,7 +73,126 @@
     "responsibility",
     "governance"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.100",
+      "§1798.199.40"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 CA.L2-3.12.2",
+      "NIST SP 800-171 Rev. 3 03.12.02, 03.12.05"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702",
+      "Developer and deployer accountability"
+    ],
+    "csa_aicm": [
+      "GRC-06",
+      "STA-09"
+    ],
+    "dora": [
+      "DORA Art. 5(2)",
+      "DORA Art. 5(4)"
+    ],
+    "eu-ai-act": [
+      "Art.26"
+    ],
+    "eu_cra": [
+      "Art. 13",
+      "Annex I Part II(5)"
+    ],
+    "fda_ai_device_pccp": [
+      "524B(b)(2)",
+      "PCCP-ModProtocol"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 CA-2, CA-5",
+      "FedRAMP Moderate CA-2, CA-5, CA-7"
+    ],
+    "gdpr": [
+      "Art. 5(2)",
+      "Art. 37",
+      "Art. 38"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(a), 314.4(i)",
+      "SOX §301, §404",
+      "DORA Art.5(2)"
+    ],
+    "hipaa": [
+      "164.308(a)(3)",
+      "164.308(a)(5)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Governance-and-Oversight"
+    ],
+    "imda-mgf": [
+      "MGF Area 1 §2.2",
+      "Accountability and Competence"
+    ],
+    "iso-23894": [
+      "5.2",
+      "5.4.2"
+    ],
+    "iso-27001": [
+      "A.5.2",
+      "A.5.3"
+    ],
+    "iso-27701": [
+      "A.7.2.1"
+    ],
+    "iso-42001": [
+      "Clause 5.3",
+      "7.2",
+      "GOV 1.3"
+    ],
+    "mas-trm": [
+      "MAS TRM §3.2",
+      "§3.3"
+    ],
+    "nis2": [
+      "NIS2 Art. 20(1)",
+      "NIS2 Art. 20(2)"
+    ],
+    "nist-ai-rmf": [
+      "GOVERN 1.3",
+      "GOVERN 2.1",
+      "GOVERN 2.2"
+    ],
+    "nist-csf": [
+      "GV.RR-01",
+      "GV.RR-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-2.1"
+    ],
+    "nist_privacy_framework": [
+      "ID.IM-P2",
+      "GV.PO-P3"
+    ],
+    "nist_sp_800_218_ssdf": [
+      "PO.2.1",
+      "PO.2.3"
+    ],
+    "nydfs-500": [
+      "500.4"
+    ],
+    "pci-dss-v4": [
+      "Req 12.1.2",
+      "Req 12.4"
+    ],
+    "sec-cyber-disclosure": [
+      "Reg S-K Item 106(c)(2)"
+    ],
+    "securities-mnpi": [
+      "SOX §302, §404",
+      "SEC Reg FD 17 CFR 243.100(a)"
+    ],
+    "soc2": [
+      "CC1.2",
+      "CC1.3"
+    ]
+  },
   "display_name": "Ownership Accountability",
   "display_detail": "Each AI system has a named accountable owner for operation, risk decisions, and remediation.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for GOV-02 (Ownership Accountability) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

@@ -585,7 +585,7 @@ class TestConnectCommand:
 
         assert result.exit_code == 0
         assert "not connected" in result.output.lower()
-        assert "ancilis.dev" in result.output
+        assert "ancilis.ai" in result.output
 
     def test_connected_shows_status(self, tmp_path: Path) -> None:
         runner = CliRunner()

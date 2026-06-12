@@ -1,0 +1,318 @@
+{
+  "id": "eu_cra",
+  "name": "EU Cyber Resilience Act — Regulation (EU) 2024/2847 on horizontal cybersecurity requirements for products with digital elements",
+  "version": "0.1",
+  "trigger_type": "certification",
+  "triggered_by": [
+    "DC-CRIT",
+    "DC-IP",
+    "DC-PII"
+  ],
+  "description": "The EU Cyber Resilience Act (Regulation (EU) 2024/2847) sets horizontal essential cybersecurity requirements (Annex I: Part I product properties points 1 and 2(a)-(m); Part II vulnerability-handling points (1)-(8)) and reporting duties (Art. 14) for manufacturers of products with digital elements; it entered into force 10 Dec 2024, with reporting obligations applying from 11 Sep 2026 and full application from 11 Dec 2027. CRA obligations attach to the MANUFACTURER and the PRODUCT as placed on the market, so AKSI controls map only to the agent-runtime slice (secure-by-design properties, vulnera",
+  "jurisdiction": "European Union",
+  "regime_version": "Regulation (EU) 2024/2847, OJ 20 Nov 2024; in force 10 Dec 2024. Reporting obligations (Art. 14) apply 11 Sep 2026; full application 11 Dec 2027.",
+  "controls": {
+    "GOV-02": {
+      "applicable": true,
+      "coverage": "inherited",
+      "verified": true,
+      "framework_reference": "CRA places obligations on the manufacturer (legal entity), not on a runtime; Art. 13 manufacturer accountability and the coordinated vulnerability disclosure policy (Annex I Part II(5)) presume a named accountable owner. GOV-02 ('named accountable owner for operation/risk/remediation') maps as basel",
+      "evidence_requirements": []
+    },
+    "GOV-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(1) requires products to be designed/developed/produced so as to ensure 'an appropriate level of cybersecurity based on the risks' grounded in a manufacturer risk assessment. GOV-03 (autonomy limits + escalation thresholds defined in policy before autonomous action) supplies the runtim",
+      "evidence_requirements": []
+    },
+    "GOV-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "CRA creates standing external obligations (CE conformity, support-period commitments, advisory publication, regulator/CSIRT/ENISA reporting). GOV-06 (registering framework/regulator obligations and linking them to posture/evidence/owner reporting) covers tracking these obligations and their evidence",
+      "evidence_requirements": []
+    },
+    "GOV-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": false,
+      "framework_reference": "Annex I Part II(6) requires mechanisms (incl. a contact address) for receiving and sharing vulnerability information; Art. 13(18) (accompanying information and instructions to users per Annex II) covers user-facing security information; Annex I Part II(4) requires public disclosure about fixed vulne",
+      "evidence_requirements": []
+    },
+    "ID-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part II(1) requires manufacturers to identify and document the components and vulnerabilities of products, including drawing up an SBOM in a commonly used machine-readable format. ID-02 (tool/model/integration registry with provenance + approval metadata, storing descriptor hash at approval)",
+      "evidence_requirements": []
+    },
+    "ID-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part II(1) (component identification + SBOM) and Annex I Part I(2)(j) (limit attack surfaces incl. external interfaces) drive supply-chain/dependency risk understanding. ID-04 (models/tools/deps/prompts/orchestration assessed for supply-chain risk via SBOM, provenance) covers the agent suppl",
+      "evidence_requirements": []
+    },
+    "ID-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(1) requires an appropriate level of cybersecurity 'based on the risks', which CRA ties to a manufacturer cybersecurity risk assessment. ID-05 (purpose/autonomy/data-sensitivity/action-authority/impact-tier profiling before use) supplies the agent-risk-profiling input to that risk asse",
+      "evidence_requirements": []
+    },
+    "PR-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(d) requires protection from unauthorised access by appropriate control mechanisms, including authentication, identity or access management systems. PR-01 (sensitive actions evaluated against policy; allowed only when identity+context+target authorized) is the runtime authorization ",
+      "evidence_requirements": []
+    },
+    "PR-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(d) (access-control mechanisms) and (2)(j) (limit attack surfaces incl. external interfaces). PR-02 (least-privilege scope enforcement per session/per action) implements least-privilege access control and attack-surface reduction for the agent runtime. Partial.",
+      "evidence_requirements": []
+    },
+    "PR-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(f) requires protecting the integrity of stored/transmitted/processed data, commands, programs and configuration against unauthorised manipulation. PR-03 (tool descriptors/model artifacts/execution surfaces verified against trusted baselines, hash vs ID-02) enforces integrity/proven",
+      "evidence_requirements": []
+    },
+    "PR-04": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(e) requires protecting confidentiality of stored/transmitted/processed data (e.g., encryption at rest/in transit) and (2)(g) data minimisation (process only data adequate, relevant and limited to what is necessary). PR-04 (sensitive/regulated data inspected + constrained before con",
+      "evidence_requirements": []
+    },
+    "PR-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(l) requires providing security-relevant information by recording and monitoring relevant internal activity (security logging/monitoring, with user opt-out). PR-06 (every governed action records the evaluation chain, hash-chained) delivers the audit-trail/security-logging slice for ",
+      "evidence_requirements": []
+    },
+    "PR-07": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(e) (confidentiality, incl. encryption in transit) and (2)(f) (integrity of transmitted data and commands against manipulation). PR-07 (authenticated, integrity-protected, replay-resistant channels + signed task context for A2A) realizes secure-communication for agent-to-agent and a",
+      "evidence_requirements": []
+    },
+    "PR-08": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(f) (protect integrity against manipulation, incl. of commands and inputs) and (2)(k) (reduce incident impact via exploitation-mitigation mechanisms). PR-08 (validating direct/indirect inputs, tool payloads, retrieved context against prompt injection) is the agent-native input-valid",
+      "evidence_requirements": []
+    },
+    "PR-09": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(j) (limit attack surfaces) and (2)(k) (mitigate exploitation impact). PR-09 (generated code/shell/dynamic execution constrained to approved sandbox classes) reduces the attack surface and contains exploitation for agent code execution. Partial — agent-runtime slice.",
+      "evidence_requirements": []
+    },
+    "PR-10": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(f) requires protecting the integrity of stored/processed data against unauthorised manipulation. PR-10 (persistent memory/retrieved context/shared state carry provenance, integrity checks, quarantine — RAG/memory poisoning) is the agent-native integrity protection for memory and co",
+      "evidence_requirements": []
+    },
+    "PR-11": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(m) requires enabling secure permanent removal of all data and settings, and where data can be transferred to other products, secure transfer. (2)(g) underpins minimisation/retention. PR-11 (agent-held data/memory/context/evidence retained/deleted/evicted/disposed per policy + legal",
+      "evidence_requirements": []
+    },
+    "PR-12": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(e) (confidentiality of processed data, incl. credentials) and (2)(d) (access-control mechanisms). PR-12 (secrets/API keys/signing keys/wallet material vaulted, scoped, rotated, never exposed to prompts/untrusted tools) realizes credential confidentiality and protected access for th",
+      "evidence_requirements": []
+    },
+    "DE-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(l) requires monitoring/recording relevant internal activity to provide security-relevant information. DE-01 (agents monitored vs expected behavioral baselines; suspicious deviations detected) provides the agent behavioral-monitoring slice that supports detection of exploitation/ano",
+      "evidence_requirements": []
+    },
+    "DE-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(b) requires a secure-by-default configuration (incl. reset to original state) and (2)(a) no known exploitable vulnerabilities at availability. DE-03 (drift in config/deps/tools/models/policy baselines detected before it normalizes) detects departures from the secure baseline config",
+      "evidence_requirements": []
+    },
+    "DE-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part II(3) requires applying effective and regular tests and reviews of the security of the product; Part I(2)(a) requires no known exploitable vulnerabilities. DE-06 (vuln scans, adversarial/red-team, resilience tests, third-party evals ingested as evidence with remediation state) is the ru",
+      "evidence_requirements": []
+    },
+    "RS-02": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(k) (mechanisms to mitigate the impact of an incident, incl. exploitation mitigation) and (2)(h) (protect availability of essential/basic functions, incl. resilience against DoS). RS-02 (agents/tools/memory/credentials/actions blocked/quarantined/degraded/halted on risk conditions) ",
+      "evidence_requirements": []
+    },
+    "RS-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 14 requires reporting actively exploited vulnerabilities and severe incidents; Annex I Part II(6) requires mechanisms to receive vulnerability reports. RS-03 (significant failures/exceptions/regulated incidents routed to responders with reporting context) supplies the human-escalation + reporti",
+      "evidence_requirements": []
+    },
+    "RS-05": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Art. 14 imposes a strict notification clock: early warning within 24 hours of awareness, full notification within 72 hours, and a final report (14 days after a corrective measure for actively exploited vulnerabilities, within one month for severe incidents), via the Single Reporting Platform to the ",
+      "evidence_requirements": []
+    },
+    "RS-06": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Core mapping. Annex I Part II(2) (remediate vulnerabilities without delay via security updates, separated from feature updates), Part II(4) (publicly disclose info on fixed vulnerabilities), Part II(5) (coordinated vulnerability disclosure policy), Part II(7) (mechanisms to securely distribute updat",
+      "evidence_requirements": []
+    },
+    "RC-01": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part I(2)(b) includes the possibility to reset the product to its original (secure) state; (2)(h) requires protecting availability of essential/basic functions through resilience. RC-01 (recovery plans/rollback paths/restoration dependencies documented + tested) covers the rollback/restorati",
+      "evidence_requirements": []
+    },
+    "RC-03": {
+      "applicable": true,
+      "coverage": "partial",
+      "verified": true,
+      "framework_reference": "Annex I Part II(3) (effective and regular tests/reviews of security) and Part I(2)(h) (availability resilience). RC-03 (recovery/rollback/failover/continuity/agent-disablement procedures periodically exercised + captured as evidence) provides recurring resilience-exercise evidence supporting the reg",
+      "evidence_requirements": []
+    }
+  },
+  "framework_mapping": {
+    "GOV-02": [
+      "Art. 13",
+      "Annex I Part II(5)"
+    ],
+    "GOV-03": [
+      "Annex I Part I(1)"
+    ],
+    "GOV-06": [
+      "Art. 13",
+      "Art. 14",
+      "Annex I Part II(4)",
+      "Annex I Part II(8)"
+    ],
+    "GOV-07": [
+      "Annex I Part II(6)",
+      "Art. 13(18)",
+      "Annex I Part II(4)"
+    ],
+    "ID-02": [
+      "Annex I Part II(1)"
+    ],
+    "ID-04": [
+      "Annex I Part II(1)",
+      "Annex I Part I(2)(j)"
+    ],
+    "ID-05": [
+      "Annex I Part I(1)"
+    ],
+    "PR-01": [
+      "Annex I Part I(2)(d)"
+    ],
+    "PR-02": [
+      "Annex I Part I(2)(d)",
+      "Annex I Part I(2)(j)"
+    ],
+    "PR-03": [
+      "Annex I Part I(2)(f)",
+      "Annex I Part II(1)"
+    ],
+    "PR-04": [
+      "Annex I Part I(2)(e)",
+      "Annex I Part I(2)(g)"
+    ],
+    "PR-06": [
+      "Annex I Part I(2)(l)",
+      "Annex I Part II(3)"
+    ],
+    "PR-07": [
+      "Annex I Part I(2)(e)",
+      "Annex I Part I(2)(f)"
+    ],
+    "PR-08": [
+      "Annex I Part I(2)(f)",
+      "Annex I Part I(2)(k)"
+    ],
+    "PR-09": [
+      "Annex I Part I(2)(j)",
+      "Annex I Part I(2)(k)"
+    ],
+    "PR-10": [
+      "Annex I Part I(2)(f)"
+    ],
+    "PR-11": [
+      "Annex I Part I(2)(m)",
+      "Annex I Part I(2)(g)"
+    ],
+    "PR-12": [
+      "Annex I Part I(2)(e)",
+      "Annex I Part I(2)(d)"
+    ],
+    "DE-01": [
+      "Annex I Part I(2)(l)",
+      "Annex I Part I(2)(k)"
+    ],
+    "DE-03": [
+      "Annex I Part I(2)(b)",
+      "Annex I Part I(2)(a)"
+    ],
+    "DE-06": [
+      "Annex I Part II(3)",
+      "Annex I Part I(2)(a)"
+    ],
+    "RS-02": [
+      "Annex I Part I(2)(k)",
+      "Annex I Part I(2)(h)"
+    ],
+    "RS-03": [
+      "Art. 14",
+      "Annex I Part II(6)"
+    ],
+    "RS-05": [
+      "Art. 14"
+    ],
+    "RS-06": [
+      "Annex I Part II(2)",
+      "Annex I Part II(4)",
+      "Annex I Part II(5)",
+      "Annex I Part II(7)",
+      "Annex I Part II(8)",
+      "Art. 13(8)"
+    ],
+    "RC-01": [
+      "Annex I Part I(2)(b)",
+      "Annex I Part I(2)(h)"
+    ],
+    "RC-03": [
+      "Annex I Part II(3)",
+      "Annex I Part I(2)(h)"
+    ]
+  },
+  "notes": "Built by PROD-REPAIRS D3 from aksi-ultra research/eu-cra.crosswalk.json (commit aeda1839 framework). Coverage/verified carried VERBATIM; most mappings are partial and many verified=false — REVIEW-FIRST, not production-asserted. Confidence=high, webVerified=True.",
+  "evidence_requirements": {}
+}

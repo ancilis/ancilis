@@ -11,7 +11,7 @@ Classification-driven controls, runtime security decisions, and audit-ready evid
 
 AKSI is Ancilis's common-control model for agents: a harmonized catalog of agent controls drawn from industry and regulatory frameworks, expressed as runtime checks, evidence requirements, and compliance overlays.
 
-Ancilis starts from the two things compliance and security teams already care about: what data your agent handles, and which certification or regulatory targets it needs to support. Declare classifications such as `health_records`, `credit_cards`, or `personal_info`; add certification targets such as `soc2`; Ancilis activates the right AKSI controls and reporting overlays without manual framework crosswalking.
+Ancilis starts from the two things compliance and security teams already care about: what data your agent handles, and which certification or regulatory targets it needs to support. Declare classifications such as `health_records`, `credit_cards`, or `personal_info` (which activate framework overlays like SOC 2, PCI-DSS, and GDPR); add a certification target such as `aiuc-1`; Ancilis activates the right AKSI controls and reporting overlays without manual framework crosswalking.
 
 AI agents do real work now: they call tools, run shell commands, invoke MCP servers, and send requests to LLM providers. Ancilis gives those actions a policy decision before they become invisible operational risk. It evaluates each action against the active AKSI controls, records the result in a local tamper-evident evidence store, and turns the same evidence into compliance posture reports.
 
@@ -28,8 +28,8 @@ Ancilis runs locally. Core evaluation does not require a hosted service, network
 What AKSI gives you:
 
 - **Classification-driven control activation**: data declarations such as `health_records` and `credit_cards` activate the controls and overlays that matter for that agent.
-- **Certification-driven readiness**: targets such as `soc2` add framework-specific posture reporting without hand-maintained crosswalks.
-- **Policy decisions at runtime**: audit mode observes every action; enforce mode blocks violations before execution.
+- **Certification-driven readiness**: a certification target such as `aiuc-1` adds framework-specific posture reporting without hand-maintained crosswalks (framework overlays like SOC 2 activate from data declarations).
+- **Policy decisions at runtime**: audit mode observes every action; enforce mode blocks violations before execution on enforce-capable producers (MCP, CLI, the tool wrapper, and the Semantic Kernel filter) — see the producer table below.
 - **Tamper-evident evidence**: each record is written to DuckDB with a SHA-256 hash chain.
 - **Compliance posture from runtime evidence**: the same evaluated Actions feed security review, trust review, and audit-readiness reports.
 - **Honest coverage**: direct evaluators, attestation-backed controls, and current TypeScript preview limits are called out below.
@@ -75,11 +75,23 @@ ancilis status
 ```
 
 ```text
-Ancilis - my-agent
+Ancilis — my-agent
   Mode: audit
-  Controls: 39 common controls active, 2 payment extension controls available
+  Controls: 39 active, 11 runtime-verified, 27 pending, 1 flagged
   Tool calls: 1 evaluated, 0 blocked
+  Sync: 1 pending, 0 failed
+
+  Warnings:
+    [audit trail completeness] Audit Trail Completeness flagged deviations
+            Review recent activity: ancilis report --period 1d
 ```
+
+The headline is honest about coverage: of the 39 active AKSI controls, 11 are
+runtime-evaluated and passing on this call, 27 are attestation-backed and
+pending your attestation, and 1 (Audit Trail Completeness) is flagged for
+review. The `Sync: 1 pending` line reflects that the local record has not been
+pushed to the optional platform (none is configured here). Run
+`ancilis status --verbose` for the per-control breakdown.
 
 That is the adoption loop: define policy, evaluate real agent actions, and keep evidence that can be inspected later.
 
@@ -195,13 +207,22 @@ llm = ChatAnthropic(callbacks=[handler])
 
 Supported producers:
 
-| Category | Producers |
-|----------|-----------|
-| LLM provider direct APIs | Anthropic, OpenAI, Gemini, Mistral, Cohere, xAI |
-| OpenAI-compatible inference | Groq, Together, Fireworks, DeepSeek |
-| Cloud LLM gateway | AWS Bedrock |
-| Agent frameworks | LangChain / LangGraph, CrewAI, AutoGen / AG2, Microsoft Semantic Kernel |
-| Protocols | MCP, CLI, HTTP |
+| Category | Producers | Enforcement |
+|----------|-----------|-------------|
+| Plain Python tools | `ToolActionProducer` (`wrap_tool`) | Enforce-capable |
+| Protocols | MCP, CLI | Enforce-capable |
+| Agent frameworks (filter) | Microsoft Semantic Kernel | Enforce-capable |
+| Protocols | HTTP | Opt-in (`enforce=True`) |
+| LLM provider direct APIs | Anthropic, OpenAI, Gemini, Mistral, Cohere, xAI | Observe-only |
+| OpenAI-compatible inference | Groq, Together, Fireworks, DeepSeek | Observe-only |
+| Cloud LLM gateway | AWS Bedrock | Observe-only |
+| Agent frameworks (callback/observer) | LangChain / LangGraph, CrewAI, AutoGen / AG2 | Observe-only |
+
+**Enforcement** describes whether a producer can actually *block* a tool call when `security.mode: enforce` is set and a control returns BLOCK:
+
+- **Enforce-capable** — intercepts the call and raises `BlockedActionError` before the underlying action runs (MCP middleware, CLI subprocess, the `ToolActionProducer` wrapper, and the Semantic Kernel filter).
+- **Opt-in** — blocks only when constructed with `enforce=True`; otherwise observes (the `HTTPActionProducer` and the lower-level `LLMActionProducer`).
+- **Observe-only** — records evidence and surfaces decisions but never blocks, regardless of `security.mode`. This includes the LLM provider/gateway adapters (`AnthropicActionProducer`, `BedrockActionProducer`, …), which only `observe()`, and the framework callback/observer producers (LangChain, CrewAI, AutoGen). Constructing one of these SDK producers with `security.mode: enforce` emits a warning. The `integrations/*` framework adapters and all log **importers** are also observe-only — importers label decisions on already-executed actions and never intercept live calls.
 
 Tool-name convention is stable across providers: `llm:{provider}:{model}` for direct LLM SDKs, `aws-bedrock:{operation}` for Bedrock, and `{framework}:{kind}:{name}` for framework producers. Allowlists in `ancilis.yaml` use these names directly.
 
@@ -213,26 +234,35 @@ Compliance work starts with what your agent handles. Declare the data classes an
 agent:
   name: payment-agent
 certification_targets:
-  - soc2
+  - aiuc-1
 my_agent_handles:
   - credit_cards
   - personal_info
 ```
 
-SOC 2 and PCI-DSS overlays activate automatically from the declaration. No framework selection spreadsheet and no manual crosswalk mapping are needed to start producing posture evidence.
+The SOC 2, PCI-DSS, and GDPR overlays activate automatically from the data-class declaration (`credit_cards`, `personal_info`); the `aiuc-1` certification target adds its certification overlay. (`soc2`, `hipaa`, `pci-dss-v4`, and `gdpr` are overlay names, activated by data classes — not `certification_targets` values; valid `certification_targets` values include `aiuc-1` and `gov-contractor`.) No framework selection spreadsheet and no manual crosswalk mapping are needed to start producing posture evidence.
 
 ```bash
 ancilis status
 ```
 
 ```text
-Ancilis - payment-agent
+Ancilis — payment-agent
   Mode: audit
-  Controls: 39 common controls active, all passing
-  SOC 2 Type II: active - triggered by certification target
-  PCI-DSS v4: active - triggered by credit_cards declaration
-  GDPR: active - triggered by personal_info declaration
+  Controls: 39 active, 9 runtime-verified, 27 pending, 1 flagged, 2 failing
+  AIUC-1: active
+  CCPA/CPRA: active — triggered by personal_info declaration
+  GDPR: active — triggered by personal_info declaration
+  PCI-DSS v4.0: active — triggered by credit_cards declaration
+  SOC 2 Type II: active — triggered by personal_info declaration
+  Tool calls: 1 evaluated, 0 blocked
+  Sync: 1 pending, 0 failed
 ```
+
+The overlays activate from the data declarations (the `aiuc-1` certification
+target shows as `AIUC-1: active`). The headline is honest: on this first call,
+27 controls are attestation-pending, 1 is flagged, and 2 are failing — real
+gaps to resolve before a clean report, not a fabricated "all passing".
 
 ```bash
 ancilis report --format markdown
@@ -252,7 +282,7 @@ Declare what data your agent handles. The right regulatory overlays activate aut
 | `controlled_unclassified` | CMMC L2 |
 | `biometric_data` | EU AI Act |
 
-23 canonical data classes are supported across 19 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
+23 canonical data classes are supported across 37 overlay profiles. Full list in [docs/configuration.md](docs/configuration.md).
 
 The DORA-RES operational resilience overlay is specified as the architectural anchor for v0.2 function-classification activation. It coexists with the existing `DC-FIN` DORA overlay: the existing overlay covers financial-data handling evidence, while DORA-RES covers AI workload resilience evidence for agents supporting critical or important functions. See [shared/overlays/dora-res/dora_res_overlay_spec.md](shared/overlays/dora-res/dora_res_overlay_spec.md).
 
@@ -283,9 +313,9 @@ Each level adds one concept. You do not need level 2 to get value from level 1.
 | Level | What you add | What you get |
 |-------|-------------|-------------|
 | 1 | `agent.name` + `tools.allowed` | 39 common controls, evidence for every tool call |
-| 2 | `certification_targets: [soc2]` | Certification readiness reporting |
+| 2 | `certification_targets: [aiuc-1]` | Certification readiness reporting |
 | 3 | `my_agent_handles: [health_records]` | Automatic regulatory overlay activation |
-| 4 | `security.mode: enforce` | Policy-violating tool calls blocked before execution |
+| 4 | `security.mode: enforce` | Policy-violating tool calls blocked before execution on enforce-capable producers (see the producer table) |
 
 ## CLI Reference
 
@@ -360,8 +390,8 @@ LLM SDK and framework producers also ship in the TypeScript package: `AnthropicA
 - **41 AKSI v0.6 controls ship in the catalog.** 39 common controls activate by default; `PAY-01` and `PAY-02` activate only for `DC-PAY`, `AGENT_PAYMENTS`, or `X402`.
 - **Python has 18 direct runtime evaluators plus 23 attestation-backed evaluators.** Attestation-backed controls return `SKIP` until required evidence is recorded with `ancilis attest`.
 - **TypeScript has direct core runtime evaluators plus catalog-backed evaluators for the remaining AKSI controls.** Catalog-backed controls return `FLAG` until explicit manual attestation is supplied; keyword matches are hints, not proof.
-- **19 overlay profiles ship today.** Existing overlays are preserved and reference known AKSI controls; v0.6 adds more catalog coverage than the current overlay depth can fully exercise.
-- **Evidence integrity depends on protecting the DB.** The hash chain detects tampering after the fact. It does not prevent replacing the entire database.
+- **37 overlay profiles ship today.** Existing overlays are preserved and reference known AKSI controls; v0.6 adds more catalog coverage than the current overlay depth can fully exercise.
+- **Evidence integrity depends on protecting the chain key.** New records use an HMAC-SHA256 keyed hash chain; with the key (`ANCILIS_CHAIN_KEY`, held outside the DB) per-record forgery is detected. Without a key, records are legacy unkeyed SHA-256 — an attacker with DB write access can forge a record *and* re-chain following records (not merely replace the whole database), so `verify_chain` reports such records as legacy-unverified.
 - **HTTP wrapping is explicit.** Ancilis does not monkey-patch HTTP libraries. You wrap the calls you want evaluated.
 - **PDF export requires pandoc and xelatex.** The CLI falls back to markdown without them.
 

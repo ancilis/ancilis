@@ -1,0 +1,77 @@
+---
+title: "ISO/IEC 27701 Overlay"
+description: "AKSI compliance overlay mapping agent control evidence to the ISO/IEC 27701:2019 privacy information management system (PIMS)."
+---
+
+## Overview
+
+ISO/IEC 27701:2019 is the ISO privacy information management system (PIMS) extension to ISO/IEC 27001 and 27002, adding PII-controller controls (clause 7 / Annex A) and PII-processor controls (clause 8 / Annex B). It is a regulation-agnostic PIMS; its Annex D maps to EU GDPR.
+
+The `iso-27701` overlay packages AKSI control evidence against the ISO/IEC 27701:2019 Annex A / Annex B structure, mapping each AKSI control to the relevant clause references for agents that process PII as controller or processor.
+
+<Warning>
+This overlay is a review-first scaffold mapping, not yet backed by runtime evidence. The 2019 edition targeted here was withdrawn on 2025-10-14 and superseded by the standalone ISO/IEC 27701:2025 (transition deadline ~Oct 2028); mappings reflect the 2019 structure and should be re-verified against 2025 if the target migrates. Coverage is indicative: most control mappings are marked partial and many are unverified, and most PIMS obligations (lawful basis, consent capture, privacy notices, PIAs, DPAs) remain org/legal responsibilities outside the agent boundary. Treat this overlay as a crosswalk, not a production-asserted compliance claim.
+</Warning>
+
+**Use this overlay when your agent:**
+- Processes personal information (PII) as a controller or processor
+- Operates within an organization running an ISO/IEC 27001 ISMS extending to a PIMS
+- Handles records of processing, transfer governance, or data-subject request workflows
+- Needs an agent-runtime crosswalk to ISO/IEC 27701:2019 Annex A / Annex B controls
+
+---
+
+## Activation
+
+```yaml
+# ancilis.yaml
+compliance:
+  overlays:
+    - iso-27701
+```
+
+**Data classification trigger** — this overlay also auto-activates when your agent declares, via `my_agent_handles`, that it handles data classified under `DC-PII`, `DC-NPI`, or `DC-MINOR`. See [Data Classification](/data-classification) for the classification codes and declaration syntax.
+
+---
+
+## Control Mapping
+
+The table lists every AKSI control mapped by this overlay (19 controls). Each row shows the control, its ISO/IEC 27701 framework reference, and the evidence requirement.
+
+| Control | Framework Reference | Key Evidence Requirement |
+|---------|---------------------|--------------------------|
+| **GOV-02** | ISO 27701 inherits ISO 27001 clause 5.3 (roles/responsibilities) and 27002 organizational controls; assigning accountability for privacy/PII processing as baseline inheritance. | Not yet specified (review-first mapping) |
+| **GOV-03** | A.7.2.5 (privacy impact assessment — PIA/DPIA for processing likely to result in high risk). | Not yet specified (review-first mapping) |
+| **GOV-04** | Data-subject rights fulfillment — A.7.3.6 (access, correction and/or erasure), A.7.3.9 (handling requests), A.7.3.10 (automated decision making); processor B.8.3.1 (assist controller in responding to PII-principal requests). | Not yet specified (review-first mapping) |
+| **GOV-05** | A.7.2.1 (identify/document purpose), A.7.2.2 (identify lawful basis), A.7.2.3/A.7.2.4 (consent obtained and recorded), A.7.4.2 (limit processing to identified purpose); processors B.8.2.1, B.8.2.2. | Not yet specified (review-first mapping) |
+| **GOV-06** | A.7.2.6 (contracts with PII processors), A.7.2.7 (joint PII controller arrangements), B.8.2.1, B.8.2.5, B.8.5.6, B.8.5.7, B.8.5.8 (subcontractor disclosure/engagement/change). | Not yet specified (review-first mapping) |
+| **GOV-07** | A.7.3.2 (determining information for PII principals), A.7.3.3 (privacy notices), A.7.3.4 (modify/withdraw consent), A.7.3.5 (object to PII processing). | Not yet specified (review-first mapping) |
+| **ID-03** | A.7.2.8/B.8.2.6 (records of processing — categories, purposes, recipients), A.7.4.1 (limit collection), A.7.5.2 (transfer destinations). | Not yet specified (review-first mapping) |
+| **ID-04** | B.8.5.6 (disclosure of subcontractors), B.8.5.7 (engagement of a subcontractor under written contract), B.8.5.8 (change of subcontractor). | Not yet specified (review-first mapping) |
+| **ID-05** | A.7.2.5 (privacy impact assessment). | Not yet specified (review-first mapping) |
+| **PR-04** | A.7.4.1 (data minimization), A.7.4.2 (limit processing), A.7.5.1 (basis for PII transfer), A.7.5.2 (transfer destinations); processor B.8.5.1/B.8.5.2. | Not yet specified (review-first mapping) |
+| **PR-05** | A.7.5.2 / B.8.5.2 (control countries/organizations PII goes to) and B.8.5.3 (disclosure of PII to third parties / subprocessors). | Not yet specified (review-first mapping) |
+| **PR-06** | A.7.2.8 / B.8.2.6 (records of processing activities, ROPA), A.7.5.3 (records of transfer), A.7.5.4 (records of disclosure to third parties), B.8.5.4 (record disclosures). | Not yet specified (review-first mapping) |
+| **PR-07** | A.7.4.9 / B.8.4.3 (PII transmission controls — protect PII in transit, restrict transmission). | Not yet specified (review-first mapping) |
+| **PR-09** | A.7.4.5 (PII de-identification and deletion at end of processing / pseudonymization-anonymization). | Not yet specified (review-first mapping) |
+| **PR-11** | A.7.4.7 (retention), A.7.4.8 (disposal), A.7.4.4 (minimization objectives), A.7.4.6 (temporary files), A.7.3.6 (erasure-on-request slice); processor B.8.4.1, B.8.4.2. | Not yet specified (review-first mapping) |
+| **PR-12** | A.7.4.9/B.8.4.3 (PII transmission controls) lean on cryptographic key protection; maps as baseline inheritance from ISO 27001/27002 key-management controls. | Not yet specified (review-first mapping) |
+| **DE-02** | A.7.4.2 (limit processing to declared purpose), A.7.4.4 (minimization objectives), A.7.5.2 (authorized transfer destinations). | Not yet specified (review-first mapping) |
+| **RS-03** | B.8.5.4 (notify controller of disclosure requests), B.8.5.5 (legally binding disclosures), B.8.5.8 (notify customer of subcontractor change). | Not yet specified (review-first mapping) |
+| **RS-05** | B.8.5.4 (notify controller of legally binding requests), B.8.5.5 (legally binding disclosures to authorities), A.7.5.4 (records of disclosure to third parties). | Not yet specified (review-first mapping) |
+
+---
+
+## Retention & Jurisdiction
+
+**Jurisdiction:** International (ISO/IEC). ISO/IEC 27701 is designed as a regulation-agnostic PIMS; its Annex D maps to EU GDPR.
+
+**Evidence retention:** This overlay does not specify a minimum evidence-retention period. Set retention to satisfy the regulatory regime(s) your PIMS operates under (for example, an applicable GDPR or sector requirement) rather than relying on a value from this crosswalk.
+
+---
+
+## Related
+
+- [Overlay Overview](/overlays/overview)
+- [Data Classification](/data-classification)
+- [Reading Reports](/overlays/reading-reports)

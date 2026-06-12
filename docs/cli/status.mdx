@@ -31,7 +31,7 @@ ancilis status
 ```
 Ancilis — my-agent
   Mode: audit
-  Controls: 6 active, not yet evaluated
+  Controls: 39 active, not yet evaluated
   No evaluations recorded yet. Run your agent with Ancilis to start collecting evidence.
 ```
 
@@ -42,12 +42,19 @@ ancilis status
 
 ```
 Ancilis — my-agent
-  Mode:     audit
-  Controls: 6 active, all passing
-  SOC2: active
-  Financial overlay: active — triggered by financial data declaration
+  Mode: audit
+  Controls: 39 active, 9 runtime-verified, 27 pending, 1 flagged, 2 failing
+  Financial Services (GLBA, SOX, DORA): active — triggered by financial_records declaration
+  SOC 2 Type II: active — triggered by financial_records declaration
   Tool calls: 246 evaluated, 0 blocked
+  Sync: 246 pending, 0 failed
 ```
+
+The headline distinguishes runtime-verified controls from attestation-pending,
+flagged, and failing ones — it never collapses them into "all passing" while
+any control is pending, flagged, or failing. (SOC 2 and the financial overlay
+are activated by the `financial_records` data declaration, not by a
+`certification_targets` value.)
 
 **Verbose — per-control breakdown**
 ```bash
@@ -56,25 +63,32 @@ ancilis status --verbose
 
 ```
 Ancilis — my-agent
-  Mode:     audit
-  Controls: 6 active, all passing
-  SOC2: active
+  Mode: audit
+  Controls: 39 active, 9 runtime-verified, 27 pending, 1 flagged, 2 failing
+  Financial Services (GLBA, SOX, DORA): active — triggered by financial_records declaration
+  SOC 2 Type II: active — triggered by financial_records declaration
   Tool calls: 246 evaluated, 0 blocked
+  Sync: 246 pending, 0 failed
 
   Controls:
-    ✓ Identity & Authorization — passing
-    ✓ Scope Confinement — passing (2 flags)
-    ✓ Output Integrity — passing
-    ✓ Prompt Security — passing
-    ✓ Audit Trail — passing
-    ✓ Dependency Vulnerabilities — passing
+    ✓ Action Authorization — passing
+    ✓ Data Exposure Prevention — passing
+    ✗ Tool/Model Integrity and Provenance — failing (3 failures)
+    ! Audit Trail Completeness — flagged (3 flags)
+    ○ Agent Identity Declaration and Match — pending (attestation required)
+    ○ Human Oversight and Decision Accountability — pending (attestation required)
+    … (39 controls total — 9 runtime-verified, 27 pending, 1 flagged, 2 failing)
 
   Activation:
-    SOC2 certification active — 6 controls enforcing
-    Financial overlay active — triggered by financial data declaration
+    Financial Services (GLBA, SOX, DORA) overlay active — triggered by financial_records declaration
+    SOC 2 Type II overlay active — triggered by financial_records declaration
 
-  Evidence records: 246 stored, hash chain intact
+  Evidence records: 246 stored, hash chain legacy-unverified (set ANCILIS_CHAIN_KEY)
 ```
+
+Per-control markers: `✓` runtime-verified passing · `○` pending (attestation
+required) · `!` flagged for review · `✗` failing · `–` not yet evaluated. A
+flagged or pending control is never shown as passing.
 
 **Verbose with flagged control warnings**
 ```bash
@@ -96,16 +110,19 @@ ancilis status --session sess_20260412_abc123 --verbose
 
 | Indicator | Meaning |
 |-----------|---------|
-| `not yet evaluated` | No evidence collected in the current session |
-| `all passing` | All controls have evidence and no failures |
-| `issues detected` | One or more controls have failures |
+| `not yet evaluated` | No evidence collected yet |
+| `N runtime-verified` | Controls with a runtime evaluator that passed |
+| `N pending` | Controls awaiting attestation, or not yet evaluated |
+| `N flagged` | Controls with a deviation to review (e.g. sensitive data with no destination policy) |
+| `N failing` | Controls with a failure |
+| `— all passing` | Appended only when nothing is pending, flagged, or failing |
 
 ## Overlay Trigger Line
 
 When an overlay is active via automatic data classification, the status line shows what triggered it:
 
 ```
-  Financial overlay: active — triggered by financial data declaration
+  SOC 2 Type II: active — triggered by financial_records declaration
 ```
 
 This confirms that your `ancilis.yaml` data classification caused the overlay to activate, rather than an explicit configuration.

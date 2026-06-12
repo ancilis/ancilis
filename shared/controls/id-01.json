@@ -98,7 +98,108 @@
     "system",
     "identity"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "ccpa": [
+      "§1798.110",
+      "§1798.115"
+    ],
+    "cmmc-l2": [
+      "CMMC Level 2 CM.L2-3.4.1",
+      "NIST SP 800-171 Rev. 3 03.04.01, 03.04.10"
+    ],
+    "colorado-ai-act": [
+      "CRS §6-1-1702(2)(e)",
+      "Website disclosure (high-risk AI inventory)"
+    ],
+    "csa_aicm": [
+      "GRC-08",
+      "STA-09"
+    ],
+    "dora": [
+      "DORA Art. 8(1)",
+      "DORA Art. 8(4)"
+    ],
+    "eu-ai-act": [
+      "Art.49"
+    ],
+    "fda_ai_device_pccp": [
+      "AI-LCM-Draft-TPLC",
+      "PCCP-DescMod"
+    ],
+    "fedramp": [
+      "NIST SP 800-53 Rev 5 CM-8, CM-10",
+      "FedRAMP Moderate CM-8, CM-10, CM-11"
+    ],
+    "gdpr": [
+      "Art. 30"
+    ],
+    "glba": [
+      "GLBA 16 CFR 314.4(c)(2)",
+      "SOX §404",
+      "DORA Art.8"
+    ],
+    "hipaa": [
+      "164.308(a)(1)",
+      "164.310(d)"
+    ],
+    "hitrust_ai_security": [
+      "AISec.Documenting-and-Inventorying-AI-Systems"
+    ],
+    "imda-mgf": [
+      "MGF Area 1 (implied)",
+      "Governance Accountability"
+    ],
+    "iso-23894": [
+      "6.3.3",
+      "Annex C"
+    ],
+    "iso-27001": [
+      "A.5.9"
+    ],
+    "iso-42001": [
+      "Clause 7.3",
+      "MAP 1.1"
+    ],
+    "mas-trm": [
+      "MAS TRM §4.1"
+    ],
+    "nis2": [
+      "NIS2 Art. 21(2)(a)",
+      "NIS2 Art. 21(2)(d)"
+    ],
+    "nist-ai-rmf": [
+      "MAP 1.1",
+      "MAP 1.5"
+    ],
+    "nist-csf": [
+      "ID.AM-01",
+      "ID.AM-02"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "GV-1.6"
+    ],
+    "nist_privacy_framework": [
+      "ID.IM-P1",
+      "ID.IM-P2",
+      "ID.IM-P7",
+      "ID.BE-P3"
+    ],
+    "nydfs-500": [
+      "500.13(a)",
+      "500.9"
+    ],
+    "pci-dss-v4": [
+      "Req 12.5.1",
+      "Req 12.5.2"
+    ],
+    "securities-mnpi": [
+      "SOX §404",
+      "SEC Reg FD 17 CFR 243.100(b)(1)"
+    ],
+    "soc2": [
+      "CC6.1"
+    ]
+  },
   "display_name": "Agent Inventory and Registry",
   "display_detail": "The organization maintains a complete, current registry of governed AI systems and their operating context.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for ID-01 (Agent Inventory & Registry) from one of the configured evidence sources, or record an explicit exception with owner and expiry."

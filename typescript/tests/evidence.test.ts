@@ -571,6 +571,31 @@ describe("Evidence Store", () => {
 
     expect(controlResultsJson).toContain("\"duration_ms\":1.0");
   });
+
+  it("persists records stored after same-instance close and reopen", async () => {
+    const dbPath = join(tmpdir(), `ancilis-evidence-reopen-${randomUUID()}.duckdb`);
+    store = new EvidenceStore(makeConfig(), { dbPath });
+
+    await store.store(makeEvaluation({ evaluationId: "reopen-e1" }), "tool-a");
+    await store.close();
+
+    await store.store(makeEvaluation({ evaluationId: "reopen-e2" }), "tool-b");
+    expect(await store.count()).toBe(2);
+    await store.close();
+
+    const db = await DuckDBInstance.create(dbPath);
+    const conn = await db.connect();
+    try {
+      const reader = await conn.runAndReadAll(
+        "SELECT evaluation_id FROM evidence_records ORDER BY seq_id",
+      );
+      const rows = reader.getRowObjectsJson() as Array<{ evaluation_id: string }>;
+      expect(rows.map(row => row.evaluation_id)).toEqual(["reopen-e1", "reopen-e2"]);
+    } finally {
+      conn.disconnectSync();
+      db.closeSync();
+    }
+  });
 });
 
 // --- Summary ---

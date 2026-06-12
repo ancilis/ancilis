@@ -73,7 +73,49 @@
     "circuit_breaker",
     "kill_switch"
   ],
-  "regulatory_mappings": {},
+  "regulatory_mappings": {
+    "cmmc-l2": [
+      "CMMC Level 2 / NIST SP 800-171 Rev. 3 AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
+    ],
+    "csa_aicm": [
+      "AIS-11",
+      "MDS-11",
+      "BCR-01"
+    ],
+    "eu-ai-act": [
+      "Art. 14(4)(e)",
+      "Art. 9(2)"
+    ],
+    "fedramp": [
+      "FedRAMP Moderate / NIST SP 800-53 Rev. 5 AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
+    ],
+    "glba": [
+      "GLBA / SOX / DORA financial-services AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
+    ],
+    "hipaa": [
+      "164.306(a)",
+      "164.308(a)(6)(ii)"
+    ],
+    "iso-27001": [
+      "A.8.22",
+      "A.5.29"
+    ],
+    "nist-ai-rmf": [
+      "MEASURE 2.6",
+      "MANAGE 2.4"
+    ],
+    "nist-csf": [
+      "RS.MI-01",
+      "RS.MA-04"
+    ],
+    "nist_ai_600_1_genai_profile": [
+      "MG-2.4",
+      "GV-6.2"
+    ],
+    "securities-mnpi": [
+      "SEC Reg FD / SOX MNPI AKSI v0.6 coverage: RS-04 Cascade Containment & Blast-Radius Control"
+    ]
+  },
   "display_name": "Cascade Containment and Blast-Radius Control",
   "display_detail": "Multi-agent workflows enforce failure-domain isolation, circuit breakers, and coordinated kill-switch behavior.",
   "remediation_hint_template": "Collect or attach AKSI v0.6 evidence for RS-04 (Cascade Containment & Blast-Radius Control) from one of the configured evidence sources, or record an explicit exception with owner and expiry."
