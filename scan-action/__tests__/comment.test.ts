@@ -1,6 +1,27 @@
-import { formatComment } from "../src/comment";
 import type { ScanResult } from "../src/scanner";
 import scanFixture from "./fixtures/scan-output.json";
+
+jest.mock(
+  "@actions/core",
+  () => ({
+    info: jest.fn(),
+    warning: jest.fn(),
+    setFailed: jest.fn(),
+  }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@actions/github",
+  () => ({
+    context: { payload: {}, repo: { owner: "ancilis", repo: "ancilis" } },
+    getOctokit: jest.fn(),
+  }),
+  { virtual: true }
+);
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { formatComment } = require("../src/comment") as typeof import("../src/comment");
 
 const scan = scanFixture as unknown as ScanResult;
 

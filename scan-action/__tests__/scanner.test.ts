@@ -6,7 +6,7 @@ import type { ScanResult } from "../src/scanner";
 jest.mock("@actions/exec", () => ({
   getExecOutput: jest.fn(),
   exec: jest.fn(),
-}));
+}), { virtual: true });
 
 // Mock @actions/core
 jest.mock("@actions/core", () => ({
@@ -14,7 +14,7 @@ jest.mock("@actions/core", () => ({
   debug: jest.fn(),
   warning: jest.fn(),
   error: jest.fn(),
-}));
+}), { virtual: true });
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const mockExec = require("@actions/exec") as { getExecOutput: jest.Mock; exec: jest.Mock };
