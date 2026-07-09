@@ -67,9 +67,9 @@ function hasOptionalMcpExtra(requireFn: NodeRequire): boolean {
 // Individual doctor checks (spec-required)
 // ---------------------------------------------------------------------------
 
-/** E010 — Node.js version >= 18 */
+/** E010 — Node.js version matches the engines field (>= 20) */
 function checkNodeVersion(): { ok: boolean; detail: string } {
-  const MIN_MAJOR = 18;
+  const MIN_MAJOR = 20; // keep in sync with package.json engines.node
   const raw = process.versions.node;
   const major = parseInt(raw.split(".")[0] ?? "0", 10);
   if (major >= MIN_MAJOR) {
