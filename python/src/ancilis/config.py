@@ -183,7 +183,7 @@ class AncilisConfig(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def warn_unknown_keys(cls, values: Any) -> Any:
+    def reject_unknown_keys(cls, values: Any) -> Any:
         if isinstance(values, dict):
             known = {
                 "agent",
@@ -196,12 +196,18 @@ class AncilisConfig(BaseModel):
                 "cli",
                 "scan",
             }
-            unknown = set(values.keys()) - known
+            # `_warnings` is the internal injected-warnings channel, not user config.
+            unknown = set(values.keys()) - known - {"_warnings"}
             if unknown:
-                # Store warnings for later reporting
-                values.setdefault("_warnings", [])
-                for key in sorted(unknown):
-                    values["_warnings"].append(f"Unknown top-level key: '{key}'")
+                # A misspelled section name (e.g. `secuirty:`) would otherwise be
+                # ignored and silently disable everything under it, so unknown
+                # top-level keys are a validation error, not a warning.
+                raise ValueError(
+                    "Unknown top-level config key(s): "
+                    + ", ".join(f"'{k}'" for k in sorted(unknown))
+                    + ". Valid keys: "
+                    + ", ".join(sorted(known))
+                )
         return values
 
     model_config = {"extra": "ignore"}

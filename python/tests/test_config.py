@@ -292,3 +292,24 @@ class TestCertificationTargets:
         )
         assert "certification_targets:gov-contractor" in resolved.control_activation_sources["DE-04"]
         assert resolved.control_has_activation_source("DE-04", "certification_targets:")
+
+
+class TestUnknownTopLevelKeys:
+    def test_misspelled_security_key_raises(self):
+        # `secuirty:` previously validated clean and silently dropped
+        # enforce mode; unknown top-level keys must be a hard error.
+        with pytest.raises(ValidationError, match="Unknown top-level config key.*secuirty"):
+            validate_config(
+                {
+                    "agent": {"name": "x"},
+                    "secuirty": {"mode": "enforce"},
+                }
+            )
+
+    def test_unknown_key_lists_valid_keys(self):
+        with pytest.raises(ValidationError, match="Valid keys: .*security"):
+            validate_config({"agent": {"name": "x"}, "sekurity": {}})
+
+    def test_internal_warnings_channel_still_tolerated(self):
+        config, _ = validate_config({"agent": {"name": "x"}, "_warnings": "nope"})
+        assert config.agent.name == "x"
