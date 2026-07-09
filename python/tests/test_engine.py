@@ -222,6 +222,21 @@ class TestPR02Scope:
         pr02 = next(r for r in result.control_results if r.control_id == "PR-02")
         assert pr02.result == "FAIL"
 
+    def test_blocked_destination_nested_in_kwargs_fails(self):
+        # ToolActionProducer nests call args as {"args": [...], "kwargs": {...}};
+        # destination extraction must see through that nesting or destination
+        # policy never fires on the tool path.
+        config = _make_config(
+            security={"scope": {"blocked_destinations": ["evil.com"]}}
+        )
+        action = _make_action(
+            params={"args": [], "kwargs": {"url": "evil.com", "payload": "x"}}
+        )
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        pr02 = next(r for r in result.control_results if r.control_id == "PR-02")
+        assert pr02.result == "FAIL"
+
 
 # --- PR-03 Provenance Tests ---
 

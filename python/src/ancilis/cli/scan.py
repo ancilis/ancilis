@@ -38,7 +38,7 @@ def _default_config() -> ResolvedConfig:
     """Create a minimal in-memory config for zero-config scanning."""
     return load_config(raw={
         "agent": {"name": Path.cwd().name},
-        "mode": "audit",
+        "security": {"mode": "audit"},
     })
 
 

@@ -1,5 +1,6 @@
 agent:
   name: auto-register-demo
-mode: audit
+security:
+  mode: audit
 my_agent_handles:
   - personal_info

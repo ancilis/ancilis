@@ -7,7 +7,7 @@ from typing import Any
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action
-from ancilis.engine.patterns import scan_parameters
+from ancilis.engine.patterns import extract_destination, scan_parameters
 from ancilis.engine.result import ControlResult
 
 PATTERN_TO_DC: dict[str, str] = {
@@ -120,10 +120,9 @@ def _observed_data_classes(action: Action) -> set[str]:
 
 
 def _extract_destination(action: Action) -> str | None:
-    for key in ("destination", "url", "endpoint", "host", "server"):
-        value = action.parameters.raw.get(key)
-        if isinstance(value, str):
-            return value
+    found = extract_destination(action.parameters.raw)
+    if found is not None:
+        return found
     return getattr(action, "destination", None)
 
 

@@ -3,8 +3,8 @@ agent:
 my_agent_handles:
   - health_records
   - personal_info
-mode: audit
 security:
+  mode: audit
   tools:
     allowed:
       - http:POST:api.openai.com

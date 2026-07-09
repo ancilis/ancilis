@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -122,3 +123,35 @@ def scan_parameters(params: dict) -> list[PatternMatch]:  # type: ignore[type-ar
 
     text = json.dumps(params, default=str)
     return scan_for_patterns(text)
+
+
+_DESTINATION_KEYS = ("destination", "url", "endpoint", "host", "server")
+_DESTINATION_MAX_DEPTH = 4
+
+
+def extract_destination(params: Any, _depth: int = 0) -> str | None:  # type: ignore[explicit-any]
+    """Find a destination-like value in an action's raw parameters.
+
+    Producers nest call arguments (e.g. ToolActionProducer stores
+    {"args": [...], "kwargs": {...}}), so a top-level-only lookup misses
+    the destination entirely and destination policy never fires. Searches
+    key-priority order at each level, then recurses into nested
+    dicts/lists (depth-capped).
+    """
+    if _depth > _DESTINATION_MAX_DEPTH:
+        return None
+    if isinstance(params, dict):
+        for key in _DESTINATION_KEYS:
+            value = params.get(key)
+            if isinstance(value, str):
+                return value
+        for value in params.values():
+            found = extract_destination(value, _depth + 1)
+            if found is not None:
+                return found
+    elif isinstance(params, (list, tuple)):
+        for item in params:
+            found = extract_destination(item, _depth + 1)
+            if found is not None:
+                return found
+    return None

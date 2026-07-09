@@ -160,3 +160,41 @@ def test_semantic_kernel_observes_in_audit_mode() -> None:
     result = asyncio.run(filt(Ctx(), next_fn))
     assert result == "ran"
     assert ran["v"] is True
+
+
+def test_tool_producer_blocks_kwarg_destination_under_enforce() -> None:
+    """June-2026 finding: blocked_destinations never fired on the wrap_tool
+    path because the destination lived under raw["kwargs"]."""
+    config = load_config(
+        raw={
+            "agent": {"name": "t"},
+            "security": {
+                "mode": "enforce",
+                "tools": {"allowed": ["sender"]},
+                "scope": {"blocked_destinations": ["evil.example.com"]},
+            },
+        }
+    )
+    engine = Engine(config)
+    producer = ToolActionProducer(config=config, engine=engine)
+
+    def sender(url: str, payload: str) -> str:
+        return "sent"
+
+    with pytest.raises(BlockedActionError):
+        producer.execute(
+            sender,
+            agent_name="t",
+            kwargs={"url": "evil.example.com", "payload": "hi"},
+            tool_name="sender",
+        )
+
+    # Same call to an unblocked destination must not raise via PR-02.
+    result = producer.execute(
+        sender,
+        agent_name="t",
+        kwargs={"url": "ok.example.com", "payload": "hi"},
+        tool_name="sender",
+    )
+    assert result.blocked is False
+    assert result.return_value == "sent"

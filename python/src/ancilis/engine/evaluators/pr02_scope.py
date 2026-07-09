@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from ancilis.engine.patterns import extract_destination
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action
 from ancilis.engine.result import ControlResult
@@ -119,10 +120,4 @@ class PR02ScopeEvaluator:
 
     def _extract_destination(self, action: Action) -> str | None:
         """Extract destination from action parameters if present."""
-        raw = action.parameters.raw
-        for key in ("url", "destination", "endpoint", "host", "server"):
-            if key in raw:
-                val = raw[key]
-                if isinstance(val, str):
-                    return val
-        return None
+        return extract_destination(action.parameters.raw)

@@ -7,7 +7,7 @@ from typing import Any
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action
-from ancilis.engine.patterns import scan_parameters
+from ancilis.engine.patterns import extract_destination, scan_parameters
 from ancilis.engine.result import ControlResult
 
 
@@ -125,10 +125,4 @@ class PR04ExposureEvaluator:
         )
 
     def _extract_destination(self, action: Action) -> str | None:
-        raw = action.parameters.raw
-        for key in ("url", "destination", "endpoint", "host", "server"):
-            if key in raw:
-                val = raw[key]
-                if isinstance(val, str):
-                    return val
-        return None
+        return extract_destination(action.parameters.raw)
