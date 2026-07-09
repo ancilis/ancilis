@@ -350,7 +350,9 @@ def _coverage_status_for_result(result: str, detail: str, control_id: str) -> st
     if result in {"FAIL", "ERROR", "FLAG"}:
         return "gap"
     if result == "SKIP":
-        return "covered"
+        # No evaluator produced a verdict — that is absence of evidence,
+        # not coverage.
+        return "pending"
     return "gap"
 
 
@@ -367,6 +369,8 @@ def _action_required(control_id: str, coverage_status: str) -> str:
         return f"ancilis attest {control_id}"
     if coverage_status == "policy_gated":
         return "enable in policy"
+    if coverage_status == "pending":
+        return "collect evidence"
     return "remediate"
 
 

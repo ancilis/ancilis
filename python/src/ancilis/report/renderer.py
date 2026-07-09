@@ -96,7 +96,8 @@ def render_terminal(data: ReportData) -> str:
     lines.append(
         "Posture: "
         f"{_style(posture['status'], color_enabled, color=posture['status_color'], bold=True)} "
-        f"({posture['passing_control_count']}/{posture['total_controls']} controls passing)"
+        f"({posture['passing_control_count']}/{posture['total_controls']} controls passing, "
+        f"{posture['pending_control_count']} pending)"
     )
     lines.append(
         "Evaluations: "
@@ -307,10 +308,20 @@ def _pad_cell(text: str, width: int) -> str:
 def _build_posture_summary(data: ReportData) -> dict[str, Any]:
     controls = data.baseline.get("controls", [])
     failing_controls = [control for control in controls if _control_requires_attention(control)]
+    # Passing requires verifying evidence (>=1 PASS); SKIP-only or never-evaluated
+    # controls are pending, not passing.
     passing_controls = [
         control
         for control in controls
-        if not _control_requires_attention(control) and control.get("total", 0) > 0
+        if not _control_requires_attention(control)
+        and _control_evaluated(control) > 0
+        and control.get("passed", 0) > 0
+    ]
+    pending_controls = [
+        control
+        for control in controls
+        if not _control_requires_attention(control)
+        and (_control_evaluated(control) <= 0 or control.get("passed", 0) <= 0)
     ]
 
     if not data.chain_valid or len(failing_controls) >= 3:
@@ -337,6 +348,8 @@ def _build_posture_summary(data: ReportData) -> dict[str, Any]:
         "failing_controls": failing_controls,
         "passing_controls": passing_controls,
         "passing_control_count": len(passing_controls),
+        "pending_controls": pending_controls,
+        "pending_control_count": len(pending_controls),
         "total_controls": len(controls),
         "allowed_evaluations": data.baseline.get("decisions", {}).get("allow", 0),
         "blocked_evaluations": data.baseline.get("decisions", {}).get("block", 0),
@@ -348,9 +361,16 @@ def _build_posture_summary(data: ReportData) -> dict[str, Any]:
     }
 
 
+def _control_evaluated(control: dict[str, Any]) -> int:
+    """Results excluding SKIP (older payloads lack the split; fall back to total)."""
+    evaluated = control.get("evaluated")
+    if isinstance(evaluated, int):
+        return evaluated
+    return control.get("total", 0) - control.get("skipped", 0)
+
+
 def _control_requires_attention(control: dict[str, Any]) -> bool:
-    total = control.get("total", 0)
-    if total <= 0:
+    if _control_evaluated(control) <= 0:
         return False
     threshold = _numeric_threshold(control.get("threshold"))
     if threshold is None:
@@ -373,11 +393,12 @@ def _numeric_threshold(value: Any) -> float | None:
 
 
 def _control_mark(control: dict[str, Any], color_enabled: bool) -> str:
-    if control.get("total", 0) <= 0:
-        return "-"
     if _control_requires_attention(control):
-        return _style("\u2717", color_enabled, color="red")
-    return _style("\u2713", color_enabled, color="green")
+        return _style("✗", color_enabled, color="red")
+    if _control_evaluated(control) <= 0 or control.get("passed", 0) <= 0:
+        # No verifying evidence yet — pending, not passing.
+        return "-"
+    return _style("✓", color_enabled, color="green")
 
 
 def _render_baseline_terminal(
@@ -389,7 +410,16 @@ def _render_baseline_terminal(
     controls = baseline.get("controls", [])
     failing_controls = [control for control in controls if _control_requires_attention(control)]
     passing_controls = [
-        control for control in controls if control.get("total", 0) > 0 and not _control_requires_attention(control)
+        control
+        for control in controls
+        if not _control_requires_attention(control)
+        and _control_evaluated(control) > 0
+        and control.get("passed", 0) > 0
+    ]
+    pending_controls = [
+        control
+        for control in controls
+        if not _control_requires_attention(control) and control not in passing_controls
     ]
 
     lines.append(_style("Baseline Controls:", color_enabled, bold=True))
@@ -405,7 +435,11 @@ def _render_baseline_terminal(
             f"  {passing_mark} "
             f"{len(passing_controls)} controls passing (full detail preserved in markdown)"
         )
-    elif not failing_controls:
+    if pending_controls:
+        lines.append(
+            f"  - {len(pending_controls)} controls pending (no verifying evidence yet)"
+        )
+    if not failing_controls and not passing_controls and not pending_controls:
         lines.append("  - No evaluations recorded")
 
     tools = baseline.get("tools_evaluated", [])
@@ -515,7 +549,8 @@ def _render_executive_summary_markdown(lines: list[str], data: ReportData) -> No
     lines.append("")
     lines.append(
         f"**Posture: {posture['status']}** — "
-        f"{posture['passing_control_count']} of {posture['total_controls']} controls passing "
+        f"{posture['passing_control_count']} of {posture['total_controls']} controls passing, "
+        f"{posture['pending_control_count']} pending "
         f"across {len(data.compliance_sections)} active overlays."
     )
     lines.append("")
