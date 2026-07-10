@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 export interface ControlResult {
   id: string;
   name: string;
-  status: "pass" | "fail" | "skip";
+  status: "pass" | "fail" | "skip" | "pending";
   evaluations: number;
   failures: number;
   flags: number;
@@ -18,6 +18,8 @@ export interface ScanSummary {
   passing: number;
   failing: number;
   skipped: number;
+  /** Controls with only SKIP results — no evaluator evidence yet. */
+  pending?: number;
   total_evaluations: number;
 }
 
@@ -38,12 +40,13 @@ export interface ScannerOptions {
   period?: string;
 }
 
-function buildConfig(overlays: string[]): string {
+export function buildConfig(overlays: string[]): string {
   return [
     "agent:",
     "  name: github-action-scan",
     "security:",
     "  mode: audit",
+    "compliance:",
     `  overlays: [${overlays.map((o) => `"${o}"`).join(", ")}]`,
   ].join("\n");
 }

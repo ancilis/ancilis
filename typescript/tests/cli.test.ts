@@ -481,7 +481,7 @@ describe("runDoctor", () => {
 
     const result = await runDoctor(configPath, join(dir, "doctor.duckdb"));
 
-    expect(result.output).toMatch(/\[OK\] node version: Node\.js \d+\.\d+\.\d+ \(>= 18 required\)/);
+    expect(result.output).toMatch(/\[OK\] node version: Node\.js \d+\.\d+\.\d+ \(>= 20 required\)/);
   });
 
   it("includes overlay existence check in output", async () => {
@@ -1272,7 +1272,7 @@ describe("Report Renderer UX", () => {
 
     expect(md).toContain("## Executive Summary");
     expect(md).toContain("**Posture: ATTENTION**");
-    expect(md).toContain("5 of 6 controls passing across 4 active overlays.");
+    expect(md).toContain("5 of 6 controls passing, 0 pending across 4 active overlays.");
     expect(md).toContain("Active overlays: SOC 2, PCI-DSS v4.0, GLBA, GDPR");
     expect(md).toContain("Active certifications: AIUC-1 (87% ready)");
     expect(md).toContain("Evidence chain: intact (1,234 records, SHA-256 verified)");
@@ -1285,7 +1285,7 @@ describe("Report Renderer UX", () => {
 
     expect(md).toContain("## Executive Summary");
     expect(md).toContain("**Posture: HEALTHY**");
-    expect(md).toContain("6 of 6 controls passing across 4 active overlays.");
+    expect(md).toContain("6 of 6 controls passing, 0 pending across 4 active overlays.");
     expect(md).not.toContain("### Attention Required");
   });
 });
@@ -1372,5 +1372,187 @@ describe("Progressive Disclosure", () => {
     const gen = new ReportGenerator(config, populatedSummary(2));
     const report = gen.generate();
     expect(report.complianceSections.length).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SKIP is pending, not passing (0.2.0 parity with Python)
+// ---------------------------------------------------------------------------
+
+function skipOnlySummary(): EvidenceSummary {
+  return {
+    total_evaluations: 3,
+    decisions: { ALLOW: 3 },
+    tools_evaluated: ["read_file"],
+    control_pass_rates: {
+      "PR-01": { PASS: 0, FAIL: 0, FLAG: 0, SKIP: 3, ERROR: 0 },
+    },
+    chain_valid: true,
+    chain_errors: [],
+  };
+}
+
+describe("SKIP handling — status", () => {
+  it("SKIP-only evidence is pending, never all passing", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const output = formatStatus(config, skipOnlySummary());
+
+    expect(output).toContain("pending");
+    expect(output).not.toContain("all passing");
+  });
+
+  it("verbose marks a SKIP-only control as pending, not passing", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const output = formatStatus(config, skipOnlySummary(), true);
+
+    expect(output).toContain("pending (attestation required)");
+  });
+
+  it("clean PASS evidence still reports all passing", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const summary = skipOnlySummary();
+    summary.control_pass_rates = Object.fromEntries(
+      [...loadConfig({ raw: minimalConfig() }).controls.values()]
+        .filter((c) => c.enabled)
+        .map((c) => [c.controlId, { PASS: 2, FAIL: 0, FLAG: 0, SKIP: 0, ERROR: 0 }]),
+    );
+    const output = formatStatus(config, summary);
+
+    expect(output).toContain("all passing");
+    expect(output).not.toContain("pending");
+  });
+});
+
+describe("SKIP handling — report generator", () => {
+  it("baseline pass rate is computed over evaluated (non-SKIP) results", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const summary = skipOnlySummary();
+    summary.control_pass_rates = { "PR-01": { PASS: 1, FAIL: 0, FLAG: 0, SKIP: 9, ERROR: 0 } };
+    const report = new ReportGenerator(config, summary).generate();
+    const controls = (report.baseline as Record<string, unknown>).controls as Record<string, unknown>[];
+    const pr01 = controls.find((c) => c.controlId === "PR-01")!;
+
+    expect(pr01.total).toBe(10);
+    expect(pr01.skipped).toBe(9);
+    expect(pr01.evaluated).toBe(1);
+    expect(pr01.passRate).toBe(100);
+  });
+
+  it("SKIP-only control has zero pass rate, not 100%", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const report = new ReportGenerator(config, skipOnlySummary()).generate();
+    const controls = (report.baseline as Record<string, unknown>).controls as Record<string, unknown>[];
+    const pr01 = controls.find((c) => c.controlId === "PR-01")!;
+
+    expect(pr01.evaluated).toBe(0);
+    expect(pr01.passRate).toBe(0);
+  });
+
+  it("compliance sections expose skipped/evaluated and rate over evaluated results", () => {
+    const config = loadConfig({ raw: fullConfig() });
+    const summary = populatedSummary(2);
+    summary.control_pass_rates["PR-01"] = { PASS: 1, FAIL: 0, FLAG: 0, SKIP: 3, ERROR: 0 };
+    const report = new ReportGenerator(config, summary).generate();
+    const section = report.complianceSections.find((s) =>
+      ((s.controls as Record<string, unknown>[]) ?? []).some((c) => c.controlId === "PR-01"),
+    )!;
+    const pr01 = (section.controls as Record<string, unknown>[]).find((c) => c.controlId === "PR-01")!;
+
+    expect(pr01.skipped).toBe(3);
+    expect(pr01.evaluated).toBe(1);
+    expect(pr01.passRate).toBe(100);
+  });
+});
+
+describe("SKIP handling — renderer posture", () => {
+  function pendingReport(): ReportData {
+    const report = rendererReport(0);
+    const pendingControl = (controlId: string, displayName: string): Record<string, unknown> => ({
+      controlId,
+      displayName,
+      threshold: "95",
+      total: 10,
+      passed: 0,
+      failed: 0,
+      flagged: 0,
+      skipped: 10,
+      evaluated: 0,
+      passRate: 0,
+    });
+    (report.baseline as Record<string, unknown>).controls = [
+      pendingControl("PR-01", "Identity Verification"),
+      pendingControl("PR-02", "Access Governance"),
+    ];
+    return report;
+  }
+
+  it("pending-only reports render PENDING, not HEALTHY", () => {
+    const output = renderTerminal(pendingReport());
+
+    const plain = output.replace(/\u001b\[[0-9;]*m/g, "");
+    expect(plain).toContain("Posture: PENDING");
+    expect(plain).not.toContain("Posture: HEALTHY");
+    expect(output).toContain("(0/2 controls passing, 2 pending)");
+    expect(output).toContain("2 controls pending (no verifying evidence yet)");
+  });
+
+  it("markdown posture line includes the pending count", () => {
+    const md = renderMarkdown(pendingReport());
+
+    expect(md).toContain("**Posture: PENDING**");
+    expect(md).toContain("0 of 2 controls passing, 2 pending across 4 active overlays.");
+  });
+});
+
+describe("SKIP handling — OSCAL", () => {
+  it("SKIP-only controls emit not-satisfied findings with a pending remark", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const report = new ReportGenerator(config, skipOnlySummary()).generate("30d", "oscal-json");
+    const document = JSON.parse(renderOscalJson(report)) as {
+      "assessment-results": {
+        results: Array<{ findings: Array<{ target?: { type?: string; controlId?: string }; status?: string; remarks?: string }> }>;
+      };
+    };
+    const finding = document["assessment-results"].results[0]!.findings.find(
+      (f) => f.target?.type === "baseline_control" && f.target?.controlId === "PR-01",
+    )!;
+
+    expect(finding.status).toBe("not-satisfied");
+    expect(finding.remarks).toContain("pending");
+    expect(finding.status).not.toBe("satisfied");
+  });
+
+  it("raw SKIP evidence maps to not-satisfied with a pending remark, never not-applicable", () => {
+    const config = loadConfig({ raw: minimalConfig() });
+    const report = new ReportGenerator(config, skipOnlySummary()).generate("30d", "oscal-json");
+    report.evidenceRecords = [
+      {
+        recordId: "record-skip",
+        recordHash: "hash",
+        previousHash: "prev",
+        timestamp: new Date().toISOString(),
+        sessionId: null,
+        tenantId: null,
+        detectedDataTypes: [],
+        sdkVersion: null,
+        frameworkVersion: null,
+        classificationContext: {},
+        controlResults: [
+          { control_id: "PR-01", control_name: "Identity", result: "SKIP", detail: "no evaluator" },
+        ],
+      } as unknown as EvidenceRecord,
+    ];
+    const document = JSON.parse(renderOscalJson(report)) as {
+      "assessment-results": {
+        results: Array<{ observations: Array<{ props: Array<{ name: string; value: string }> }> }>;
+      };
+    };
+    const props = document["assessment-results"].results[0]!.observations[0]!.props;
+    const state = props.find((p) => p.name === "assessment-state")!;
+    const remark = props.find((p) => p.name === "assessment-remarks");
+
+    expect(state.value).toBe("not-satisfied");
+    expect(state.value).not.toBe("not-applicable");
+    expect(remark?.value).toContain("pending");
   });
 });

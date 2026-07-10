@@ -220,12 +220,29 @@ export interface ResolvedConfig {
 function validateConfig(raw: Record<string, unknown>): { config: AncilisConfig; warnings: string[] } {
   const warnings: string[] = [];
 
-  // Check for unknown top-level keys
-  const knownKeys = new Set(["agent", "security", "my_agent_handles", "certification_targets", "compliance", "scan"]);
-  for (const key of Object.keys(raw)) {
-    if (!knownKeys.has(key)) {
-      warnings.push(`Unknown top-level key: '${key}'`);
-    }
+  // Check for unknown top-level keys. A misspelled section name (e.g.
+  // `secuirty:`) would otherwise be ignored and silently disable everything
+  // under it, so unknown top-level keys are a validation error, not a warning.
+  // Keep this list in sync with Python's AncilisConfig.reject_unknown_keys.
+  const knownKeys = new Set([
+    "agent",
+    "security",
+    "my_agent_handles",
+    "certification_targets",
+    "compliance",
+    "platform",
+    "sync",
+    "cli",
+    "scan",
+  ]);
+  const unknownKeys = Object.keys(raw).filter((key) => !knownKeys.has(key)).sort();
+  if (unknownKeys.length > 0) {
+    throw new ConfigError(
+      "Unknown top-level config key(s): "
+      + unknownKeys.map((k) => `'${k}'`).join(", ")
+      + ". Valid keys: "
+      + [...knownKeys].sort().join(", ")
+    );
   }
 
   // Validate control IDs in overrides

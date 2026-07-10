@@ -179,14 +179,17 @@ export class ReportGenerator {
       const passed = stats.PASS ?? 0;
       const failed = (stats.FAIL ?? 0) + (stats.ERROR ?? 0);
       const flagged = stats.FLAG ?? 0;
-      const passRate = total > 0 ? Math.round(passed / total * 1000) / 10 : 0;
+      const skipped = stats.SKIP ?? 0;
+      // SKIP means "no evaluator ran", not "passed" — rate only what was evaluated.
+      const evaluated = total - skipped;
+      const passRate = evaluated > 0 ? Math.round(passed / evaluated * 1000) / 10 : 0;
 
       controls.push({
         controlId: cs.controlId,
         displayName: (cdef.display_name as string) ?? cs.name,
         displayDetail: (cdef.display_detail as string) ?? "",
         threshold: cs.threshold,
-        total, passed, failed, flagged, passRate,
+        total, passed, failed, flagged, skipped, evaluated, passRate,
       });
     }
 
@@ -229,7 +232,10 @@ export class ReportGenerator {
         const total = Object.values(stats).reduce((a, b) => a + b, 0);
         const passed = stats.PASS ?? 0;
         const failed = (stats.FAIL ?? 0) + (stats.ERROR ?? 0);
-        const passRate = total > 0 ? Math.round(passed / total * 1000) / 10 : 0;
+        const skipped = stats.SKIP ?? 0;
+        // SKIP means "no evaluator ran", not "passed" — rate only what was evaluated.
+        const evaluated = total - skipped;
+        const passRate = evaluated > 0 ? Math.round(passed / evaluated * 1000) / 10 : 0;
 
         const adj = adjustments[cid] ?? {};
         const threshold = adj.threshold_adjustment ?? "standard";
@@ -238,7 +244,7 @@ export class ReportGenerator {
         controls.push({
           controlId: cid,
           displayName: (cdef.display_name as string) ?? cid,
-          citations, total, passed, failed, passRate, threshold,
+          citations, total, passed, failed, skipped, evaluated, passRate, threshold,
         });
       }
 

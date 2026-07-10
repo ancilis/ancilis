@@ -391,3 +391,103 @@ describe("TestScanLatestSessionDefault", () => {
     expect(summary["total_evaluations"]).toBe(2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// SKIP-only controls are pending, not passing (0.2.0)
+// ---------------------------------------------------------------------------
+
+describe("TestScanSkipIsPending", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = tmpDir();
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  /** EvaluationResult where PR-01 only ever SKIPs. */
+  function makeSkipEvaluation(): EvaluationResult {
+    return {
+      evaluationId: `skip-eval-${randomUUID()}`,
+      actionId: `skip-action-${randomUUID()}`,
+      timestamp: new Date().toISOString(),
+      agentId: "test-agent",
+      sourceType: "agent",
+      mode: "audit",
+      controlResults: [
+        {
+          controlId: "PR-01",
+          controlName: "Identity",
+          result: "SKIP",
+          detail: "No evaluator ran.",
+          evidenceData: {},
+          durationMs: 1.0,
+        },
+      ],
+      decision: "ALLOW",
+      decisionReason: "audit",
+      activeOverlays: [],
+      dataClassifications: [],
+      totalDurationMs: 1.0,
+    };
+  }
+
+  it("--ci reports a SKIP-only control as pending with a zero pass rate", async () => {
+    const cfgPath = writeConfig(dir, minimalConfig());
+    const dbPath = join(dir, "evidence.duckdb");
+    const config = loadConfig({ path: cfgPath });
+    const store = new EvidenceStore(config, { dbPath });
+    await store.store(makeSkipEvaluation(), "read_file");
+    await store.close();
+
+    const capture = captureIo();
+    const exitCode = await handleScan(
+      { ci: true, config: cfgPath, db: dbPath, period: "1y", all: true },
+      capture.io,
+    );
+
+    expect(exitCode).toBe(0);
+    const data = JSON.parse(capture.stdout()) as Record<string, unknown>;
+    const controls = data["controls"] as Array<Record<string, unknown>>;
+    const pr01 = controls.find((c) => c["id"] === "PR-01")!;
+
+    expect(pr01["status"]).toBe("pending");
+    expect(pr01["skips"]).toBe(1);
+    expect(pr01["evaluated"]).toBe(0);
+    expect(pr01["pass_rate"]).toBe(0);
+
+    const summary = data["summary"] as Record<string, unknown>;
+    expect(summary["pending"]).toBe(1);
+    expect(summary["passing"]).toBe(0);
+    // Pending is not a violation — posture stays compliant with exit 0.
+    expect(data["posture"]).toBe("compliant");
+  });
+
+  it("--ci pass_rate is computed over evaluated (non-SKIP) results", async () => {
+    const cfgPath = writeConfig(dir, minimalConfig());
+    const dbPath = join(dir, "evidence.duckdb");
+    const config = loadConfig({ path: cfgPath });
+    const store = new EvidenceStore(config, { dbPath });
+    const mixed = makeSkipEvaluation();
+    mixed.controlResults = [
+      { controlId: "PR-01", controlName: "Identity", result: "PASS", detail: "ok", evidenceData: {}, durationMs: 1.0 },
+      { controlId: "PR-01", controlName: "Identity", result: "SKIP", detail: "skipped", evidenceData: {}, durationMs: 1.0 },
+    ];
+    await store.store(mixed, "read_file");
+    await store.close();
+
+    const capture = captureIo();
+    await handleScan({ ci: true, config: cfgPath, db: dbPath, period: "1y", all: true }, capture.io);
+
+    const data = JSON.parse(capture.stdout()) as Record<string, unknown>;
+    const controls = data["controls"] as Array<Record<string, unknown>>;
+    const pr01 = controls.find((c) => c["id"] === "PR-01")!;
+
+    expect(pr01["status"]).toBe("pass");
+    expect(pr01["evaluations"]).toBe(2);
+    expect(pr01["evaluated"]).toBe(1);
+    expect(pr01["pass_rate"]).toBe(100);
+  });
+});

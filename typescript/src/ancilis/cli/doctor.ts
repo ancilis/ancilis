@@ -192,7 +192,7 @@ export async function runDoctor(configPath?: string, dbPath?: string): Promise<D
   const nodeCheck = checkNodeVersion();
   lines.push(`${checkMark(nodeCheck.ok, color)} node version: ${nodeCheck.detail}`);
   if (!nodeCheck.ok) {
-    lines.push("  " + (color ? yellow("→ Upgrade Node.js to v18 or later") : "→ Upgrade Node.js to v18 or later"));
+    lines.push("  " + (color ? yellow("→ Upgrade Node.js to v20 or later") : "→ Upgrade Node.js to v20 or later"));
     failures++;
   }
 

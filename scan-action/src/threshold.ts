@@ -16,6 +16,9 @@ export function applyThreshold(scan: ScanResult, failOn: FailOn): ThresholdResul
   );
   const hasFailures = scan.controls.some((c) => c.status === "fail");
   const hasFlags = scan.controls.some((c) => c.flags > 0);
+  // "pending" (SKIP-only) and "skip" (never evaluated) both count as non-pass:
+  // a control without verifying evidence must never satisfy a threshold as
+  // if it were passing.
   const hasNonPass = scan.controls.some((c) => c.status !== "pass");
 
   // Detect BLOCK decisions: only in enforce mode when posture is non_compliant
@@ -50,7 +53,7 @@ export function applyThreshold(scan: ScanResult, failOn: FailOn): ThresholdResul
     case "low":
       // Fail on any non-pass status (includes skip)
       if (hasNonPass) {
-        return { shouldFail: true, reason: "One or more controls are not passing (fail or skip)" };
+        return { shouldFail: true, reason: "One or more controls are not passing (fail, pending, or skip)" };
       }
       return { shouldFail: false, reason: "All controls passing — check passes at low threshold" };
   }

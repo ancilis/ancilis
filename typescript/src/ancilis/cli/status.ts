@@ -38,17 +38,51 @@ export function formatStatus(config: ResolvedConfig, summary: EvidenceSummary, v
   const enabled = [...config.controls.values()].filter(c => c.enabled);
   const controlStats = summary.control_pass_rates ?? {};
 
+  // Honest per-control bucketing (mirrors Python status). The headline must
+  // never report "all passing" while a control is failing, flagged, or has
+  // not actually been evaluated (never evaluated, or only SKIP results).
+  let verified = 0;
+  let attested = 0;
+  let pendingCount = 0;
+  let flaggedCount = 0;
+  let failingCount = 0;
+  for (const cs of enabled) {
+    const stats = controlStats[cs.controlId] ?? {};
+    const cdef = controlDefs.get(cs.controlId) ?? {};
+    const supportLevel = (cdef.support_level as string | undefined) ?? "runtime_evaluator";
+    const failCount = (stats.FAIL ?? 0) + (stats.ERROR ?? 0);
+    const flagCount = stats.FLAG ?? 0;
+    const passCount = stats.PASS ?? 0;
+    if (failCount > 0) {
+      failingCount += 1;
+    } else if (flagCount > 0) {
+      flaggedCount += 1;
+    } else if (passCount > 0) {
+      if (supportLevel === "attestation") attested += 1;
+      else verified += 1;
+    } else {
+      // No PASS/FAIL/FLAG: never evaluated, or only SKIP (e.g. an
+      // attestation control awaiting its first attestation).
+      pendingCount += 1;
+    }
+  }
+
   const totalEvals = summary.total_evaluations;
   let controlSuffix: string;
   if (totalEvals === 0) {
     controlSuffix = "not yet evaluated";
   } else {
-    let allPassing = true;
-    for (const cs of enabled) {
-      const stats = controlStats[cs.controlId] ?? {};
-      if ((stats.FAIL ?? 0) > 0 || (stats.ERROR ?? 0) > 0) allPassing = false;
+    const parts: string[] = [];
+    if (verified) parts.push(`${verified} runtime-verified`);
+    if (attested) parts.push(`${attested} attestation-passing`);
+    if (pendingCount) parts.push(`${pendingCount} pending`);
+    if (flaggedCount) parts.push(`${flaggedCount} flagged`);
+    if (failingCount) parts.push(`${failingCount} failing`);
+    controlSuffix = parts.length > 0 ? parts.join(", ") : "not yet evaluated";
+    // Only an unqualified clean state earns the "all passing" affirmation.
+    if (!pendingCount && !flaggedCount && !failingCount && (verified || attested)) {
+      controlSuffix += " — all passing";
     }
-    controlSuffix = allPassing ? "all passing" : "issues detected";
   }
   lines.push(`  Controls: ${enabled.length} active, ${controlSuffix}`);
 
@@ -89,18 +123,30 @@ export function formatStatus(config: ResolvedConfig, summary: EvidenceSummary, v
       const failCount = (stats.FAIL ?? 0) + (stats.ERROR ?? 0);
       const flagCount = stats.FLAG ?? 0;
 
-      let mark: string, suffix: string;
-      if (failCount > 0) {
+      const passCount = stats.PASS ?? 0;
+      const totalCount = Object.values(stats).reduce((a, b) => a + b, 0);
+
+      let mark: string, statusStr: string;
+      if (totalCount === 0) {
+        mark = "\u2013";
+        statusStr = "not yet evaluated";
+      } else if (failCount > 0) {
         mark = "\u2717";
-        suffix = ` (${failCount} failures)`;
+        statusStr = `failing (${failCount} failures)`;
       } else if (flagCount > 0) {
+        // A flag is a deviation for review \u2014 not a pass.
+        mark = "!";
+        statusStr = `flagged (${flagCount} flag${flagCount !== 1 ? "s" : ""})`;
+      } else if (passCount > 0) {
         mark = "\u2713";
-        suffix = ` (${flagCount} flags)`;
+        statusStr = "passing";
       } else {
-        mark = "\u2713";
-        suffix = "";
+        // Evaluated only as SKIP (e.g. an attestation control not yet
+        // attested) \u2014 pending, not passing.
+        mark = "\u25cb";
+        statusStr = "pending (attestation required)";
       }
-      lines.push(`    ${mark} ${displayName} — passing${suffix}`);
+      lines.push(`    ${mark} ${displayName} — ${statusStr}`);
     }
 
     if (config.activeCertifications.length > 0 || config.activeOverlays.size > 0) {

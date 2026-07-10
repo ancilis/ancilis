@@ -141,10 +141,15 @@ function printNextSteps(out: (m: string) => void): void {
 export interface ControlResult2 {
   id: string;
   name: string;
-  status: "pass" | "fail" | "skip";
+  status: "pass" | "fail" | "skip" | "pending";
   evaluations: number;
   failures: number;
   flags: number;
+  skips: number;
+  /** Results excluding SKIP — the denominator for pass_rate. */
+  evaluated: number;
+  /** PASS share of evaluated (non-SKIP) results, percent to one decimal. */
+  pass_rate: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -185,16 +190,25 @@ export async function runEvaluation(
       const flags = stats.FLAG ?? 0;
       const totalEvals = Object.values(stats).reduce((acc, v) => acc + v, 0);
 
-      let ctrlStatus: "pass" | "fail" | "skip";
+      const skips = stats.SKIP ?? 0;
+      const passes = stats.PASS ?? 0;
+      // SKIP means "no evaluator ran", not "passed" — rate only what was evaluated.
+      const evaluated = totalEvals - skips;
+      const passRate = evaluated > 0 ? Math.round(passes / evaluated * 1000) / 10 : 0;
+
+      let ctrlStatus: "pass" | "fail" | "skip" | "pending";
       if (totalEvals === 0) {
         ctrlStatus = "skip";
       } else if (failures > 0) {
         ctrlStatus = "fail";
         anyFailing = true;
+      } else if (evaluated === 0) {
+        // Only SKIP results — pending, not passing.
+        ctrlStatus = "pending";
       } else {
         ctrlStatus = "pass";
       }
-      controlResults.push({ id: cs.controlId, name: displayName, status: ctrlStatus, evaluations: totalEvals, failures, flags });
+      controlResults.push({ id: cs.controlId, name: displayName, status: ctrlStatus, evaluations: totalEvals, failures, flags, skips, evaluated, pass_rate: passRate });
     }
 
     const normalizedDecisions: Record<string, number> = {};
@@ -365,6 +379,7 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
     let passingCount = 0;
     let failingCount = 0;
     let skippedCount = 0;
+    let pendingCount = 0;
     let anyFailing = false;
 
     for (const cs of enabled) {
@@ -375,7 +390,13 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
       const flags = stats.FLAG ?? 0;
       const totalEvals = Object.values(stats).reduce((acc, v) => acc + v, 0);
 
-      let ctrlStatus: "pass" | "fail" | "skip";
+      const skips = stats.SKIP ?? 0;
+      const passes = stats.PASS ?? 0;
+      // SKIP means "no evaluator ran", not "passed" — rate only what was evaluated.
+      const evaluated = totalEvals - skips;
+      const passRate = evaluated > 0 ? Math.round(passes / evaluated * 1000) / 10 : 0;
+
+      let ctrlStatus: "pass" | "fail" | "skip" | "pending";
       if (totalEvals === 0) {
         ctrlStatus = "skip";
         skippedCount += 1;
@@ -383,12 +404,16 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
         ctrlStatus = "fail";
         anyFailing = true;
         failingCount += 1;
+      } else if (evaluated === 0) {
+        // Only SKIP results — pending, not passing.
+        ctrlStatus = "pending";
+        pendingCount += 1;
       } else {
         ctrlStatus = "pass";
         passingCount += 1;
       }
 
-      controlResults.push({ id: cs.controlId, name: displayName, status: ctrlStatus, evaluations: totalEvals, failures, flags });
+      controlResults.push({ id: cs.controlId, name: displayName, status: ctrlStatus, evaluations: totalEvals, failures, flags, skips, evaluated, pass_rate: passRate });
     }
 
     // Blocked tool calls also make posture non-compliant
@@ -527,6 +552,7 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
           passing: passingCount,
           failing: failingCount,
           skipped: skippedCount,
+          pending: pendingCount,
           total_evaluations: totalEvaluations,
         },
         posture,
@@ -546,7 +572,7 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
         lines.push("  No evaluations recorded in period. Posture: compliant (nothing to check).");
       } else {
         for (const ctrl of controlResults) {
-          const mark = ctrl.status === "pass" ? "\u2713" : ctrl.status === "fail" ? "\u2717" : "\u2013";
+          const mark = ctrl.status === "pass" ? "\u2713" : ctrl.status === "fail" ? "\u2717" : ctrl.status === "pending" ? "\u25cb" : "\u2013";
           let detail = `${ctrl.evaluations} evals`;
           if (ctrl.failures > 0) detail += `, ${ctrl.failures} failures`;
           if (ctrl.flags > 0) detail += `, ${ctrl.flags} flags`;
