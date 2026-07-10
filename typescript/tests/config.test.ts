@@ -345,3 +345,38 @@ describe("Agent ID", () => {
     expect(resolved.agentId).toBe("12345678-1234-1234-1234-123456789ABC");
   });
 });
+
+describe("Unknown top-level keys", () => {
+  it("rejects unknown top-level keys with a hard error listing valid keys", () => {
+    let caught: unknown;
+    try {
+      loadConfig({ raw: { agent: { name: "my-agent" }, secuirty: { mode: "enforce" } } });
+    } catch (error: unknown) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(ConfigError);
+    const message = (caught as Error).message;
+    expect(message).toContain("Unknown top-level config key(s): 'secuirty'");
+    expect(message).toContain("Valid keys:");
+    expect(message).toContain("security");
+    expect(message).toContain("compliance");
+  });
+
+  it("accepts every documented top-level key", () => {
+    const resolved = loadConfig({
+      raw: {
+        agent: { name: "my-agent" },
+        security: { mode: "audit" },
+        my_agent_handles: [],
+        certification_targets: [],
+        compliance: {},
+        platform: {},
+        sync: {},
+        cli: {},
+        scan: {},
+      },
+    });
+    expect(resolved.agentName).toBe("my-agent");
+    expect(resolved.warnings.filter((w) => w.includes("Unknown top-level"))).toEqual([]);
+  });
+});
