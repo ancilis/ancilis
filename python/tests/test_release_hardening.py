@@ -379,3 +379,65 @@ def test_release_check_sanitizes_node_env_for_typescript_smoke(monkeypatch):
         assert "NODE_ENV" not in env
         assert "NPM_CONFIG_PRODUCTION" not in env
         assert "npm_config_omit" not in env
+
+
+def test_certify_coverage_fail_not_buried_by_trailing_skip():
+    """Review finding: coverage was last-result-wins — a SKIP recorded after a
+    FAIL reported the control as pending instead of gap."""
+    from ancilis.evidence.query import certification_coverage
+
+    config = _config()
+    registry = ToolRegistry()
+    registry.register(ToolEntry(name="read_file", status=ToolStatus.APPROVED))
+    engine = Engine(config, registry=registry)
+    store = EvidenceStore(config, in_memory=True)
+    try:
+        evaluation = engine.evaluate(_action())
+        record = store.store(evaluation, tool_name="read_file")
+        # Rewrite the stored control results to a deterministic FAIL-then-SKIP
+        # sequence for one certification-mapped control.
+        target, rows = certification_coverage(store, target="aiuc1")
+        mapped_control = rows[0].control_id
+
+        fail_eval = engine.evaluate(_action())
+        for result in fail_eval.control_results:
+            if result.control_id == mapped_control:
+                result.result = "FAIL"
+        store.store(fail_eval, tool_name="read_file")
+
+        skip_eval = engine.evaluate(_action())
+        for result in skip_eval.control_results:
+            if result.control_id == mapped_control:
+                result.result = "SKIP"
+        store.store(skip_eval, tool_name="read_file")
+
+        _, rows = certification_coverage(store, target="aiuc1")
+        row = next(r for r in rows if r.control_id == mapped_control)
+        assert row.coverage_status == "gap", (
+            f"FAIL in period must be a gap even if the latest result is SKIP; "
+            f"got {row.coverage_status}"
+        )
+    finally:
+        store.close()
+
+
+def test_flagged_control_not_certification_ready():
+    """PASS+FLAG evidence must not certify as ready."""
+    from ancilis.report.certification import build_certification_section
+
+    config = _config()
+    profiles = {
+        "aiuc-1": {
+            "name": "AIUC-1",
+            "aksi_to_requirement_map": {"PR-02": ["A003"]},
+            "operator_action_required": [],
+        }
+    }
+    summary = {
+        "control_pass_rates": {"PR-02": {"PASS": 3, "FLAG": 1}},
+        "total_evaluations": 4,
+    }
+    section = build_certification_section(config, summary, profiles)
+    req = section["automated_coverage"][0]
+    assert req["ready"] is False
+    assert section["ready_count"] == 0

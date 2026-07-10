@@ -40,8 +40,9 @@ def build_certification_section(
         flagged = stats.get("FLAG", 0)
         errored = stats.get("ERROR", 0)
 
-        # A control is "ready" when it has evidence, passes, and has no failures
-        control_ready = passed > 0 and failed == 0 and errored == 0
+        # A control is "ready" when it has evidence, passes, and has no
+        # failures or unresolved flags — PASS+FLAG must not certify as ready.
+        control_ready = passed > 0 and failed == 0 and errored == 0 and flagged == 0
 
         for req_id in req_ids:
             total_automated_reqs += 1

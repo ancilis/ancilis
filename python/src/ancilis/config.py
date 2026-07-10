@@ -30,7 +30,15 @@ CLASSIFICATIONS_FILE = SHARED_DIR / "classifications" / "taxonomy.json"
 # --- Pydantic Models ---
 
 
-class AgentConfig(BaseModel):
+class StrictSectionModel(BaseModel):
+    """Config sections reject unknown keys: a misspelled field (e.g.
+    security.mod, scope.blocked_destinatons) would otherwise be silently
+    ignored and disable the setting it was meant to configure."""
+
+    model_config = {"extra": "forbid"}
+
+
+class AgentConfig(StrictSectionModel):
     name: str
     description: str = ""
     owner: str = ""
@@ -45,30 +53,30 @@ class AgentConfig(BaseModel):
         return v
 
 
-class ControlOverride(BaseModel):
+class ControlOverride(StrictSectionModel):
     enabled: bool = True
 
 
-class ToolsConfig(BaseModel):
+class ToolsConfig(StrictSectionModel):
     allowed: list[str] = Field(default_factory=list)
     blocked: list[str] = Field(default_factory=list)
 
 
-class ScopeConfig(BaseModel):
+class ScopeConfig(StrictSectionModel):
     max_actions_per_minute: int | None = None
     allowed_destinations: list[str] = Field(default_factory=list)
     blocked_destinations: list[str] = Field(default_factory=list)
 
 
-class SandboxPolicyConfig(BaseModel):
+class SandboxPolicyConfig(StrictSectionModel):
     approved_execution_classes: list[str] = Field(default_factory=list)
 
 
-class ResponsePolicyConfig(BaseModel):
+class ResponsePolicyConfig(StrictSectionModel):
     containment_required_for_results: list[str] = Field(default_factory=lambda: ["FAIL", "ERROR"])
 
 
-class SecurityConfig(BaseModel):
+class SecurityConfig(StrictSectionModel):
     mode: str = "audit"
     controls: dict[str, ControlOverride] = Field(default_factory=dict)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
@@ -84,22 +92,22 @@ class SecurityConfig(BaseModel):
         return v
 
 
-class EvidenceConfig(BaseModel):
+class EvidenceConfig(StrictSectionModel):
     storage: str = "local"
     retention_days: int = 365
 
 
-class ComplianceConfig(BaseModel):
+class ComplianceConfig(StrictSectionModel):
     overlays: list[str] | None = None
     evidence: EvidenceConfig = Field(default_factory=EvidenceConfig)
 
 
-class CliConfig(BaseModel):
+class CliConfig(StrictSectionModel):
     update_check: bool = True
     update_check_interval: int = 86400
 
 
-class PlatformConfig(BaseModel):
+class PlatformConfig(StrictSectionModel):
     url: str | None = None
     api_key_env: str = "ANCILIS_API_KEY"
 
@@ -107,7 +115,7 @@ class PlatformConfig(BaseModel):
 _VALID_SYNC_OFFLINE_MODES = {"auto", "always_offline", "always_online"}
 
 
-class SyncConfig(BaseModel):
+class SyncConfig(StrictSectionModel):
     offline_mode: str = "auto"
     interval_seconds: int = 300
     max_retries: int = 8
@@ -150,7 +158,7 @@ class SyncConfig(BaseModel):
 _VALID_SEVERITY_THRESHOLDS = {"critical", "high", "medium", "low"}
 
 
-class ScanDepsConfig(BaseModel):
+class ScanDepsConfig(StrictSectionModel):
     enabled: bool = True
     severity_threshold: str = "high"
     ignore: list[str] = Field(default_factory=list)
@@ -166,7 +174,7 @@ class ScanDepsConfig(BaseModel):
         return v
 
 
-class ScanConfig(BaseModel):
+class ScanConfig(StrictSectionModel):
     dependencies: ScanDepsConfig = Field(default_factory=ScanDepsConfig)
 
 

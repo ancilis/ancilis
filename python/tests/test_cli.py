@@ -262,7 +262,9 @@ class TestCLIFramework:
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        from importlib.metadata import version as _pkg_version
+
+        assert _pkg_version("ancilis") in result.output
 
 
 # ===== Config Validate Tests =====

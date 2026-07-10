@@ -313,3 +313,19 @@ class TestUnknownTopLevelKeys:
     def test_internal_warnings_channel_still_tolerated(self):
         config, _ = validate_config({"agent": {"name": "x"}, "_warnings": "nope"})
         assert config.agent.name == "x"
+
+
+class TestNestedSectionStrictness:
+    def test_misspelled_nested_security_field_raises(self):
+        # security.mod (for mode) was silently ignored, leaving audit mode.
+        with pytest.raises(ValidationError):
+            validate_config({"agent": {"name": "x"}, "security": {"mod": "enforce"}})
+
+    def test_misspelled_scope_field_raises(self):
+        with pytest.raises(ValidationError):
+            validate_config(
+                {
+                    "agent": {"name": "x"},
+                    "security": {"scope": {"blocked_destinatons": ["evil.example"]}},
+                }
+            )
