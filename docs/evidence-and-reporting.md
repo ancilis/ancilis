@@ -119,7 +119,7 @@ ancilis certify --target pci --format json --dry-run
 ```
 
 The command reports each in-scope AKSI control's coverage status — `covered`,
-`policy_gated`, `attestation_required`, `attestation_stale`,
+`pending`, `policy_gated`, `attestation_required`, `attestation_stale`,
 `attestation_incomplete`, or `gap` — along with the action required, evidence
 count, and the latest evidence timestamp. If no evidence exists, all in-scope
 controls are listed as gaps.

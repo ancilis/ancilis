@@ -40,10 +40,11 @@ def _compute_control_stats(
 
 
 def _pass_rate(stats: dict[str, Any]) -> float:
-    total = stats["total"]
-    if total == 0:
+    # SKIP means "no evaluator ran", not "passed" — rate only evaluated results.
+    evaluated = stats["total"] - stats.get("skip", 0)
+    if evaluated == 0:
         return 1.0
-    return float(stats["pass"]) / float(total)
+    return float(stats["pass"]) / float(evaluated)
 
 
 def _dominant_result(stats: dict[str, Any]) -> str:

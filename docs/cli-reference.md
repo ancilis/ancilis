@@ -464,7 +464,7 @@ ancilis evidence reset [OPTIONS]
 Report dry-run framework coverage from local evidence. In v0.1 this command
 does not generate certification artifacts; it computes a per-control
 `coverage_status` for the selected target. The possible values are `covered`,
-`gap`, `policy_gated`, `attestation_required`, `attestation_stale`, and
+`gap`, `pending`, `policy_gated`, `attestation_required`, `attestation_stale`, and
 `attestation_incomplete`.
 
 ```bash

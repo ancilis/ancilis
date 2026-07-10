@@ -82,7 +82,9 @@ def _stats_for(summary: dict[str, Any], control_id: str) -> tuple[int, int, int,
     flags = int(stats.get("FLAG", 0) or 0)
     skipped = int(stats.get("SKIP", 0) or 0)
     total = passed + failures + flags + skipped
-    pass_rate = round((passed / total) * 100, 1) if total else 0.0
+    # SKIP means "no evaluator ran", not "passed" — rate only what was evaluated.
+    evaluated = total - skipped
+    pass_rate = round((passed / evaluated) * 100, 1) if evaluated else 0.0
     return total, failures, flags, pass_rate
 
 
