@@ -3,6 +3,7 @@
  * Parity with python/tests/test_cli_scan.py (11 test cases).
  */
 
+import { readFileSync } from "node:fs";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -159,7 +160,9 @@ describe("TestScanCommand", () => {
 
     expect(exitCode).toBe(0);
     const data = JSON.parse(capture.stdout()) as Record<string, unknown>;
-    expect(data["version"]).toBe("0.1.0");
+    expect(data["version"]).toBe(
+      JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf-8")).version,
+    );
     expect(data["agent"]).toBe("test-agent");
     expect(data["posture"]).toBe("compliant");
     expect(data["exit_code"]).toBe(0);

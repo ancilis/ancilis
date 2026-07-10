@@ -114,7 +114,9 @@ class TestScanCommand:
         assert result.exit_code == 0
 
         data = json.loads(result.output)
-        assert data["version"] == "0.1.0"
+        from importlib.metadata import version as _pkg_version
+
+        assert data["version"] == _pkg_version("ancilis")
         assert data["agent"] == "test-agent"
         assert data["posture"] == "compliant"
         assert data["exit_code"] == 0

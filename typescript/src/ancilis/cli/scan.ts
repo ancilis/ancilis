@@ -1,6 +1,7 @@
 /** ancilis scan — CI/CD posture check with exit codes and JSON output. */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { __version__ } from "../index.js";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { basename } from "node:path";
@@ -541,7 +542,7 @@ export async function handleScan(options: ScanOptions, io?: { stdout(m: string):
         : { status: "disabled" };
 
       const output = {
-        version: "0.1.0",
+        version: __version__,
         agent: config.agentName,
         mode: config.mode,
         timestamp: new Date().toISOString(),

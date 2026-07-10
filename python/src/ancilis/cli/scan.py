@@ -25,6 +25,15 @@ from ancilis.telemetry import (
 _SENTINEL = Path.home() / ".ancilis" / ".first-run-complete"
 
 
+
+def _sdk_version() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("ancilis")
+    except PackageNotFoundError:
+        return "0.0.0"
+
 def _load_config_safe(config_path: str | None) -> ResolvedConfig | None:
     try:
         if config_path:
@@ -320,7 +329,7 @@ def scan(
 
         if ci:
             output = {
-                "version": "0.1.0",
+                "version": _sdk_version(),
                 "agent": config.agent_name,
                 "mode": config.mode,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
