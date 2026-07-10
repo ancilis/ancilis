@@ -39,6 +39,6 @@
   "license": "Apache-2.0",
   "overrides": {
     "@actions/http-client": "3.0.2",
-    "undici": "6.25.0"
+    "undici": "6.27.0"
   }
 }
