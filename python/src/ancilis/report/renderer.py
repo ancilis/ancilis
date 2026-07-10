@@ -330,6 +330,11 @@ def _build_posture_summary(data: ReportData) -> dict[str, Any]:
     elif failing_controls:
         status = "ATTENTION"
         status_color = "yellow"
+    elif not passing_controls and pending_controls:
+        # Nothing failed, but nothing was actually evaluated either — an
+        # honest "not yet assessed" state, not HEALTHY.
+        status = "PENDING"
+        status_color = "yellow"
     else:
         status = "HEALTHY"
         status_color = "green"
@@ -487,7 +492,9 @@ def _matrix_cell(control: dict[str, Any] | None, color_enabled: bool) -> str:
         return "-"
     if control.get("failed", 0) > 0:
         return _style(f"\u2717({control['failed']})", color_enabled, color="red")
-    if control.get("total", 0) > 0:
+    # Passing requires verifying evidence (>=1 PASS); SKIP-only results are
+    # pending, not passing \u2014 same semantics as _control_mark.
+    if control.get("passed", 0) > 0:
         return _style("\u2713", color_enabled, color="green")
     return "-"
 
@@ -595,7 +602,13 @@ def _render_baseline_markdown(lines: list[str], baseline: dict[str, Any]) -> Non
     lines.append("|---------|-----------|-------------|--------|")
     for c in baseline.get("controls", []):
         if c["total"] > 0:
-            status = "Pass" if c["failed"] == 0 else f"{c['failed']} failures"
+            if c["failed"] > 0:
+                status = f"{c['failed']} failures"
+            elif c.get("passed", 0) > 0:
+                status = "Pass"
+            else:
+                # SKIP-only: no verifying evidence yet — pending, not passing.
+                status = "Pending"
             lines.append(f"| {c['display_name']} | {c['pass_rate']}% | {c['total']} | {status} |")
         else:
             lines.append(f"| {c['display_name']} | - | 0 | No data |")
