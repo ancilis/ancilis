@@ -481,7 +481,7 @@ describe("runDoctor", () => {
 
     const result = await runDoctor(configPath, join(dir, "doctor.duckdb"));
 
-    expect(result.output).toMatch(/\[OK\] node version: Node\.js \d+\.\d+\.\d+ \(>= 18 required\)/);
+    expect(result.output).toMatch(/\[OK\] node version: Node\.js \d+\.\d+\.\d+ \(>= 20 required\)/);
   });
 
   it("includes overlay existence check in output", async () => {
