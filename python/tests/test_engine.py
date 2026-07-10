@@ -679,3 +679,28 @@ class TestDetectedDataTypes:
         engine = Engine(config, registry=_make_registry(("test-tool",)))
         result = engine.evaluate(action)
         assert result.detected_data_types.count("DC-PII") == 1
+
+
+class TestExtractDestinations:
+    def test_collects_all_candidates_and_dedups(self):
+        from ancilis.engine.patterns import extract_destinations
+
+        raw = {
+            "args": [{"host": "a.example"}],
+            "kwargs": {"url": "b.example", "nested": {"destination": "a.example"}},
+        }
+        found = extract_destinations(raw)
+        assert set(found) == {"a.example", "b.example"}
+        assert len(found) == 2
+
+    def test_reaches_realistic_nesting_depth(self):
+        from ancilis.engine.patterns import extract_destinations
+
+        raw = {
+            "kwargs": {
+                "request": {
+                    "transport": {"connection": {"target": {"url": "deep.example"}}}
+                }
+            }
+        }
+        assert extract_destinations(raw) == ["deep.example"]

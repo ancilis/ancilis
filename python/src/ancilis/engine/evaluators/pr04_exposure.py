@@ -7,7 +7,7 @@ from typing import Any
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action
-from ancilis.engine.patterns import extract_destination, scan_parameters
+from ancilis.engine.patterns import extract_destinations, scan_parameters
 from ancilis.engine.result import ControlResult
 
 
@@ -49,11 +49,20 @@ class PR04ExposureEvaluator:
             for m in matches
         ]
 
-        # Check destination
-        destination = self._extract_destination(action)
+        # Check destination — evaluate every candidate (see extract_destinations)
+        destinations = extract_destinations(action.parameters.raw)
+        destination = destinations[0] if destinations else None
         evidence["destination"] = destination
+        evidence["destinations"] = destinations
 
-        if destination and config.scope_blocked_destinations and destination in config.scope_blocked_destinations:
+        blocked_hits = [
+            d for d in destinations
+            if config.scope_blocked_destinations and d in config.scope_blocked_destinations
+        ]
+        if blocked_hits:
+            destination = blocked_hits[0]
+            evidence["destination"] = destination
+        if blocked_hits:
             evidence["destination_authorized"] = False
             evidence["scan_result"] = "blocked"
             return ControlResult(
@@ -65,7 +74,14 @@ class PR04ExposureEvaluator:
                 duration_ms=(time.perf_counter() - start) * 1000,
             )
 
-        if destination and config.scope_allowed_destinations and destination not in config.scope_allowed_destinations:
+        unlisted = [
+            d for d in destinations
+            if config.scope_allowed_destinations and d not in config.scope_allowed_destinations
+        ]
+        if unlisted:
+            destination = unlisted[0]
+            evidence["destination"] = destination
+        if unlisted:
             evidence["destination_authorized"] = False
             evidence["scan_result"] = "blocked"
             return ControlResult(
@@ -124,5 +140,4 @@ class PR04ExposureEvaluator:
             duration_ms=(time.perf_counter() - start) * 1000,
         )
 
-    def _extract_destination(self, action: Action) -> str | None:
-        return extract_destination(action.parameters.raw)
+

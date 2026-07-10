@@ -84,7 +84,7 @@ class AncilisCLIGroup(click.Group):
 
 
 @click.group(cls=AncilisCLIGroup)
-@click.version_option(version="0.1.0", prog_name="ancilis")
+@click.version_option(prog_name="ancilis")  # version from installed package metadata
 @click.option("--no-update-check", is_flag=True, default=False, hidden=True,
               help="Suppress update check.")
 @click.pass_context

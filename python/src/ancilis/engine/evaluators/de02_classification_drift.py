@@ -7,7 +7,7 @@ from typing import Any
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action
-from ancilis.engine.patterns import extract_destination, scan_parameters
+from ancilis.engine.patterns import extract_destinations, scan_parameters
 from ancilis.engine.result import ControlResult
 
 PATTERN_TO_DC: dict[str, str] = {
@@ -39,8 +39,14 @@ class DE02ClassificationDriftEvaluator:
             if COMPATIBLE_DECLARATIONS.get(code, set()).intersection(declared)
         )
         incompatible = [code for code in undeclared if code not in compatible]
-        destination = _extract_destination(action)
-        boundary_violation = _boundary_violation(destination, config)
+        destinations = _extract_destinations(action)
+        destination = destinations[0] if destinations else None
+        boundary_violation = None
+        for candidate in destinations:
+            boundary_violation = _boundary_violation(candidate, config)
+            if boundary_violation:
+                destination = candidate
+                break
 
         evidence: dict[str, Any] = {
             "declared_data_classes": sorted(declared),
@@ -119,11 +125,12 @@ def _observed_data_classes(action: Action) -> set[str]:
     return observed
 
 
-def _extract_destination(action: Action) -> str | None:
-    found = extract_destination(action.parameters.raw)
-    if found is not None:
+def _extract_destinations(action: Action) -> list[str]:
+    found = extract_destinations(action.parameters.raw)
+    if found:
         return found
-    return getattr(action, "destination", None)
+    fallback = getattr(action, "destination", None)
+    return [fallback] if isinstance(fallback, str) else []
 
 
 def _boundary_violation(destination: str | None, config: ResolvedConfig) -> str | None:

@@ -577,13 +577,12 @@ class TestPR02RateLimit:
         tracker = RateTracker()
         assert tracker.get_action_count("any-agent") == 0
 
-    def test_extract_destination_returns_none_when_no_keys(self):
-        """_extract_destination returns None when params have no url/host/etc."""
-        config = _make_config()
-        evaluator = PR02ScopeEvaluator()
+    def test_extract_destinations_empty_when_no_keys(self):
+        """extract_destinations finds nothing when params have no url/host/etc."""
+        from ancilis.engine.patterns import extract_destinations
+
         action = _make_action(params={"data": "value", "count": 5})
-        result = evaluator._extract_destination(action)
-        assert result is None
+        assert extract_destinations(action.parameters.raw) == []
 
 
 # ---------------------------------------------------------------------------

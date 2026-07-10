@@ -15,6 +15,8 @@ else:
 from pathlib import Path
 
 from click.testing import CliRunner
+import json
+
 import pytest
 import yaml
 
@@ -168,7 +170,10 @@ def test_pyproject_has_required_pypi_metadata():
     project = pyproject["project"]
 
     assert project["name"] == "ancilis"
-    assert project["version"] == "0.1.0"
+    # Version is asserted for cross-SDK alignment (the release workflows
+    # enforce tag == pyproject == package.json), not pinned to a literal.
+    package_json = json.loads((ROOT / "package.json").read_text())
+    assert project["version"] == package_json["version"]
     assert project["readme"] == "README.md"
     assert project["requires-python"] == ">=3.10"
     assert project["authors"] == [{"name": "Kevin Bauer", "email": "kevin@ancilis.ai"}]
@@ -200,9 +205,8 @@ def test_ci_typescript_examples_keeps_deterministic_tarball_name():
         for step in workflow["jobs"]["typescript-examples"]["steps"]
         if step.get("name") == "Build SDK tarball"
     )
-    assert "mv ancilis-*.tgz ancilis-0.1.0.tgz" not in build_step["run"]
     assert "npm ci --include=dev" in build_step["run"]
-    assert "test -f ancilis-0.1.0.tgz" in build_step["run"]
+    assert 'test -f "ancilis-$(node -p ' in build_step["run"]
 
 
 def test_ci_typescript_example_score_steps_tolerate_non_compliant_scan_exit():

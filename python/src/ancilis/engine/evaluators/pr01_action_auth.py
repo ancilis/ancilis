@@ -7,7 +7,7 @@ from typing import Any
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action
-from ancilis.engine.patterns import extract_destination, scan_parameters
+from ancilis.engine.patterns import extract_destinations, scan_parameters
 from ancilis.engine.result import ControlResult
 
 
@@ -29,7 +29,8 @@ class PR01ActionAuthorizationEvaluator:
     def evaluate(self, action: Action, config: ResolvedConfig) -> ControlResult:
         start = time.perf_counter()
         sensitive_reasons = _sensitivity_reasons(action, config)
-        destination = _extract_destination(action)
+        destinations = _extract_destinations(action)
+        destination = destinations[0] if destinations else None
         expected_identity = config.agent_id or config.agent_name
         allowed_identities = {config.agent_name}
         if config.agent_id:
@@ -71,7 +72,13 @@ class PR01ActionAuthorizationEvaluator:
                 start,
             )
 
-        if destination and config.scope_blocked_destinations and destination in config.scope_blocked_destinations:
+        blocked_hits = [
+            d for d in destinations
+            if config.scope_blocked_destinations and d in config.scope_blocked_destinations
+        ]
+        if blocked_hits:
+            destination = blocked_hits[0]
+            evidence["destination"] = destination
             evidence["target_authorized"] = False
             return _result(
                 self,
@@ -81,11 +88,13 @@ class PR01ActionAuthorizationEvaluator:
                 start,
             )
 
-        if (
-            destination
-            and config.scope_allowed_destinations
-            and destination not in config.scope_allowed_destinations
-        ):
+        unlisted = [
+            d for d in destinations
+            if config.scope_allowed_destinations and d not in config.scope_allowed_destinations
+        ]
+        if unlisted:
+            destination = unlisted[0]
+            evidence["destination"] = destination
             evidence["target_authorized"] = False
             return _result(
                 self,
@@ -143,8 +152,9 @@ def _sensitivity_reasons(action: Action, config: ResolvedConfig) -> list[str]:
     return sorted(set(reasons))
 
 
-def _extract_destination(action: Action) -> str | None:
-    found = extract_destination(action.parameters.raw)
-    if found is not None:
+def _extract_destinations(action: Action) -> list[str]:
+    found = extract_destinations(action.parameters.raw)
+    if found:
         return found
-    return getattr(action, "destination", None)
+    fallback = getattr(action, "destination", None)
+    return [fallback] if isinstance(fallback, str) else []
