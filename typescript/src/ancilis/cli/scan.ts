@@ -1,7 +1,6 @@
 /** ancilis scan — CI/CD posture check with exit codes and JSON output. */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { __version__ } from "../index.js";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { basename } from "node:path";
