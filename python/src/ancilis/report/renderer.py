@@ -380,7 +380,7 @@ def _control_evaluated(control: dict[str, Any]) -> int:
     evaluated = control.get("evaluated")
     if isinstance(evaluated, int):
         return evaluated
-    return control.get("total", 0) - control.get("skipped", 0)
+    return int(control.get("total", 0)) - int(control.get("skipped", 0))
 
 
 def _control_requires_attention(control: dict[str, Any]) -> bool:

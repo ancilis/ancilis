@@ -129,7 +129,7 @@ _DESTINATION_KEYS = ("destination", "url", "endpoint", "host", "server")
 _DESTINATION_MAX_DEPTH = 8
 
 
-def extract_destinations(params: Any, _depth: int = 0) -> list[str]:  # type: ignore[explicit-any]
+def extract_destinations(params: Any, _depth: int = 0) -> list[str]:
     """Collect every destination-like value in an action's raw parameters.
 
     Producers nest call arguments (e.g. ToolActionProducer stores
@@ -152,7 +152,7 @@ def extract_destinations(params: Any, _depth: int = 0) -> list[str]:  # type: ig
     return unique
 
 
-def _collect_destinations(params: Any, depth: int, out: list[str]) -> None:  # type: ignore[explicit-any]
+def _collect_destinations(params: Any, depth: int, out: list[str]) -> None:
     if depth > _DESTINATION_MAX_DEPTH:
         return
     if isinstance(params, dict):
@@ -169,7 +169,7 @@ def _collect_destinations(params: Any, depth: int, out: list[str]) -> None:  # t
             _collect_destinations(item, depth + 1, out)
 
 
-def extract_destination(params: Any) -> str | None:  # type: ignore[explicit-any]
+def extract_destination(params: Any) -> str | None:
     """First destination candidate, for callers that only report one."""
     candidates = extract_destinations(params)
     return candidates[0] if candidates else None
