@@ -16,7 +16,6 @@ else:
 from pathlib import Path
 
 from click.testing import CliRunner
-import json
 
 import pytest
 import yaml
