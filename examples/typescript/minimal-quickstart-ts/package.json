@@ -9,7 +9,7 @@
     "scan": "tsx index.ts && ancilis scan --config ancilis.yaml"
   },
   "dependencies": {
-    "ancilis": "file:../../../ancilis-0.1.0.tgz"
+    "ancilis": "file:../../../ancilis-local.tgz"
   },
   "devDependencies": {
     "tsx": "^4.19.0"

@@ -152,6 +152,14 @@ class TestValidation:
                 }
             )
 
+    def test_unknown_top_level_key_raises(self):
+        with pytest.raises(ConfigError, match="Unknown top-level config key: 'securty'"):
+            load_config(raw={"agent": {"name": "x"}, "securty": {"mode": "enforce"}})
+
+    def test_unknown_nested_key_raises(self):
+        with pytest.raises(ValidationError, match="extra_forbidden|Extra inputs"):
+            load_config(raw={"agent": {"name": "x"}, "security": {"mod": "enforce"}})
+
 
 class TestDataTypeTranslation:
     def test_health_records_maps_to_phi_pii(self):
@@ -298,7 +306,7 @@ class TestUnknownTopLevelKeys:
     def test_misspelled_security_key_raises(self):
         # `secuirty:` previously validated clean and silently dropped
         # enforce mode; unknown top-level keys must be a hard error.
-        with pytest.raises(ValidationError, match="Unknown top-level config key.*secuirty"):
+        with pytest.raises(ConfigError, match="Unknown top-level config key: 'secuirty'"):
             validate_config(
                 {
                     "agent": {"name": "x"},
@@ -306,13 +314,13 @@ class TestUnknownTopLevelKeys:
                 }
             )
 
-    def test_unknown_key_lists_valid_keys(self):
-        with pytest.raises(ValidationError, match="Valid keys: .*security"):
+    def test_unknown_key_message_names_the_key(self):
+        with pytest.raises(ConfigError, match="'sekurity'"):
             validate_config({"agent": {"name": "x"}, "sekurity": {}})
 
-    def test_internal_warnings_channel_still_tolerated(self):
-        config, _ = validate_config({"agent": {"name": "x"}, "_warnings": "nope"})
-        assert config.agent.name == "x"
+    def test_underscore_warnings_key_rejected_like_any_unknown(self):
+        with pytest.raises(ConfigError, match="'_warnings'"):
+            validate_config({"agent": {"name": "x"}, "_warnings": "nope"})
 
 
 class TestNestedSectionStrictness:

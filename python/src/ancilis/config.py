@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ancilis._shared import shared_path
 from ancilis.activation.loader import load_overlay_profiles
@@ -30,15 +30,11 @@ CLASSIFICATIONS_FILE = SHARED_DIR / "classifications" / "taxonomy.json"
 # --- Pydantic Models ---
 
 
-class StrictSectionModel(BaseModel):
-    """Config sections reject unknown keys: a misspelled field (e.g.
-    security.mod, scope.blocked_destinatons) would otherwise be silently
-    ignored and disable the setting it was meant to configure."""
-
-    model_config = {"extra": "forbid"}
+class ConfigBaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
-class AgentConfig(StrictSectionModel):
+class AgentConfig(ConfigBaseModel):
     name: str
     description: str = ""
     owner: str = ""
@@ -53,30 +49,30 @@ class AgentConfig(StrictSectionModel):
         return v
 
 
-class ControlOverride(StrictSectionModel):
+class ControlOverride(ConfigBaseModel):
     enabled: bool = True
 
 
-class ToolsConfig(StrictSectionModel):
+class ToolsConfig(ConfigBaseModel):
     allowed: list[str] = Field(default_factory=list)
     blocked: list[str] = Field(default_factory=list)
 
 
-class ScopeConfig(StrictSectionModel):
+class ScopeConfig(ConfigBaseModel):
     max_actions_per_minute: int | None = None
     allowed_destinations: list[str] = Field(default_factory=list)
     blocked_destinations: list[str] = Field(default_factory=list)
 
 
-class SandboxPolicyConfig(StrictSectionModel):
+class SandboxPolicyConfig(ConfigBaseModel):
     approved_execution_classes: list[str] = Field(default_factory=list)
 
 
-class ResponsePolicyConfig(StrictSectionModel):
+class ResponsePolicyConfig(ConfigBaseModel):
     containment_required_for_results: list[str] = Field(default_factory=lambda: ["FAIL", "ERROR"])
 
 
-class SecurityConfig(StrictSectionModel):
+class SecurityConfig(ConfigBaseModel):
     mode: str = "audit"
     controls: dict[str, ControlOverride] = Field(default_factory=dict)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
@@ -92,22 +88,22 @@ class SecurityConfig(StrictSectionModel):
         return v
 
 
-class EvidenceConfig(StrictSectionModel):
+class EvidenceConfig(ConfigBaseModel):
     storage: str = "local"
     retention_days: int = 365
 
 
-class ComplianceConfig(StrictSectionModel):
+class ComplianceConfig(ConfigBaseModel):
     overlays: list[str] | None = None
     evidence: EvidenceConfig = Field(default_factory=EvidenceConfig)
 
 
-class CliConfig(StrictSectionModel):
+class CliConfig(ConfigBaseModel):
     update_check: bool = True
     update_check_interval: int = 86400
 
 
-class PlatformConfig(StrictSectionModel):
+class PlatformConfig(ConfigBaseModel):
     url: str | None = None
     api_key_env: str = "ANCILIS_API_KEY"
 
@@ -115,7 +111,7 @@ class PlatformConfig(StrictSectionModel):
 _VALID_SYNC_OFFLINE_MODES = {"auto", "always_offline", "always_online"}
 
 
-class SyncConfig(StrictSectionModel):
+class SyncConfig(ConfigBaseModel):
     offline_mode: str = "auto"
     interval_seconds: int = 300
     max_retries: int = 8
@@ -158,7 +154,7 @@ class SyncConfig(StrictSectionModel):
 _VALID_SEVERITY_THRESHOLDS = {"critical", "high", "medium", "low"}
 
 
-class ScanDepsConfig(StrictSectionModel):
+class ScanDepsConfig(ConfigBaseModel):
     enabled: bool = True
     severity_threshold: str = "high"
     ignore: list[str] = Field(default_factory=list)
@@ -174,11 +170,11 @@ class ScanDepsConfig(StrictSectionModel):
         return v
 
 
-class ScanConfig(StrictSectionModel):
+class ScanConfig(ConfigBaseModel):
     dependencies: ScanDepsConfig = Field(default_factory=ScanDepsConfig)
 
 
-class AncilisConfig(BaseModel):
+class AncilisConfig(ConfigBaseModel):
     agent: AgentConfig
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     my_agent_handles: list[str] = Field(default_factory=list)
@@ -188,37 +184,6 @@ class AncilisConfig(BaseModel):
     sync: SyncConfig = Field(default_factory=SyncConfig)
     cli: CliConfig = Field(default_factory=CliConfig)
     scan: ScanConfig = Field(default_factory=ScanConfig)
-
-    @model_validator(mode="before")
-    @classmethod
-    def reject_unknown_keys(cls, values: Any) -> Any:
-        if isinstance(values, dict):
-            known = {
-                "agent",
-                "security",
-                "my_agent_handles",
-                "certification_targets",
-                "compliance",
-                "platform",
-                "sync",
-                "cli",
-                "scan",
-            }
-            # `_warnings` is the internal injected-warnings channel, not user config.
-            unknown = set(values.keys()) - known - {"_warnings"}
-            if unknown:
-                # A misspelled section name (e.g. `secuirty:`) would otherwise be
-                # ignored and silently disable everything under it, so unknown
-                # top-level keys are a validation error, not a warning.
-                raise ValueError(
-                    "Unknown top-level config key(s): "
-                    + ", ".join(f"'{k}'" for k in sorted(unknown))
-                    + ". Valid keys: "
-                    + ", ".join(sorted(known))
-                )
-        return values
-
-    model_config = {"extra": "ignore"}
 
 
 # --- Shared JSON Loaders ---
@@ -469,12 +434,20 @@ def _apply_overlay_effects(
 # --- Config Parser ---
 
 
+def _reject_unknown_top_level_keys(raw: dict[str, Any]) -> None:
+    known = set(AncilisConfig.model_fields)
+    unknown = sorted(key for key in raw if isinstance(key, str) and key not in known)
+    if not unknown:
+        return
+    label = "key" if len(unknown) == 1 else "keys"
+    formatted = ", ".join(repr(key) for key in unknown)
+    raise config_invalid(f"Unknown top-level config {label}: {formatted}.")
+
+
 def validate_config(raw: dict[str, Any]) -> tuple[AncilisConfig, list[str]]:
     """Validate raw config dict and return (config, warnings)."""
-    # `_warnings` is an internal channel for injected warnings; a user-supplied
-    # non-list value must not later crash warnings.append(...).
-    warnings_raw = raw.pop("_warnings", [])
-    warnings: list[str] = warnings_raw if isinstance(warnings_raw, list) else []
+    warnings: list[str] = []
+    _reject_unknown_top_level_keys(raw)
 
     # Validate control IDs in overrides
     security = raw.get("security", {})

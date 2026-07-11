@@ -11,6 +11,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
+from ancilis import __version__
 from ancilis.cli.main import cli
 from ancilis.config import load_config
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
@@ -114,9 +115,7 @@ class TestScanCommand:
         assert result.exit_code == 0
 
         data = json.loads(result.output)
-        from importlib.metadata import version as _pkg_version
-
-        assert data["version"] == _pkg_version("ancilis")
+        assert data["version"] == __version__
         assert data["agent"] == "test-agent"
         assert data["posture"] == "compliant"
         assert data["exit_code"] == 0

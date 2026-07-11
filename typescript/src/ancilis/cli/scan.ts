@@ -12,6 +12,7 @@ import { EvidenceStore } from "../evidence/store.js";
 import { parsePeriod } from "../report/generator.js";
 import { sharedPathFrom } from "../shared-path.js";
 import { scanDependencies } from "../dependencies/index.js";
+import { __version__ } from "../index.js";
 import type { VulnerabilityFinding } from "../dependencies/index.js";
 import type { EvaluationResult, ControlResult } from "../engine/result.js";
 import {

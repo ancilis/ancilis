@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -182,6 +183,20 @@ def test_pyproject_has_required_pypi_metadata():
 
 
 @pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")
+def test_public_release_versions_are_aligned_and_not_stale_0_1_0():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    package_json = json.loads((ROOT / "package.json").read_text())
+    package_lock = json.loads((ROOT / "package-lock.json").read_text())
+    version = pyproject["project"]["version"]
+
+    assert version == "0.2.0"
+    assert package_json["version"] == version
+    assert package_lock["version"] == version
+    assert package_lock["packages"][""]["version"] == version
+    assert f"## [{version}] - 2026-06-10" in (ROOT / "CHANGELOG.md").read_text()
+
+
+@pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")
 def test_dev_extra_includes_watch_dependencies_exercised_by_tests():
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
     extras = pyproject["project"]["optional-dependencies"]
@@ -206,7 +221,22 @@ def test_ci_typescript_examples_keeps_deterministic_tarball_name():
         if step.get("name") == "Build SDK tarball"
     )
     assert "npm ci --include=dev" in build_step["run"]
-    assert 'test -f "ancilis-$(node -p ' in build_step["run"]
+    assert 'PKG_VERSION=$(node -p "require(\'./package.json\').version")' in build_step["run"]
+    assert 'test -f "ancilis-${PKG_VERSION}.tgz"' in build_step["run"]
+    assert 'cp "ancilis-${PKG_VERSION}.tgz" ancilis-local.tgz' in build_step["run"]
+
+
+def test_typescript_examples_use_stable_local_tarball_alias():
+    for example in [
+        ROOT / "examples" / "typescript" / "minimal-quickstart-ts",
+        ROOT / "examples" / "typescript" / "langchain-ts-chatbot",
+    ]:
+        package_json = json.loads((example / "package.json").read_text())
+        makefile = (example / "Makefile").read_text()
+
+        assert package_json["dependencies"]["ancilis"] == "file:../../../ancilis-local.tgz"
+        assert "ancilis-0.1.0.tgz" not in makefile
+        assert "../../../ancilis-local.tgz" in makefile
 
 
 def test_ci_typescript_example_score_steps_tolerate_non_compliant_scan_exit():
@@ -288,6 +318,9 @@ def test_release_python_workflow_uses_release_check_and_trusted_publishing():
 
     verify_job = workflow["jobs"]["verify_python_release"]
     verify_runs = [step["run"] for step in verify_job["steps"] if "run" in step]
+    assert any("TAG_VERSION=\"${GITHUB_REF_NAME#v}\"" in run for run in verify_runs)
+    assert any("PY_VERSION=$(python3 -c" in run for run in verify_runs)
+    assert any('Tag $GITHUB_REF_NAME does not match pyproject.toml version' in run for run in verify_runs)
     assert "python scripts/release_check.py" in verify_runs
 
     publish_job = workflow["jobs"]["publish_python"]
