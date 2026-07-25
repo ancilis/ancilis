@@ -15,11 +15,14 @@ RUNTIME_CONTROL_PREFIXES = ("PR-", "DE-")
 POSTURE_CONTROL_PREFIXES = ("GOV-", "ID-", "RS-", "RC-")
 RESULT_TO_STATE = {
     "PASS": "satisfied",
+    # SKIP means "no evaluator evidence collected in period", i.e. pending —
+    # not "not-applicable" (which asserts the control does not apply).
     "FAIL": "not-satisfied",
-    "SKIP": "not-applicable",
+    "SKIP": "not-satisfied",
     "ERROR": "not-satisfied",
     "FLAG": "not-satisfied",
 }
+SKIP_REMARKS = "no evaluator evidence collected in period (pending)"
 
 
 def load_oscal_mapping() -> dict[str, Any]:
@@ -108,7 +111,7 @@ def _observation(
     control_id: str,
     nist_control_id: str,
 ) -> dict[str, Any]:
-    return {
+    observation: dict[str, Any] = {
         "uuid": str(
             uuid.uuid5(
                 uuid.NAMESPACE_URL,
@@ -127,6 +130,9 @@ def _observation(
             }
         ],
     }
+    if str(control_result.get("result", "SKIP")).upper() == "SKIP":
+        observation["remarks"] = SKIP_REMARKS
+    return observation
 
 
 def _finding(
@@ -135,6 +141,13 @@ def _finding(
     control_id: str,
     nist_control_id: str,
 ) -> dict[str, Any]:
+    result = str(control_result.get("result", "SKIP")).upper()
+    status: dict[str, str] = {
+        "state": _assessment_state(control_result),
+        "reason": str(control_result.get("result", "SKIP")),
+    }
+    if result == "SKIP":
+        status["remarks"] = SKIP_REMARKS
     return {
         "uuid": str(
             uuid.uuid5(
@@ -148,10 +161,7 @@ def _finding(
         "target": {
             "type": "control-id",
             "target-id": nist_control_id,
-            "status": {
-                "state": _assessment_state(control_result),
-                "reason": str(control_result.get("result", "SKIP")),
-            },
+            "status": status,
         },
     }
 

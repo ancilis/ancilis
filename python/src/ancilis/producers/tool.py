@@ -102,6 +102,17 @@ class ToolActionProducer:
         kwargs = raw_invocation.kwargs or {}
         tool_name = self._qualified_name(raw_invocation.func, raw_invocation.tool_name)
         payload = {"args": list(raw_invocation.args), "kwargs": kwargs}
+        # Bind positional args to their parameter names so semantic keys
+        # (url=, destination=, ...) stay visible to evaluators when callers
+        # pass them positionally — sender("evil.example", msg) must be
+        # enforceable the same as sender(url="evil.example", msg=msg).
+        try:
+            bound = inspect.signature(raw_invocation.func).bind_partial(
+                *raw_invocation.args, **kwargs
+            )
+            payload["bound_arguments"] = dict(bound.arguments)
+        except (TypeError, ValueError):
+            pass
         param_hash = hashlib.sha256(json.dumps(payload, sort_keys=True, default=repr).encode()).hexdigest()
         entry = self._registry.lookup(tool_name)
         dc_codes: list[str] = []

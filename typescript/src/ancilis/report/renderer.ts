@@ -79,9 +79,14 @@ function numericThreshold(value: unknown): number | null {
   return null;
 }
 
+/** Results excluding SKIP (older payloads lack the split; fall back to total). */
+function controlEvaluated(control: Record<string, unknown>): number {
+  if (typeof control.evaluated === "number") return control.evaluated;
+  return Number(control.total ?? 0) - Number(control.skipped ?? 0);
+}
+
 function controlRequiresAttention(control: Record<string, unknown>): boolean {
-  const total = Number(control.total ?? 0);
-  if (total <= 0) return false;
+  if (controlEvaluated(control) <= 0) return false;
   const threshold = numericThreshold(control.threshold);
   if (threshold === null) {
     return Number(control.failed ?? 0) > 0;
@@ -89,11 +94,20 @@ function controlRequiresAttention(control: Record<string, unknown>): boolean {
   return Number(control.failed ?? 0) > 0 || Number(control.passRate ?? 0) < threshold;
 }
 
+/** Passing requires verifying evidence: >=1 PASS and nothing needing attention. */
+function controlIsPassing(control: Record<string, unknown>): boolean {
+  return !controlRequiresAttention(control)
+    && controlEvaluated(control) > 0
+    && Number(control.passed ?? 0) > 0;
+}
+
 function controlMark(control: Record<string, unknown>, colorEnabled: boolean): string {
-  const total = Number(control.total ?? 0);
-  if (total <= 0) return "-";
   if (controlRequiresAttention(control)) {
     return style("\u2717", colorEnabled, { color: "red" });
+  }
+  if (!controlIsPassing(control)) {
+    // No verifying evidence yet \u2014 pending, not passing.
+    return "-";
   }
   return style("\u2713", colorEnabled, { color: "green" });
 }
@@ -102,15 +116,24 @@ function buildPostureSummary(data: ReportData): Record<string, unknown> {
   const baseline = data.baseline as Record<string, unknown>;
   const controls = (baseline.controls as Record<string, unknown>[]) ?? [];
   const failingControls = controls.filter(controlRequiresAttention);
-  const passingControls = controls.filter((control) => Number(control.total ?? 0) > 0 && !controlRequiresAttention(control));
+  // Passing requires verifying evidence (>=1 PASS); SKIP-only or never-evaluated
+  // controls are pending, not passing.
+  const passingControls = controls.filter(controlIsPassing);
+  const pendingControls = controls.filter(
+    (control) => !controlRequiresAttention(control) && !controlIsPassing(control),
+  );
 
-  let status: "HEALTHY" | "ATTENTION" | "CRITICAL" = "HEALTHY";
+  let status: "HEALTHY" | "ATTENTION" | "CRITICAL" | "PENDING" = "HEALTHY";
   let statusColor: "green" | "yellow" | "red" = "green";
   if (!data.chainValid || failingControls.length >= 3) {
     status = "CRITICAL";
     statusColor = "red";
   } else if (failingControls.length > 0) {
     status = "ATTENTION";
+    statusColor = "yellow";
+  } else if (passingControls.length === 0 && pendingControls.length > 0) {
+    // Nothing has verifying evidence and nothing fails — pending, not healthy.
+    status = "PENDING";
     statusColor = "yellow";
   }
 
@@ -124,6 +147,8 @@ function buildPostureSummary(data: ReportData): Record<string, unknown> {
     failingControls,
     passingControls,
     passingControlCount: passingControls.length,
+    pendingControls,
+    pendingControlCount: pendingControls.length,
     totalControls: controls.length,
     allowedEvaluations: (baseline.decisions as Record<string, number> | undefined)?.allow ?? 0,
     blockedEvaluations: (baseline.decisions as Record<string, number> | undefined)?.block ?? 0,
@@ -138,7 +163,10 @@ function buildPostureSummary(data: ReportData): Record<string, unknown> {
 function renderBaselineTerminal(lines: string[], baseline: Record<string, unknown>, colorEnabled: boolean): void {
   const controls = (baseline.controls as Record<string, unknown>[]) ?? [];
   const failingControls = controls.filter(controlRequiresAttention);
-  const passingControls = controls.filter((control) => Number(control.total ?? 0) > 0 && !controlRequiresAttention(control));
+  const passingControls = controls.filter(controlIsPassing);
+  const pendingControls = controls.filter(
+    (control) => !controlRequiresAttention(control) && !controlIsPassing(control),
+  );
 
   lines.push(style("Baseline Controls:", colorEnabled, { bold: true }));
   if (failingControls.length > 0) {
@@ -152,7 +180,11 @@ function renderBaselineTerminal(lines: string[], baseline: Record<string, unknow
   if (passingControls.length > 0) {
     const passingMark = style("\u2713", colorEnabled, { color: "green" });
     lines.push(`  ${passingMark} ${passingControls.length} controls passing (full detail preserved in markdown)`);
-  } else if (failingControls.length === 0) {
+  }
+  if (pendingControls.length > 0) {
+    lines.push(`  - ${pendingControls.length} controls pending (no verifying evidence yet)`);
+  }
+  if (failingControls.length === 0 && passingControls.length === 0 && pendingControls.length === 0) {
     lines.push("  - No evaluations recorded");
   }
 
@@ -207,7 +239,8 @@ function renderExecutiveSummaryMarkdown(lines: string[], data: ReportData): void
   lines.push("");
   lines.push(
     `**Posture: ${posture.status}** — `
-    + `${posture.passingControlCount} of ${posture.totalControls} controls passing `
+    + `${posture.passingControlCount} of ${posture.totalControls} controls passing, `
+    + `${posture.pendingControlCount} pending `
     + `across ${data.complianceSections.length} active overlays.`,
   );
   lines.push("");
@@ -246,7 +279,8 @@ export function renderTerminal(data: ReportData): string {
   lines.push(`Mode: ${data.mode}`);
   lines.push(
     `Posture: ${style(String(posture.status), colorEnabled, { color: posture.statusColor as "green" | "yellow" | "red", bold: true })} `
-    + `(${posture.passingControlCount}/${posture.totalControls} controls passing)`,
+    + `(${posture.passingControlCount}/${posture.totalControls} controls passing, `
+    + `${posture.pendingControlCount} pending)`,
   );
   lines.push(
     `Evaluations: ${data.totalEvaluations.toLocaleString()} total | `
@@ -506,12 +540,24 @@ function stableId(...parts: string[]): string {
   return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 32);
 }
 
-function findingStatus(row: Record<string, unknown>): string | undefined {
+const PENDING_REMARK = "No evaluator evidence was collected for this control (pending); it cannot be marked satisfied.";
+
+function findingStatus(row: Record<string, unknown>): { state: string; remarks?: string } | undefined {
   if (typeof row.failed === "number") {
-    return row.failed === 0 ? "satisfied" : "not-satisfied";
+    if (row.failed !== 0) {
+      return { state: "not-satisfied" };
+    }
+    // SKIP-only or never-evaluated controls are pending — never "satisfied".
+    const evaluated = typeof row.evaluated === "number"
+      ? row.evaluated
+      : Number(row.total ?? 0) - Number(row.skipped ?? 0);
+    if (evaluated <= 0 || Number(row.passed ?? 0) <= 0) {
+      return { state: "not-satisfied", remarks: PENDING_REMARK };
+    }
+    return { state: "satisfied" };
   }
   if (typeof row.retentionMet === "boolean") {
-    return row.retentionMet ? "satisfied" : "not-satisfied";
+    return { state: row.retentionMet ? "satisfied" : "not-satisfied" };
   }
   return undefined;
 }
@@ -549,8 +595,8 @@ function evidenceAssessmentState(result: unknown): string {
   switch (String(result ?? "SKIP").toUpperCase()) {
     case "PASS":
       return "satisfied";
-    case "SKIP":
-      return "not-applicable";
+    // SKIP means "no evaluator ran" — pending, never "satisfied" or
+    // "not-applicable".
     default:
       return "not-satisfied";
   }
@@ -564,6 +610,9 @@ function evidenceProps(record: EvidenceRecord, controlResult: Record<string, unk
     { name: "evidence-previous-hash", value: record.previousHash },
     { name: "assessment-state", value: evidenceAssessmentState(controlResult.result) },
   ];
+  if (String(controlResult.result ?? "SKIP").toUpperCase() === "SKIP") {
+    props.push({ name: "assessment-remarks", value: PENDING_REMARK });
+  }
   if (record.sessionId !== null && record.sessionId !== undefined) {
     props.push({ name: "evidence-session-id", value: record.sessionId });
   }
@@ -626,7 +675,10 @@ export function renderOscalJson(data: ReportData): string {
       };
       const status = findingStatus(row);
       if (status) {
-        finding.status = status;
+        finding.status = status.state;
+        if (status.remarks !== undefined) {
+          finding.remarks = status.remarks;
+        }
       }
       return finding;
     });

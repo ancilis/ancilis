@@ -300,3 +300,40 @@ class TestCertificationTargets:
         )
         assert "certification_targets:gov-contractor" in resolved.control_activation_sources["DE-04"]
         assert resolved.control_has_activation_source("DE-04", "certification_targets:")
+
+
+class TestUnknownTopLevelKeys:
+    def test_misspelled_security_key_raises(self):
+        # `secuirty:` previously validated clean and silently dropped
+        # enforce mode; unknown top-level keys must be a hard error.
+        with pytest.raises(ConfigError, match="Unknown top-level config key: 'secuirty'"):
+            validate_config(
+                {
+                    "agent": {"name": "x"},
+                    "secuirty": {"mode": "enforce"},
+                }
+            )
+
+    def test_unknown_key_message_names_the_key(self):
+        with pytest.raises(ConfigError, match="'sekurity'"):
+            validate_config({"agent": {"name": "x"}, "sekurity": {}})
+
+    def test_underscore_warnings_key_rejected_like_any_unknown(self):
+        with pytest.raises(ConfigError, match="'_warnings'"):
+            validate_config({"agent": {"name": "x"}, "_warnings": "nope"})
+
+
+class TestNestedSectionStrictness:
+    def test_misspelled_nested_security_field_raises(self):
+        # security.mod (for mode) was silently ignored, leaving audit mode.
+        with pytest.raises(ValidationError):
+            validate_config({"agent": {"name": "x"}, "security": {"mod": "enforce"}})
+
+    def test_misspelled_scope_field_raises(self):
+        with pytest.raises(ValidationError):
+            validate_config(
+                {
+                    "agent": {"name": "x"},
+                    "security": {"scope": {"blocked_destinatons": ["evil.example"]}},
+                }
+            )

@@ -1,4 +1,4 @@
-import { runScan, validateScanResult } from "../src/scanner";
+import { runScan, validateScanResult, buildConfig } from "../src/scanner";
 import scanFixture from "./fixtures/scan-output.json";
 import type { ScanResult } from "../src/scanner";
 
@@ -150,5 +150,19 @@ describe("scan result structure", () => {
       expect(typeof control.failures).toBe("number");
       expect(typeof control.flags).toBe("number");
     }
+  });
+});
+
+describe("buildConfig", () => {
+  it("puts overlays under compliance, not security", () => {
+    const yaml = buildConfig(["financial", "soc2"]);
+    const lines = yaml.split("\n");
+    const complianceIdx = lines.indexOf("compliance:");
+    expect(complianceIdx).toBeGreaterThan(-1);
+    expect(lines[complianceIdx + 1]).toContain('overlays: ["financial", "soc2"]');
+    // The security section must not carry an (unsupported) overlays field.
+    const securityIdx = lines.indexOf("security:");
+    expect(lines[securityIdx + 1]).toBe("  mode: audit");
+    expect(lines[securityIdx + 1]).not.toContain("overlays");
   });
 });

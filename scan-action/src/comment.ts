@@ -7,6 +7,7 @@ const COMMENT_MARKER = "<!-- ancilis-scan -->";
 function statusEmoji(status: ControlResult["status"]): string {
   if (status === "pass") return "✅";
   if (status === "fail") return "❌";
+  if (status === "pending") return "⏳";
   return "⏭️";
 }
 
@@ -35,7 +36,11 @@ export function formatComment(scan: ScanResult): string {
       : "_No controls configured._";
 
   const { passing, failing, skipped, total_evaluations } = scan.summary;
-  const summaryLine = `**Summary:** ${passing}/${scan.summary.total_controls} controls passing · ${total_evaluations} evaluations · Mode: ${scan.mode}${skipped > 0 ? ` · ${skipped} skipped` : ""}`;
+  // Count pending from the summary if present, else from control statuses
+  // (older scanner payloads lack the field).
+  const pending =
+    scan.summary.pending ?? scan.controls.filter((c) => c.status === "pending").length;
+  const summaryLine = `**Summary:** ${passing}/${scan.summary.total_controls} controls passing · ${total_evaluations} evaluations · Mode: ${scan.mode}${pending > 0 ? ` · ${pending} pending` : ""}${skipped > 0 ? ` · ${skipped} skipped` : ""}`;
 
   return [
     "## Ancilis Security Scan",

@@ -41,7 +41,8 @@ agent:
   name: crewai-research-crew
 my_agent_handles:
   - personal_info
-mode: audit
+security:
+  mode: audit
 ```
 
 ## Expected output

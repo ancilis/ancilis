@@ -311,11 +311,21 @@ def certification_coverage(
                 latest_result = "SKIP"
                 detail = "MANUAL: attestation required"
         elif row["evidence_count"] > 0:
-            coverage_status = _coverage_status_for_result(
-                str(row["latest_result"] or ""),
-                str(row["latest_detail"] or ""),
-                control_id,
-            )
+            if row["failed"] > 0:
+                # Any failure in the period is a gap regardless of what came
+                # after — last-result-wins let a trailing SKIP bury a FAIL.
+                coverage_status = "gap"
+                if str(row["latest_result"] or "") not in {"FAIL", "ERROR"}:
+                    detail = (
+                        f"{row['failed']} failing result(s) in period "
+                        f"(latest result: {row['latest_result']})"
+                    )
+            else:
+                coverage_status = _coverage_status_for_result(
+                    str(row["latest_result"] or ""),
+                    str(row["latest_detail"] or ""),
+                    control_id,
+                )
         elif control_id in synthetic_results:
             synthetic = synthetic_results[control_id]
             latest_result = str(synthetic.get("result", ""))
@@ -350,7 +360,9 @@ def _coverage_status_for_result(result: str, detail: str, control_id: str) -> st
     if result in {"FAIL", "ERROR", "FLAG"}:
         return "gap"
     if result == "SKIP":
-        return "covered"
+        # No evaluator produced a verdict — that is absence of evidence,
+        # not coverage.
+        return "pending"
     return "gap"
 
 
@@ -367,6 +379,8 @@ def _action_required(control_id: str, coverage_status: str) -> str:
         return f"ancilis attest {control_id}"
     if coverage_status == "policy_gated":
         return "enable in policy"
+    if coverage_status == "pending":
+        return "collect evidence"
     return "remediate"
 
 

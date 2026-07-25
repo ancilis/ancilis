@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -122,3 +123,53 @@ def scan_parameters(params: dict) -> list[PatternMatch]:  # type: ignore[type-ar
 
     text = json.dumps(params, default=str)
     return scan_for_patterns(text)
+
+
+_DESTINATION_KEYS = ("destination", "url", "endpoint", "host", "server")
+_DESTINATION_MAX_DEPTH = 8
+
+
+def extract_destinations(params: Any, _depth: int = 0) -> list[str]:
+    """Collect every destination-like value in an action's raw parameters.
+
+    Producers nest call arguments (e.g. ToolActionProducer stores
+    {"args": [...], "kwargs": {...}}), so a top-level-only lookup misses
+    the destination entirely and destination policy never fires. Returns
+    ALL candidates rather than the first match: with both "url" and
+    "destination" present, enforcing against only one lets the other slip
+    a blocked value through. Callers must treat any blocked candidate as
+    a violation (fail-safe). Order is deterministic (key priority, then
+    traversal order); duplicates removed.
+    """
+    found: list[str] = []
+    _collect_destinations(params, 0, found)
+    seen: set[str] = set()
+    unique: list[str] = []
+    for value in found:
+        if value not in seen:
+            seen.add(value)
+            unique.append(value)
+    return unique
+
+
+def _collect_destinations(params: Any, depth: int, out: list[str]) -> None:
+    if depth > _DESTINATION_MAX_DEPTH:
+        return
+    if isinstance(params, dict):
+        for key in _DESTINATION_KEYS:
+            value = params.get(key)
+            if isinstance(value, str):
+                out.append(value)
+        for key, value in params.items():
+            if key in _DESTINATION_KEYS and isinstance(value, str):
+                continue
+            _collect_destinations(value, depth + 1, out)
+    elif isinstance(params, (list, tuple)):
+        for item in params:
+            _collect_destinations(item, depth + 1, out)
+
+
+def extract_destination(params: Any) -> str | None:
+    """First destination candidate, for callers that only report one."""
+    candidates = extract_destinations(params)
+    return candidates[0] if candidates else None

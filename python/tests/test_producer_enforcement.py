@@ -160,3 +160,117 @@ def test_semantic_kernel_observes_in_audit_mode() -> None:
     result = asyncio.run(filt(Ctx(), next_fn))
     assert result == "ran"
     assert ran["v"] is True
+
+
+def test_tool_producer_blocks_kwarg_destination_under_enforce() -> None:
+    """June-2026 finding: blocked_destinations never fired on the wrap_tool
+    path because the destination lived under raw["kwargs"]."""
+    config = load_config(
+        raw={
+            "agent": {"name": "t"},
+            "security": {
+                "mode": "enforce",
+                "tools": {"allowed": ["sender"]},
+                "scope": {"blocked_destinations": ["evil.example.com"]},
+            },
+        }
+    )
+    engine = Engine(config)
+    producer = ToolActionProducer(config=config, engine=engine)
+
+    def sender(url: str, payload: str) -> str:
+        return "sent"
+
+    with pytest.raises(BlockedActionError):
+        producer.execute(
+            sender,
+            agent_name="t",
+            kwargs={"url": "evil.example.com", "payload": "hi"},
+            tool_name="sender",
+        )
+
+    # Same call to an unblocked destination must not raise via PR-02.
+    result = producer.execute(
+        sender,
+        agent_name="t",
+        kwargs={"url": "ok.example.com", "payload": "hi"},
+        tool_name="sender",
+    )
+    assert result.blocked is False
+    assert result.return_value == "sent"
+
+
+def _enforce_config(blocked: list[str]):
+    return load_config(
+        raw={
+            "agent": {"name": "t"},
+            "security": {
+                "mode": "enforce",
+                "tools": {"allowed": ["sender"]},
+                "scope": {"blocked_destinations": blocked},
+            },
+        }
+    )
+
+
+def test_blocked_url_not_masked_by_second_destination_key() -> None:
+    """Review finding: with both keys present, first-match extraction let
+    {"url": blocked, "destination": allowed} through."""
+    config = _enforce_config(["evil.example.com"])
+    engine = Engine(config)
+    producer = ToolActionProducer(config=config, engine=engine)
+
+    def sender(url: str, destination: str) -> str:
+        return "sent"
+
+    with pytest.raises(BlockedActionError):
+        producer.execute(
+            sender,
+            agent_name="t",
+            kwargs={"url": "evil.example.com", "destination": "ok.example.com"},
+            tool_name="sender",
+        )
+    with pytest.raises(BlockedActionError):
+        producer.execute(
+            sender,
+            agent_name="t",
+            kwargs={"url": "ok.example.com", "destination": "evil.example.com"},
+            tool_name="sender",
+        )
+
+
+def test_blocked_kwarg_not_masked_by_allowed_url_in_positional_payload() -> None:
+    config = _enforce_config(["evil.example.com"])
+    engine = Engine(config)
+    producer = ToolActionProducer(config=config, engine=engine)
+
+    def sender(payload: dict, url: str) -> str:  # type: ignore[type-arg]
+        return "sent"
+
+    with pytest.raises(BlockedActionError):
+        producer.execute(
+            sender,
+            agent_name="t",
+            args=({"url": "ok.example.com"},),
+            kwargs={"url": "evil.example.com"},
+            tool_name="sender",
+        )
+
+
+def test_blocked_positional_destination_is_enforced() -> None:
+    """Review finding: sender("evil.example", msg) passed all destination
+    controls because positional strings had no parameter-name binding."""
+    config = _enforce_config(["evil.example.com"])
+    engine = Engine(config)
+    producer = ToolActionProducer(config=config, engine=engine)
+
+    def sender(url: str, message: str) -> str:
+        return "sent"
+
+    with pytest.raises(BlockedActionError):
+        producer.execute(
+            sender,
+            agent_name="t",
+            args=("evil.example.com", "hello"),
+            tool_name="sender",
+        )

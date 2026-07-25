@@ -40,6 +40,7 @@ Each control in the report carries a `coverage_status` and an `action_required` 
 |-------------------|---------|-------------------|
 | `covered` | The control is satisfied by collected or attestation evidence | `—` |
 | `gap` | No passing evidence — the control is unmet | `remediate` |
+| `pending` | No evaluator evidence collected in the period (SKIP-only) — not yet assessed | `collect evidence` |
 | `policy_gated` | The control is not runtime-active under the explicit/certification policy gate | `enable in policy` |
 | `attestation_required` | A manual attestation is needed for this control | `ancilis attest <control_id>` |
 | `attestation_stale` | A prior attestation has expired and must be renewed | `ancilis attest <control_id>` |

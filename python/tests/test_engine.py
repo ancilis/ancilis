@@ -222,6 +222,21 @@ class TestPR02Scope:
         pr02 = next(r for r in result.control_results if r.control_id == "PR-02")
         assert pr02.result == "FAIL"
 
+    def test_blocked_destination_nested_in_kwargs_fails(self):
+        # ToolActionProducer nests call args as {"args": [...], "kwargs": {...}};
+        # destination extraction must see through that nesting or destination
+        # policy never fires on the tool path.
+        config = _make_config(
+            security={"scope": {"blocked_destinations": ["evil.com"]}}
+        )
+        action = _make_action(
+            params={"args": [], "kwargs": {"url": "evil.com", "payload": "x"}}
+        )
+        engine = Engine(config, registry=_make_registry(("test-tool",)))
+        result = engine.evaluate(action)
+        pr02 = next(r for r in result.control_results if r.control_id == "PR-02")
+        assert pr02.result == "FAIL"
+
 
 # --- PR-03 Provenance Tests ---
 
@@ -664,3 +679,28 @@ class TestDetectedDataTypes:
         engine = Engine(config, registry=_make_registry(("test-tool",)))
         result = engine.evaluate(action)
         assert result.detected_data_types.count("DC-PII") == 1
+
+
+class TestExtractDestinations:
+    def test_collects_all_candidates_and_dedups(self):
+        from ancilis.engine.patterns import extract_destinations
+
+        raw = {
+            "args": [{"host": "a.example"}],
+            "kwargs": {"url": "b.example", "nested": {"destination": "a.example"}},
+        }
+        found = extract_destinations(raw)
+        assert set(found) == {"a.example", "b.example"}
+        assert len(found) == 2
+
+    def test_reaches_realistic_nesting_depth(self):
+        from ancilis.engine.patterns import extract_destinations
+
+        raw = {
+            "kwargs": {
+                "request": {
+                    "transport": {"connection": {"target": {"url": "deep.example"}}}
+                }
+            }
+        }
+        assert extract_destinations(raw) == ["deep.example"]

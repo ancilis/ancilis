@@ -417,7 +417,22 @@
       tbody.innerHTML = '<tr><td colspan="2" style="color:var(--muted)">No control data</td></tr>';
     } else {
       tbody.innerHTML = rateEntries.map(([ctrl, rate]) => {
-        const pct = Math.round(rate * 100);
+        // `rate` is a dict of result counts (e.g. {PASS: 3, SKIP: 2}), not a
+        // scalar. Rate PASS over evaluated (non-SKIP) results only; SKIP means
+        // "no evaluator ran", not "passed".
+        const counts = {};
+        for (const [k, v] of Object.entries(rate && typeof rate === 'object' ? rate : {})) {
+          counts[k.toUpperCase()] = (counts[k.toUpperCase()] || 0) + Number(v || 0);
+        }
+        const totalResults = Object.values(counts).reduce((a, b) => a + b, 0);
+        const evaluated = totalResults - (counts.SKIP || 0);
+        if (evaluated === 0) {
+          return `<tr>
+            <td>${ctrl}</td>
+            <td><span class="pct warn">Pending</span></td>
+          </tr>`;
+        }
+        const pct = Math.round(((counts.PASS || 0) / evaluated) * 100);
         const cls = pct >= 90 ? 'ok' : pct >= 60 ? 'warn' : 'fail';
         return `<tr>
           <td>${ctrl}</td>

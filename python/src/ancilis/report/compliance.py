@@ -37,7 +37,11 @@ def build_compliance_sections(
             total = sum(stats.values()) if stats else 0
             passed = stats.get("PASS", 0)
             failed = stats.get("FAIL", 0) + stats.get("ERROR", 0)
-            pass_rate = (passed / total * 100) if total > 0 else 0.0
+            skipped = stats.get("SKIP", 0)
+            # SKIP means "no evaluator ran", not "passed" — rate only what was
+            # evaluated (mirrors report/baseline.py).
+            evaluated = total - skipped
+            pass_rate = (passed / evaluated * 100) if evaluated > 0 else 0.0
 
             adj = adjustments.get(cid, {})
             threshold = adj.get("threshold_adjustment", "standard")
@@ -56,6 +60,8 @@ def build_compliance_sections(
                 "total": total,
                 "passed": passed,
                 "failed": failed,
+                "skipped": skipped,
+                "evaluated": evaluated,
                 "pass_rate": round(pass_rate, 1),
                 "threshold": threshold,
                 "support_level": support_level,

@@ -121,3 +121,28 @@ describe("applyThreshold", () => {
     });
   });
 });
+
+// Scan with one pending control (SKIP-only evidence — not passing)
+const pendingScan: ScanResult = {
+  ...compliantScan,
+  controls: compliantScan.controls.map((c, i) =>
+    i === 0 ? { ...c, status: "pending" as const, evaluations: 3 } : c
+  ),
+  summary: { total_controls: 6, passing: 5, failing: 0, skipped: 0, pending: 1, total_evaluations: 30 },
+};
+
+describe("applyThreshold — pending controls", () => {
+  it("low threshold fails when a control is pending (not counted as passing)", () => {
+    const result = applyThreshold(pendingScan, "low");
+    expect(result.shouldFail).toBe(true);
+    expect(result.reason).toContain("not passing");
+  });
+
+  it("high threshold does not treat pending as a failure", () => {
+    expect(applyThreshold(pendingScan, "high").shouldFail).toBe(false);
+  });
+
+  it("medium threshold does not treat pending as a failure or flag", () => {
+    expect(applyThreshold(pendingScan, "medium").shouldFail).toBe(false);
+  });
+});

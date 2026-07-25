@@ -75,6 +75,10 @@ function controlToResult(control: ControlResult): SarifResult {
   } else if (control.status === "skip") {
     level = "note";
     kind = "notApplicable";
+  } else if (control.status === "pending") {
+    // Only SKIP results — no evaluator evidence yet; open, not passing.
+    level = "note";
+    kind = "open";
   } else {
     level = "note";
     kind = "pass";
@@ -85,6 +89,8 @@ function controlToResult(control: ControlResult): SarifResult {
       ? `Control ${control.id} (${control.name}) failed with ${control.failures} failure(s) in ${control.evaluations} evaluation(s).`
       : control.status === "skip"
       ? `Control ${control.id} (${control.name}) was skipped — no evaluations recorded.`
+      : control.status === "pending"
+      ? `Control ${control.id} (${control.name}) is pending — no evaluator evidence collected yet.`
       : `Control ${control.id} (${control.name}) passed ${control.evaluations} evaluation(s).`;
 
   const result: SarifResult = {

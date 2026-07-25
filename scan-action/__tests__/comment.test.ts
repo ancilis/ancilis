@@ -99,3 +99,32 @@ describe("formatComment", () => {
     expect(comment).not.toContain("skipped");
   });
 });
+
+describe("formatComment — pending controls", () => {
+  const pendingScan: ScanResult = {
+    ...compliantScan,
+    controls: compliantScan.controls.map((c, i) =>
+      i === 0 ? { ...c, status: "pending" as const, evaluations: 3 } : c
+    ),
+    summary: { total_controls: 6, passing: 5, failing: 0, skipped: 0, pending: 1, total_evaluations: 30 },
+  };
+
+  it("renders pending controls with a pending marker, not a pass", () => {
+    const comment = formatComment(pendingScan);
+    expect(comment).toContain("⏳ pending");
+    expect(comment).toContain("5/6 controls passing");
+  });
+
+  it("summary line reports the pending count", () => {
+    const comment = formatComment(pendingScan);
+    expect(comment).toContain("1 pending");
+  });
+
+  it("falls back to counting pending statuses when summary lacks the field", () => {
+    const legacy: ScanResult = {
+      ...pendingScan,
+      summary: { total_controls: 6, passing: 5, failing: 0, skipped: 0, total_evaluations: 30 },
+    };
+    expect(formatComment(legacy)).toContain("1 pending");
+  });
+});

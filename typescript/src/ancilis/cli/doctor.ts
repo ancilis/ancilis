@@ -67,9 +67,9 @@ function hasOptionalMcpExtra(requireFn: NodeRequire): boolean {
 // Individual doctor checks (spec-required)
 // ---------------------------------------------------------------------------
 
-/** E010 — Node.js version >= 18 */
+/** E010 — Node.js version matches the engines field (>= 20) */
 function checkNodeVersion(): { ok: boolean; detail: string } {
-  const MIN_MAJOR = 18;
+  const MIN_MAJOR = 20; // keep in sync with package.json engines.node
   const raw = process.versions.node;
   const major = parseInt(raw.split(".")[0] ?? "0", 10);
   if (major >= MIN_MAJOR) {
@@ -192,7 +192,7 @@ export async function runDoctor(configPath?: string, dbPath?: string): Promise<D
   const nodeCheck = checkNodeVersion();
   lines.push(`${checkMark(nodeCheck.ok, color)} node version: ${nodeCheck.detail}`);
   if (!nodeCheck.ok) {
-    lines.push("  " + (color ? yellow("→ Upgrade Node.js to v18 or later") : "→ Upgrade Node.js to v18 or later"));
+    lines.push("  " + (color ? yellow("→ Upgrade Node.js to v20 or later") : "→ Upgrade Node.js to v20 or later"));
     failures++;
   }
 

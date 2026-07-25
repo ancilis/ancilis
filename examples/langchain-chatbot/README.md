@@ -41,7 +41,8 @@ agent:
   name: langchain-chatbot
 my_agent_handles:
   - personal_info
-mode: audit
+security:
+  mode: audit
 ```
 
 ## Expected output

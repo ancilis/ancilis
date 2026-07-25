@@ -11,7 +11,6 @@ from typing import Any
 
 import click
 
-from ancilis import __version__
 from ancilis.config import ResolvedConfig, load_config, load_control_definitions
 from ancilis.deps.scanner import DependencyScanner
 from ancilis.evidence.store import EvidenceStore
@@ -25,6 +24,15 @@ from ancilis.telemetry import (
 
 _SENTINEL = Path.home() / ".ancilis" / ".first-run-complete"
 
+
+
+def _sdk_version() -> str:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("ancilis")
+    except PackageNotFoundError:
+        return "0.0.0"
 
 def _load_config_safe(config_path: str | None) -> ResolvedConfig | None:
     try:
@@ -98,8 +106,10 @@ def _print_human_summary(
             "",
         ]
         for ctrl in control_results:
-            mark = {"pass": "\u2713", "fail": "\u2717", "skip": "\u2013"}.get(ctrl["status"], "?")
+            mark = {"pass": "\u2713", "fail": "\u2717", "skip": "\u2013", "pending": "\u2013"}.get(ctrl["status"], "?")
             detail = f"{ctrl['evaluations']} evals"
+            if ctrl.get("skips", 0) > 0:
+                detail += f", {ctrl['skips']} skipped"
             if ctrl["failures"] > 0:
                 detail += f", {ctrl['failures']} failures"
             if ctrl["flags"] > 0:
@@ -191,6 +201,7 @@ def scan(
         passing_count = 0
         failing_count = 0
         skipped_count = 0
+        pending_count = 0
         any_failing = False
 
         for cs in sorted(enabled, key=lambda c: c.control_id):
@@ -199,7 +210,11 @@ def scan(
             stats = control_stats.get(cs.control_id, {})
             failures = stats.get("FAIL", 0) + stats.get("ERROR", 0)
             flags = stats.get("FLAG", 0)
+            skips = stats.get("SKIP", 0)
             total_evals = sum(stats.values()) if stats else 0
+            # SKIP results mean "no evaluator ran" — only non-SKIP results count
+            # as evaluated evidence.
+            evaluated = total_evals - skips
 
             if total_evals == 0:
                 ctrl_status = "skip"
@@ -208,6 +223,11 @@ def scan(
                 ctrl_status = "fail"
                 any_failing = True
                 failing_count += 1
+            elif evaluated == 0:
+                # SKIP-only: results exist but none were actually evaluated —
+                # pending, not passing.
+                ctrl_status = "pending"
+                pending_count += 1
             else:
                 ctrl_status = "pass"
                 passing_count += 1
@@ -217,6 +237,8 @@ def scan(
                 "name": display_name,
                 "status": ctrl_status,
                 "evaluations": total_evals,
+                "evaluated": evaluated,
+                "skips": skips,
                 "failures": failures,
                 "flags": flags,
             })
@@ -271,6 +293,15 @@ def scan(
             elif any(i["result"] == "PASS" for i in dep_items):
                 dep_posture = "compliant"
 
+        # Overall pass rate over evaluated (non-SKIP) results only.
+        passed_results = sum(stats.get("PASS", 0) for stats in control_stats.values())
+        evaluated_results = sum(
+            sum(stats.values()) - stats.get("SKIP", 0) for stats in control_stats.values()
+        )
+        pass_rate = (
+            round(passed_results / evaluated_results * 100, 1) if evaluated_results > 0 else 0.0
+        )
+
         posture = "non_compliant" if any_failing else "compliant"
         exit_code = 1 if any_failing else 0
         overlay_ids = sorted(config.active_overlays)
@@ -298,7 +329,7 @@ def scan(
 
         if ci:
             output = {
-                "version": __version__,
+                "version": _sdk_version(),
                 "agent": config.agent_name,
                 "mode": config.mode,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -311,8 +342,11 @@ def scan(
                     "total_controls": len(enabled),
                     "passing": passing_count,
                     "failing": failing_count,
+                    "pending": pending_count,
                     "skipped": skipped_count,
                     "total_evaluations": total_evaluations,
+                    "evaluated_results": evaluated_results,
+                    "pass_rate": pass_rate,
                 },
                 "posture": posture,
                 "exit_code": exit_code,

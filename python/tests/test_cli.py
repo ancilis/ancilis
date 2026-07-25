@@ -1249,7 +1249,7 @@ class TestReportRendererUX:
 
         assert "## Executive Summary" in md
         assert "**Posture: ATTENTION**" in md
-        assert "5 of 6 controls passing across 4 active overlays." in md
+        assert "5 of 6 controls passing, 0 pending across 4 active overlays." in md
         assert "Active overlays: SOC 2, PCI-DSS v4.0, GLBA, GDPR" in md
         assert "Active certifications: AIUC-1 (87% ready)" in md
         # No chain_status set on this fixture -> neutral "intact"; the misleading
@@ -1265,7 +1265,7 @@ class TestReportRendererUX:
 
         assert "## Executive Summary" in md
         assert "**Posture: HEALTHY**" in md
-        assert "6 of 6 controls passing across 4 active overlays." in md
+        assert "6 of 6 controls passing, 0 pending across 4 active overlays." in md
         assert "### Attention Required" not in md
 
 
@@ -1351,3 +1351,36 @@ class TestProgressiveDisclosure:
 
         assert len(report.compliance_sections) > 0
         store.close()
+
+
+class TestSkipIsPendingNotPassing:
+    """June-2026 finding: SKIP (no evaluator ran) was rendered as passing/covered."""
+
+    def test_skip_only_control_is_pending_in_posture(self) -> None:
+        from ancilis.report.renderer import _build_posture_summary
+
+        report = _make_renderer_report(failing_controls=0)
+        skip_only = {
+            "control_id": "PR-09",
+            "display_name": "Sandbox",
+            "display_detail": "",
+            "threshold": None,
+            "total": 3,
+            "passed": 0,
+            "failed": 0,
+            "flagged": 0,
+            "skipped": 3,
+            "evaluated": 0,
+            "pass_rate": 0.0,
+        }
+        report.baseline["controls"].append(skip_only)
+        posture = _build_posture_summary(report)
+        assert posture["pending_control_count"] == 1
+        assert skip_only not in posture["passing_controls"]
+        assert skip_only not in posture["failing_controls"]
+
+    def test_skip_result_maps_to_pending_coverage(self) -> None:
+        from ancilis.evidence.query import _action_required, _coverage_status_for_result
+
+        assert _coverage_status_for_result("SKIP", "", "PR-09") == "pending"
+        assert _action_required("PR-09", "pending") == "collect evidence"

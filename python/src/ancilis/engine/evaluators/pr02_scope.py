@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from ancilis.engine.patterns import extract_destinations
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action
 from ancilis.engine.result import ControlResult
@@ -60,13 +61,18 @@ class PR02ScopeEvaluator:
                 duration_ms=(time.perf_counter() - start) * 1000,
             )
 
-        # Check blocked destinations
+        # Check blocked destinations — any candidate anywhere in the
+        # parameters counts; enforcing only the first found lets a second
+        # destination-like key smuggle a blocked value through.
         if config.scope_blocked_destinations:
-            destination = self._extract_destination(action)
-            if destination and destination in config.scope_blocked_destinations:
+            destinations = extract_destinations(action.parameters.raw)
+            blocked = [d for d in destinations if d in config.scope_blocked_destinations]
+            destination = blocked[0] if blocked else None
+            if destination:
                 evidence["scope_check"] = "out_of_scope"
                 evidence["failure_reason"] = "destination is blocked"
                 evidence["destination"] = destination
+                evidence["destinations"] = destinations
                 return ControlResult(
                     control_id=self.control_id,
                     control_name=self.control_name,
@@ -117,12 +123,4 @@ class PR02ScopeEvaluator:
                 return True
         return False
 
-    def _extract_destination(self, action: Action) -> str | None:
-        """Extract destination from action parameters if present."""
-        raw = action.parameters.raw
-        for key in ("url", "destination", "endpoint", "host", "server"):
-            if key in raw:
-                val = raw[key]
-                if isinstance(val, str):
-                    return val
-        return None
+

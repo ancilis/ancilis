@@ -17,12 +17,13 @@ const STATUS_COLORS: Record<string, string> = {
   pass: GREEN,
   fail: RED,
   skip: DIM,
+  pending: DIM,
 };
 
 export interface WatchControlResult {
   id: string;
   name: string;
-  status: "pass" | "fail" | "skip";
+  status: "pass" | "fail" | "skip" | "pending";
   evaluations: number;
   failures: number;
   flags: number;
