@@ -166,13 +166,14 @@ class CLIActionProducer:
     def compute_tool_hash(self, tool_identifier: str) -> str:
         """Compute provenance hash for a CLI tool.
 
-        Uses the tool's resolved path + version output.
-        Detects both binary swaps (path change) and updates (version bump).
+        Uses the tool's resolved path and executable content without running it.
+        Missing or unreadable tools are still hashed so policy evaluation remains
+        the first execution boundary.
         """
         tool_path = shutil.which(tool_identifier)
-        version_output = self._get_version_output(tool_identifier)
+        content_hash = self._get_executable_content_hash(tool_path)
 
-        hash_input = f"{tool_path or tool_identifier}:{version_output or 'no-version'}"
+        hash_input = f"{tool_path or tool_identifier}:{content_hash}"
         return hashlib.sha256(hash_input.encode()).hexdigest()
 
     def register_tools(self, registry: ToolRegistry) -> list[str]:
@@ -216,8 +217,8 @@ class CLIActionProducer:
         """
         if self._registry.lookup(tool_name) is not None:
             return
-        bare_name = command[0] if command else "unknown"
-        tool_hash = self.compute_tool_hash(os.path.basename(bare_name))
+        tool_identifier = command[0] if command else "unknown"
+        tool_hash = self.compute_tool_hash(tool_identifier)
         status = self._resolve_initial_status(tool_name)
         self._registry.register(
             ToolEntry(
@@ -328,18 +329,16 @@ class CLIActionProducer:
         return f"cli:{base}"
 
     @staticmethod
-    def _get_version_output(tool_name: str) -> str | None:
-        """Attempt to get version output from a CLI tool."""
-        for flag in ["--version", "-V", "version"]:
-            try:
-                result = subprocess.run(
-                    [tool_name, flag],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    return result.stdout.strip()
-            except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-                continue
-        return None
+    def _get_executable_content_hash(tool_path: str | None) -> str:
+        """Return a content digest without executing the resolved tool."""
+        if tool_path is None:
+            return "missing"
+
+        digest = hashlib.sha256()
+        try:
+            with open(tool_path, "rb") as executable:
+                for chunk in iter(lambda: executable.read(65536), b""):
+                    digest.update(chunk)
+        except OSError:
+            return "unreadable"
+        return digest.hexdigest()

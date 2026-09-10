@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import uuid
 from unittest.mock import patch
 
@@ -248,6 +249,24 @@ class TestCLIToolHash:
         producer = self._make_producer()
         h = producer.compute_tool_hash("nonexistent_tool_xyz_12345")
         assert len(h) == 64
+
+    def test_hashes_executable_content_without_executing_it(self, tmp_path):
+        tool = tmp_path / "content-hash-tool"
+        marker = tmp_path / "invoked"
+        tool.write_text(
+            f"#!/bin/sh\nprintf invoked > {marker}\nprintf stable-version\n"
+        )
+        tool.chmod(0o755)
+        producer = self._make_producer()
+
+        first = producer.compute_tool_hash(str(tool))
+        tool.write_text(
+            f"#!/bin/sh\n# changed content\nprintf invoked > {marker}\nprintf stable-version\n"
+        )
+        second = producer.compute_tool_hash(str(tool))
+
+        assert first != second
+        assert not marker.exists()
 
 
 # --- CLI Tool Registration ---
@@ -754,6 +773,24 @@ class TestCLIEvidencePersistence:
 
 
 class TestCLITrustLifecycle:
+    def test_blocked_command_is_not_run_during_auto_registration(self, tmp_path, monkeypatch):
+        """The policy decision is the first point that may run a CLI command."""
+        tool = tmp_path / "blocked-side-effect-tool"
+        marker = tmp_path / "invoked"
+        tool.write_text(f"#!/bin/sh\nprintf invoked > {marker}\n")
+        tool.chmod(0o755)
+        monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ.get('PATH', '')}")
+
+        config = _enforce_config(
+            security={"mode": "enforce", "tools": {"blocked": [tool.name]}}
+        )
+        producer = _make_cli_producer(config=config)
+
+        result = producer.execute(command=[str(tool), "--version"], agent_name="test-agent")
+
+        assert result.blocked
+        assert not marker.exists()
+
     def test_allowlisted_tool_auto_registers_as_approved(self):
         """Auto-register honors config allowlist: echo in allowed -> APPROVED."""
         config = _config(security={"tools": {"allowed": ["echo"]}})

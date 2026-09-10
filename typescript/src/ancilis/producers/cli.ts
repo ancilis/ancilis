@@ -1,8 +1,8 @@
 /** CLIActionProducer — intercepts CLI/subprocess tool calls for evaluation. */
 
 import { createHash, randomUUID } from "node:crypto";
-import { execFileSync, spawnSync } from "node:child_process";
-import { accessSync, constants as fsConstants } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { accessSync, constants as fsConstants, readFileSync } from "node:fs";
 import { basename, delimiter, isAbsolute, join, resolve } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
 import type { Action } from "../engine/action.js";
@@ -113,8 +113,8 @@ export class CLIActionProducer {
 
   computeToolHash(toolIdentifier: string): string {
     const toolPath = this._resolveToolPath(toolIdentifier);
-    const versionOutput = this._getVersionOutput(toolIdentifier);
-    const input = `${toolPath ?? toolIdentifier}:${versionOutput ?? "no-version"}`;
+    const contentHash = this._getExecutableContentHash(toolPath);
+    const input = `${toolPath ?? toolIdentifier}:${contentHash}`;
     return createHash("sha256").update(input).digest("hex");
   }
 
@@ -141,8 +141,8 @@ export class CLIActionProducer {
 
   private _autoRegister(toolName: string, command: string[]): void {
     if (this._registry.lookup(toolName)) return;
-    const bareName = command[0] ? basename(command[0]) : "unknown";
-    const toolHash = this.computeToolHash(bareName);
+    const toolIdentifier = command[0] ?? "unknown";
+    const toolHash = this.computeToolHash(toolIdentifier);
     const status = matchesToolList(toolName, this._config.toolsAllowed)
       ? ToolStatus.APPROVED
       : ToolStatus.OBSERVED;
@@ -215,20 +215,13 @@ export class CLIActionProducer {
     return { action, evaluation, blocked, stdout, stderr, returnCode, scanResult };
   }
 
-  private _getVersionOutput(toolName: string): string | null {
-    for (const flag of ["--version", "-V", "version"]) {
-      try {
-        const output = execFileSync(toolName, [flag], {
-          timeout: 5000,
-          encoding: "utf-8",
-          stdio: ["ignore", "pipe", "pipe"],
-        });
-        if (output.trim()) return output.trim();
-      } catch {
-        // continue
-      }
+  private _getExecutableContentHash(toolPath: string | null): string {
+    if (!toolPath) return "missing";
+    try {
+      return createHash("sha256").update(readFileSync(toolPath)).digest("hex");
+    } catch {
+      return "unreadable";
     }
-    return null;
   }
 
   private _resolveToolPath(toolName: string): string | null {

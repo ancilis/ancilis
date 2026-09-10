@@ -203,7 +203,29 @@ describe("CLIActionProducer", () => {
     }
   });
 
-  it("does not leak version-probe stderr while hashing CLI tools", () => {
+  it("hashes executable content without executing it", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-content-hash-"));
+    const tool = join(directory, "content-hash-tool");
+    const marker = join(directory, "invoked");
+    writeFileSync(tool, `#!/bin/sh\nprintf invoked > ${marker}\nprintf stable-version\n`);
+    chmodSync(tool, 0o755);
+
+    const first = producer.computeToolHash(tool);
+    writeFileSync(tool, `#!/bin/sh\n# changed content\nprintf invoked > ${marker}\nprintf stable-version\n`);
+    const second = producer.computeToolHash(tool);
+
+    expect(first).not.toBe(second);
+    expect(() => readFileSync(marker, "utf-8")).toThrow();
+  });
+
+  it("does not write to stderr while hashing CLI tools", () => {
     const config = makeConfig({ mode: "audit" });
     const producer = new CLIActionProducer(
       config,
@@ -273,6 +295,33 @@ describe("CLIActionProducer", () => {
     expect(result.blocked).toBe(true);
     expect(result.stdout).toBeUndefined();
     expect(result.returnCode).toBeUndefined();
+  });
+
+  it("does not run a blocked command during auto-registration", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-blocked-"));
+    const toolName = "blocked-side-effect-tool";
+    const tool = join(directory, toolName);
+    const marker = join(directory, "invoked");
+    writeFileSync(tool, `#!/bin/sh\nprintf invoked > ${marker}\n`);
+    chmodSync(tool, 0o755);
+    const originalPath = process.env.PATH ?? "";
+    process.env.PATH = `${directory}:${originalPath}`;
+    const config = makeConfig({ mode: "enforce", toolsBlocked: [toolName] });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    try {
+      const result = await producer.execute([tool, "--version"], "runtime-agent");
+
+      expect(result.blocked).toBe(true);
+      expect(() => readFileSync(marker, "utf-8")).toThrow();
+    } finally {
+      process.env.PATH = originalPath;
+    }
   });
 
   it("flags sensitive stdout patterns for Python parity", async () => {
