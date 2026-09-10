@@ -2,7 +2,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { accessSync, constants as fsConstants, readFileSync } from "node:fs";
+import * as fs from "node:fs";
 import { basename, delimiter, isAbsolute, join, resolve } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
 import type { Action } from "../engine/action.js";
@@ -16,6 +16,10 @@ import type { ScanResult } from "../middleware/response-scanner.js";
 import { matchesToolList } from "../engine/tool-matching.js";
 import { recordAdapterUsed } from "../telemetry/index.js";
 import { ProducerType } from "./protocol.js";
+
+/** Bound fingerprinting I/O so a tool path cannot consume unbounded resources. */
+const EXECUTABLE_HASH_MAX_BYTES = 64 * 1024 * 1024;
+const EXECUTABLE_HASH_CHUNK_BYTES = 64 * 1024;
 
 export interface CLIInvocation {
   command: string[];
@@ -216,11 +220,44 @@ export class CLIActionProducer {
   }
 
   private _getExecutableContentHash(toolPath: string | null): string {
-    if (!toolPath) return "missing";
+    if (!toolPath) return "unavailable";
+
+    let descriptor: number | undefined;
     try {
-      return createHash("sha256").update(readFileSync(toolPath)).digest("hex");
+      const flags = fs.constants.O_RDONLY | (fs.constants.O_NONBLOCK ?? 0);
+      descriptor = fs.openSync(toolPath, flags);
+      const initial = fs.fstatSync(descriptor);
+      if (!initial.isFile() || initial.size > EXECUTABLE_HASH_MAX_BYTES) return "unavailable";
+
+      const digest = createHash("sha256");
+      const buffer = Buffer.allocUnsafe(EXECUTABLE_HASH_CHUNK_BYTES);
+      let remaining = initial.size;
+      while (remaining > 0) {
+        const bytesRead = fs.readSync(descriptor, buffer, 0, Math.min(buffer.length, remaining), null);
+        if (bytesRead === 0) return "unavailable";
+        digest.update(buffer.subarray(0, bytesRead));
+        remaining -= bytesRead;
+      }
+
+      const final = fs.fstatSync(descriptor);
+      if (
+        final.dev !== initial.dev
+        || final.ino !== initial.ino
+        || final.size !== initial.size
+        || final.mtimeMs !== initial.mtimeMs
+        || final.ctimeMs !== initial.ctimeMs
+      ) return "unavailable";
+      return digest.digest("hex");
     } catch {
-      return "unreadable";
+      return "unavailable";
+    } finally {
+      if (descriptor !== undefined) {
+        try {
+          fs.closeSync(descriptor);
+        } catch {
+          // The descriptor is already unusable; hashing remains unavailable.
+        }
+      }
     }
   }
 
@@ -237,7 +274,7 @@ export class CLIActionProducer {
 
     for (const candidate of candidates) {
       try {
-        accessSync(candidate, fsConstants.X_OK);
+        fs.accessSync(candidate, fs.constants.X_OK);
         return candidate;
       } catch {
         // continue

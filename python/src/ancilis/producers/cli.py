@@ -31,8 +31,10 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import stat
 import subprocess
 import uuid
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -47,6 +49,12 @@ from ancilis.middleware.response_scanner import ScanResult, scan_response
 from ancilis.producers.enforcement import ENFORCE_CAPABLE
 from ancilis.producers.protocol import ProducerType
 from ancilis.telemetry import record_adapter_used
+
+
+# Fingerprinting is deliberately capped: provenance collection must not turn a
+# large or growing executable into an unbounded I/O or memory operation.
+_EXECUTABLE_HASH_MAX_BYTES = 64 * 1024 * 1024
+_EXECUTABLE_HASH_CHUNK_BYTES = 64 * 1024
 
 
 @dataclass
@@ -330,15 +338,50 @@ class CLIActionProducer:
 
     @staticmethod
     def _get_executable_content_hash(tool_path: str | None) -> str:
-        """Return a content digest without executing the resolved tool."""
-        if tool_path is None:
-            return "missing"
+        """Return a bounded content digest without executing the resolved tool.
 
+        Only stable regular files at most 64 MiB are fingerprinted. All other
+        cases return ``"unavailable"`` rather than a claimed content digest.
+        """
+        if tool_path is None:
+            return "unavailable"
+
+        descriptor: int | None = None
         digest = hashlib.sha256()
         try:
-            with open(tool_path, "rb") as executable:
-                for chunk in iter(lambda: executable.read(65536), b""):
-                    digest.update(chunk)
+            flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_CLOEXEC", 0)
+            descriptor = os.open(tool_path, flags)
+            initial = os.fstat(descriptor)
+            if not stat.S_ISREG(initial.st_mode) or initial.st_size > _EXECUTABLE_HASH_MAX_BYTES:
+                return "unavailable"
+
+            remaining = initial.st_size
+            while remaining:
+                chunk = os.read(descriptor, min(_EXECUTABLE_HASH_CHUNK_BYTES, remaining))
+                if not chunk:
+                    return "unavailable"
+                digest.update(chunk)
+                remaining -= len(chunk)
+
+            final = os.fstat(descriptor)
+            if (
+                final.st_dev,
+                final.st_ino,
+                final.st_size,
+                final.st_mtime_ns,
+                final.st_ctime_ns,
+            ) != (
+                initial.st_dev,
+                initial.st_ino,
+                initial.st_size,
+                initial.st_mtime_ns,
+                initial.st_ctime_ns,
+            ):
+                return "unavailable"
         except OSError:
-            return "unreadable"
+            return "unavailable"
+        finally:
+            if descriptor is not None:
+                with suppress(OSError):
+                    os.close(descriptor)
         return digest.hexdigest()

@@ -268,6 +268,48 @@ class TestCLIToolHash:
         assert first != second
         assert not marker.exists()
 
+    def test_rejects_oversized_executable_content(self, tmp_path):
+        tool = tmp_path / "oversized-tool"
+        with tool.open("wb") as executable:
+            executable.truncate(64 * 1024 * 1024 + 1)
+
+        assert self._make_producer()._get_executable_content_hash(str(tool)) == "unavailable"
+
+    def test_rejects_unreadable_executable_content(self, tmp_path):
+        unreadable = tmp_path / "unreadable-tool"
+        unreadable.write_bytes(b"content")
+        unreadable.chmod(0)
+
+        try:
+            assert self._make_producer()._get_executable_content_hash(str(unreadable)) == "unavailable"
+        finally:
+            unreadable.chmod(0o600)
+
+    @pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="FIFOs are not supported on this platform")
+    def test_rejects_fifo_without_waiting_or_executing_it(self, tmp_path):
+        fifo = tmp_path / "tool-fifo"
+        os.mkfifo(fifo)
+
+        assert self._make_producer()._get_executable_content_hash(str(fifo)) == "unavailable"
+
+    def test_rejects_content_when_descriptor_metadata_changes_while_hashing(self, tmp_path, monkeypatch):
+        tool = tmp_path / "changing-tool"
+        tool.write_bytes(b"original content")
+        original_fstat = os.fstat
+        fstat_calls = 0
+
+        def grow_after_initial_fstat(fd):
+            nonlocal fstat_calls
+            fstat_calls += 1
+            if fstat_calls == 2:
+                with tool.open("ab") as executable:
+                    executable.write(b" changed")
+            return original_fstat(fd)
+
+        monkeypatch.setattr(os, "fstat", grow_after_initial_fstat)
+
+        assert self._make_producer()._get_executable_content_hash(str(tool)) == "unavailable"
+
 
 # --- CLI Tool Registration ---
 

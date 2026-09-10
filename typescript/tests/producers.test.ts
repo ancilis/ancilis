@@ -2,7 +2,8 @@
  * Tests for protocol-agnostic producers.
  */
 
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, truncateSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -223,6 +224,66 @@ describe("CLIActionProducer", () => {
 
     expect(first).not.toBe(second);
     expect(() => readFileSync(marker, "utf-8")).toThrow();
+  });
+
+  it("rejects oversized executable content", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(config, new Engine(config), undefined, new EvidenceStore(config, { inMemory: true }));
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-oversized-hash-"));
+    const tool = join(directory, "oversized-tool");
+    writeFileSync(tool, "");
+    truncateSync(tool, 64 * 1024 * 1024 + 1);
+
+    expect((producer as unknown as { _getExecutableContentHash(path: string | null): string })
+      ._getExecutableContentHash(tool)).toBe("unavailable");
+  });
+
+  it("rejects unreadable executable content", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(config, new Engine(config), undefined, new EvidenceStore(config, { inMemory: true }));
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-unreadable-hash-"));
+    const tool = join(directory, "unreadable-tool");
+    writeFileSync(tool, "content");
+    chmodSync(tool, 0o000);
+
+    try {
+      expect((producer as unknown as { _getExecutableContentHash(path: string | null): string })
+        ._getExecutableContentHash(tool)).toBe("unavailable");
+    } finally {
+      chmodSync(tool, 0o600);
+    }
+  });
+
+  it.skipIf(process.platform === "win32")("rejects FIFO content without waiting or executing it", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(config, new Engine(config), undefined, new EvidenceStore(config, { inMemory: true }));
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-fifo-hash-"));
+    const fifo = join(directory, "tool-fifo");
+    execFileSync("mkfifo", [fifo]);
+
+    expect((producer as unknown as { _getExecutableContentHash(path: string | null): string })
+      ._getExecutableContentHash(fifo)).toBe("unavailable");
+  });
+
+  it("rejects content when descriptor metadata changes while hashing", async () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(config, new Engine(config), undefined, new EvidenceStore(config, { inMemory: true }));
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-changing-hash-"));
+    const tool = join(directory, "changing-tool");
+    writeFileSync(tool, Buffer.alloc(8 * 1024 * 1024));
+    const writer = spawn(process.execPath, ["-e", `
+      const fs = require("node:fs");
+      process.send("ready");
+      setInterval(() => fs.appendFileSync(process.argv[1], "x"), 0);
+    `, tool], { stdio: ["ignore", "ignore", "ignore", "ipc"] });
+    await new Promise<void>((resolve) => writer.once("message", resolve));
+
+    try {
+      expect((producer as unknown as { _getExecutableContentHash(path: string | null): string })
+        ._getExecutableContentHash(tool)).toBe("unavailable");
+    } finally {
+      writer.kill();
+    }
   });
 
   it("does not write to stderr while hashing CLI tools", () => {
