@@ -14,6 +14,7 @@ class ToolInfo:
     version: str | None = None
     server: str | None = None
     description_hash: str | None = None
+    content_fingerprint: str | None = None
 
 
 @dataclass

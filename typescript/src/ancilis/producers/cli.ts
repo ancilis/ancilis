@@ -7,7 +7,7 @@ import { basename, delimiter, isAbsolute, join, resolve } from "node:path";
 import type { ResolvedConfig } from "../config/index.js";
 import type { Action } from "../engine/action.js";
 import { Engine } from "../engine/engine.js";
-import { ToolRegistry, ToolStatus } from "../engine/registry.js";
+import { ContentFingerprintStatus, ToolRegistry, ToolStatus } from "../engine/registry.js";
 import type { ToolEntry } from "../engine/registry.js";
 import type { EvaluationResult } from "../engine/result.js";
 import { EvidenceStore } from "../evidence/store.js";
@@ -92,6 +92,7 @@ export class CLIActionProducer {
       .update(JSON.stringify(invocation.command))
       .digest("hex");
     const entry = this._registry.lookup(toolName);
+    const isCliContentEntry = entry?.contentFingerprintStatus != null;
 
     return {
       actionId: randomUUID(),
@@ -104,7 +105,10 @@ export class CLIActionProducer {
       actionType: "tool_call",
       tool: {
         name: toolName,
-        descriptionHash: entry?.descriptionHash ?? null,
+        descriptionHash: isCliContentEntry ? null : (entry?.descriptionHash ?? null),
+        contentFingerprint: isCliContentEntry && invocation.command[0]
+          ? this._contentFingerprint(invocation.command[0])
+          : null,
       },
       parameters: { raw, parameterHash: paramHash },
       context: {
@@ -122,6 +126,11 @@ export class CLIActionProducer {
     return createHash("sha256").update(input).digest("hex");
   }
 
+  private _contentFingerprint(toolIdentifier: string): string | null {
+    const contentHash = this._getExecutableContentHash(this._resolveToolPath(toolIdentifier));
+    return contentHash === "unavailable" ? null : contentHash;
+  }
+
   registerTools(registry: ToolRegistry): string[] {
     const registered: string[] = [];
     const now = new Date().toISOString();
@@ -129,10 +138,13 @@ export class CLIActionProducer {
       let bareName = toolSpec;
       if (bareName.startsWith("cli:")) bareName = bareName.slice(4);
       const cliName = `cli:${bareName}`;
-      const toolHash = this.computeToolHash(bareName);
+      const contentFingerprint = this._contentFingerprint(bareName);
       registry.register({
         name: cliName,
-        descriptionHash: toolHash,
+        contentFingerprint,
+        contentFingerprintStatus: contentFingerprint == null
+          ? ContentFingerprintStatus.UNAVAILABLE
+          : ContentFingerprintStatus.AVAILABLE,
         status: ToolStatus.APPROVED,
         approvedBy: "config",
         firstSeen: now,
@@ -146,14 +158,17 @@ export class CLIActionProducer {
   private _autoRegister(toolName: string, command: string[]): void {
     if (this._registry.lookup(toolName)) return;
     const toolIdentifier = command[0] ?? "unknown";
-    const toolHash = this.computeToolHash(toolIdentifier);
+    const contentFingerprint = this._contentFingerprint(toolIdentifier);
     const status = matchesToolList(toolName, this._config.toolsAllowed)
       ? ToolStatus.APPROVED
       : ToolStatus.OBSERVED;
     const now = new Date().toISOString();
     this._registry.register({
       name: toolName,
-      descriptionHash: toolHash,
+      contentFingerprint,
+      contentFingerprintStatus: contentFingerprint == null
+        ? ContentFingerprintStatus.UNAVAILABLE
+        : ContentFingerprintStatus.AVAILABLE,
       status,
       approvedBy: status === ToolStatus.APPROVED ? "config" : null,
       firstSeen: now,

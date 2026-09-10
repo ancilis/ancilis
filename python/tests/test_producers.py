@@ -12,7 +12,7 @@ import pytest
 from ancilis.config import load_config
 from ancilis.engine import Engine
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
-from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
+from ancilis.engine.registry import ContentFingerprintStatus, ToolEntry, ToolRegistry, ToolStatus
 from ancilis.producers.protocol import ActionProducer, ProducerType
 from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
 from ancilis.producers.mcp import MCPActionProducer
@@ -344,8 +344,9 @@ class TestCLIToolRegistration:
         producer.register_tools(registry)
         entry = registry.lookup("cli:echo")
         assert entry is not None
-        assert entry.description_hash is not None
-        assert len(entry.description_hash) == 64
+        assert entry.content_fingerprint_status == ContentFingerprintStatus.AVAILABLE
+        assert entry.content_fingerprint is not None
+        assert len(entry.content_fingerprint) == 64
 
     def test_empty_allowlist_registers_nothing(self):
         config = _config()
@@ -354,6 +355,105 @@ class TestCLIToolRegistration:
         producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
         registered = producer.register_tools(registry)
         assert registered == []
+
+    def test_unavailable_allowlisted_binary_flags_without_claiming_hash_match(self):
+        """An approved CLI entry without readable bytes is not positive provenance."""
+        config = _config(security={"tools": {"allowed": ["missing-cli-tool-for-provenance"]}})
+        registry = ToolRegistry()
+        engine = _make_engine(config, registry=registry)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            registry=registry,
+            evidence_store=EvidenceStore(config, in_memory=True),
+        )
+
+        producer.register_tools(registry)
+        action = producer.translate(
+            CLIInvocation(command=["missing-cli-tool-for-provenance"], agent_name="test-agent")
+        )
+        pr03 = next(result for result in engine.evaluate(action).control_results if result.control_id == "PR-03")
+
+        assert pr03.result == "FLAG"
+        assert pr03.evidence_data["hash_match"] == "no_baseline"
+
+    def test_replaced_binary_at_same_path_fails_provenance_before_execution(self, tmp_path):
+        """The current content fingerprint must not be copied from the registry baseline."""
+        tool = tmp_path / "same-path-tool"
+        marker = tmp_path / "invoked"
+        tool.write_text(f"#!/bin/sh\nprintf invoked > {marker}\n")
+        tool.chmod(0o755)
+        config = _config(security={"tools": {"allowed": []}})
+        registry = ToolRegistry()
+        engine = _make_engine(config, registry=registry)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            registry=registry,
+            evidence_store=EvidenceStore(config, in_memory=True),
+        )
+
+        tool_name = producer._resolve_tool_name([str(tool)])
+        producer._auto_register(tool_name, [str(tool)])
+        assert registry.approve(tool_name)
+        tool.write_text(f"#!/bin/sh\n# replacement\nprintf invoked > {marker}\n")
+        action = producer.translate(CLIInvocation(command=[str(tool)], agent_name="test-agent"))
+        pr03 = next(result for result in engine.evaluate(action).control_results if result.control_id == "PR-03")
+
+        assert pr03.result == "FAIL"
+        assert pr03.evidence_data["hash_match"] is False
+        assert not marker.exists()
+
+    def test_unchanged_binary_content_passes_provenance_before_execution(self, tmp_path):
+        tool = tmp_path / "unchanged-tool"
+        marker = tmp_path / "invoked"
+        tool.write_text(f"#!/bin/sh\nprintf invoked > {marker}\n")
+        tool.chmod(0o755)
+        config = _config()
+        registry = ToolRegistry()
+        engine = _make_engine(config, registry=registry)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            registry=registry,
+            evidence_store=EvidenceStore(config, in_memory=True),
+        )
+
+        tool_name = producer._resolve_tool_name([str(tool)])
+        producer._auto_register(tool_name, [str(tool)])
+        assert registry.approve(tool_name)
+        action = producer.translate(CLIInvocation(command=[str(tool)], agent_name="test-agent"))
+        pr03 = next(result for result in engine.evaluate(action).control_results if result.control_id == "PR-03")
+
+        assert pr03.result == "PASS"
+        assert pr03.evidence_data["hash_match"] is True
+        assert not marker.exists()
+
+    def test_unreadable_after_baseline_flags_instead_of_passing(self, tmp_path):
+        tool = tmp_path / "becomes-unreadable-tool"
+        tool.write_text("#!/bin/sh\nexit 0\n")
+        tool.chmod(0o755)
+        config = _config()
+        registry = ToolRegistry()
+        engine = _make_engine(config, registry=registry)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            registry=registry,
+            evidence_store=EvidenceStore(config, in_memory=True),
+        )
+        tool_name = producer._resolve_tool_name([str(tool)])
+        producer._auto_register(tool_name, [str(tool)])
+        assert registry.approve(tool_name)
+        tool.chmod(0)
+        try:
+            action = producer.translate(CLIInvocation(command=[str(tool)], agent_name="test-agent"))
+            pr03 = next(result for result in engine.evaluate(action).control_results if result.control_id == "PR-03")
+
+            assert pr03.result == "FLAG"
+            assert pr03.evidence_data["hash_match"] == "no_baseline"
+        finally:
+            tool.chmod(0o600)
 
 
 # --- CLI Execute: Audit Mode ---

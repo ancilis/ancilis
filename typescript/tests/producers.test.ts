@@ -17,7 +17,7 @@ import { CLIActionProducer } from "../src/ancilis/producers/cli.js";
 import { HTTPActionProducer } from "../src/ancilis/producers/http.js";
 import { MCPActionProducer } from "../src/ancilis/producers/mcp.js";
 import { ToolActionProducer } from "../src/ancilis/producers/tool.js";
-import { ToolRegistry, ToolStatus } from "../src/ancilis/engine/registry.js";
+import { ContentFingerprintStatus, ToolRegistry, ToolStatus } from "../src/ancilis/engine/registry.js";
 
 function makeConfig(options: {
   mode?: "audit" | "enforce";
@@ -167,7 +167,8 @@ describe("CLIActionProducer", () => {
     expect(registered).toEqual(["cli:echo", "cli:cat"]);
     expect(registry.lookup("cli:echo")?.status).toBe(ToolStatus.APPROVED);
     expect(registry.lookup("cli:echo")?.approvedBy).toBe("config");
-    expect(registry.lookup("cli:echo")?.descriptionHash).toHaveLength(64);
+    expect(registry.lookup("cli:echo")?.contentFingerprintStatus).toBe(ContentFingerprintStatus.AVAILABLE);
+    expect(registry.lookup("cli:echo")?.contentFingerprint).toHaveLength(64);
   });
 
   it("includes the resolved binary path in computeToolHash for Python parity", () => {
@@ -340,6 +341,104 @@ describe("CLIActionProducer", () => {
     );
 
     expect(producer.registerTools(registry)).toEqual([]);
+  });
+
+  it("flags an unavailable allowlisted binary without claiming a hash match", () => {
+    const config = makeConfig({ mode: "audit", toolsAllowed: ["missing-cli-tool-for-provenance"] });
+    const registry = new ToolRegistry();
+    const engine = new Engine(config, { registry });
+    const producer = new CLIActionProducer(
+      config,
+      engine,
+      registry,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    producer.registerTools(registry);
+    const action = producer.translate({
+      command: ["missing-cli-tool-for-provenance"],
+      agentName: "runtime-agent",
+    });
+    const pr03 = engine.evaluate(action).controlResults.find((result) => result.controlId === "PR-03");
+
+    expect(pr03?.result).toBe("FLAG");
+    expect(pr03?.evidenceData.hash_match).toBe("no_baseline");
+  });
+
+  it("fails provenance after a same-path binary replacement before execution", () => {
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-provenance-"));
+    const tool = join(directory, "same-path-tool");
+    const marker = join(directory, "invoked");
+    writeFileSync(tool, `#!/bin/sh\nprintf invoked > ${marker}\n`);
+    chmodSync(tool, 0o755);
+    const config = makeConfig({ mode: "audit" });
+    const registry = new ToolRegistry();
+    const engine = new Engine(config, { registry });
+    const producer = new CLIActionProducer(
+      config,
+      engine,
+      registry,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    const toolName = (producer as unknown as { _resolveToolName(command: string[]): string })
+      ._resolveToolName([tool]);
+    (producer as unknown as { _autoRegister(name: string, command: string[]): void })
+      ._autoRegister(toolName, [tool]);
+    expect(registry.approve(toolName)).toBe(true);
+    writeFileSync(tool, `#!/bin/sh\n# replacement\nprintf invoked > ${marker}\n`);
+    const action = producer.translate({ command: [tool], agentName: "runtime-agent" });
+    const pr03 = engine.evaluate(action).controlResults.find((result) => result.controlId === "PR-03");
+
+    expect(pr03?.result).toBe("FAIL");
+    expect(pr03?.evidenceData.hash_match).toBe(false);
+    expect(() => readFileSync(marker, "utf-8")).toThrow();
+  });
+
+  it("passes provenance for unchanged bounded binary content without executing it", () => {
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-provenance-"));
+    const tool = join(directory, "unchanged-tool");
+    const marker = join(directory, "invoked");
+    writeFileSync(tool, `#!/bin/sh\nprintf invoked > ${marker}\n`);
+    chmodSync(tool, 0o755);
+    const config = makeConfig({ mode: "audit" });
+    const registry = new ToolRegistry();
+    const engine = new Engine(config, { registry });
+    const producer = new CLIActionProducer(config, engine, registry, new EvidenceStore(config, { inMemory: true }));
+    const toolName = (producer as unknown as { _resolveToolName(command: string[]): string })._resolveToolName([tool]);
+    (producer as unknown as { _autoRegister(name: string, command: string[]): void })._autoRegister(toolName, [tool]);
+    expect(registry.approve(toolName)).toBe(true);
+
+    const action = producer.translate({ command: [tool], agentName: "runtime-agent" });
+    const pr03 = engine.evaluate(action).controlResults.find((result) => result.controlId === "PR-03");
+
+    expect(pr03?.result).toBe("PASS");
+    expect(pr03?.evidenceData.hash_match).toBe(true);
+    expect(() => readFileSync(marker, "utf-8")).toThrow();
+  });
+
+  it("flags an unreadable current binary instead of passing its prior baseline", () => {
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-provenance-"));
+    const tool = join(directory, "becomes-unreadable-tool");
+    writeFileSync(tool, "#!/bin/sh\nexit 0\n");
+    chmodSync(tool, 0o755);
+    const config = makeConfig({ mode: "audit" });
+    const registry = new ToolRegistry();
+    const engine = new Engine(config, { registry });
+    const producer = new CLIActionProducer(config, engine, registry, new EvidenceStore(config, { inMemory: true }));
+    const toolName = (producer as unknown as { _resolveToolName(command: string[]): string })._resolveToolName([tool]);
+    (producer as unknown as { _autoRegister(name: string, command: string[]): void })._autoRegister(toolName, [tool]);
+    expect(registry.approve(toolName)).toBe(true);
+    chmodSync(tool, 0o000);
+    try {
+      const action = producer.translate({ command: [tool], agentName: "runtime-agent" });
+      const pr03 = engine.evaluate(action).controlResults.find((result) => result.controlId === "PR-03");
+
+      expect(pr03?.result).toBe("FLAG");
+      expect(pr03?.evidenceData.hash_match).toBe("no_baseline");
+    } finally {
+      chmodSync(tool, 0o600);
+    }
   });
 
   it("treats a bare blocked entry as a block for the prefixed CLI tool", async () => {

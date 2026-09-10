@@ -42,7 +42,7 @@ from typing import Any
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
 from ancilis.engine.engine import Engine
-from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
+from ancilis.engine.registry import ContentFingerprintStatus, ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 from ancilis.middleware.response_scanner import ScanResult, scan_response
@@ -134,9 +134,16 @@ class CLIActionProducer:
             str(raw_invocation.command).encode()
         ).hexdigest()
 
-        # Look up tool in registry for provenance
+        # Description hashes remain the legacy provenance channel for non-CLI
+        # producers. CLI entries carry a separately persisted content baseline.
         entry = self._registry.lookup(tool_name)
-        description_hash = entry.description_hash if entry else None
+        is_cli_content_entry = entry and entry.content_fingerprint_status is not None
+        description_hash = entry.description_hash if entry and not is_cli_content_entry else None
+        content_fingerprint = (
+            self._content_fingerprint(raw_invocation.command[0])
+            if is_cli_content_entry and raw_invocation.command
+            else None
+        )
 
         # Collect DC codes from config
         dc_codes: list[str] = []
@@ -157,6 +164,7 @@ class CLIActionProducer:
             tool=ToolInfo(
                 name=tool_name,
                 description_hash=description_hash,
+                content_fingerprint=content_fingerprint,
             ),
             parameters=ActionParameters(
                 raw=raw_params,
@@ -184,6 +192,11 @@ class CLIActionProducer:
         hash_input = f"{tool_path or tool_identifier}:{content_hash}"
         return hashlib.sha256(hash_input.encode()).hexdigest()
 
+    def _content_fingerprint(self, tool_identifier: str) -> str | None:
+        """Return current bounded binary bytes, or None when unavailable."""
+        content_hash = self._get_executable_content_hash(shutil.which(tool_identifier))
+        return None if content_hash == "unavailable" else content_hash
+
     def register_tools(self, registry: ToolRegistry) -> list[str]:
         """Register CLI tools from config allowlist.
 
@@ -204,11 +217,16 @@ class CLIActionProducer:
                 bare_name = bare_name[4:]
 
             cli_name = f"cli:{bare_name}"
-            tool_hash = self.compute_tool_hash(bare_name)
+            content_fingerprint = self._content_fingerprint(bare_name)
             registry.register(
                 ToolEntry(
                     name=cli_name,
-                    description_hash=tool_hash,
+                    content_fingerprint=content_fingerprint,
+                    content_fingerprint_status=(
+                        ContentFingerprintStatus.AVAILABLE
+                        if content_fingerprint is not None
+                        else ContentFingerprintStatus.UNAVAILABLE
+                    ),
                     status=ToolStatus.APPROVED,
                     approved_by="config",
                 )
@@ -226,12 +244,17 @@ class CLIActionProducer:
         if self._registry.lookup(tool_name) is not None:
             return
         tool_identifier = command[0] if command else "unknown"
-        tool_hash = self.compute_tool_hash(tool_identifier)
+        content_fingerprint = self._content_fingerprint(tool_identifier)
         status = self._resolve_initial_status(tool_name)
         self._registry.register(
             ToolEntry(
                 name=tool_name,
-                description_hash=tool_hash,
+                content_fingerprint=content_fingerprint,
+                content_fingerprint_status=(
+                    ContentFingerprintStatus.AVAILABLE
+                    if content_fingerprint is not None
+                    else ContentFingerprintStatus.UNAVAILABLE
+                ),
                 status=status,
                 approved_by="config" if status == ToolStatus.APPROVED else None,
             )
