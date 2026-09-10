@@ -883,7 +883,11 @@ class EvidenceStore:
 
         This is a full reset — the hash chain restarts from GENESIS_SEED.
         For session-scoped views, use session_id filters on queries instead.
+        Raises RuntimeError when this store has a configured tenant_id: reset
+        checkpoints and sync metadata are global, so use an unscoped operator
+        handle for a full-store reset.
         """
+        self._require_unscoped_destructive_operation("reset")
         self._ensure_initialized()
         n = self.count()
         # Record a signed reset checkpoint BEFORE deleting, so the wipe is
@@ -893,6 +897,20 @@ class EvidenceStore:
         self._connection.execute("DELETE FROM evidence_sync_meta")
         self._connection.execute("DELETE FROM evidence_records")
         return n
+
+    def _require_unscoped_destructive_operation(self, operation: str) -> None:
+        """Reject destructive operations through a tenant-scoped handle.
+
+        Evidence reset/purge checkpoints are global and cannot safely represent
+        a tenant-only deletion without a tenant-specific chain design. Call the
+        operation from an EvidenceStore without tenant_id to operate on the
+        entire store.
+        """
+        if self._tenant_id is not None:
+            raise RuntimeError(
+                f"Cannot {operation} through a tenant-scoped EvidenceStore; "
+                "use an unscoped operator handle for the full-store operation."
+            )
 
     def _record_chain_event(
         self,
@@ -1235,6 +1253,8 @@ class EvidenceStore:
                    evidence records from that session are included in counts
                    and stats.
                    Chain verification always runs against the full store.
+                   A configured tenant_id is always applied to every summary
+                   aggregation, including when either filter is present.
 
         Returns empty results if no evidence has been recorded yet (without
         forcing DB creation for persistent stores).
@@ -1254,6 +1274,9 @@ class EvidenceStore:
         self._ensure_initialized()
         conditions: list[str] = []
         params: list[str] = []
+        if self._tenant_id is not None:
+            conditions.append("tenant_id = ?")
+            params.append(self._tenant_id)
         if since is not None:
             conditions.append("timestamp >= ?")
             params.append(since)
@@ -1340,7 +1363,11 @@ class EvidenceStore:
 
         Records a signed purge checkpoint before deletion so the purge is
         auditable and an emptied chain cannot pass verification as pristine.
+        Raises RuntimeError when this store has a configured tenant_id: purge
+        checkpoints and sync metadata are global, so use an unscoped operator
+        handle for a full-store purge.
         """
+        self._require_unscoped_destructive_operation("purge")
         self._ensure_initialized()
         row = self._connection.execute(
             "SELECT COUNT(*) FROM evidence_records WHERE timestamp < ?",
