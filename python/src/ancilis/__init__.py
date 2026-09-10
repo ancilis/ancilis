@@ -5,6 +5,24 @@ from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ancilis.episodes import (
+        Ancilis,
+        Authority,
+        CaptureFrame,
+        CaptureResult,
+        ContentEvidence,
+        Diagnostics,
+        Episode,
+        EpisodeCapacityError,
+        EpisodeError,
+        EpisodeLifecycleError,
+        EpisodeSnapshot,
+        NativePolicy,
+        Observation,
+        ObservationConflict,
+        ObservationInput,
+        Relationship,
+    )
     from ancilis.adapters.anthropic import (
         AnthropicActionProducer,
         AnthropicAdapter,
@@ -126,6 +144,22 @@ except PackageNotFoundError:
     __version__ = "0.0.0+dev"
 
 _EXPORTS: dict[str, tuple[str, str]] = {
+    "Ancilis": ("ancilis.episodes", "Ancilis"),
+    "Authority": ("ancilis.episodes", "Authority"),
+    "CaptureFrame": ("ancilis.episodes", "CaptureFrame"),
+    "CaptureResult": ("ancilis.episodes", "CaptureResult"),
+    "ContentEvidence": ("ancilis.episodes", "ContentEvidence"),
+    "Diagnostics": ("ancilis.episodes", "Diagnostics"),
+    "Episode": ("ancilis.episodes", "Episode"),
+    "EpisodeCapacityError": ("ancilis.episodes", "EpisodeCapacityError"),
+    "EpisodeError": ("ancilis.episodes", "EpisodeError"),
+    "EpisodeLifecycleError": ("ancilis.episodes", "EpisodeLifecycleError"),
+    "EpisodeSnapshot": ("ancilis.episodes", "EpisodeSnapshot"),
+    "NativePolicy": ("ancilis.episodes", "NativePolicy"),
+    "Observation": ("ancilis.episodes", "Observation"),
+    "ObservationConflict": ("ancilis.episodes", "ObservationConflict"),
+    "ObservationInput": ("ancilis.episodes", "ObservationInput"),
+    "Relationship": ("ancilis.episodes", "Relationship"),
     "AKSI_FRAMEWORK_VERSION": ("ancilis.aksi", "AKSI_FRAMEWORK_VERSION"),
     "ActionProducer": ("ancilis.producers.protocol", "ActionProducer"),
     "AncilisMiddleware": ("ancilis.middleware.middleware", "AncilisMiddleware"),
@@ -245,7 +279,10 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "ToolActionProducer": ("ancilis.producers.tool", "ToolActionProducer"),
     "ToolExecutionResult": ("ancilis.producers.tool", "ToolExecutionResult"),
     "ToolInvocation": ("ancilis.producers.tool", "ToolInvocation"),
-    "build_remediation_recommendations": ("ancilis.remediation", "build_remediation_recommendations"),
+    "build_remediation_recommendations": (
+        "ancilis.remediation",
+        "build_remediation_recommendations",
+    ),
     "evaluate_and_execute": ("ancilis.producers.tool", "evaluate_and_execute"),
     "flush_telemetry_events": ("ancilis.telemetry", "flush_telemetry_events"),
     "format_telemetry_status": ("ancilis.telemetry", "format_telemetry_status"),
@@ -259,7 +296,10 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "resolve_runtime_producers": ("ancilis.producers.runtime", "resolve_runtime_producers"),
     "set_telemetry_enabled": ("ancilis.telemetry", "set_telemetry_enabled"),
     "load_remediation_guides": ("ancilis.remediation", "load_remediation_guides"),
-    "render_remediation_recommendations": ("ancilis.remediation", "render_remediation_recommendations"),
+    "render_remediation_recommendations": (
+        "ancilis.remediation",
+        "render_remediation_recommendations",
+    ),
     "tool": ("ancilis.producers.tool", "tool"),
     "translate_runtime_action": ("ancilis.producers.runtime", "translate_runtime_action"),
     "wrap_tool": ("ancilis.producers.tool", "wrap_tool"),
