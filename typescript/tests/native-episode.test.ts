@@ -35,6 +35,37 @@ const vectors = JSON.parse(
   readFileSync("tests/fixtures/episodes/native-vectors.json", "utf8"),
 );
 
+describe("cross-language unsigned snapshot contract", () => {
+  const fixtures = JSON.parse(
+    readFileSync("tests/fixtures/episodes/native-cross-language.json", "utf8"),
+  );
+  for (const fixture of fixtures.cases)
+    it(fixture.name, () => {
+      expect(
+        SDK.verifyEpisodeSnapshot(fixture.snapshot, {
+          assessedAt: "2026-09-10T00:00:00.000000Z",
+        }),
+      ).toEqual(fixture.expected);
+    });
+  it("normalizes JSON integer negative zero", () => {
+    expect(SDK.canonicalEpisodeJSON(JSON.parse("-0"))).toBe("0");
+  });
+  it("keeps manual capacity advisory unless strict capture is selected", () => {
+    for (const strictCapture of [false, true]) {
+      const sdk = make({ maxEvents: 1, strictCapture });
+      sdk.episode("one", { expectedSurfaces: ["document"] }, (e) => {
+        e.observe(input());
+        if (strictCapture)
+          expect(() => e.observe(input({ call_id: "c2" }))).toThrow(
+            "LEDGER_EVENT_CAP",
+          );
+        else expect(e.observe(input({ call_id: "c2" }))).toBeUndefined();
+        expect(e.inspect().coverage.lost_events).toBe(1);
+      });
+    }
+  });
+});
+
 describe("native episode public contract", () => {
   it("exports a native entry point alongside unchanged load", () => {
     expect(SDK.Ancilis.open).toBeTypeOf("function");
@@ -50,9 +81,9 @@ describe("native episode public contract", () => {
       ["ancilis-native-policy/1", "policy", "policy_sha256"],
       ["ancilis-episode-open/1", "open", "open_sha256"],
       ["ancilis-observation-id/1", "event_preimage", "event_id"],
-      ["ancilis-native-revision/1", "revision_preimage", "revision_id"],
+      ["ancilis-native-revision/2", "revision_preimage", "revision_id"],
       [
-        "ancilis-native-revision/1",
+        "ancilis-native-revision/2",
         "partial_revision_preimage",
         "partial_revision_id",
       ],
@@ -540,5 +571,153 @@ describe("native capture boundaries", () => {
         "EPISODE_FINISHED",
       );
     });
+  });
+});
+
+describe("payload-bound incremental revisions", () => {
+  it("matches chain vectors and binds tenant/open in genesis", () => {
+    const H = SDK.hashEpisodePayload;
+    expect(
+      H("ancilis-native-observation-chain/1", {
+        open_sha256: vectors.open_sha256,
+      }),
+    ).toBe(vectors.genesis_chain);
+    expect(H("ancilis-observation-payload/1", vectors.observation)).toBe(
+      vectors.observation_payload_sha256,
+    );
+    expect(
+      H("ancilis-native-observation-chain/1", {
+        previous_observation_chain_sha256: vectors.genesis_chain,
+        observation_sha256: vectors.observation_payload_sha256,
+      }),
+    ).toBe(vectors.first_observation_chain);
+    const a = make(),
+      b = make({ tenant: "tenant-b" });
+    a.episode("e", { expectedSurfaces: ["document"] }, () => {});
+    b.episode("e", { expectedSurfaces: ["document"] }, () => {});
+    expect(a.getEpisode("e").inspect().observation_chain_sha256).not.toBe(
+      b.getEpisode("e").inspect().observation_chain_sha256,
+    );
+  });
+  it("commits the full admitted payload and keeps chain stable for conflicts/loss", () => {
+    const sdk = make({ maxEvents: 1 });
+    sdk.episode("one", { expectedSurfaces: ["document"] }, (e) => {
+      const genesis = e.inspect().observation_chain_sha256;
+      e.observe(input());
+      const snap = e.inspect();
+      const H = SDK.hashEpisodePayload;
+      expect(snap.observation_chain_sha256).toBe(
+        H("ancilis-native-observation-chain/1", {
+          previous_observation_chain_sha256: genesis,
+          observation_sha256: H(
+            "ancilis-observation-payload/1",
+            snap.observations[0],
+          ),
+        }),
+      );
+      const rev = snap.revision_id;
+      e.observe(input());
+      expect(e.inspect().revision_id).toBe(rev);
+      expect(() =>
+        e.observe(input({ capture_gaps: ["CONTENT_NOT_CAPTURED"] })),
+      ).toThrow();
+      const conflict = e.inspect();
+      expect(conflict.observation_chain_sha256).toBe(
+        snap.observation_chain_sha256,
+      );
+      expect(conflict.revision_id).not.toBe(rev);
+      expect(e.observe(input({ call_id: "c2" }))).toBeUndefined();
+      expect(e.inspect().observation_chain_sha256).toBe(
+        snap.observation_chain_sha256,
+      );
+    });
+  });
+  it("checks native integrity without claiming signer, protected bodies or reconstruction", () => {
+    const sdk = make();
+    sdk.episode("one", { expectedSurfaces: ["document"] }, (e) => {
+      e.observe(input());
+      e.observe(input({ phase: "END", outcome: "SUCCEEDED" }));
+    });
+    const snap = sdk.getEpisode("one").inspect();
+    const result = SDK.verifyEpisodeSnapshot(snap, {
+      expectedTenant: "tenant-a",
+    });
+    expect(result).toMatchObject({
+      status: "UNVERIFIED",
+      envelope_authenticated: false,
+      protected_bodies: "NOT_REQUESTED",
+      reconstruction: "UNSUPPORTED",
+      verified_claim_refs: [],
+    });
+    expect(result.reasons).toContain("NATIVE_CHAIN_MATCH");
+    for (const mutate of [
+      (s) => (s.observations[0].authority.principal = "forged"),
+      (s) => (s.observations[0].captured_at = "2026-09-09T00:00:00.000000Z"),
+      (s) => s.observations.reverse(),
+      (s) => s.observations.pop(),
+      (s) => s.observations.push(s.observations[0]),
+      (s) => (s.revision_method = "ancilis-native-revision/1"),
+      (s) => (s.coverage.observed_surfaces = []),
+    ]) {
+      const bad = structuredClone(snap);
+      mutate(bad);
+      expect(SDK.verifyEpisodeSnapshot(bad).status).toBe("REJECTED");
+    }
+    expect(
+      SDK.verifyEpisodeSnapshot(snap, { expectedTenant: "other" }).status,
+    ).toBe("REJECTED");
+  });
+  it("rejects scope/order tampering even after recomputing a self-consistent chain", () => {
+    const sdk = make();
+    sdk.episode("one", { expectedSurfaces: ["document"] }, (e) => {
+      e.observe(input());
+    });
+    const snapshot = sdk.getEpisode("one").inspect();
+    snapshot.observations[0].episode_open = "a".repeat(64);
+    const H = SDK.hashEpisodePayload;
+    let chain = H("ancilis-native-observation-chain/1", {
+      open_sha256: snapshot.open_sha256,
+    });
+    for (const row of snapshot.observations)
+      chain = H("ancilis-native-observation-chain/1", {
+        previous_observation_chain_sha256: chain,
+        observation_sha256: H("ancilis-observation-payload/1", row),
+      });
+    snapshot.observation_chain_sha256 = chain;
+    snapshot.revision_id = H("ancilis-native-revision/2", {
+      open_sha256: snapshot.open_sha256,
+      revision: snapshot.revision,
+      previous_revision_id: snapshot.previous_revision_id,
+      observation_chain_sha256: chain,
+      coverage: snapshot.coverage,
+    });
+    expect(SDK.verifyEpisodeSnapshot(snapshot).status).toBe("REJECTED");
+  });
+  it("discard yields an explicit tombstone, not full-history verification or withdrawal", () => {
+    const sdk = make();
+    sdk.episode("one", { expectedSurfaces: ["document"] }, (e) => {
+      e.observe(input());
+      e.observe(input({ phase: "END", outcome: "SUCCEEDED" }));
+    });
+    const handle = sdk.getEpisode("one");
+    const prior = handle.inspect();
+    sdk.discardEpisode("one");
+    const tombstone = handle.inspect();
+    expect(tombstone.observations).toEqual([]);
+    expect(tombstone.coverage.observed_surfaces).toEqual([]);
+    expect(tombstone.coverage.missing_surfaces).toEqual(["document"]);
+    expect(tombstone.previous_revision_id).toBe(prior.revision_id);
+    expect(tombstone.observation_chain_sha256).toBe(
+      SDK.hashEpisodePayload("ancilis-native-observation-chain/1", {
+        open_sha256: tombstone.open_sha256,
+      }),
+    );
+    expect(SDK.verifyEpisodeSnapshot(tombstone)).toMatchObject({
+      status: "UNVERIFIED",
+      verified_claim_refs: [],
+    });
+    expect(SDK.verifyEpisodeSnapshot(tombstone).reasons).toContain(
+      "NATIVE_HISTORY_DISCARDED",
+    );
   });
 });

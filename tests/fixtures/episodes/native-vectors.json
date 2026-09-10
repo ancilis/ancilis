@@ -169,5 +169,12 @@
       "reconstruction_exclusions": []
     }
   },
-  "partial_revision_id": "2861f52df385dd86fe482b14aad4cf9bea9fe1196c7bde8216b6adc7ccfa2700"
+  "partial_revision_id": "2861f52df385dd86fe482b14aad4cf9bea9fe1196c7bde8216b6adc7ccfa2700",
+  "verification_policy": {
+    "schema": "ancilis-native-verification-policy/1",
+    "mode": "INTEGRITY_ONLY",
+    "revision_method": "ancilis-native-revision/2",
+    "expected_tenant": null
+  },
+  "verification_policy_sha256": "694a14f817e89354647a3cc6afe4254068fb7e9103a7cbc2620a955d7171b378"
 }

@@ -49,6 +49,7 @@ const time = z
     const n = Date.parse(s);
     return (
       Number.isFinite(n) &&
+      s.slice(0, 4) !== "0000" &&
       new Date(n).toISOString().slice(0, 19) === s.slice(0, 19)
     );
   });
@@ -161,6 +162,8 @@ export interface EpisodeCoverage {
   reconstruction_exclusions: [];
 }
 export interface EpisodeSnapshot {
+  observation_chain_sha256: string;
+  revision_method: "ancilis-native-revision/2";
   schema: "ancilis-episode/1";
   tenant: string;
   episode: string;
@@ -228,7 +231,7 @@ export function canonicalEpisodeJSON(value: unknown): string {
     if (depth > 64) throw new EpisodeError("INVALID_OBSERVATION");
     if (v === null || typeof v === "boolean") return JSON.stringify(v);
     if (typeof v === "number") {
-      if (!Number.isSafeInteger(v) || Object.is(v, -0))
+      if (!Number.isSafeInteger(v))
         throw new EpisodeError("INVALID_OBSERVATION");
       return String(v);
     }
@@ -284,11 +287,14 @@ export function canonicalEpisodeJSON(value: unknown): string {
   }
   return encode(value, 0);
 }
-export const hashEpisodePayload = (domain: string, value: unknown): string =>
+/** Internal helper: caller must supply already-validated canonical bytes. */
+export const hashCanonical = (domain: string, canonical: string): string =>
   createHash("sha256")
     .update(domain + "\n")
-    .update(canonicalEpisodeJSON(value))
+    .update(canonical)
     .digest("hex");
+export const hashEpisodePayload = (domain: string, value: unknown): string =>
+  hashCanonical(domain, canonicalEpisodeJSON(value));
 export const detached = <T>(v: T): T =>
   JSON.parse(canonicalEpisodeJSON(v)) as T;
 export function validateObservationInput(value: unknown): ObservationInput {
@@ -331,3 +337,12 @@ export class ContentEvidence {
     });
   }
 }
+
+// Internal schema building blocks; the public barrel exposes the typed data contract.
+export {
+  id as nativeIdSchema,
+  digest as nativeDigestSchema,
+  time as nativeTimeSchema,
+  safe as nativeIntegerSchema,
+  inputSchema as nativeInputSchema,
+};

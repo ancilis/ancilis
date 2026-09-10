@@ -52,7 +52,7 @@ def test_native_policy_open_event_and_v2_chain_match_golden_vectors() -> None:
         "envelope_authenticated": False,
         "protected_bodies": "NOT_REQUESTED",
         "reconstruction": "UNSUPPORTED",
-        "policy_sha256": vector["policy_sha256"],
+        "policy_sha256": vector["verification_policy_sha256"],
         "assessed_at": vector["open"]["created_at"],
         "reasons": ["NATIVE_CHAIN_MATCH"],
         "verified_claim_refs": [],
@@ -73,7 +73,16 @@ def test_golden_v2_revision_hash_uses_the_shared_canonical_preimage() -> None:
 def test_real_native_snapshot_and_unsigned_verdict_validate_against_shared_schemas() -> None:
     sdk = Ancilis("tenant", "source", source_instance="instance")
     episode = sdk.episode("episode", expected_surfaces=("tool",))
-    episode.observe(ObservationInput("call", "2026-09-10T00:00:00.000000Z", "tool", "EXECUTE", "START", None, "STARTED"))
+    episode.observe(
+        ObservationInput(
+            "call", "2026-09-10T00:00:00.000000Z", "tool", "EXECUTE", "START", None, "STARTED"
+        )
+    )
     root = Path(__file__).resolve().parents[2] / "shared/episodes/v1"
-    jsonschema.validate(episode.inspect().to_dict(), json.loads((root / "episode.schema.json").read_text()))
-    jsonschema.validate(verify_episode_snapshot(episode.inspect()).to_dict(), json.loads((root / "verification.schema.json").read_text()))
+    jsonschema.validate(
+        episode.inspect().to_dict(), json.loads((root / "episode.schema.json").read_text())
+    )
+    jsonschema.validate(
+        verify_episode_snapshot(episode.inspect()).to_dict(),
+        json.loads((root / "verification.schema.json").read_text()),
+    )

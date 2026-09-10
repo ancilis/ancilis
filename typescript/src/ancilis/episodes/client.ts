@@ -9,6 +9,7 @@ import {
   EPISODE_REASONS,
   EPISODE_SURFACES,
   hashEpisodePayload,
+  hashCanonical,
   now,
   orderedSurfaces,
   validId,
@@ -145,6 +146,9 @@ export class EpisodeHandle {
   private lost = 0;
   private revision = 1;
   private revisionId: string;
+  private chain: string;
+  private incompleteCalls = 0;
+  private unterminatedCalls = 0;
   private previous: string | null = null;
   private bytes = 0;
   private finished = false;
@@ -177,6 +181,9 @@ export class EpisodeHandle {
       this.lost = 1;
       this.reasons.add("LEDGER_EPISODE_CAP");
     }
+    this.chain = hashEpisodePayload("ancilis-native-observation-chain/1", {
+      open_sha256: this.openHash,
+    });
     this.revisionId = this.hashRevision();
   }
   get id(): string {
@@ -215,6 +222,11 @@ export class EpisodeHandle {
           : "LEDGER_EPISODE_CAP";
   }
   _captureLoss(reason: EpisodeReason): void {
+    if (this.revision === maximum) {
+      this.owner._reason("REVISION_EXHAUSTED");
+      this.finished = true;
+      return;
+    }
     this.lost = increment(this.lost);
     this.reasons.add(reason);
     this.advance();
@@ -227,19 +239,17 @@ export class EpisodeHandle {
       missing_surfaces: expected.filter((s) => !this.observed.has(s)),
       complete: false,
       lost_events: this.lost,
-      incomplete_calls: [...this.calls.values()].filter(
-        (c) => !c.started || !c.ended || c.failed,
-      ).length,
+      incomplete_calls: this.incompleteCalls,
       reasons: EPISODE_REASONS.filter((r) => this.reasons.has(r)),
       reconstruction_exclusions: [],
     };
   }
   private hashRevision(): string {
-    return hashEpisodePayload("ancilis-native-revision/1", {
+    return hashEpisodePayload("ancilis-native-revision/2", {
       open_sha256: this.openHash,
       revision: this.revision,
       previous_revision_id: this.previous,
-      event_ids: this.rows.map((o) => o.event_id),
+      observation_chain_sha256: this.chain,
       coverage: this.coverage(),
     });
   }
@@ -254,7 +264,24 @@ export class EpisodeHandle {
     this.revisionId = this.hashRevision();
   }
   /** Caller-assigned facts only; duplicates retain the first capture timestamp/sequence. */
-  observe(raw: ObservationInput): Observation {
+  observe(raw: ObservationInput): Observation | undefined {
+    if (this.revision === maximum) {
+      this.owner._reason("REVISION_EXHAUSTED");
+      if (this.owner.policy.strict_capture)
+        throw new EpisodeError("REVISION_EXHAUSTED");
+      return undefined;
+    }
+    if (
+      this.saturated &&
+      !this.owner.isClosed &&
+      !this.finished &&
+      !this.discarded
+    ) {
+      this.owner._loss("LEDGER_EPISODE_CAP", this);
+      if (this.owner.policy.strict_capture)
+        throw new EpisodeError("LEDGER_EPISODE_CAP");
+      return undefined;
+    }
     if (!this._available()) throw new EpisodeError(this._unavailableReason());
     let data: ObservationInput;
     try {
@@ -330,14 +357,23 @@ export class EpisodeHandle {
       clock_evidence_refs: [],
     };
     // Conservative accounting covers the canonical record, dedupe bytes and indexes, not process RSS.
+    const observationBytes = canonicalEpisodeJSON(observation);
+    const nextChain = hashEpisodePayload("ancilis-native-observation-chain/1", {
+      previous_observation_chain_sha256: this.chain,
+      observation_sha256: hashCanonical(
+        "ancilis-observation-payload/1",
+        observationBytes,
+      ),
+    });
     const bytes =
-      Buffer.byteLength(canonicalEpisodeJSON(observation)) +
+      Buffer.byteLength(observationBytes) +
       Buffer.byteLength(comparison) +
       512 +
       staged.size * 384;
-    this.owner._reserve(bytes, this);
+    if (!this.owner._reserve(bytes, this)) return undefined;
     for (const [id, a] of staged) this.artifacts.set(id, a);
     this.bytes += bytes;
+    this.chain = nextChain;
     this.rows.push(observation);
     this.ids.set(eventId, { comparison, observation });
     const call = this.calls.get(data.call_id) ?? {
@@ -346,6 +382,10 @@ export class EpisodeHandle {
       failed: false,
       nextChunk: 0,
     };
+    const wasIncomplete = existingCall
+      ? !existingCall.started || !existingCall.ended || existingCall.failed
+      : false;
+    const wasUnterminated = existingCall ? !existingCall.ended : false;
     if (data.phase === "START") call.started = true;
     else if (data.phase === "CHUNK") {
       if (data.chunk_index !== call.nextChunk) {
@@ -361,6 +401,10 @@ export class EpisodeHandle {
     }
     if (data.phase !== "START" && !call.started)
       this.reasons.add("MISSING_START");
+    this.incompleteCalls +=
+      Number(!call.started || !call.ended || call.failed) -
+      Number(wasIncomplete);
+    this.unterminatedCalls += Number(!call.ended) - Number(wasUnterminated);
     this.calls.set(data.call_id, call);
     for (const reason of data.capture_gaps) this.reasons.add(reason);
     this.advance();
@@ -377,6 +421,8 @@ export class EpisodeHandle {
       revision_id: this.revisionId,
       previous_revision_id: this.previous,
       observations: this.rows,
+      observation_chain_sha256: this.chain,
+      revision_method: "ancilis-native-revision/2",
       coverage: this.coverage(),
       method: "ancilis-native-observation-ledger/1",
       claims_basis: "COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION",
@@ -386,11 +432,15 @@ export class EpisodeHandle {
   finish(): void {
     if (this.finished) return;
     this.finished = true;
-    for (const c of this.calls.values())
-      if (!c.ended) this.reasons.add("MISSING_END");
+    if (this.revision === maximum) {
+      this.owner._reason("REVISION_EXHAUSTED");
+      return;
+    }
+    if (this.unterminatedCalls) this.reasons.add("MISSING_END");
     this.advance();
   }
   _discard(): { events: number; bytes: number } {
+    if (this.revision === maximum) throw new EpisodeError("REVISION_EXHAUSTED");
     if (this.activeContexts || this.inFlight) throw new EpisodeError("OTHER");
     const stats = { events: this.rows.length, bytes: this.bytes };
     this.discarded = true;
@@ -398,6 +448,12 @@ export class EpisodeHandle {
     this.ids.clear();
     this.artifacts.clear();
     this.calls.clear();
+    this.observed.clear();
+    this.incompleteCalls = 0;
+    this.unterminatedCalls = 0;
+    this.chain = hashEpisodePayload("ancilis-native-observation-chain/1", {
+      open_sha256: this.openHash,
+    });
     this.bytes = 0;
     this.reasons.add("DISCARDED_EPISODE");
     this.advance();
@@ -474,7 +530,7 @@ export class EpisodeClient {
     if (this.sequence === maximum) throw new EpisodeError("REVISION_EXHAUSTED");
     return ++this.sequence;
   }
-  _reserve(bytes: number, episode: EpisodeHandle): void {
+  _reserve(bytes: number, episode: EpisodeHandle): boolean {
     const reason =
       this.events >= this.policy.max_events
         ? "LEDGER_EVENT_CAP"
@@ -483,10 +539,12 @@ export class EpisodeClient {
           : null;
     if (reason) {
       this._loss(reason, episode);
-      throw new EpisodeError(reason);
+      if (this.policy.strict_capture) throw new EpisodeError(reason);
+      return false;
     }
     this.events++;
     this.bytes += bytes;
+    return true;
   }
   episode<T>(
     id: string,
@@ -695,7 +753,7 @@ export class EpisodeClient {
       }
       if (!captured?.artifacts?.length) gaps.push("CONTENT_NOT_CAPTURED");
       try {
-        e.observe({
+        const admitted = e.observe({
           call_id: callId,
           occurred_at: now(),
           surface: reg.options.surface,
@@ -709,7 +767,7 @@ export class EpisodeClient {
           provenance_refs: [],
           capture_gaps: gaps,
         });
-        stat.events_admitted = increment(stat.events_admitted);
+        if (admitted) stat.events_admitted = increment(stat.events_admitted);
       } catch {
         /* observe recorded a fixed loss; capture never replaces upstream behavior */
       }

@@ -324,7 +324,7 @@ def test_public_projections_are_typed_and_tombstone_resets_to_episode_genesis() 
     )
     verdict = verify_episode_snapshot(snapshot)
     assert verdict.status == "UNVERIFIED"
-    assert verdict.reasons == ("NATIVE_HISTORY_DISCARDED",)
+    assert verdict.reasons == ("NATIVE_HISTORY_DISCARDED", "NATIVE_CHAIN_MATCH")
 
 
 def test_unsigned_verifier_rejects_payload_reorder_duplicate_and_foreign_scope() -> None:
@@ -402,7 +402,10 @@ def test_custom_awaitable_is_returned_unchanged_without_telemetry_execution() ->
     with sdk.episode("custom", expected_surfaces=("tool",)) as episode:
         assert wrapped() is custom
         assert not custom.executed
-    assert episode.inspect().coverage.reasons == ("UNSUPPORTED_RETURN_PROTOCOL",)
+    assert episode.inspect().coverage.reasons == (
+        "CONTENT_NOT_CAPTURED",
+        "UNSUPPORTED_RETURN_PROTOCOL",
+    )
 
 
 def test_nested_same_episode_context_restores_outer_binding() -> None:
