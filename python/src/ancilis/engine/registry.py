@@ -27,13 +27,13 @@ class ToolEntry:
     name: str
     version: str | None = None
     description_hash: str | None = None
-    # None preserves description-only provenance semantics for existing producers.
-    content_fingerprint: str | None = None
-    content_fingerprint_status: ContentFingerprintStatus | None = None
     status: ToolStatus = ToolStatus.OBSERVED
     approved_by: str | None = None
     first_seen: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     status_changed: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    # None preserves description-only provenance semantics for existing producers.
+    content_fingerprint: str | None = None
+    content_fingerprint_status: ContentFingerprintStatus | None = None
 
     @property
     def approved(self) -> bool:

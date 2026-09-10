@@ -83,9 +83,9 @@ class PR03ProvenanceEvaluator:
         # description hashes. Missing or unreadable bytes are never evidence of
         # authentic provenance, while entries without this status retain the
         # established description-only behavior below.
-        if entry.content_fingerprint_status is not None:
-            evidence["content_fingerprint_status"] = entry.content_fingerprint_status.value
-            if entry.content_fingerprint_status == ContentFingerprintStatus.UNAVAILABLE:
+        if entry.content_fingerprint_status is not None or tool_name.startswith("cli:"):
+            evidence["content_fingerprint_status"] = (entry.content_fingerprint_status.value if entry.content_fingerprint_status is not None else "unavailable")
+            if entry.content_fingerprint_status != ContentFingerprintStatus.AVAILABLE:
                 evidence["hash_match"] = "no_baseline"
                 return ControlResult(
                     control_id=self.control_id,
@@ -126,7 +126,7 @@ class PR03ProvenanceEvaluator:
                 control_id=self.control_id,
                 control_name=self.control_name,
                 result="PASS",
-                detail="Tool provenance verified — approved and hash-consistent.",
+                detail="Binary content matches the configured approval baseline; publisher identity is not verified.",
                 evidence_data=evidence,
                 duration_ms=(time.perf_counter() - start) * 1000,
             )

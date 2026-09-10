@@ -459,6 +459,25 @@ class TestCLIToolRegistration:
 # --- CLI Execute: Audit Mode ---
 
 
+def test_legacy_cli_description_baseline_cannot_claim_binary_provenance():
+    config = _config()
+    registry = ToolRegistry()
+    registry.register(ToolEntry(name="cli:missing-legacy", description_hash="legacy-hash", status=ToolStatus.APPROVED))
+    engine = _make_engine(config, registry)
+    producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
+    action = producer.translate(CLIInvocation(command=["missing-legacy"], agent_name="test-agent"))
+    result = next(r for r in engine.evaluate(action).control_results if r.control_id == "PR-03")
+    assert result.result == "FLAG"
+    assert result.evidence_data["hash_match"] == "no_baseline"
+
+
+def test_tool_entry_positional_approval_is_backward_compatible():
+    entry = ToolEntry("tool", None, "description", ToolStatus.APPROVED, "operator")
+    assert entry.status == ToolStatus.APPROVED
+    assert entry.approved_by == "operator"
+    assert entry.content_fingerprint_status is None
+
+
 class TestCLIExecuteAudit:
     def _make_producer(self, config=None):
         c = config or _config()

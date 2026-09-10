@@ -365,6 +365,16 @@ describe("CLIActionProducer", () => {
     expect(pr03?.evidenceData.hash_match).toBe("no_baseline");
   });
 
+  it("does not treat a legacy CLI description as a binary-content baseline", () => {
+    const config = makeConfig({mode:"audit"}); const registry = new ToolRegistry();
+    registry.register({name:"cli:missing-legacy", descriptionHash:"legacy-hash",status:ToolStatus.APPROVED,approvedBy:"operator",firstSeen:"2026-09-10T00:00:00Z",statusChanged:"2026-09-10T00:00:00Z"});
+    const engine = new Engine(config, {registry});
+    const producer = new CLIActionProducer(config, engine, registry, new EvidenceStore(config,{inMemory:true}));
+    const result = engine.evaluate(producer.translate({command:["missing-legacy"],agentName:"app"})).controlResults.find(r=>r.controlId==="PR-03");
+    expect(result?.result).toBe("FLAG");
+    expect(result?.evidenceData.hash_match).toBe("no_baseline");
+  });
+
   it("fails provenance after a same-path binary replacement before execution", () => {
     const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-provenance-"));
     const tool = join(directory, "same-path-tool");

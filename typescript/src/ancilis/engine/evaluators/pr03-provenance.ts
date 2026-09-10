@@ -72,9 +72,9 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
 
     // CLI content fingerprint baselines are separate from legacy description
     // hashes. Unavailable bytes never produce a positive provenance result.
-    if (entry.contentFingerprintStatus != null) {
-      evidence.content_fingerprint_status = entry.contentFingerprintStatus;
-      if (entry.contentFingerprintStatus === ContentFingerprintStatus.UNAVAILABLE) {
+    if (entry.contentFingerprintStatus != null || toolName.startsWith("cli:")) {
+      evidence.content_fingerprint_status = entry.contentFingerprintStatus ?? "unavailable";
+      if (entry.contentFingerprintStatus !== ContentFingerprintStatus.AVAILABLE) {
         evidence.hash_match = "no_baseline";
         return {
           controlId: this.controlId, controlName: this.controlName,
@@ -103,7 +103,7 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
       evidence.hash_match = true;
       return {
         controlId: this.controlId, controlName: this.controlName,
-        result: "PASS", detail: "Tool provenance verified — approved and hash-consistent.",
+        result: "PASS", detail: "Binary content matches the configured approval baseline; publisher identity is not verified.",
         evidenceData: evidence, durationMs: performance.now() - start,
       };
     }
