@@ -1,3 +1,5 @@
+import { EpisodeClient } from './episodes/client.js';
+import type { EpisodeOptions } from './episodes/client.js';
 /** Ergonomic SDK facade for common runtime enforcement flows. */
 
 import { existsSync } from "node:fs";
@@ -80,6 +82,9 @@ function resolveFacadeConfig(options: AncilisLoadOptions): ResolvedConfig {
 }
 
 export class Ancilis {
+  /** Open advisory episode capture; legacy load/tool enforcement remains explicit. */
+  static open(options: EpisodeOptions): EpisodeClient { return new EpisodeClient(options); }
+
   readonly config: ResolvedConfig;
   readonly engine: Engine;
   readonly registry: ToolRegistry;
