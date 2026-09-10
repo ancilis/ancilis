@@ -19,7 +19,7 @@ import secrets
 import types
 import uuid
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Generic, TypeVar
+from typing import Any, Literal, TypeVar
 
 T = TypeVar("T")
 _MAX_SAFE = 9007199254740991
@@ -135,6 +135,10 @@ def canonical_json(value: Any) -> bytes:
 
 def _hash(domain: str, value: Any) -> str:
     return hashlib.sha256(domain.encode("ascii") + b"\n" + canonical_json(value)).hexdigest()
+
+
+def _hash_encoded(domain: str, encoded: bytes) -> str:
+    return hashlib.sha256(domain.encode("ascii") + b"\n" + encoded).hexdigest()
 
 
 def _id(value: str, name: str = "id") -> str:
@@ -269,7 +273,15 @@ class Relationship:
     evidence_refs: tuple[str, ...] = ()
 
     def __post_init__(self):
-        if self.kind not in ("ACCESSED", "OPERAND", "BYTE_EQUAL", "ASSERTED_ORIGIN", "WRITTEN", "READ", "SEMANTIC_PROPOSAL"):
+        if self.kind not in (
+            "ACCESSED",
+            "OPERAND",
+            "BYTE_EQUAL",
+            "ASSERTED_ORIGIN",
+            "WRITTEN",
+            "READ",
+            "SEMANTIC_PROPOSAL",
+        ):
             raise EpisodeError("INVALID_OBSERVATION")
         _id(self.from_artifact, "artifact")
         _id(self.to_artifact, "artifact")
@@ -352,9 +364,14 @@ class ObservationInput:
             raise EpisodeError("INVALID_OBSERVATION")
         if any(reason not in _REASONS for reason in self.capture_gaps):
             raise EpisodeError("INVALID_OBSERVATION")
-        if any(not isinstance(item, ContentEvidence) for item in self.artifacts) or any(
-            not isinstance(item, Relationship) for item in self.relationships
-        ) or len(self.artifacts) > 64 or len(self.relationships) > 64 or len(self.provenance_refs) > 64 or len(self.capture_gaps) > 64:
+        if (
+            any(not isinstance(item, ContentEvidence) for item in self.artifacts)
+            or any(not isinstance(item, Relationship) for item in self.relationships)
+            or len(self.artifacts) > 64
+            or len(self.relationships) > 64
+            or len(self.provenance_refs) > 64
+            or len(self.capture_gaps) > 64
+        ):
             raise EpisodeError("INVALID_OBSERVATION")
         for ref in self.provenance_refs:
             _digest(ref)
@@ -385,6 +402,50 @@ class Observation:
 
     def __getitem__(self, key):
         return self.to_dict()[key]
+
+    @property
+    def event_id(self) -> str:
+        return self.to_dict()["event_id"]
+
+    @property
+    def episode_open(self) -> str:
+        return self.to_dict()["episode_open"]
+
+    @property
+    def tenant(self) -> str:
+        return self.to_dict()["tenant"]
+
+    @property
+    def episode(self) -> str:
+        return self.to_dict()["episode"]
+
+    @property
+    def call_id(self) -> str:
+        return self.to_dict()["call_id"]
+
+    @property
+    def surface(self) -> Literal["document", "tool", "execution", "memory", "output"]:
+        return self.to_dict()["surface"]
+
+    @property
+    def operation(self) -> Literal["REQUEST", "READ", "EXECUTE", "WRITE", "RECEIVE"]:
+        return self.to_dict()["operation"]
+
+    @property
+    def phase(self) -> Literal["START", "CHUNK", "END"]:
+        return self.to_dict()["phase"]
+
+    @property
+    def outcome(self) -> str:
+        return self.to_dict()["outcome"]
+
+    @property
+    def source(self) -> Mapping[str, Any]:
+        return self.to_dict()["source"]
+
+    @property
+    def captured_at(self) -> str:
+        return self.to_dict()["captured_at"]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -427,7 +488,14 @@ class NativePolicy:
             "max_diagnostic_keys",
         ):
             value = getattr(self, name)
-            maximum = {"max_events": 10000, "max_bytes": 268435456, "max_episodes": 4096, "max_attachments": 4096, "max_body_bytes": 16777216, "max_diagnostic_keys": 4096}[name]
+            maximum = {
+                "max_events": 10000,
+                "max_bytes": 268435456,
+                "max_episodes": 4096,
+                "max_attachments": 4096,
+                "max_body_bytes": 16777216,
+                "max_diagnostic_keys": 4096,
+            }[name]
             if not isinstance(value, int) or isinstance(value, bool) or not 0 < value <= maximum:
                 raise EpisodeError("INVALID_POLICY")
         if not isinstance(self.strict_capture, bool):
@@ -457,6 +525,30 @@ class EpisodeSnapshot:
     def to_dict(self):
         return _thaw(self._value)
 
+    @property
+    def open_sha256(self) -> str:
+        return self.to_dict()["open_sha256"]
+
+    @property
+    def observation_chain_sha256(self) -> str:
+        return self.to_dict()["observation_chain_sha256"]
+
+    @property
+    def revision_id(self) -> str:
+        return self.to_dict()["revision_id"]
+
+    @property
+    def revision_method(self) -> str:
+        return self.to_dict()["revision_method"]
+
+    @property
+    def observations(self) -> tuple[Observation, ...]:
+        return tuple(Observation(_freeze(x)) for x in self.to_dict()["observations"])
+
+    @property
+    def coverage(self) -> Coverage:
+        return Coverage(_freeze(self.to_dict()["coverage"]))
+
 
 @dataclasses.dataclass(frozen=True)
 class Diagnostics:
@@ -464,6 +556,50 @@ class Diagnostics:
 
     def to_dict(self):
         return _thaw(self._value)
+
+    @property
+    def reasons(self) -> tuple[Mapping[str, Any], ...]:
+        return tuple(self.to_dict()["reasons"])
+
+    @property
+    def discarded_episodes(self) -> int:
+        return self.to_dict()["discarded_episodes"]
+
+
+@dataclasses.dataclass(frozen=True)
+class Coverage:
+    _value: Any
+
+    def to_dict(self):
+        return _thaw(self._value)
+
+    @property
+    def observed_surfaces(self) -> tuple[str, ...]:
+        return tuple(self.to_dict()["observed_surfaces"])
+
+    @property
+    def incomplete_calls(self) -> int:
+        return self.to_dict()["incomplete_calls"]
+
+    @property
+    def reasons(self) -> tuple[str, ...]:
+        return tuple(self.to_dict()["reasons"])
+
+
+@dataclasses.dataclass(frozen=True)
+class EpisodeVerification:
+    _value: Any
+
+    def to_dict(self):
+        return _thaw(self._value)
+
+    @property
+    def status(self) -> Literal["UNVERIFIED", "REJECTED"]:
+        return self.to_dict()["status"]
+
+    @property
+    def reasons(self) -> tuple[str, ...]:
+        return tuple(self.to_dict()["reasons"])
 
 
 class Episode:
@@ -482,6 +618,8 @@ class Episode:
         self._by_id = {}
         self._artifacts = {}
         self._calls = {}
+        self._observed = set()
+        self._incomplete = 0
         self._reasons = {}
         self._lost = 0
         self._reserved_bytes = 0
@@ -501,6 +639,7 @@ class Episode:
             "policy_sha256": sdk.policy.sha256,
         }
         self._open_hash = _hash("ancilis-episode-open/1", self._open)
+        self._chain = _hash("ancilis-native-observation-chain/1", {"open_sha256": self._open_hash})
         if saturated:
             self._reasons["LEDGER_EPISODE_CAP"] = 1
             self._lost = 1
@@ -535,30 +674,28 @@ class Episode:
         return EpisodeSnapshot(_freeze(self._snapshot()))
 
     def _loss(self, reason: str):
+        if self._revision >= _MAX_SAFE:
+            self._sdk._diag("REVISION_EXHAUSTED")
+            return False
         self._lost = min(_MAX_SAFE, self._lost + 1)
+        self._sdk._loss_total = min(_MAX_SAFE, self._sdk._loss_total + 1)
+        self._sdk._diag(reason)
         self._reasons[reason] = min(_MAX_SAFE, self._reasons.get(reason, 0) + 1)
         self._previous = self._revision_id
         self._revision = min(_MAX_SAFE, self._revision + 1)
         self._refresh()
+        return True
 
     def _coverage(self):
-        observed = set()
-        incomplete = 0
-        for call in self._calls.values():
-            if call.get("good"):
-                observed.add(call["surface"])
-            if (call.get("started") and not call.get("ended")) or call.get("outcome") not in (
-                None,
-                "SUCCEEDED",
-            ):
-                incomplete += 1
         return {
             "expected_surfaces": list(self._expected),
-            "observed_surfaces": [s for s in _SURFACES if s in observed],
-            "missing_surfaces": [s for s in _SURFACES if s in self._expected and s not in observed],
+            "observed_surfaces": [s for s in _SURFACES if s in self._observed],
+            "missing_surfaces": [
+                s for s in _SURFACES if s in self._expected and s not in self._observed
+            ],
             "complete": False,
             "lost_events": self._lost,
-            "incomplete_calls": incomplete,
+            "incomplete_calls": self._incomplete,
             "reasons": [r for r in _REASONS if r in self._reasons],
             "reconstruction_exclusions": [],
         }
@@ -569,10 +706,10 @@ class Episode:
             "open_sha256": self._open_hash,
             "revision": self._revision,
             "previous_revision_id": self._previous,
-            "event_ids": [r.to_dict()["event_id"] for r in self._records],
+            "observation_chain_sha256": self._chain,
             "coverage": coverage,
         }
-        self._revision_id = _hash("ancilis-native-revision/1", preimage)
+        self._revision_id = _hash("ancilis-native-revision/2", preimage)
 
     def _snapshot(self):
         return {
@@ -589,6 +726,8 @@ class Episode:
             "method": "ancilis-native-observation-ledger/1",
             "claims_basis": "COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION",
             "determination_refs": [],
+            "observation_chain_sha256": self._chain,
+            "revision_method": "ancilis-native-revision/2",
         }
 
     def observe(self, input: ObservationInput) -> Observation:
@@ -608,6 +747,11 @@ class Episode:
             if manual and self._sdk.policy.strict_capture:
                 raise EpisodeCapacityError("LEDGER_EPISODE_CAP")
             self._loss("LEDGER_EPISODE_CAP")
+            return None
+        if self._revision >= _MAX_SAFE:
+            self._sdk._diag("REVISION_EXHAUSTED")
+            if manual and self._sdk.policy.strict_capture:
+                raise EpisodeCapacityError("REVISION_EXHAUSTED")
             return None
         data = input.to_dict()
         event_pre = {
@@ -653,7 +797,9 @@ class Episode:
                     raise EpisodeError("ARTIFACT_REBIND")
                 return None
         existing = {
-            artifact["artifact"] for record in self._records for artifact in record.to_dict()["artifacts"]
+            artifact["artifact"]
+            for record in self._records
+            for artifact in record.to_dict()["artifacts"]
         }
         supplied = {a.artifact for a in input.artifacts}
         if any(
@@ -661,16 +807,28 @@ class Episode:
             for r in input.relationships
         ):
             raise EpisodeError("INVALID_OBSERVATION")
-        proposed_call = dict(self._calls.get(input.call_id, {
-            "surface": input.surface, "started": False, "ended": False, "next": 0,
-            "good": False, "outcome": None,
-        }))
+        previous_call = self._calls.get(input.call_id)
+        proposed_call = dict(
+            previous_call
+            or {
+                "surface": input.surface,
+                "started": False,
+                "ended": False,
+                "next": 0,
+                "good": False,
+                "outcome": None,
+            }
+        )
         if input.phase == "START":
             if proposed_call["started"]:
                 return self._invalid(manual, "MISSING_START")
             proposed_call["started"] = True
         elif input.phase == "CHUNK":
-            if not proposed_call["started"] or proposed_call["ended"] or input.chunk_index != proposed_call["next"]:
+            if (
+                not proposed_call["started"]
+                or proposed_call["ended"]
+                or input.chunk_index != proposed_call["next"]
+            ):
                 return self._invalid(manual, "CHUNK_GAP")
             proposed_call["next"] += 1
             proposed_call["good"] = True
@@ -694,6 +852,18 @@ class Episode:
                 raise EpisodeCapacityError("LEDGER_BYTE_CAP")
             return None
         self._calls[input.call_id] = proposed_call
+
+        def incomplete(call):
+            return (call.get("started") and not call.get("ended")) or call.get("outcome") not in (
+                None,
+                "SUCCEEDED",
+            )
+
+        self._incomplete += int(incomplete(proposed_call)) - int(
+            bool(previous_call) and incomplete(previous_call)
+        )
+        if proposed_call["good"]:
+            self._observed.add(proposed_call["surface"])
         self._sdk._sequence += 1
         record = Observation(_freeze(candidate))
         self._records.append(record)
@@ -702,12 +872,38 @@ class Episode:
         self._sdk._event_count += 1
         self._reserved_bytes += len(encoded)
         self._reserved_events += 1
+        payload = _hash_encoded("ancilis-observation-payload/1", encoded)
+        self._chain = _hash(
+            "ancilis-native-observation-chain/1",
+            {"previous_observation_chain_sha256": self._chain, "observation_sha256": payload},
+        )
         for artifact in input.artifacts:
             self._artifacts[artifact.artifact] = (artifact.sha256, artifact.byte_length)
         self._previous = self._revision_id
         self._revision += 1
         self._refresh()
         return record
+
+    def _discard(self):
+        if self._revision >= _MAX_SAFE:
+            self._sdk._diag("REVISION_EXHAUSTED")
+            return False
+        self._previous = self._revision_id
+        self._records.clear()
+        self._by_id.clear()
+        self._artifacts.clear()
+        self._calls.clear()
+        self._observed.clear()
+        self._incomplete = 0
+        self._chain = _hash("ancilis-native-observation-chain/1", {"open_sha256": self._open_hash})
+        self._lost = min(_MAX_SAFE, self._lost + 1)
+        self._reasons["DISCARDED_EPISODE"] = min(
+            _MAX_SAFE, self._reasons.get("DISCARDED_EPISODE", 0) + 1
+        )
+        self._revision += 1
+        self._discarded = True
+        self._refresh()
+        return True
 
     def _invalid(self, manual, reason):
         self._loss(reason)
@@ -761,7 +957,9 @@ class _GeneratorProxy:
             self._terminal("SUCCEEDED", stopped.value)
             raise
         except BaseException as exc:
-            self._terminal("CANCELLED" if isinstance(exc, asyncio.CancelledError) else "FAILED", exc)
+            self._terminal(
+                "CANCELLED" if isinstance(exc, asyncio.CancelledError) else "FAILED", exc
+            )
             raise
         self._terminal("CHUNK", value, self._index)
         self._index += 1
@@ -772,6 +970,64 @@ class _GeneratorProxy:
             return self._iterator.close()
         finally:
             self._terminal("CLOSED_EARLY", None)
+
+
+class _AsyncGeneratorProxy:
+    def __init__(self, iterator, terminal):
+        self._iterator, self._terminal, self._index, self._ended = iterator, terminal, 0, False
+
+    def __aiter__(self):
+        return self
+
+    def _end(self, outcome, value=None):
+        if not self._ended:
+            self._ended = True
+            self._terminal(outcome, value)
+
+    async def __anext__(self):
+        try:
+            value = await self._iterator.__anext__()
+        except StopAsyncIteration:
+            self._end("SUCCEEDED")
+            raise
+        except BaseException as exc:
+            self._end("CANCELLED" if isinstance(exc, asyncio.CancelledError) else "FAILED", exc)
+            raise
+        self._terminal("CHUNK", value, self._index)
+        self._index += 1
+        return value
+
+    async def asend(self, value):
+        try:
+            result = await self._iterator.asend(value)
+        except StopAsyncIteration:
+            self._end("SUCCEEDED")
+            raise
+        except BaseException as exc:
+            self._end("CANCELLED" if isinstance(exc, asyncio.CancelledError) else "FAILED", exc)
+            raise
+        self._terminal("CHUNK", result, self._index)
+        self._index += 1
+        return result
+
+    async def athrow(self, *args):
+        try:
+            result = await self._iterator.athrow(*args)
+        except StopAsyncIteration:
+            self._end("SUCCEEDED")
+            raise
+        except BaseException as exc:
+            self._end("CANCELLED" if isinstance(exc, asyncio.CancelledError) else "FAILED", exc)
+            raise
+        self._terminal("CHUNK", result, self._index)
+        self._index += 1
+        return result
+
+    async def aclose(self):
+        try:
+            return await self._iterator.aclose()
+        finally:
+            self._end("CLOSED_EARLY")
 
 
 class Ancilis:
@@ -817,6 +1073,9 @@ class Ancilis:
         self._sequence = 0
         self._diagnostics = {}
         self._discarded = 0
+        self._discarded_events = 0
+        self._discarded_bytes = 0
+        self._loss_total = 0
 
     def __enter__(self):
         return self
@@ -833,6 +1092,8 @@ class Ancilis:
         return False
 
     def _diag(self, reason):
+        if reason not in _REASONS:
+            reason = "OTHER"
         self._diagnostics[reason] = min(_MAX_SAFE, self._diagnostics.get(reason, 0) + 1)
 
     def diagnostics(self):
@@ -840,12 +1101,21 @@ class Ancilis:
             _freeze(
                 {
                     "schema": "ancilis-native-diagnostics/1",
-                    "reasons": [
-                        {"reason": r, "count": self._diagnostics[r]}
-                        for r in _REASONS
-                        if r in self._diagnostics
-                    ],
+                    "storage": "MEMORY_ONLY",
+                    "closed": self._closed,
+                    "events": self._event_count,
+                    "accounted_bytes": self._event_bytes,
+                    "episodes": len(self._episodes),
+                    "lost": self._loss_total,
+                    "discarded_events": self._discarded_events,
+                    "discarded_bytes": self._discarded_bytes,
+                    "reasons": {
+                        r: self._diagnostics[r] for r in _REASONS if r in self._diagnostics
+                    },
+                    "attachments": [],
                     "discarded_episodes": self._discarded,
+                    "reconstruction": "UNAVAILABLE",
+                    "semantic_recovery": "UNQUALIFIED",
                 }
             )
         )
@@ -878,19 +1148,21 @@ class Ancilis:
         episode = self._episodes.get(episode_id)
         if episode is None:
             return False
-        if episode._active or any(not c["ended"] for c in episode._calls.values() if c["started"]):
+        if episode._active:
             raise EpisodeLifecycleError("EPISODE_ACTIVE")
         self._event_bytes -= episode._reserved_bytes
         self._event_count -= episode._reserved_events
-        del self._episodes[episode_id]
-        episode._discarded = True
+        self._discarded_events += episode._reserved_events
+        self._discarded_bytes += episode._reserved_bytes
+        if not episode._discard():
+            return False
         self._discarded = min(_MAX_SAFE, self._discarded + 1)
         self._diag("DISCARDED_EPISODE")
         return True
 
     def flush(self):
         return {
-            "admitted_events": sum(len(e._records) for e in self._episodes.values()),
+            "admitted": self._event_count,
             "pending": 0,
             "durable": 0,
             "lost": sum(e._lost for e in self._episodes.values()),
@@ -908,7 +1180,9 @@ class Ancilis:
             self._attachments.clear()
 
     def detach(self, wrapped):
-        attachment = self._attachments.pop(getattr(wrapped, "__ancilis_attachment_key__", None), None)
+        attachment = self._attachments.pop(
+            getattr(wrapped, "__ancilis_attachment_key__", None), None
+        )
         if attachment is not None:
             attachment.__ancilis_attachment_active__ = False
 
@@ -1011,14 +1285,23 @@ class Ancilis:
                 return None, secrets.token_hex(16)
             episode = _active_episode.get()
             call_id = secrets.token_hex(16)
-            if episode and episode._sdk is self:
-                episode._admit(
-                    ObservationInput(
-                        call_id, self._clock(), surface, operation, "START", None, "STARTED"
-                    ),
-                    manual=False,
-                )
-            return episode, call_id
+            if (
+                episode
+                and episode._sdk is self
+                and not episode._discarded
+                and not episode._finished
+            ):
+                try:
+                    episode._admit(
+                        ObservationInput(
+                            call_id, self._clock(), surface, operation, "START", None, "STARTED"
+                        ),
+                        manual=False,
+                    )
+                    return episode, call_id
+                except EpisodeError:
+                    pass
+            return None, call_id
 
         def terminal(episode, call_id, args, kwargs, outcome, result=None, error=None, chunk=None):
             self._capture(
@@ -1145,7 +1428,35 @@ class Ancilis:
 
                     result.add_done_callback(done)
                     return result
-                if inspect.isawaitable(result) and not isinstance(result, types.CoroutineType):
+                if inspect.isasyncgen(result):
+                    return _AsyncGeneratorProxy(
+                        result,
+                        lambda outcome, value=None, index=None: terminal(
+                            episode, call_id, args, kwargs, outcome, value, chunk=index
+                        ),
+                    )
+                if isinstance(result, types.CoroutineType):
+
+                    async def await_result():
+                        try:
+                            value = await result
+                        except BaseException as exc:
+                            terminal(
+                                episode,
+                                call_id,
+                                args,
+                                kwargs,
+                                "CANCELLED"
+                                if isinstance(exc, asyncio.CancelledError)
+                                else "FAILED",
+                                error=exc,
+                            )
+                            raise
+                        terminal(episode, call_id, args, kwargs, "SUCCEEDED", value)
+                        return value
+
+                    return await_result()
+                if inspect.isawaitable(result):
                     if episode:
                         episode._loss("UNSUPPORTED_RETURN_PROTOCOL")
                     return result
@@ -1192,6 +1503,7 @@ class Ancilis:
                 self._client = client
                 self._wrapped = {}
                 for tool_name, surface, operation in normalized:
+
                     async def invoke(request, _client=client):
                         result = _client.call_tool(request)
                         return await result if inspect.isawaitable(result) else result
@@ -1228,6 +1540,8 @@ __all__ = [
     "CaptureResult",
     "ContentEvidence",
     "Diagnostics",
+    "Coverage",
+    "EpisodeVerification",
     "Episode",
     "EpisodeCapacityError",
     "EpisodeError",
@@ -1239,4 +1553,189 @@ __all__ = [
     "ObservationInput",
     "Relationship",
     "canonical_json",
+    "verify_episode_snapshot",
 ]
+
+
+def verify_episode_snapshot(
+    snapshot: EpisodeSnapshot | Mapping[str, Any], *, assessed_at: str | None = None
+) -> EpisodeVerification:
+    """Check native, unsigned payload-chain integrity; this is not authentication."""
+    value = snapshot.to_dict() if isinstance(snapshot, EpisodeSnapshot) else snapshot
+    assessed = assessed_at or _now()
+    try:
+        _timestamp(assessed)
+    except EpisodeError:
+        assessed = _now()
+    policy = ""
+
+    def result(status: str, reason: str) -> EpisodeVerification:
+        return EpisodeVerification(
+            _freeze(
+                {
+                    "schema": "ancilis-verification/1",
+                    "status": status,
+                    "envelope_authenticated": False,
+                    "protected_bodies": "NOT_REQUESTED",
+                    "reconstruction": "UNSUPPORTED",
+                    "policy_sha256": policy,
+                    "assessed_at": assessed,
+                    "reasons": [reason],
+                    "verified_claim_refs": [],
+                }
+            )
+        )
+
+    try:
+        if (
+            not isinstance(value, Mapping)
+            or value.get("schema") != "ancilis-episode/1"
+            or value.get("method") != "ancilis-native-observation-ledger/1"
+            or value.get("revision_method") != "ancilis-native-revision/2"
+        ):
+            raise EpisodeError("INVALID")
+        open_value = value["open"]
+        if (
+            not isinstance(open_value, Mapping)
+            or open_value.get("schema") != "ancilis-episode-open/1"
+        ):
+            raise EpisodeError("INVALID")
+        _id(open_value["tenant"], "tenant")
+        _id(open_value["episode"], "episode")
+        _id(open_value["owner_source"], "source")
+        _timestamp(open_value["created_at"])
+        _digest(open_value["policy_sha256"])
+        _digest(value["open_sha256"])
+        policy = open_value["policy_sha256"]
+        if (
+            value["tenant"] != open_value["tenant"]
+            or value["episode"] != open_value["episode"]
+            or _hash("ancilis-episode-open/1", dict(open_value)) != value["open_sha256"]
+        ):
+            raise EpisodeError("INVALID")
+        rows = value["observations"]
+        if not isinstance(rows, list) or len(rows) > 10000:
+            raise EpisodeError("INVALID")
+        chain = _hash("ancilis-native-observation-chain/1", {"open_sha256": value["open_sha256"]})
+        sequences: list[int] = []
+        calls: dict[str, dict[str, Any]] = {}
+        observed: set[str] = set()
+        for row in rows:
+            if not isinstance(row, Mapping) or row.get("schema") != "ancilis-observation/1":
+                raise EpisodeError("INVALID")
+            if (
+                row.get("tenant") != value["tenant"]
+                or row.get("episode") != value["episode"]
+                or row.get("episode_open") != value["open_sha256"]
+            ):
+                raise EpisodeError("INVALID")
+            source = row.get("source")
+            if (
+                not isinstance(source, Mapping)
+                or source.get("id") != open_value["owner_source"]
+                or source.get("instance") not in open_value["allowed_source_instances"]
+            ):
+                raise EpisodeError("INVALID")
+            seq = _safe_int(source.get("sequence"), minimum=1)
+            if sequences and seq <= sequences[-1]:
+                raise EpisodeError("INVALID")
+            sequences.append(seq)
+            _timestamp(row["occurred_at"])
+            _timestamp(row["captured_at"])
+            if (
+                row.get("surface") not in _SURFACES
+                or row.get("operation") not in _OPERATIONS
+                or row.get("phase") not in _PHASES
+                or row.get("outcome") not in _OUTCOMES
+            ):
+                raise EpisodeError("INVALID")
+            event = _hash(
+                "ancilis-observation-id/1",
+                {
+                    "tenant": value["tenant"],
+                    "episode_open": value["open_sha256"],
+                    "source_instance": source["instance"],
+                    "call_id": row["call_id"],
+                    "phase": row["phase"],
+                    "chunk_index": row["chunk_index"],
+                },
+            )
+            if row.get("event_id") != event:
+                raise EpisodeError("INVALID")
+            if event in {r.get("event_id") for r in rows[: len(sequences) - 1]}:
+                raise EpisodeError("INVALID")
+            encoded = canonical_json(dict(row))
+            chain = _hash(
+                "ancilis-native-observation-chain/1",
+                {
+                    "previous_observation_chain_sha256": chain,
+                    "observation_sha256": _hash_encoded("ancilis-observation-payload/1", encoded),
+                },
+            )
+            call = calls.setdefault(
+                row["call_id"],
+                {
+                    "started": False,
+                    "ended": False,
+                    "next": 0,
+                    "surface": row["surface"],
+                    "good": False,
+                    "outcome": None,
+                },
+            )
+            if row["phase"] == "START":
+                if call["started"]:
+                    raise EpisodeError("INVALID")
+                call["started"] = True
+            elif row["phase"] == "CHUNK":
+                if not call["started"] or call["ended"] or row["chunk_index"] != call["next"]:
+                    raise EpisodeError("INVALID")
+                call["next"] += 1
+                call["good"] = True
+            else:
+                if not call["started"] or call["ended"]:
+                    raise EpisodeError("INVALID")
+                call["ended"] = True
+                call["outcome"] = row["outcome"]
+                call["good"] = row["outcome"] == "SUCCEEDED"
+            if call["good"]:
+                observed.add(call["surface"])
+        coverage = value["coverage"]
+        discarded = "DISCARDED_EPISODE" in coverage.get("reasons", [])
+        if discarded:
+            if rows or coverage.get("observed_surfaces") or coverage.get("incomplete_calls") != 0:
+                raise EpisodeError("INVALID")
+            if chain != value["observation_chain_sha256"]:
+                return result("REJECTED", "NATIVE_CHAIN_MISMATCH")
+            return result("UNVERIFIED", "NATIVE_HISTORY_DISCARDED")
+        incomplete = sum(
+            (c["started"] and not c["ended"]) or c["outcome"] not in (None, "SUCCEEDED")
+            for c in calls.values()
+        )
+        expected = open_value["expected_surfaces"]
+        recomputed = {
+            "expected_surfaces": expected,
+            "observed_surfaces": [s for s in _SURFACES if s in observed],
+            "missing_surfaces": [s for s in _SURFACES if s in expected and s not in observed],
+            "complete": False,
+            "lost_events": coverage.get("lost_events"),
+            "incomplete_calls": incomplete,
+            "reasons": coverage.get("reasons"),
+            "reconstruction_exclusions": [],
+        }
+        if coverage != recomputed:
+            raise EpisodeError("INVALID")
+        if chain != value["observation_chain_sha256"]:
+            return result("REJECTED", "NATIVE_CHAIN_MISMATCH")
+        preimage = {
+            "open_sha256": value["open_sha256"],
+            "revision": value["revision"],
+            "previous_revision_id": value["previous_revision_id"],
+            "observation_chain_sha256": chain,
+            "coverage": coverage,
+        }
+        if _hash("ancilis-native-revision/2", preimage) != value["revision_id"]:
+            raise EpisodeError("INVALID")
+        return result("UNVERIFIED", "NATIVE_CHAIN_MATCH")
+    except (EpisodeError, KeyError, TypeError, ValueError):
+        return result("REJECTED", "INVALID_NATIVE_SNAPSHOT")

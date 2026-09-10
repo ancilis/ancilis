@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         ObservationConflict,
         ObservationInput,
         Relationship,
+        verify_episode_snapshot,
     )
     from ancilis.adapters.anthropic import (
         AnthropicActionProducer,
@@ -160,6 +161,7 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "ObservationConflict": ("ancilis.episodes", "ObservationConflict"),
     "ObservationInput": ("ancilis.episodes", "ObservationInput"),
     "Relationship": ("ancilis.episodes", "Relationship"),
+    "verify_episode_snapshot": ("ancilis.episodes", "verify_episode_snapshot"),
     "AKSI_FRAMEWORK_VERSION": ("ancilis.aksi", "AKSI_FRAMEWORK_VERSION"),
     "ActionProducer": ("ancilis.producers.protocol", "ActionProducer"),
     "AncilisMiddleware": ("ancilis.middleware.middleware", "AncilisMiddleware"),

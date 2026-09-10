@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import inspect
 
 import pytest
@@ -17,6 +18,8 @@ from ancilis.episodes import (
     ObservationConflict,
     ObservationInput,
     Relationship,
+    verify_episode_snapshot,
+    canonical_json,
 )
 
 
@@ -68,9 +71,11 @@ def test_five_operation_capture_keeps_both_artifacts_without_raw_body() -> None:
         name="read",
         surface="document",
         operation="READ",
-        capture=lambda frame: CaptureResult((ContentEvidence.from_bytes("doc", frame.result),))
-        if frame.phase == "END"
-        else None,
+        capture=lambda frame: (
+            CaptureResult((ContentEvidence.from_bytes("doc", frame.result),))
+            if frame.phase == "END"
+            else None
+        ),
     )
     execute = sdk.attach_tool(
         lambda value: len(value), name="execute", surface="execution", operation="EXECUTE"
@@ -89,11 +94,11 @@ def test_five_operation_capture_keeps_both_artifacts_without_raw_body() -> None:
         name="output",
         surface="output",
         operation="WRITE",
-        capture=lambda frame: CaptureResult(
-            (ContentEvidence.from_bytes("final", frame.result.encode()),)
-        )
-        if frame.phase == "END"
-        else None,
+        capture=lambda frame: (
+            CaptureResult((ContentEvidence.from_bytes("final", frame.result.encode()),))
+            if frame.phase == "END"
+            else None
+        ),
     )
 
     with sdk.episode(
@@ -107,7 +112,9 @@ def test_five_operation_capture_keeps_both_artifacts_without_raw_body() -> None:
 
     snapshot = episode.inspect().to_dict()
     assert len(snapshot["observations"]) == 10
-    assert [artifact["artifact"] for row in snapshot["observations"] for artifact in row["artifacts"]] == [
+    assert [
+        artifact["artifact"] for row in snapshot["observations"] for artifact in row["artifacts"]
+    ] == [
         "doc",
         "final",
     ]
@@ -196,8 +203,12 @@ def test_mcp_attachment_is_deduplicated_and_preserves_caller_method_binding() ->
         lambda: ContentEvidence("artifact", "g" * 64, 1),
         lambda: ContentEvidence("artifact", "0" * 64, True),
         lambda: Relationship("NOT_A_RELATIONSHIP", "a", "b"),
-        lambda: ObservationInput("call", "2026-99-99T00:00:00.000000Z", "tool", "EXECUTE", "START", None, "STARTED"),
-        lambda: ObservationInput("call", "2026-09-10T00:00:00.000000Z", "tool", "EXECUTE", "CHUNK", True, "OBSERVED"),
+        lambda: ObservationInput(
+            "call", "2026-99-99T00:00:00.000000Z", "tool", "EXECUTE", "START", None, "STARTED"
+        ),
+        lambda: ObservationInput(
+            "call", "2026-09-10T00:00:00.000000Z", "tool", "EXECUTE", "CHUNK", True, "OBSERVED"
+        ),
         lambda: Ancilis("tenant", "source", source_instance="instance", max_events=True),
         lambda: Ancilis("tenant", "source", source_instance="instance", strict_capture=1),
     ],
@@ -286,4 +297,120 @@ def test_closed_sdk_wrapper_still_calls_application_without_admitting_new_events
         sdk.close()
         assert wrapped() == "value"
     assert episode.inspect().to_dict()["observations"] == []
-    assert sdk.diagnostics().to_dict()["reasons"] == [{"reason": "SDK_CLOSED", "count": 1}]
+    assert sdk.diagnostics().to_dict()["reasons"] == {"SDK_CLOSED": 1}
+
+
+def test_public_projections_are_typed_and_tombstone_resets_to_episode_genesis() -> None:
+    sdk = Ancilis("tenant", "source", source_instance="instance")
+    episode = sdk.episode("episode", expected_surfaces=("tool",))
+    observation = episode.observe(_input("call"))
+    assert observation.event_id == observation.to_dict()["event_id"]
+    before = episode.inspect()
+    assert before.observation_chain_sha256 != before.open_sha256
+    assert sdk.discard_episode("episode") is True
+    snapshot = episode.inspect()
+    assert snapshot.observations == ()
+    assert snapshot.coverage.observed_surfaces == ()
+    assert snapshot.coverage.incomplete_calls == 0
+    assert snapshot.coverage.reasons[-1] == "DISCARDED_EPISODE"
+    assert (
+        snapshot.observation_chain_sha256
+        == __import__("hashlib")
+        .sha256(
+            b"ancilis-native-observation-chain/1\n"
+            + canonical_json({"open_sha256": snapshot.open_sha256})
+        )
+        .hexdigest()
+    )
+    verdict = verify_episode_snapshot(snapshot)
+    assert verdict.status == "UNVERIFIED"
+    assert verdict.reasons == ("NATIVE_HISTORY_DISCARDED",)
+
+
+def test_unsigned_verifier_rejects_payload_reorder_duplicate_and_foreign_scope() -> None:
+    sdk = Ancilis("tenant", "source", source_instance="instance")
+    episode = sdk.episode("episode", expected_surfaces=("tool",))
+    episode.observe(_input("call"))
+    episode.observe(_input("call", phase="END", outcome="SUCCEEDED"))
+    valid = episode.inspect().to_dict()
+    assert verify_episode_snapshot(valid).reasons == ("NATIVE_CHAIN_MATCH",)
+    for mutate in (
+        lambda value: value["observations"].__setitem__(
+            0, {**value["observations"][0], "outcome": "OBSERVED"}
+        ),
+        lambda value: value["observations"].reverse(),
+        lambda value: value["observations"].append(copy.deepcopy(value["observations"][0])),
+        lambda value: value["observations"].__setitem__(
+            0, {**value["observations"][0], "tenant": "foreign"}
+        ),
+    ):
+        invalid = copy.deepcopy(valid)
+        mutate(invalid)
+        result = verify_episode_snapshot(invalid).to_dict()
+        assert result["status"] == "REJECTED"
+        assert result["reasons"] in (["NATIVE_CHAIN_MISMATCH"], ["INVALID_NATIVE_SNAPSHOT"])
+
+
+def test_ordinary_callable_returning_coroutine_or_async_generator_is_lazy() -> None:
+    sdk = Ancilis("tenant", "source", source_instance="instance")
+    started = []
+
+    async def coroutine():
+        started.append("coroutine")
+        return object()
+
+    async def async_stream():
+        started.append("stream")
+        yield "one"
+
+    wrapped_coroutine = sdk.attach_tool(
+        lambda: coroutine(), name="coro", surface="tool", operation="EXECUTE"
+    )
+    wrapped_stream = sdk.attach_tool(
+        lambda: async_stream(), name="stream", surface="tool", operation="EXECUTE"
+    )
+
+    async def exercise():
+        with sdk.episode("lazy", expected_surfaces=("tool",)) as episode:
+            pending = wrapped_coroutine()
+            iterator = wrapped_stream()
+            assert started == []
+            assert await pending is not None
+            assert await anext(iterator) == "one"
+        assert [row["phase"] for row in episode.inspect().to_dict()["observations"]] == [
+            "START",
+            "START",
+            "END",
+            "CHUNK",
+        ]
+
+    asyncio.run(exercise())
+
+
+def test_custom_awaitable_is_returned_unchanged_without_telemetry_execution() -> None:
+    class Custom:
+        executed = False
+
+        def __await__(self):
+            self.executed = True
+            yield
+            return "value"
+
+    sdk = Ancilis("tenant", "source", source_instance="instance")
+    custom = Custom()
+    wrapped = sdk.attach_tool(lambda: custom, name="custom", surface="tool", operation="EXECUTE")
+    with sdk.episode("custom", expected_surfaces=("tool",)) as episode:
+        assert wrapped() is custom
+        assert not custom.executed
+    assert episode.inspect().coverage.reasons == ("UNSUPPORTED_RETURN_PROTOCOL",)
+
+
+def test_nested_same_episode_context_restores_outer_binding() -> None:
+    sdk = Ancilis("tenant", "source", source_instance="instance")
+    wrapped = sdk.attach_tool(lambda: "value", name="tool", surface="tool", operation="EXECUTE")
+    with sdk.episode("nested", expected_surfaces=("tool",)) as episode:
+        wrapped()
+        with episode:
+            wrapped()
+        wrapped()
+    assert len(episode.inspect().observations) == 6

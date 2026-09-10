@@ -6,7 +6,9 @@ import json
 import hashlib
 from pathlib import Path
 
-from ancilis.episodes import Ancilis, ObservationInput, canonical_json
+import jsonschema
+
+from ancilis.episodes import Ancilis, ObservationInput, canonical_json, verify_episode_snapshot
 
 
 VECTORS = json.loads(
@@ -16,7 +18,7 @@ VECTORS = json.loads(
 )
 
 
-def test_native_policy_open_event_and_initial_revision_match_golden_vectors() -> None:
+def test_native_policy_open_event_and_v2_chain_match_golden_vectors() -> None:
     vector = VECTORS
     sdk = Ancilis(
         vector["open"]["tenant"],
@@ -36,17 +38,42 @@ def test_native_policy_open_event_and_initial_revision_match_golden_vectors() ->
     assert initial["open"] == vector["open"]
     assert initial["open_sha256"] == vector["open_sha256"]
     assert initial["revision_id"] == vector["revision_id"]
+    assert initial["revision_method"] == vector["revision_method"]
+    assert initial["observation_chain_sha256"] == vector["genesis_chain"]
 
     observation = episode.observe(ObservationInput(**vector["manual_input"]))
     assert observation.to_dict() == vector["observation"]
+    after = episode.inspect().to_dict()
+    assert after["observation_chain_sha256"] == vector["first_observation_chain"]
+    assert after["revision_id"] != initial["revision_id"]
+    assert verify_episode_snapshot(after, assessed_at=vector["open"]["created_at"]).to_dict() == {
+        "schema": "ancilis-verification/1",
+        "status": "UNVERIFIED",
+        "envelope_authenticated": False,
+        "protected_bodies": "NOT_REQUESTED",
+        "reconstruction": "UNSUPPORTED",
+        "policy_sha256": vector["policy_sha256"],
+        "assessed_at": vector["open"]["created_at"],
+        "reasons": ["NATIVE_CHAIN_MATCH"],
+        "verified_claim_refs": [],
+    }
 
 
-def test_golden_partial_revision_hash_uses_the_shared_canonical_preimage() -> None:
+def test_golden_v2_revision_hash_uses_the_shared_canonical_preimage() -> None:
     assert (
         canonical_json(VECTORS["canonical_nonbmp"]["value"]).hex()
         == VECTORS["canonical_nonbmp"]["utf8_hex"]
     )
     digest = hashlib.sha256(
-        b"ancilis-native-revision/1\n" + canonical_json(VECTORS["partial_revision_preimage"])
+        b"ancilis-native-revision/2\n" + canonical_json(VECTORS["partial_revision_preimage"])
     ).hexdigest()
     assert digest == VECTORS["partial_revision_id"]
+
+
+def test_real_native_snapshot_and_unsigned_verdict_validate_against_shared_schemas() -> None:
+    sdk = Ancilis("tenant", "source", source_instance="instance")
+    episode = sdk.episode("episode", expected_surfaces=("tool",))
+    episode.observe(ObservationInput("call", "2026-09-10T00:00:00.000000Z", "tool", "EXECUTE", "START", None, "STARTED"))
+    root = Path(__file__).resolve().parents[2] / "shared/episodes/v1"
+    jsonschema.validate(episode.inspect().to_dict(), json.loads((root / "episode.schema.json").read_text()))
+    jsonschema.validate(verify_episode_snapshot(episode.inspect()).to_dict(), json.loads((root / "verification.schema.json").read_text()))
