@@ -1241,6 +1241,425 @@
         "status": "UNVERIFIED",
         "verified_claim_refs": []
       }
+    },
+    {
+      "name": "tenant-newline",
+      "snapshot": {
+        "schema": "ancilis-episode/1",
+        "tenant": "tenant-a\n",
+        "episode": "one",
+        "open": {
+          "schema": "ancilis-episode-open/1",
+          "tenant": "tenant-a\n",
+          "episode": "one",
+          "owner_source": "app",
+          "open_nonce": "adfc2d990165a901bcdc8c2fdc8e2b34",
+          "allowed_source_instances": [
+            "instance"
+          ],
+          "expected_surfaces": [
+            "tool"
+          ],
+          "correlation_basis": "APPLICATION_ASSIGNED",
+          "created_at": "2026-09-10T06:20:46.587443Z",
+          "policy_sha256": "5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63"
+        },
+        "open_sha256": "2902aea592545e45c54e8ac651ce67190d85bb0d844e7c51dcf29750f0094029",
+        "revision": 3,
+        "revision_id": "6724f831c75d0cb63edf4ae3ca7e8e115a4282570de885e31712c992fbb27952",
+        "previous_revision_id": "72cf551a2fb7a3f98baa5e3d57520bfb1924c07709b4dd68de0f723a298d8532",
+        "observations": [
+          {
+            "call_id": "c1",
+            "occurred_at": "2026-09-10T00:00:00.000000Z",
+            "surface": "tool",
+            "operation": "EXECUTE",
+            "phase": "START",
+            "chunk_index": null,
+            "outcome": "STARTED",
+            "authority": {
+              "principal": null,
+              "service": null,
+              "delegation": null,
+              "approval": null,
+              "scope": null,
+              "basis": "APPLICATION_ASSERTION"
+            },
+            "artifacts": [],
+            "relationships": [],
+            "provenance_refs": [],
+            "capture_gaps": [],
+            "schema": "ancilis-observation/1",
+            "tenant": "tenant-a\n",
+            "episode": "one",
+            "episode_open": "2902aea592545e45c54e8ac651ce67190d85bb0d844e7c51dcf29750f0094029",
+            "event_id": "ade8a2af46da6635d8abadd32b834f73042088320b98dd08bbb55f1f554556ec",
+            "source": {
+              "id": "app",
+              "instance": "instance",
+              "sequence": 1
+            },
+            "captured_at": "2026-09-10T06:20:46.589000Z",
+            "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+            "clock_evidence_refs": []
+          },
+          {
+            "call_id": "c1",
+            "occurred_at": "2026-09-10T00:00:00.000000Z",
+            "surface": "tool",
+            "operation": "EXECUTE",
+            "phase": "END",
+            "chunk_index": null,
+            "outcome": "SUCCEEDED",
+            "authority": {
+              "principal": null,
+              "service": null,
+              "delegation": null,
+              "approval": null,
+              "scope": null,
+              "basis": "APPLICATION_ASSERTION"
+            },
+            "artifacts": [
+              {
+                "artifact": "doc",
+                "sha256": "6ffbbe12c3d609cbd5297aa4418f8371ce1ee554ce8b6919fee54d90398d44db",
+                "byte_length": 9,
+                "role": "OUTPUT",
+                "access_scope": "application",
+                "classification_receipt_refs": []
+              }
+            ],
+            "relationships": [],
+            "provenance_refs": [],
+            "capture_gaps": [],
+            "schema": "ancilis-observation/1",
+            "tenant": "tenant-a\n",
+            "episode": "one",
+            "episode_open": "2902aea592545e45c54e8ac651ce67190d85bb0d844e7c51dcf29750f0094029",
+            "event_id": "17eb5b927513c873380874999f9ba29e1e5806f18b0e18345357d1b0e0c5d3d1",
+            "source": {
+              "id": "app",
+              "instance": "instance",
+              "sequence": 2
+            },
+            "captured_at": "2026-09-10T06:20:46.589169Z",
+            "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+            "clock_evidence_refs": []
+          }
+        ],
+        "coverage": {
+          "expected_surfaces": [
+            "tool"
+          ],
+          "observed_surfaces": [
+            "tool"
+          ],
+          "missing_surfaces": [],
+          "complete": false,
+          "lost_events": 0,
+          "incomplete_calls": 0,
+          "reasons": [],
+          "reconstruction_exclusions": []
+        },
+        "method": "ancilis-native-observation-ledger/1",
+        "claims_basis": "COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION",
+        "determination_refs": [],
+        "observation_chain_sha256": "2f0b85f8d6183a210d866b9b61fbcba954ad7b6c5137658dcfbbb884bf45d31e",
+        "revision_method": "ancilis-native-revision/2"
+      },
+      "expected": {
+        "schema": "ancilis-verification/1",
+        "status": "REJECTED",
+        "envelope_authenticated": false,
+        "protected_bodies": "NOT_REQUESTED",
+        "reconstruction": "UNSUPPORTED",
+        "policy_sha256": "694a14f817e89354647a3cc6afe4254068fb7e9103a7cbc2620a955d7171b378",
+        "assessed_at": "2026-09-10T00:00:00.000000Z",
+        "reasons": [
+          "INVALID_NATIVE_SNAPSHOT"
+        ],
+        "verified_claim_refs": []
+      }
+    },
+    {
+      "name": "nonce-newline",
+      "snapshot": {
+        "schema": "ancilis-episode/1",
+        "tenant": "tenant-a",
+        "episode": "one",
+        "open": {
+          "schema": "ancilis-episode-open/1",
+          "tenant": "tenant-a",
+          "episode": "one",
+          "owner_source": "app",
+          "open_nonce": "adfc2d990165a901bcdc8c2fdc8e2b34\n",
+          "allowed_source_instances": [
+            "instance"
+          ],
+          "expected_surfaces": [
+            "tool"
+          ],
+          "correlation_basis": "APPLICATION_ASSIGNED",
+          "created_at": "2026-09-10T06:20:46.587443Z",
+          "policy_sha256": "5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63"
+        },
+        "open_sha256": "427e248c0ff4c389bd5e012548ede76fcb9f24a99566a99375713915963475b5",
+        "revision": 3,
+        "revision_id": "5662c6a502da852ee20d551b889141c2b2c9aa7befd7f03de0a6e7056919a10d",
+        "previous_revision_id": "72cf551a2fb7a3f98baa5e3d57520bfb1924c07709b4dd68de0f723a298d8532",
+        "observations": [
+          {
+            "call_id": "c1",
+            "occurred_at": "2026-09-10T00:00:00.000000Z",
+            "surface": "tool",
+            "operation": "EXECUTE",
+            "phase": "START",
+            "chunk_index": null,
+            "outcome": "STARTED",
+            "authority": {
+              "principal": null,
+              "service": null,
+              "delegation": null,
+              "approval": null,
+              "scope": null,
+              "basis": "APPLICATION_ASSERTION"
+            },
+            "artifacts": [],
+            "relationships": [],
+            "provenance_refs": [],
+            "capture_gaps": [],
+            "schema": "ancilis-observation/1",
+            "tenant": "tenant-a",
+            "episode": "one",
+            "episode_open": "427e248c0ff4c389bd5e012548ede76fcb9f24a99566a99375713915963475b5",
+            "event_id": "62b497c779f2c36134bcff97e764facfc0a2b5e1dc7aef0e033091a4482c2232",
+            "source": {
+              "id": "app",
+              "instance": "instance",
+              "sequence": 1
+            },
+            "captured_at": "2026-09-10T06:20:46.589000Z",
+            "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+            "clock_evidence_refs": []
+          },
+          {
+            "call_id": "c1",
+            "occurred_at": "2026-09-10T00:00:00.000000Z",
+            "surface": "tool",
+            "operation": "EXECUTE",
+            "phase": "END",
+            "chunk_index": null,
+            "outcome": "SUCCEEDED",
+            "authority": {
+              "principal": null,
+              "service": null,
+              "delegation": null,
+              "approval": null,
+              "scope": null,
+              "basis": "APPLICATION_ASSERTION"
+            },
+            "artifacts": [
+              {
+                "artifact": "doc",
+                "sha256": "6ffbbe12c3d609cbd5297aa4418f8371ce1ee554ce8b6919fee54d90398d44db",
+                "byte_length": 9,
+                "role": "OUTPUT",
+                "access_scope": "application",
+                "classification_receipt_refs": []
+              }
+            ],
+            "relationships": [],
+            "provenance_refs": [],
+            "capture_gaps": [],
+            "schema": "ancilis-observation/1",
+            "tenant": "tenant-a",
+            "episode": "one",
+            "episode_open": "427e248c0ff4c389bd5e012548ede76fcb9f24a99566a99375713915963475b5",
+            "event_id": "f1390944d87b66941646554d3b0d4acbebe1e4d8f3fde0e3368c4dbc7e0d0558",
+            "source": {
+              "id": "app",
+              "instance": "instance",
+              "sequence": 2
+            },
+            "captured_at": "2026-09-10T06:20:46.589169Z",
+            "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+            "clock_evidence_refs": []
+          }
+        ],
+        "coverage": {
+          "expected_surfaces": [
+            "tool"
+          ],
+          "observed_surfaces": [
+            "tool"
+          ],
+          "missing_surfaces": [],
+          "complete": false,
+          "lost_events": 0,
+          "incomplete_calls": 0,
+          "reasons": [],
+          "reconstruction_exclusions": []
+        },
+        "method": "ancilis-native-observation-ledger/1",
+        "claims_basis": "COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION",
+        "determination_refs": [],
+        "observation_chain_sha256": "1b04c7314f1930c5d1c3dcccc418a3521966a258decabaa8bad9e11702d0af56",
+        "revision_method": "ancilis-native-revision/2"
+      },
+      "expected": {
+        "schema": "ancilis-verification/1",
+        "status": "REJECTED",
+        "envelope_authenticated": false,
+        "protected_bodies": "NOT_REQUESTED",
+        "reconstruction": "UNSUPPORTED",
+        "policy_sha256": "694a14f817e89354647a3cc6afe4254068fb7e9103a7cbc2620a955d7171b378",
+        "assessed_at": "2026-09-10T00:00:00.000000Z",
+        "reasons": [
+          "INVALID_NATIVE_SNAPSHOT"
+        ],
+        "verified_claim_refs": []
+      }
+    },
+    {
+      "name": "live-discard-claim",
+      "snapshot": {
+        "schema": "ancilis-episode/1",
+        "tenant": "tenant-a",
+        "episode": "one",
+        "open": {
+          "schema": "ancilis-episode-open/1",
+          "tenant": "tenant-a",
+          "episode": "one",
+          "owner_source": "app",
+          "open_nonce": "adfc2d990165a901bcdc8c2fdc8e2b34",
+          "allowed_source_instances": [
+            "instance"
+          ],
+          "expected_surfaces": [
+            "tool"
+          ],
+          "correlation_basis": "APPLICATION_ASSIGNED",
+          "created_at": "2026-09-10T06:20:46.587443Z",
+          "policy_sha256": "5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63"
+        },
+        "open_sha256": "a4b76a06266987e9134c15caad9a2d6d6d63ad90af7a4882ddb9bbcdc46fd9eb",
+        "revision": 3,
+        "revision_id": "37d5fa3ad8192788e6066a363183604b65761655b22dab7e9ea3909b5aa726a4",
+        "previous_revision_id": "72cf551a2fb7a3f98baa5e3d57520bfb1924c07709b4dd68de0f723a298d8532",
+        "observations": [
+          {
+            "call_id": "c1",
+            "occurred_at": "2026-09-10T00:00:00.000000Z",
+            "surface": "tool",
+            "operation": "EXECUTE",
+            "phase": "START",
+            "chunk_index": null,
+            "outcome": "STARTED",
+            "authority": {
+              "principal": null,
+              "service": null,
+              "delegation": null,
+              "approval": null,
+              "scope": null,
+              "basis": "APPLICATION_ASSERTION"
+            },
+            "artifacts": [],
+            "relationships": [],
+            "provenance_refs": [],
+            "capture_gaps": [],
+            "schema": "ancilis-observation/1",
+            "tenant": "tenant-a",
+            "episode": "one",
+            "episode_open": "a4b76a06266987e9134c15caad9a2d6d6d63ad90af7a4882ddb9bbcdc46fd9eb",
+            "event_id": "58975a94dedb128b7915fe780c5e6d6e7d9d00bc79341aa12482cb0becbc124e",
+            "source": {
+              "id": "app",
+              "instance": "instance",
+              "sequence": 1
+            },
+            "captured_at": "2026-09-10T06:20:46.589000Z",
+            "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+            "clock_evidence_refs": []
+          },
+          {
+            "call_id": "c1",
+            "occurred_at": "2026-09-10T00:00:00.000000Z",
+            "surface": "tool",
+            "operation": "EXECUTE",
+            "phase": "END",
+            "chunk_index": null,
+            "outcome": "SUCCEEDED",
+            "authority": {
+              "principal": null,
+              "service": null,
+              "delegation": null,
+              "approval": null,
+              "scope": null,
+              "basis": "APPLICATION_ASSERTION"
+            },
+            "artifacts": [
+              {
+                "artifact": "doc",
+                "sha256": "6ffbbe12c3d609cbd5297aa4418f8371ce1ee554ce8b6919fee54d90398d44db",
+                "byte_length": 9,
+                "role": "OUTPUT",
+                "access_scope": "application",
+                "classification_receipt_refs": []
+              }
+            ],
+            "relationships": [],
+            "provenance_refs": [],
+            "capture_gaps": [],
+            "schema": "ancilis-observation/1",
+            "tenant": "tenant-a",
+            "episode": "one",
+            "episode_open": "a4b76a06266987e9134c15caad9a2d6d6d63ad90af7a4882ddb9bbcdc46fd9eb",
+            "event_id": "d4f5dcff11389670e827a0089416c4d476a5091bfe56af31729f09e09379a133",
+            "source": {
+              "id": "app",
+              "instance": "instance",
+              "sequence": 2
+            },
+            "captured_at": "2026-09-10T06:20:46.589169Z",
+            "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+            "clock_evidence_refs": []
+          }
+        ],
+        "coverage": {
+          "expected_surfaces": [
+            "tool"
+          ],
+          "observed_surfaces": [
+            "tool"
+          ],
+          "missing_surfaces": [],
+          "complete": false,
+          "lost_events": 0,
+          "incomplete_calls": 0,
+          "reasons": [
+            "DISCARDED_EPISODE"
+          ],
+          "reconstruction_exclusions": []
+        },
+        "method": "ancilis-native-observation-ledger/1",
+        "claims_basis": "COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION",
+        "determination_refs": [],
+        "observation_chain_sha256": "1f7eaebb8bc775127d72444aad62835e49e81ea658c563654f4c8279fba7f0ff",
+        "revision_method": "ancilis-native-revision/2"
+      },
+      "expected": {
+        "schema": "ancilis-verification/1",
+        "status": "REJECTED",
+        "envelope_authenticated": false,
+        "protected_bodies": "NOT_REQUESTED",
+        "reconstruction": "UNSUPPORTED",
+        "policy_sha256": "694a14f817e89354647a3cc6afe4254068fb7e9103a7cbc2620a955d7171b378",
+        "assessed_at": "2026-09-10T00:00:00.000000Z",
+        "reasons": [
+          "INVALID_NATIVE_SNAPSHOT"
+        ],
+        "verified_claim_refs": []
+      }
     }
   ]
 }

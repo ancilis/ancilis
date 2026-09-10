@@ -62,6 +62,7 @@ _REASONS = (
     "REVISION_EXHAUSTED",
     "OTHER",
 )
+_CAPTURE_GAPS = ("CONTENT_NOT_CAPTURED", "UNMAPPED_TOOL", "CAPTURE_CALLBACK_FAILED", "UNSUPPORTED_RETURN_PROTOCOL")
 _ID_RE = __import__("re").compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$")
 _active_episode: contextvars.ContextVar[Episode | None] = contextvars.ContextVar(
     "ancilis_native_episode", default=None
@@ -369,7 +370,7 @@ class ObservationInput:
             and self.outcome not in _OUTCOMES[2:]
         ):
             raise EpisodeError("INVALID_OBSERVATION")
-        if any(reason not in _REASONS for reason in self.capture_gaps):
+        if any(reason not in _CAPTURE_GAPS for reason in self.capture_gaps):
             raise EpisodeError("INVALID_OBSERVATION")
         if (
             any(not isinstance(item, ContentEvidence) for item in self.artifacts)
@@ -705,13 +706,14 @@ class Episode:
         return EpisodeSnapshot(_freeze(self._snapshot()))
 
     @_locked
-    def _loss(self, reason: str):
+    def _loss(self, reason: str, *, incident=True):
         if self._revision >= _MAX_SAFE:
             self._sdk._diag("REVISION_EXHAUSTED")
             return False
         self._lost = min(_MAX_SAFE, self._lost + 1)
         self._sdk._loss_total = min(_MAX_SAFE, self._sdk._loss_total + 1)
-        self._sdk._diag(reason)
+        if incident:
+            self._sdk._diag(reason)
         self._reasons[reason] = min(_MAX_SAFE, self._reasons.get(reason, 0) + 1)
         self._previous = self._revision_id
         self._revision = min(_MAX_SAFE, self._revision + 1)
@@ -1009,7 +1011,7 @@ class _Call:
             )
             # A saturated handle is not another episode-cap incident per operation.
             if episode._saturated:
-                sdk._loss_total = min(_MAX_SAFE, sdk._loss_total + 1)
+                episode._loss(reason, incident=False)
             else:
                 episode._loss(reason)
         else:
@@ -1086,6 +1088,8 @@ class _Call:
         if self.ended:
             return
         self.ended = True
+        if gap == "UNSUPPORTED_RETURN_PROTOCOL":
+            self.sdk._diag(gap)
         if self.enabled:
             key = (
                 "completed"
@@ -1309,7 +1313,7 @@ class Ancilis:
             if episode is None:
                 return False
             if episode._active or episode._inflight:
-                raise EpisodeLifecycleError("EPISODE_ACTIVE")
+                raise EpisodeLifecycleError("OTHER")
             events, size = episode._reserved_events, episode._reserved_bytes
             if not episode._discard():
                 return False
@@ -1414,7 +1418,10 @@ class Ancilis:
                 else:
                     call.finish("SUCCEEDED", result)
 
-            value.add_done_callback(done)
+            try:
+                value.add_done_callback(done)
+            except BaseException:
+                call.finish("CAPTURE_FAILED", gap="UNSUPPORTED_RETURN_PROTOCOL")
             return value
         if type(value) is types.CoroutineType:
 
@@ -1429,6 +1436,9 @@ class Ancilis:
 
             return waiting()
         if type(value) is types.GeneratorType:
+            if value.gi_code.co_flags & inspect.CO_ITERABLE_COROUTINE:
+                call.finish("CAPTURE_FAILED", gap="UNSUPPORTED_RETURN_PROTOCOL")
+                return value
             return _GeneratorProxy(value, call)
         if type(value) is types.AsyncGeneratorType:
             return _AsyncGeneratorProxy(value, call)
@@ -1493,7 +1503,9 @@ class Ancilis:
                         raise
                     call.finish("SUCCEEDED", result)
                     return result
-            elif inspect.isgeneratorfunction(fn):
+            elif inspect.isgeneratorfunction(fn) and not (
+                fn.__code__.co_flags & inspect.CO_ITERABLE_COROUTINE
+            ):
 
                 @functools.wraps(fn)
                 def wrapper(*args, **kwargs):

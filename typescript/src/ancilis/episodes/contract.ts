@@ -38,8 +38,15 @@ export const EPISODE_REASONS = [
 ] as const;
 export type EpisodeSurface = (typeof EPISODE_SURFACES)[number];
 export type EpisodeReason = (typeof EPISODE_REASONS)[number];
-const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/);
-const digest = z.string().regex(/^[0-9a-f]{64}$/);
+export const CAPTURE_GAPS = [
+  "CONTENT_NOT_CAPTURED",
+  "UNMAPPED_TOOL",
+  "CAPTURE_CALLBACK_FAILED",
+  "UNSUPPORTED_RETURN_PROTOCOL",
+] as const;
+export type CaptureGap = (typeof CAPTURE_GAPS)[number];
+const id = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\s\S])/);
+const digest = z.string().regex(/^[0-9a-f]{64}(?![\s\S])/);
 const safe = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const refs = z.array(digest).max(64);
 const time = z
@@ -114,7 +121,7 @@ const inputSchema = z
     artifacts: z.array(artifactSchema).max(64),
     relationships: z.array(relationshipSchema).max(64),
     provenance_refs: refs,
-    capture_gaps: z.array(z.enum(EPISODE_REASONS)).max(64),
+    capture_gaps: z.array(z.enum(CAPTURE_GAPS)).max(64),
   })
   .strict();
 export type ObservationInput = z.infer<typeof inputSchema>;

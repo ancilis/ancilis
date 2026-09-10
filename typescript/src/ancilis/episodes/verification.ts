@@ -24,7 +24,7 @@ const openSchema = z
     tenant: id,
     episode: id,
     owner_source: id,
-    open_nonce: z.string().regex(/^[0-9a-f]{32}$/),
+    open_nonce: z.string().regex(/^[0-9a-f]{32}(?![\s\S])/),
     allowed_source_instances: z.array(id).min(1).max(16),
     expected_surfaces: surfaces.min(1),
     correlation_basis: z.literal("APPLICATION_ASSIGNED"),

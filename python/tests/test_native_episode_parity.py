@@ -5,6 +5,7 @@ import copy
 import gc
 import inspect
 import weakref
+import types
 import json
 from pathlib import Path
 
@@ -58,6 +59,52 @@ def test_partial_call_capture_preserves_rows_and_reports_gaps():
     assert snap["coverage"]["incomplete_calls"] == 1
     assert set(snap["coverage"]["reasons"]) == {"MISSING_START", "CHUNK_GAP"}
     assert verify_episode_snapshot(snap).status == "UNVERIFIED"
+
+
+@pytest.mark.parametrize("gap", ["DISCARDED_EPISODE", "SDK_CLOSED", "LEDGER_EVENT_CAP", "EVENT_CONFLICT", "REVISION_EXHAUSTED"])
+def test_manual_capture_cannot_assert_collector_lifecycle(gap):
+    with pytest.raises(ValueError, match="INVALID_OBSERVATION"):
+        observe(capture_gaps=(gap,))
+
+
+def test_generator_based_coroutine_remains_awaitable_and_reports_unsupported():
+    owner = sdk()
+    @types.coroutine
+    def legacy():
+        yield from ()
+        return 42
+    wrapped = attach(owner, legacy)
+    async def run():
+        with owner.episode("one", expected_surfaces=("tool",)) as ep:
+            assert await wrapped() == 42
+        assert "UNSUPPORTED_RETURN_PROTOCOL" in ep.inspect().to_dict()["coverage"]["reasons"]
+    asyncio.run(run())
+
+
+def test_done_future_with_closed_loop_preserves_identity():
+    owner = sdk()
+    loop = asyncio.new_event_loop()
+    value = loop.create_future()
+    value.set_result(42)
+    loop.close()
+    wrapped = attach(owner, lambda: value)
+    with owner.episode("one", expected_surfaces=("tool",)):
+        assert wrapped() is value
+    assert value.result() == 42
+    assert owner.diagnostics().to_dict()["reasons"]["UNSUPPORTED_RETURN_PROTOCOL"] >= 1
+
+
+def test_saturated_episode_reports_each_lost_call_without_duplicate_incidents():
+    owner = sdk(max_episodes=1)
+    owner.episode("first", expected_surfaces=("tool",))
+    wrapped = attach(owner, lambda: 42)
+    with owner.episode("saturated", expected_surfaces=("tool",)) as ep:
+        before = ep.inspect().revision_id
+        for _ in range(3):
+            assert wrapped() == 42
+    assert ep.inspect().revision_id != before
+    assert ep.inspect().to_dict()["coverage"]["lost_events"] == 4
+    assert owner.diagnostics().to_dict()["reasons"]["LEDGER_EPISODE_CAP"] == 1
 
 
 def test_empty_diagnostics_is_object_and_attached_capture_is_visible():

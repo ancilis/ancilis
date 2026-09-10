@@ -36,6 +36,50 @@ const vectors = JSON.parse(
 );
 
 describe("cross-language unsigned snapshot contract", () => {
+  it("refuses manual lifecycle gap claims", () => {
+    const sdk = make();
+    sdk.episode("one", { expectedSurfaces: ["document"] }, (e) => {
+      for (const gap of [
+        "DISCARDED_EPISODE",
+        "SDK_CLOSED",
+        "LEDGER_EVENT_CAP",
+        "EVENT_CONFLICT",
+        "REVISION_EXHAUSTED",
+      ])
+        expect(() => e.observe(input({ capture_gaps: [gap] }))).toThrow(
+          "INVALID_OBSERVATION",
+        );
+      expect(e.inspect().observations).toEqual([]);
+    });
+  });
+  it("rejects async capture registration and handles stray promise rejection", async () => {
+    const sdk = make();
+    expect(() =>
+      sdk.attachTool(() => 42, {
+        ...settings,
+        capture: async () => {
+          throw Error("private");
+        },
+      } as any),
+    ).toThrow("INVALID_OBSERVATION");
+    const fn = sdk.attachTool(() => 42, {
+      ...settings,
+      capture: () => Promise.reject(Error("private")),
+    } as any);
+    sdk.episode("one", { expectedSurfaces: ["document"] }, () =>
+      expect(fn()).toBe(42),
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(sdk.diagnostics().reasons.CAPTURE_CALLBACK_FAILED).toBe(2);
+  });
+  it("rejects reattaching an owned MCP adapter", () => {
+    const sdk = make();
+    const client = { callTool: () => 42 };
+    const options = { surfaces: { read: settings } };
+    const adapter = sdk.attachMcp(client, options);
+    expect(() => sdk.attachMcp(adapter, options)).toThrow("SOURCE_MISMATCH");
+    expect(sdk.attachMcp(client, options)).toBe(adapter);
+  });
   const fixtures = JSON.parse(
     readFileSync("tests/fixtures/episodes/native-cross-language.json", "utf8"),
   );

@@ -16,6 +16,7 @@ import {
   validateObservationInput,
 } from "./contract.js";
 import type {
+  CaptureGap,
   ContentReference,
   EpisodeCoverage,
   EpisodeOpen,
@@ -626,7 +627,9 @@ export class EpisodeClient {
       !["REQUEST", "READ", "EXECUTE", "WRITE", "RECEIVE"].includes(
         options.operation,
       ) ||
-      (options.capture !== undefined && typeof options.capture !== "function")
+      (options.capture !== undefined &&
+        (typeof options.capture !== "function" ||
+          types.isAsyncFunction(options.capture)))
     )
       throw new EpisodeError("INVALID_OBSERVATION");
     const owner = owners.get(fn);
@@ -714,14 +717,14 @@ export class EpisodeClient {
       result: unknown,
       error: unknown,
       index: number | null,
-      gap?: EpisodeReason,
+      gap?: CaptureGap,
     ) => {
       if (!e._available()) {
         this._loss(e._unavailableReason(), e);
         return;
       }
       let captured: CaptureResult | null | undefined;
-      const gaps: EpisodeReason[] = gap ? [gap] : [];
+      const gaps: CaptureGap[] = gap ? [gap] : [];
       try {
         captured = reg.options.capture?.({
           phase,
@@ -731,6 +734,11 @@ export class EpisodeClient {
           error,
           chunk_index: index,
         });
+        if (types.isPromise(captured)) {
+          // Reject unsupported asynchronous capture without leaking its rejection.
+          Promise.prototype.then.call(captured, undefined, () => undefined);
+          throw new Error();
+        }
         if (captured !== undefined && captured !== null) {
           canonicalEpisodeJSON(captured);
           if (
@@ -776,10 +784,11 @@ export class EpisodeClient {
       outcome: ObservationInput["outcome"],
       result: unknown,
       error: unknown,
-      gap?: EpisodeReason,
+      gap?: CaptureGap,
     ) => {
       if (ended) return;
       ended = true;
+      if (gap === "UNSUPPORTED_RETURN_PROTOCOL") this._reason(gap);
       e._end();
       if (outcome === "SUCCEEDED") stat.completed = increment(stat.completed);
       else if (outcome === "CANCELLED")
@@ -916,8 +925,7 @@ export class EpisodeClient {
     },
   ): T {
     if (this.closed) throw new EpisodeError("SDK_CLOSED");
-    if (owners.has(client) && owners.get(client) !== this)
-      throw new EpisodeError("SOURCE_MISMATCH");
+    if (owners.has(client)) throw new EpisodeError("SOURCE_MISMATCH");
     const map = detached(options.surfaces);
     const signature = canonicalEpisodeJSON(map);
     const prior = this.mcp.get(client);
