@@ -761,6 +761,13 @@
             "pattern": "^[0-9a-f]{64}$"
           },
           "maxItems": 1024
+        },
+        "observation_chain_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "revision_method": {
+          "const": "ancilis-native-revision/2"
         }
       },
       "required": [
@@ -776,7 +783,9 @@
         "coverage",
         "method",
         "claims_basis",
-        "determination_refs"
+        "determination_refs",
+        "observation_chain_sha256",
+        "revision_method"
       ],
       "additionalProperties": false
     },

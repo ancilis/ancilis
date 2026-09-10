@@ -108,7 +108,7 @@
     "open_sha256": "e3baf53c26735fab9f79a55cc8da3ebba7ba4c1a1630181e01f6e82797babf17",
     "revision": 1,
     "previous_revision_id": null,
-    "event_ids": [],
+    "observation_chain_sha256": "3807351a45813d88fb85317656e0ee9eb19695d84b2dd40695563e7a88d762bb",
     "coverage": {
       "expected_surfaces": [
         "document",
@@ -132,14 +132,16 @@
       "reconstruction_exclusions": []
     }
   },
-  "revision_id": "adf5d074882acb12a86403d6b26cf06a91ed8b664661cae6f41fda4e596dc407",
+  "revision_id": "a96b3769987c9eedfdeeb09b6750266bd5538e210410e4eab0edb84247a4086b",
+  "revision_method": "ancilis-native-revision/2",
+  "genesis_chain": "3807351a45813d88fb85317656e0ee9eb19695d84b2dd40695563e7a88d762bb",
+  "observation_payload_sha256": "1be8f1c01a8d72806aad7eed0ddb63083f22d0d92471f3fa860cfbe465e29dff",
+  "first_observation_chain": "4fb98cf0710d1f1b8d2e46adf472cb855a3bbe2d50ea109ec59e4bf5bbeff0ca",
   "partial_revision_preimage": {
     "open_sha256": "e3baf53c26735fab9f79a55cc8da3ebba7ba4c1a1630181e01f6e82797babf17",
     "revision": 2,
-    "previous_revision_id": "adf5d074882acb12a86403d6b26cf06a91ed8b664661cae6f41fda4e596dc407",
-    "event_ids": [
-      "fff34caf61de8179bfff6a7603e26b67df2342f1e4acfcf03c36e265fbb0a0ff"
-    ],
+    "previous_revision_id": "a96b3769987c9eedfdeeb09b6750266bd5538e210410e4eab0edb84247a4086b",
+    "observation_chain_sha256": "4fb98cf0710d1f1b8d2e46adf472cb855a3bbe2d50ea109ec59e4bf5bbeff0ca",
     "coverage": {
       "expected_surfaces": [
         "document",
@@ -167,5 +169,5 @@
       "reconstruction_exclusions": []
     }
   },
-  "partial_revision_id": "e49d8a707b76fe7dcd9ce40919db12a1aedb53bf7984136eae0810dbcdcd56ba"
+  "partial_revision_id": "2861f52df385dd86fe482b14aad4cf9bea9fe1196c7bde8216b6adc7ccfa2700"
 }
