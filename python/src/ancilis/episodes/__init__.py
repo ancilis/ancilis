@@ -412,6 +412,7 @@ class ContentEvidence:
         *,
         role: Literal["INPUT", "OUTPUT"] = "OUTPUT",
         access_scope: str = "application",
+        classification_receipt_refs: tuple[str, ...] = (),
     ) -> ContentEvidence:
         if not isinstance(data, bytes):
             raise TypeError("data must be bytes")
@@ -423,6 +424,7 @@ class ContentEvidence:
             len(data),
             role,
             _id(access_scope, "access_scope"),
+            classification_receipt_refs,
         )
 
     def __post_init__(self) -> None:

@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ancilis-semantic-request/1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "ancilis-semantic-request/1"
+    },
+    "classification_request": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "ancilis-classification-request/1"
+        },
+        "tenant": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+        },
+        "episode": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+        },
+        "open_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "revision_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "event_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "artifact_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 63
+        },
+        "reference": {
+          "type": "object",
+          "properties": {
+            "artifact": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+            },
+            "byte_length": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 16777216
+            },
+            "role": {
+              "enum": [
+                "INPUT",
+                "OUTPUT"
+              ]
+            },
+            "access_scope": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+            },
+            "classification_receipt_refs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+              },
+              "maxItems": 64
+            }
+          },
+          "required": [
+            "artifact",
+            "sha256",
+            "byte_length",
+            "role",
+            "access_scope",
+            "classification_receipt_refs"
+          ],
+          "additionalProperties": false
+        },
+        "assessed_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])"
+        },
+        "adapter": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "provider_id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+                },
+                "method_id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+                },
+                "policy_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+                },
+                "taxonomy": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+                },
+                "supported_classes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+                  },
+                  "maxItems": 64,
+                  "minItems": 1,
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "provider_id",
+                "method_id",
+                "policy_sha256",
+                "taxonomy",
+                "supported_classes"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "request_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "schema",
+        "tenant",
+        "episode",
+        "open_sha256",
+        "revision_id",
+        "event_id",
+        "artifact_index",
+        "reference",
+        "assessed_at",
+        "adapter",
+        "request_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "trusted_response": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "ancilis-classification-response/1"
+        },
+        "request_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "outcome": {
+          "enum": [
+            "SUPPORTED_POSITIVE",
+            "UNKNOWN",
+            "ABSTAIN",
+            "ERROR",
+            "UNSUPPORTED"
+          ]
+        },
+        "classification": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema",
+        "request_sha256",
+        "outcome",
+        "classification",
+        "evidence_refs",
+        "reasons"
+      ],
+      "additionalProperties": false
+    },
+    "provider": {
+      "type": "object",
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+        },
+        "method_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+        },
+        "runtime_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+        },
+        "qualification": {
+          "const": "UNQUALIFIED"
+        }
+      },
+      "required": [
+        "provider_id",
+        "method_id",
+        "runtime_id",
+        "qualification"
+      ],
+      "additionalProperties": false
+    },
+    "request_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    }
+  },
+  "required": [
+    "schema",
+    "classification_request",
+    "trusted_response",
+    "provider",
+    "request_sha256"
+  ],
+  "additionalProperties": false
+}

@@ -5,6 +5,11 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator, Generator
 
 from ancilis import (
+    ClassificationRequest,
+    ClassificationResponse,
+    EpisodeClassificationReport,
+    ClassificationHistory,
+    EpisodeClassificationReportDict,
     Episode,
     EpisodeSigner,
     EpisodeTrustPolicy,
@@ -95,3 +100,23 @@ def signed_types(
 
 def public_signed_export(episode: Episode, signer: EpisodeSigner) -> str:
     return episode.export_signed(signer)
+
+
+def classification_response(request: ClassificationRequest, body: bytes) -> ClassificationResponse:
+    target: str = request.to_dict()["reference"]["artifact"]
+    return {
+        "schema": "ancilis-classification-response/1",
+        "request_sha256": request.request_sha256,
+        "outcome": "UNKNOWN",
+        "classification": None,
+        "evidence_refs": [],
+        "reasons": ["UNRESOLVED" if body and target else "MISSING"],
+    }
+
+
+def classification_history(
+    history: ClassificationHistory, report: EpisodeClassificationReport
+) -> str | None:
+    document: EpisodeClassificationReportDict = report.to_dict()
+    appended: bool = history.append(report)
+    return document["classifications"][0]["classification"] if appended else None

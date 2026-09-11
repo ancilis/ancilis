@@ -222,7 +222,7 @@ function scalar(s: string): void {
       throw new EpisodeError("INVALID_OBSERVATION");
   }
 }
-function compare(a: string, b: string): number {
+export function compare(a: string, b: string): number {
   const x = Array.from(a),
     y = Array.from(b);
   for (let i = 0; i < Math.min(x.length, y.length); i++) {

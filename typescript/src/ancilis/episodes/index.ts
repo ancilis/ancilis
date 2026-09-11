@@ -37,3 +37,6 @@ export type {
 
 export { EpisodeSigner, EpisodeTrustPolicy, SignedEpisodeError, signEpisodeSnapshot, verifySignedEpisode } from "./signed.js";
 export type { EpisodeSignerOptions, EpisodeTrustKey, EpisodeTrustPolicyDocument, ProtectedBodyRequest, BodyResolver, SignedVerificationOptions, SignedEpisodeVerification } from "./signed.js";
+
+export { ClassificationError, TrustedClassificationAdapter, ExperimentalSemanticProvider, EpisodeClassificationReport, ClassificationHistory, assessEpisodeClassifications } from "./classification.js";
+export type { ClassificationOutcome, ClassificationAdapterDescriptor, SemanticProviderDescriptor, ClassificationRequest, ClassificationResponse, SemanticRequest, SemanticProposal, SemanticAssessment, ClassificationAssessment, EpisodeClassificationReportDocument, ReportOrigin, ClassificationResolver, SemanticProposer, ClassificationHistoryEntry, ClassificationAssessmentOptions } from "./classification.js";

@@ -5,6 +5,31 @@ from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ancilis.episodes.classification import (
+        ClassificationOutcome as ClassificationOutcome,
+        ReportOrigin as ReportOrigin,
+        ClassificationError as ClassificationError,
+        ClassificationAdapterDescriptor as ClassificationAdapterDescriptor,
+        SemanticProviderDescriptor as SemanticProviderDescriptor,
+        ClassificationRequestDict as ClassificationRequestDict,
+        ClassificationResponse as ClassificationResponse,
+        SemanticRequestDict as SemanticRequestDict,
+        SemanticProposal as SemanticProposal,
+        SemanticAssessment as SemanticAssessment,
+        ClassificationAssessment as ClassificationAssessment,
+        EpisodeClassificationReportDict as EpisodeClassificationReportDict,
+        ClassificationHistoryEntry as ClassificationHistoryEntry,
+        ClassificationRequest as ClassificationRequest,
+        SemanticRequest as SemanticRequest,
+        ClassificationResolver as ClassificationResolver,
+        SemanticProposer as SemanticProposer,
+        TrustedClassificationAdapter as TrustedClassificationAdapter,
+        ExperimentalSemanticProvider as ExperimentalSemanticProvider,
+        EpisodeClassificationReport as EpisodeClassificationReport,
+        ClassificationHistory as ClassificationHistory,
+        assess_episode_classifications as assess_episode_classifications,
+        aassess_episode_classifications as aassess_episode_classifications,
+    )
     from ancilis.episodes.signed import (
         EpisodeSigner as EpisodeSigner,
         EpisodeTrustKey as EpisodeTrustKey,
@@ -158,6 +183,30 @@ except PackageNotFoundError:
     __version__ = "0.0.0+dev"
 
 _EXPORTS: dict[str, tuple[str, str]] = {
+    "ClassificationOutcome": ("ancilis.episodes.classification", "ClassificationOutcome"),
+    "ReportOrigin": ("ancilis.episodes.classification", "ReportOrigin"),
+    "ClassificationError": ("ancilis.episodes.classification", "ClassificationError"),
+    "ClassificationAdapterDescriptor": ("ancilis.episodes.classification", "ClassificationAdapterDescriptor"),
+    "SemanticProviderDescriptor": ("ancilis.episodes.classification", "SemanticProviderDescriptor"),
+    "ClassificationRequestDict": ("ancilis.episodes.classification", "ClassificationRequestDict"),
+    "ClassificationResponse": ("ancilis.episodes.classification", "ClassificationResponse"),
+    "SemanticRequestDict": ("ancilis.episodes.classification", "SemanticRequestDict"),
+    "SemanticProposal": ("ancilis.episodes.classification", "SemanticProposal"),
+    "SemanticAssessment": ("ancilis.episodes.classification", "SemanticAssessment"),
+    "ClassificationAssessment": ("ancilis.episodes.classification", "ClassificationAssessment"),
+    "EpisodeClassificationReportDict": ("ancilis.episodes.classification", "EpisodeClassificationReportDict"),
+    "ClassificationHistoryEntry": ("ancilis.episodes.classification", "ClassificationHistoryEntry"),
+    "ClassificationRequest": ("ancilis.episodes.classification", "ClassificationRequest"),
+    "SemanticRequest": ("ancilis.episodes.classification", "SemanticRequest"),
+    "ClassificationResolver": ("ancilis.episodes.classification", "ClassificationResolver"),
+    "SemanticProposer": ("ancilis.episodes.classification", "SemanticProposer"),
+    "TrustedClassificationAdapter": ("ancilis.episodes.classification", "TrustedClassificationAdapter"),
+    "ExperimentalSemanticProvider": ("ancilis.episodes.classification", "ExperimentalSemanticProvider"),
+    "EpisodeClassificationReport": ("ancilis.episodes.classification", "EpisodeClassificationReport"),
+    "ClassificationHistory": ("ancilis.episodes.classification", "ClassificationHistory"),
+    "assess_episode_classifications": ("ancilis.episodes.classification", "assess_episode_classifications"),
+    "aassess_episode_classifications": ("ancilis.episodes.classification", "aassess_episode_classifications"),
+
     "EpisodeSigner": ("ancilis.episodes.signed", "EpisodeSigner"),
     "EpisodeTrustKey": ("ancilis.episodes.signed", "EpisodeTrustKey"),
     "EpisodeTrustPolicy": ("ancilis.episodes.signed", "EpisodeTrustPolicy"),

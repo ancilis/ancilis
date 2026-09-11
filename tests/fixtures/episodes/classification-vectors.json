@@ -1,0 +1,316 @@
+{
+  "notice": "Synthetic orchestration contract vector. Does not establish GE or semantic qualification.",
+  "export": "{\"algorithm\":\"Ed25519\",\"key_id\":\"key-1\",\"schema\":\"ancilis-signed-episode/1\",\"signature\":\"d642e7da8a6633aeadc0ffaec9de9d17d10dfc1600c9c41a43103992f5251b0266cd73799647e7c5a95846e6ef8df102ed10dcda3e08a0365fdcd31149a9e00a\",\"snapshot\":{\"claims_basis\":\"COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION\",\"coverage\":{\"complete\":false,\"expected_surfaces\":[\"document\"],\"incomplete_calls\":0,\"lost_events\":0,\"missing_surfaces\":[],\"observed_surfaces\":[\"document\"],\"reasons\":[],\"reconstruction_exclusions\":[]},\"determination_refs\":[],\"episode\":\"episode\",\"method\":\"ancilis-native-observation-ledger/1\",\"observation_chain_sha256\":\"764c8c90c39ebb3f28a9c2b0e0d0a62171c7ddfe5666fe2b5576f03078d8dba6\",\"observations\":[{\"artifacts\":[],\"authority\":{\"approval\":null,\"basis\":\"APPLICATION_ASSERTION\",\"delegation\":null,\"principal\":null,\"scope\":null,\"service\":null},\"call_id\":\"call\",\"capture_gaps\":[],\"captured_at\":\"2026-09-11T00:00:00.000000Z\",\"chunk_index\":null,\"clock_basis\":\"COLLECTOR_CLOCK_ASSERTION\",\"clock_evidence_refs\":[],\"episode\":\"episode\",\"episode_open\":\"43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0\",\"event_id\":\"1999df7f3ef13e4d9d5c59906adc716581f3604427aa33afd9fb2faac52c958c\",\"occurred_at\":\"2026-09-11T00:00:00.000000Z\",\"operation\":\"READ\",\"outcome\":\"STARTED\",\"phase\":\"START\",\"provenance_refs\":[],\"relationships\":[],\"schema\":\"ancilis-observation/1\",\"source\":{\"id\":\"source\",\"instance\":\"instance\",\"sequence\":1},\"surface\":\"document\",\"tenant\":\"tenant\"},{\"artifacts\":[{\"access_scope\":\"scope\",\"artifact\":\"document\",\"byte_length\":74,\"classification_receipt_refs\":[\"7305d58f27dd84334b58f0fd5528f825c2f0b21387d4cecf2bc8a6c5bf711742\"],\"role\":\"INPUT\",\"sha256\":\"4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406\"}],\"authority\":{\"approval\":null,\"basis\":\"APPLICATION_ASSERTION\",\"delegation\":null,\"principal\":null,\"scope\":null,\"service\":null},\"call_id\":\"call\",\"capture_gaps\":[],\"captured_at\":\"2026-09-11T00:00:00.000000Z\",\"chunk_index\":null,\"clock_basis\":\"COLLECTOR_CLOCK_ASSERTION\",\"clock_evidence_refs\":[],\"episode\":\"episode\",\"episode_open\":\"43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0\",\"event_id\":\"d3f40f7f5d23f7fec84e7fa261c81b715e8c1156443fcd06b6f60e4310e8438f\",\"occurred_at\":\"2026-09-11T00:00:00.000000Z\",\"operation\":\"READ\",\"outcome\":\"SUCCEEDED\",\"phase\":\"END\",\"provenance_refs\":[],\"relationships\":[],\"schema\":\"ancilis-observation/1\",\"source\":{\"id\":\"source\",\"instance\":\"instance\",\"sequence\":2},\"surface\":\"document\",\"tenant\":\"tenant\"}],\"open\":{\"allowed_source_instances\":[\"instance\"],\"correlation_basis\":\"APPLICATION_ASSIGNED\",\"created_at\":\"2026-09-11T00:00:00.000000Z\",\"episode\":\"episode\",\"expected_surfaces\":[\"document\"],\"open_nonce\":\"01010101010101010101010101010101\",\"owner_source\":\"source\",\"policy_sha256\":\"5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63\",\"schema\":\"ancilis-episode-open/1\",\"tenant\":\"tenant\"},\"open_sha256\":\"43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0\",\"previous_revision_id\":\"0885ae7c1746f8514a81d7e7a381e48ede178f83d7091384b3aa2ea201b538e9\",\"revision\":3,\"revision_id\":\"340a7739621816b7f1820a1c626617a706d884c47da25cb5fd0a29bf0476c4a5\",\"revision_method\":\"ancilis-native-revision/2\",\"schema\":\"ancilis-episode/1\",\"tenant\":\"tenant\"}}",
+  "trust_policy": {
+    "schema": "ancilis-episode-trust-policy/1",
+    "tenant": "tenant",
+    "source": "source",
+    "keys": [
+      {
+        "key_id": "key-1",
+        "public_key": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+        "not_before": "2026-01-01T00:00:00.000000Z",
+        "not_after": "2027-01-01T00:00:00.000000Z",
+        "revoked": false
+      }
+    ],
+    "body_mode": "ALL_REFERENCED",
+    "max_body_bytes": 16777216,
+    "max_total_body_bytes": 67108864,
+    "max_body_requests": 1024
+  },
+  "body_hex": "53594e544845544943207075626c6963207369676e696e6720616e642070726f7465637465642d626f647920746573742c206e6f742070726f64756374696f6e2065766964656e63652e",
+  "assessed_at": "2026-09-11T00:00:00.000000Z",
+  "adapter": {
+    "provider_id": "synthetic-test",
+    "method_id": "synthetic-receipts/1",
+    "policy_sha256": "abababababababababababababababababababababababababababababababab",
+    "taxonomy": "SYNTHETIC-v1",
+    "supported_classes": [
+      "DEMO-SENSITIVE"
+    ]
+  },
+  "request": {
+    "schema": "ancilis-classification-request/1",
+    "tenant": "tenant",
+    "episode": "episode",
+    "open_sha256": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+    "revision_id": "340a7739621816b7f1820a1c626617a706d884c47da25cb5fd0a29bf0476c4a5",
+    "event_id": "d3f40f7f5d23f7fec84e7fa261c81b715e8c1156443fcd06b6f60e4310e8438f",
+    "artifact_index": 0,
+    "reference": {
+      "artifact": "document",
+      "sha256": "4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406",
+      "byte_length": 74,
+      "role": "INPUT",
+      "access_scope": "scope",
+      "classification_receipt_refs": [
+        "7305d58f27dd84334b58f0fd5528f825c2f0b21387d4cecf2bc8a6c5bf711742"
+      ]
+    },
+    "assessed_at": "2026-09-11T00:00:00.000000Z",
+    "adapter": {
+      "provider_id": "synthetic-test",
+      "method_id": "synthetic-receipts/1",
+      "policy_sha256": "abababababababababababababababababababababababababababababababab",
+      "taxonomy": "SYNTHETIC-v1",
+      "supported_classes": [
+        "DEMO-SENSITIVE"
+      ]
+    },
+    "request_sha256": "dcb82382757414a2e13a3a446852f70737669fade25792d9e9f8ff974f227a44"
+  },
+  "response": {
+    "schema": "ancilis-classification-response/1",
+    "request_sha256": "dcb82382757414a2e13a3a446852f70737669fade25792d9e9f8ff974f227a44",
+    "outcome": "SUPPORTED_POSITIVE",
+    "classification": "DEMO-SENSITIVE",
+    "evidence_refs": [
+      "7305d58f27dd84334b58f0fd5528f825c2f0b21387d4cecf2bc8a6c5bf711742"
+    ],
+    "reasons": []
+  },
+  "report": {
+    "schema": "ancilis-classification-report/1",
+    "tenant": "tenant",
+    "episode": "episode",
+    "open_sha256": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+    "revision_id": "340a7739621816b7f1820a1c626617a706d884c47da25cb5fd0a29bf0476c4a5",
+    "export_sha256": "e509db5e6e13abcf327815e779909a5639b9fc5fcf31831216935fec94e83c63",
+    "assessed_at": "2026-09-11T00:00:00.000000Z",
+    "verification": {
+      "schema": "ancilis-signed-verification/1",
+      "status": "AUTHENTICATED",
+      "envelope_authenticated": true,
+      "protected_bodies": "VERIFIED",
+      "reconstruction": "UNSUPPORTED",
+      "policy_sha256": "1826e7515249c5d3d48842945e48ff0f50c71ca09efd6674cd7d7d6f100de152",
+      "assessed_at": "2026-09-11T00:00:00.000000Z",
+      "export_sha256": "e509db5e6e13abcf327815e779909a5639b9fc5fcf31831216935fec94e83c63",
+      "verified_body_count": 1,
+      "reasons": [
+        "ENVELOPE_AUTHENTICATED",
+        "BODIES_VERIFIED"
+      ],
+      "verified_claim_refs": []
+    },
+    "adapter": {
+      "provider_id": "synthetic-test",
+      "method_id": "synthetic-receipts/1",
+      "policy_sha256": "abababababababababababababababababababababababababababababababab",
+      "taxonomy": "SYNTHETIC-v1",
+      "supported_classes": [
+        "DEMO-SENSITIVE"
+      ]
+    },
+    "semantic_provider": null,
+    "classifications": [
+      {
+        "request": {
+          "schema": "ancilis-classification-request/1",
+          "tenant": "tenant",
+          "episode": "episode",
+          "open_sha256": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+          "revision_id": "340a7739621816b7f1820a1c626617a706d884c47da25cb5fd0a29bf0476c4a5",
+          "event_id": "d3f40f7f5d23f7fec84e7fa261c81b715e8c1156443fcd06b6f60e4310e8438f",
+          "artifact_index": 0,
+          "reference": {
+            "artifact": "document",
+            "sha256": "4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406",
+            "byte_length": 74,
+            "role": "INPUT",
+            "access_scope": "scope",
+            "classification_receipt_refs": [
+              "7305d58f27dd84334b58f0fd5528f825c2f0b21387d4cecf2bc8a6c5bf711742"
+            ]
+          },
+          "assessed_at": "2026-09-11T00:00:00.000000Z",
+          "adapter": {
+            "provider_id": "synthetic-test",
+            "method_id": "synthetic-receipts/1",
+            "policy_sha256": "abababababababababababababababababababababababababababababababab",
+            "taxonomy": "SYNTHETIC-v1",
+            "supported_classes": [
+              "DEMO-SENSITIVE"
+            ]
+          },
+          "request_sha256": "dcb82382757414a2e13a3a446852f70737669fade25792d9e9f8ff974f227a44"
+        },
+        "outcome": "SUPPORTED_POSITIVE",
+        "classification": "DEMO-SENSITIVE",
+        "response": {
+          "schema": "ancilis-classification-response/1",
+          "request_sha256": "dcb82382757414a2e13a3a446852f70737669fade25792d9e9f8ff974f227a44",
+          "outcome": "SUPPORTED_POSITIVE",
+          "classification": "DEMO-SENSITIVE",
+          "evidence_refs": [
+            "7305d58f27dd84334b58f0fd5528f825c2f0b21387d4cecf2bc8a6c5bf711742"
+          ],
+          "reasons": []
+        },
+        "sdk_reason": null,
+        "trust_basis": "ADAPTER_ATTESTED",
+        "semantic": {
+          "state": "NOT_REQUESTED",
+          "request": null,
+          "response": null,
+          "sdk_reason": null
+        }
+      }
+    ],
+    "report_sha256": "5dd62b824ad9a44f0b3a8ffcf75a13d0a677ec1c7b811157509cf48a8488ea40"
+  },
+  "semantic_report": {
+    "schema": "ancilis-classification-report/1",
+    "tenant": "tenant",
+    "episode": "episode",
+    "open_sha256": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+    "revision_id": "340a7739621816b7f1820a1c626617a706d884c47da25cb5fd0a29bf0476c4a5",
+    "export_sha256": "e509db5e6e13abcf327815e779909a5639b9fc5fcf31831216935fec94e83c63",
+    "assessed_at": "2026-09-11T00:00:00.000000Z",
+    "verification": {
+      "schema": "ancilis-signed-verification/1",
+      "status": "AUTHENTICATED",
+      "envelope_authenticated": true,
+      "protected_bodies": "VERIFIED",
+      "reconstruction": "UNSUPPORTED",
+      "policy_sha256": "1826e7515249c5d3d48842945e48ff0f50c71ca09efd6674cd7d7d6f100de152",
+      "assessed_at": "2026-09-11T00:00:00.000000Z",
+      "export_sha256": "e509db5e6e13abcf327815e779909a5639b9fc5fcf31831216935fec94e83c63",
+      "verified_body_count": 1,
+      "reasons": [
+        "ENVELOPE_AUTHENTICATED",
+        "BODIES_VERIFIED"
+      ],
+      "verified_claim_refs": []
+    },
+    "adapter": {
+      "provider_id": "synthetic-test",
+      "method_id": "synthetic-receipts/1",
+      "policy_sha256": "abababababababababababababababababababababababababababababababab",
+      "taxonomy": "SYNTHETIC-v1",
+      "supported_classes": [
+        "DEMO-SENSITIVE"
+      ]
+    },
+    "semantic_provider": {
+      "provider_id": "demo",
+      "method_id": "demo/1",
+      "runtime_id": "synthetic",
+      "qualification": "UNQUALIFIED"
+    },
+    "classifications": [
+      {
+        "request": {
+          "schema": "ancilis-classification-request/1",
+          "tenant": "tenant",
+          "episode": "episode",
+          "open_sha256": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+          "revision_id": "340a7739621816b7f1820a1c626617a706d884c47da25cb5fd0a29bf0476c4a5",
+          "event_id": "d3f40f7f5d23f7fec84e7fa261c81b715e8c1156443fcd06b6f60e4310e8438f",
+          "artifact_index": 0,
+          "reference": {
+            "artifact": "document",
+            "sha256": "4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406",
+            "byte_length": 74,
+            "role": "INPUT",
+            "access_scope": "scope",
+            "classification_receipt_refs": [
+              "7305d58f27dd84334b58f0fd5528f825c2f0b21387d4cecf2bc8a6c5bf711742"
+            ]
+          },
+          "assessed_at": "2026-09-11T00:00:00.000000Z",
+          "adapter": {
+            "provider_id": "synthetic-test",
+            "method_id": "synthetic-receipts/1",
+            "policy_sha256": "abababababababababababababababababababababababababababababababab",
+            "taxonomy": "SYNTHETIC-v1",
+            "supported_classes": [
+              "DEMO-SENSITIVE"
+            ]
+          },
+          "request_sha256": "dcb82382757414a2e13a3a446852f70737669fade25792d9e9f8ff974f227a44"
+        },
+        "outcome": "UNKNOWN",
+        "classification": null,
+        "response": {
+          "schema": "ancilis-classification-response/1",
+          "request_sha256": "dcb82382757414a2e13a3a446852f70737669fade25792d9e9f8ff974f227a44",
+          "outcome": "UNKNOWN",
+          "classification": null,
+          "evidence_refs": [],
+          "reasons": [
+            "STALE_LABEL"
+          ]
+        },
+        "sdk_reason": null,
+        "trust_basis": "ADAPTER_ATTESTED",
+        "semantic": {
+          "state": "UNQUALIFIED",
+          "request": {
+            "schema": "ancilis-semantic-request/1",
+            "classification_request": {
+              "schema": "ancilis-classification-request/1",
+              "tenant": "tenant",
+              "episode": "episode",
+              "open_sha256": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+              "revision_id": "340a7739621816b7f1820a1c626617a706d884c47da25cb5fd0a29bf0476c4a5",
+              "event_id": "d3f40f7f5d23f7fec84e7fa261c81b715e8c1156443fcd06b6f60e4310e8438f",
+              "artifact_index": 0,
+              "reference": {
+                "artifact": "document",
+                "sha256": "4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406",
+                "byte_length": 74,
+                "role": "INPUT",
+                "access_scope": "scope",
+                "classification_receipt_refs": [
+                  "7305d58f27dd84334b58f0fd5528f825c2f0b21387d4cecf2bc8a6c5bf711742"
+                ]
+              },
+              "assessed_at": "2026-09-11T00:00:00.000000Z",
+              "adapter": {
+                "provider_id": "synthetic-test",
+                "method_id": "synthetic-receipts/1",
+                "policy_sha256": "abababababababababababababababababababababababababababababababab",
+                "taxonomy": "SYNTHETIC-v1",
+                "supported_classes": [
+                  "DEMO-SENSITIVE"
+                ]
+              },
+              "request_sha256": "dcb82382757414a2e13a3a446852f70737669fade25792d9e9f8ff974f227a44"
+            },
+            "trusted_response": {
+              "schema": "ancilis-classification-response/1",
+              "request_sha256": "dcb82382757414a2e13a3a446852f70737669fade25792d9e9f8ff974f227a44",
+              "outcome": "UNKNOWN",
+              "classification": null,
+              "evidence_refs": [],
+              "reasons": [
+                "STALE_LABEL"
+              ]
+            },
+            "provider": {
+              "provider_id": "demo",
+              "method_id": "demo/1",
+              "runtime_id": "synthetic",
+              "qualification": "UNQUALIFIED"
+            },
+            "request_sha256": "5ae26b26ac1f0e9d29e1ef3ae78408ca09e974916309c6f21724af9de911a487"
+          },
+          "response": {
+            "schema": "ancilis-semantic-proposal/1",
+            "request_sha256": "5ae26b26ac1f0e9d29e1ef3ae78408ca09e974916309c6f21724af9de911a487",
+            "status": "PROPOSED",
+            "proposed_classification": "DEMO-SENSITIVE",
+            "evidence_refs": [
+              "bcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc"
+            ],
+            "reasons": []
+          },
+          "sdk_reason": null
+        }
+      }
+    ],
+    "report_sha256": "3a268f50c248585e4ae3a95852e611f998d9e1870f284440511c3a029847aa29"
+  }
+}
