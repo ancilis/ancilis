@@ -934,11 +934,23 @@ export class EpisodeClient {
         throw new EpisodeError("EVENT_CONFLICT");
       return prior.adapter as T;
     }
-    if (Object.keys(map).length > this.policy.max_attachments)
+    const entries = Object.entries(map);
+    if (
+      this.registrations.size + entries.length >
+      Math.min(this.policy.max_attachments, this.policy.max_diagnostic_keys)
+    ) {
+      this._reason("ATTACHMENT_CAP");
       throw new EpisodeError("ATTACHMENT_CAP");
-    const calls = new Map<string, AnyFunction>();
-    for (const [name, spec] of Object.entries(map)) {
+    }
+    // Validate every mapping before the first registration to keep refusal atomic.
+    for (const [name, spec] of entries) {
       validId(name);
+      orderedSurfaces([spec.surface]);
+      if (!["REQUEST", "READ", "EXECUTE", "WRITE", "RECEIVE"].includes(spec.operation))
+        throw new EpisodeError("INVALID_OBSERVATION");
+    }
+    const calls = new Map<string, AnyFunction>();
+    for (const [name, spec] of entries) {
       calls.set(
         name,
         this.attachTool(
@@ -955,8 +967,10 @@ export class EpisodeClient {
       );
     }
     const sdk = this;
-    const adapter = new Proxy(client, {
-      get(target, key) {
+    // Proxy a facade: frozen client methods cannot be substituted by a get trap
+    // when the client itself is the proxy target. Calls still use the real client.
+    const adapter = new Proxy(Object.create(client) as T, {
+      get(_target, key) {
         if (key === "callTool")
           return function (...args: any[]) {
             const first = args[0];
@@ -971,10 +985,13 @@ export class EpisodeClient {
             const fn = typeof name === "string" ? calls.get(name) : undefined;
             if (fn) return Reflect.apply(fn, client, args);
             sdk._reason("UNMAPPED_TOOL");
-            return Reflect.apply(target.callTool, target, args);
+            return Reflect.apply(client.callTool, client, args);
           };
-        const value = Reflect.get(target, key, target);
-        return typeof value === "function" ? value.bind(target) : value;
+        const value = Reflect.get(client, key, client);
+        return typeof value === "function" ? value.bind(client) : value;
+      },
+      set(_target, key, value) {
+        return Reflect.set(client, key, value, client);
       },
     });
     this.mcp.set(client, { adapter, signature, capture: options.capture });

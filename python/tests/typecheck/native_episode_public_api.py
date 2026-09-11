@@ -24,6 +24,14 @@ async def async_streaming(value: int) -> AsyncGenerator[int, None]:
     yield value
 
 
+class AsyncClient:
+    async def call_tool(self, name: str, *, arguments: dict[str, str]) -> str:
+        return name + arguments["value"]
+
+    async def list_tools(self) -> list[str]:
+        return ["read"]
+
+
 async def use_public_api() -> None:
     sdk = Ancilis("tenant", "source", source_instance="instance")
     sync_tool = sdk.attach_tool(synchronous, name="sync", surface="tool", operation="EXECUTE")
@@ -37,6 +45,11 @@ async def use_public_api() -> None:
     async_result: str = await async_tool(2)
     stream_result: Generator[int, None, str] = stream_tool(3)
     async_stream_result: AsyncGenerator[int, None] = async_stream_tool(4)
+    client = sdk.attach_mcp(
+        AsyncClient(), surfaces={"read": {"surface": "document", "operation": "READ"}}
+    )
+    mcp_result: str = await client.call_tool("read", arguments={"value": "x"})
+    mcp_tools: list[str] = await client.list_tools()
 
     episode = sdk.episode("episode", expected_surfaces=("tool",))
     observation = episode.observe(

@@ -175,9 +175,13 @@ class EpisodeVerificationDict(TypedDict):
 
 
 class MCPClient(Protocol):
-    """Dynamic MCP clients expose arbitrary methods; only call_tool is required here."""
+    """Structural attachment boundary; the concrete client signature is retained."""
 
-    def call_tool(self, request: object, /, *args: object, **kwargs: object) -> object: ...
+    def call_tool(self, *args: Any, **kwargs: Any) -> Any: ...
+
+
+C = TypeVar("C", bound=MCPClient)
+
 _MAX_SAFE = 9007199254740991
 _SURFACES = ("document", "tool", "execution", "memory", "output")
 _OPERATIONS = ("REQUEST", "READ", "EXECUTE", "WRITE", "RECEIVE")
@@ -506,10 +510,9 @@ class ObservationInput:
             self,
             "artifacts",
             tuple(
-                ContentEvidence(
-                    x["artifact"], x["sha256"], x["byte_length"], x["role"], x["access_scope"],
-                    tuple(x["classification_receipt_refs"]),
-                )
+                # Forward the complete mapping to the validating constructor:
+                # unknown keys must fail and omitted optional keys keep defaults.
+                ContentEvidence(**cast(Any, x))
                 if isinstance(x, Mapping)
                 else x
                 for x in self.artifacts
@@ -519,10 +522,7 @@ class ObservationInput:
             self,
             "relationships",
             tuple(
-                Relationship(
-                    x["kind"], x["from_artifact"], x["to_artifact"], x["basis"], x["method"],
-                    tuple(x["evidence_refs"]),
-                )
+                Relationship(**cast(Any, x))
                 if isinstance(x, Mapping)
                 else x
                 for x in self.relationships
@@ -817,7 +817,7 @@ class FlushResult(TypedDict):
 class Episode:
     def __init__(
         self,
-        sdk: "Ancilis",
+        sdk: Ancilis,
         episode_id: str,
         expected_surfaces: Sequence[Surface],
         *,
@@ -868,7 +868,7 @@ class Episode:
         self._refresh()
 
     @_locked
-    def __enter__(self) -> "Episode":
+    def __enter__(self) -> Episode:
         if self._sdk._closed:
             raise EpisodeLifecycleError("SDK_CLOSED")
         if self._discarded:
@@ -898,7 +898,7 @@ class Episode:
         self._active = max(0, self._active - 1)
         return False
 
-    async def __aenter__(self) -> "Episode":
+    async def __aenter__(self) -> Episode:
         return self.__enter__()
 
     async def __aexit__(
@@ -910,7 +910,7 @@ class Episode:
         return self.__exit__(typ, value, traceback)
 
     @_locked
-    def finish(self) -> "Episode":
+    def finish(self) -> Episode:
         if self._finished:
             return self
         self._finished = True
@@ -1218,7 +1218,7 @@ class _Call:
 
     def __init__(
         self,
-        sdk: "Ancilis",
+        sdk: Ancilis,
         registration: _Attachment,
         args: tuple[Any, ...],
         kwargs: Mapping[str, Any],
@@ -1364,12 +1364,27 @@ class _Call:
             "CANCELLED" if isinstance(error, asyncio.CancelledError) else "FAILED", error=error
         )
 
+    def __del__(self) -> None:
+        # Abandonment is missing evidence, not observed completion/cancellation.
+        # Release only collector bookkeeping: never call user capture callbacks,
+        # close an application iterator, or schedule asynchronous work from GC.
+        try:
+            if self.ended or self.episode is None:
+                return
+            self.ended = True
+            with self.sdk._lock:
+                self.episode._inflight = max(0, self.episode._inflight - 1)
+                self.episode._loss("MISSING_END")
+        except BaseException:
+            # Partial initialization and interpreter shutdown must stay harmless.
+            pass
+
 
 class _GeneratorProxy:
     def __init__(self, iterator: Generator[Any, Any, Any], call: _Call) -> None:
         self._iterator, self._call = iterator, call
 
-    def __iter__(self) -> "_GeneratorProxy":
+    def __iter__(self) -> _GeneratorProxy:
         return self
 
     def _step(self, method: Callable[..., Any], *args: Any) -> Any:
@@ -1407,7 +1422,7 @@ class _AsyncGeneratorProxy:
     def __init__(self, iterator: AsyncGenerator[Any, Any], call: _Call) -> None:
         self._iterator, self._call = iterator, call
 
-    def __aiter__(self) -> "_AsyncGeneratorProxy":
+    def __aiter__(self) -> _AsyncGeneratorProxy:
         return self
 
     async def _step(self, method: Callable[..., Any], *args: Any) -> Any:
@@ -1484,7 +1499,7 @@ class Ancilis:
         self._discarded_events = self._discarded_bytes = self._discarded = 0
         self._diagnostics: dict[str, int] = {}
 
-    def __enter__(self) -> "Ancilis":
+    def __enter__(self) -> Ancilis:
         if self._closed:
             raise EpisodeLifecycleError("SDK_CLOSED")
         return self
@@ -1493,7 +1508,7 @@ class Ancilis:
         self.close()
         return False
 
-    async def __aenter__(self) -> "Ancilis":
+    async def __aenter__(self) -> Ancilis:
         return self.__enter__()
 
     async def __aexit__(self, *args: object) -> Literal[False]:
@@ -1764,13 +1779,23 @@ class Ancilis:
                 @functools.wraps(fn)
                 def wrapper(*args: P.args, **kwargs: P.kwargs) -> Generator[Any, Any, Any]:
                     call = _Call(self, registration, args, kwargs)
-                    return (yield from _GeneratorProxy(fn(*args, **kwargs), call))
+                    try:
+                        iterator = fn(*args, **kwargs)
+                    except BaseException as error:
+                        call.failure(error)
+                        raise
+                    return (yield from _GeneratorProxy(iterator, call))
             elif inspect.isasyncgenfunction(fn):
 
                 @functools.wraps(fn)
                 async def wrapper(*args: P.args, **kwargs: P.kwargs) -> AsyncGenerator[Any, Any]:
                     call = _Call(self, registration, args, kwargs)
-                    iterator = _AsyncGeneratorProxy(fn(*args, **kwargs), call)
+                    try:
+                        target = fn(*args, **kwargs)
+                    except BaseException as error:
+                        call.failure(error)
+                        raise
+                    iterator = _AsyncGeneratorProxy(target, call)
                     try:
                         value = await iterator.__anext__()
                         while True:
@@ -1807,19 +1832,17 @@ class Ancilis:
 
     def attach_mcp(
         self,
-        client: MCPClient,
+        client: C,
         *,
         capture: Callable[[CaptureFrame], CaptureResult | None] | None = None,
         surfaces: Mapping[str, Mapping[str, str]],
-    ) -> MCPClient:
+    ) -> C:
         with self._lock:
             if self._closed:
                 raise EpisodeLifecycleError("SDK_CLOSED")
             if getattr(client, "__ancilis_mcp_owner__", None) is not None:
                 raise EpisodeError("SOURCE_MISMATCH")
             canonical_json(surfaces)
-            if len(surfaces) > self.policy.max_attachments:
-                raise EpisodeCapacityError("ATTACHMENT_CAP")
             normalized = tuple(
                 sorted(
                     (name, config["surface"], config["operation"])
@@ -1836,7 +1859,16 @@ class Ancilis:
                 adapter, options, callback = existing
                 if options != normalized or callback is not capture:
                     raise EpisodeError("EVENT_CONFLICT")
-                return adapter
+                return cast(C, adapter)
+            # Validate the whole map and available budget before registering any
+            # tool; a refused attachment must not consume the caller's slots.
+            for name, _, _ in normalized:
+                _id(name)
+            if len(self._attachments) + len(normalized) > min(
+                self.policy.max_attachments, self.policy.max_diagnostic_keys
+            ):
+                self._diag("ATTACHMENT_CAP")
+                raise EpisodeCapacityError("ATTACHMENT_CAP")
             sdk = self
 
             class Adapter:
@@ -1860,7 +1892,8 @@ class Ancilis:
                 def __getattr__(self, name: str) -> Any:
                     return getattr(client, name)
 
-                def call_tool(self, request: object, /, *args: object, **kwargs: object) -> object:
+                def call_tool(self, *args: Any, **kwargs: Any) -> object:
+                    request = args[0] if args else kwargs.get("name", kwargs.get("request"))
                     name = (
                         request.get("name")
                         if type(request) is dict
@@ -1871,12 +1904,15 @@ class Ancilis:
                     wrapped = self._wrapped.get(name) if type(name) is str else None
                     if wrapped is None:
                         sdk._diag("UNMAPPED_TOOL")
-                        return client.call_tool(request, *args, **kwargs)
-                    return wrapped(request, *args, **kwargs)
+                        return client.call_tool(*args, **kwargs)
+                    return wrapped(*args, **kwargs)
 
             adapter = Adapter()
             self._mcp_attachments[id(client)] = (adapter, normalized, capture)
-            return adapter
+            # The facade delegates the client's ordinary methods and preserves
+            # call_tool arguments/return protocol. It does not preserve identity,
+            # isinstance checks, or special-method/context-manager dispatch.
+            return cast(C, adapter)
 
 
 __all__ = [

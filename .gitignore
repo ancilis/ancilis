@@ -69,6 +69,7 @@ desktop.ini
 .env
 .env.local
 .env.*.local
+.release-private/
 
 # DuckDB evidence storage
 *.duckdb
