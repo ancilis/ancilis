@@ -20,7 +20,10 @@ import threading
 import types
 import uuid
 from collections.abc import AsyncGenerator, Callable, Generator, Iterator, Mapping, Sequence
-from typing import Any, Literal, ParamSpec, Protocol, TypeAlias, TypeVar, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, Protocol, TypeAlias, TypeVar, TypedDict, cast
+
+if TYPE_CHECKING:
+    from .signed import EpisodeSigner
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -927,6 +930,12 @@ class Episode:
     @_locked
     def inspect(self) -> EpisodeSnapshot:
         return EpisodeSnapshot(_freeze(self._snapshot()))
+
+    def export_signed(self, signer: EpisodeSigner) -> str:
+        """Sign a detached inspect snapshot; signing holds no collector lock."""
+        from .signed import sign_episode_snapshot
+
+        return sign_episode_snapshot(self.inspect(), signer)
 
     @_locked
     def _loss(self, reason: str, *, incident: bool = True) -> bool:

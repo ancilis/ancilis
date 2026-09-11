@@ -5,24 +5,37 @@ from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from ancilis.episodes.signed import (
+        EpisodeSigner as EpisodeSigner,
+        EpisodeTrustKey as EpisodeTrustKey,
+        EpisodeTrustPolicy as EpisodeTrustPolicy,
+        EpisodeTrustPolicyDict as EpisodeTrustPolicyDict,
+        ProtectedBodyRequest as ProtectedBodyRequest,
+        SignedEpisodeError as SignedEpisodeError,
+        SignedEpisodeVerification as SignedEpisodeVerification,
+        SignedEpisodeVerificationDict as SignedEpisodeVerificationDict,
+        sign_episode_snapshot as sign_episode_snapshot,
+        verify_signed_episode as verify_signed_episode,
+        averify_signed_episode as averify_signed_episode,
+    )
     from ancilis.episodes import (
-        Ancilis,
-        Authority,
-        CaptureFrame,
-        CaptureResult,
-        ContentEvidence,
-        Diagnostics,
-        Episode,
-        EpisodeCapacityError,
-        EpisodeError,
-        EpisodeLifecycleError,
-        EpisodeSnapshot,
-        NativePolicy,
-        Observation,
-        ObservationConflict,
-        ObservationInput,
-        Relationship,
-        verify_episode_snapshot,
+        Ancilis as Ancilis,
+        Authority as Authority,
+        CaptureFrame as CaptureFrame,
+        CaptureResult as CaptureResult,
+        ContentEvidence as ContentEvidence,
+        Diagnostics as Diagnostics,
+        Episode as Episode,
+        EpisodeCapacityError as EpisodeCapacityError,
+        EpisodeError as EpisodeError,
+        EpisodeLifecycleError as EpisodeLifecycleError,
+        EpisodeSnapshot as EpisodeSnapshot,
+        NativePolicy as NativePolicy,
+        Observation as Observation,
+        ObservationConflict as ObservationConflict,
+        ObservationInput as ObservationInput,
+        Relationship as Relationship,
+        verify_episode_snapshot as verify_episode_snapshot,
     )
     from ancilis.adapters.anthropic import (
         AnthropicActionProducer,
@@ -145,6 +158,18 @@ except PackageNotFoundError:
     __version__ = "0.0.0+dev"
 
 _EXPORTS: dict[str, tuple[str, str]] = {
+    "EpisodeSigner": ("ancilis.episodes.signed", "EpisodeSigner"),
+    "EpisodeTrustKey": ("ancilis.episodes.signed", "EpisodeTrustKey"),
+    "EpisodeTrustPolicy": ("ancilis.episodes.signed", "EpisodeTrustPolicy"),
+    "EpisodeTrustPolicyDict": ("ancilis.episodes.signed", "EpisodeTrustPolicyDict"),
+    "ProtectedBodyRequest": ("ancilis.episodes.signed", "ProtectedBodyRequest"),
+    "SignedEpisodeError": ("ancilis.episodes.signed", "SignedEpisodeError"),
+    "SignedEpisodeVerification": ("ancilis.episodes.signed", "SignedEpisodeVerification"),
+    "SignedEpisodeVerificationDict": ("ancilis.episodes.signed", "SignedEpisodeVerificationDict"),
+    "sign_episode_snapshot": ("ancilis.episodes.signed", "sign_episode_snapshot"),
+    "verify_signed_episode": ("ancilis.episodes.signed", "verify_signed_episode"),
+    "averify_signed_episode": ("ancilis.episodes.signed", "averify_signed_episode"),
+
     "Ancilis": ("ancilis.episodes", "Ancilis"),
     "Authority": ("ancilis.episodes", "Authority"),
     "CaptureFrame": ("ancilis.episodes", "CaptureFrame"),

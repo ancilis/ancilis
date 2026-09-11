@@ -1,4 +1,6 @@
 /** Explicit, advisory native collection. Persistence and reconstruction are separate capabilities. */
+import { signEpisodeSnapshot } from "./signed.js";
+import type { EpisodeSigner } from "./signed.js";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomBytes, randomUUID } from "node:crypto";
 import { types } from "node:util";
@@ -429,6 +431,9 @@ export class EpisodeHandle {
       claims_basis: "COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION",
       determination_refs: [],
     } as EpisodeSnapshot);
+  }
+  exportSigned(signer: EpisodeSigner): string {
+    return signEpisodeSnapshot(this.inspect(), signer);
   }
   finish(): void {
     if (this.finished) return;

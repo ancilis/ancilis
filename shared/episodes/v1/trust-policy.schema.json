@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ancilis.ai/schemas/episode-trust-policy/1",
+  "title": "Ancilis independently provisioned episode trust policy v1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "ancilis-episode-trust-policy/1"
+    },
+    "tenant": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+    },
+    "source": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+    },
+    "keys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+          },
+          "public_key": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+          },
+          "not_before": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "not_after": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z(?![\\s\\S])",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revoked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key_id",
+          "public_key",
+          "not_before",
+          "not_after",
+          "revoked"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 64
+    },
+    "body_mode": {
+      "enum": [
+        "NONE",
+        "ALL_REFERENCED"
+      ]
+    },
+    "max_body_bytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16777216
+    },
+    "max_total_body_bytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 67108864
+    },
+    "max_body_requests": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1024
+    }
+  },
+  "required": [
+    "schema",
+    "tenant",
+    "source",
+    "keys",
+    "body_mode",
+    "max_body_bytes",
+    "max_total_body_bytes",
+    "max_body_requests"
+  ],
+  "additionalProperties": false
+}

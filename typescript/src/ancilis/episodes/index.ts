@@ -34,3 +34,6 @@ export type {
   NativeVerificationOptions,
   NativeVerificationReason,
 } from "./verification.js";
+
+export { EpisodeSigner, EpisodeTrustPolicy, SignedEpisodeError, signEpisodeSnapshot, verifySignedEpisode } from "./signed.js";
+export type { EpisodeSignerOptions, EpisodeTrustKey, EpisodeTrustPolicyDocument, ProtectedBodyRequest, BodyResolver, SignedVerificationOptions, SignedEpisodeVerification } from "./signed.js";

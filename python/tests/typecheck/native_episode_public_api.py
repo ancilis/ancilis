@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Generator
 
-from ancilis.episodes import Ancilis, EpisodeSnapshot, Observation, ObservationInput
+from ancilis import (
+    Episode,
+    EpisodeSigner,
+    EpisodeTrustPolicy,
+    EpisodeTrustPolicyDict,
+    ProtectedBodyRequest,
+    SignedEpisodeVerificationDict,
+)
+from ancilis import Ancilis, EpisodeSnapshot, Observation, ObservationInput
 
 
 def synchronous(value: int, *, suffix: str) -> str:
@@ -70,3 +78,20 @@ async def use_public_api() -> None:
     snapshot: EpisodeSnapshot = episode.inspect()
     snapshot_open_hash: str = snapshot.to_dict()["open_sha256"]
     snapshot_reason: str = snapshot.to_dict()["coverage"]["reasons"][0]
+
+
+# Signed verification requests retain the existing typed content-reference fields.
+
+
+def signed_types(
+    request: ProtectedBodyRequest, policy: EpisodeTrustPolicy, result: SignedEpisodeVerificationDict
+) -> int:
+    document: EpisodeTrustPolicyDict = policy.to_dict()
+    digest: str = request.reference.sha256
+    length: int = request.reference.byte_length
+    authenticated: bool = result["envelope_authenticated"]
+    return length if authenticated and digest and document["tenant"] else 0
+
+
+def public_signed_export(episode: Episode, signer: EpisodeSigner) -> str:
+    return episode.export_signed(signer)

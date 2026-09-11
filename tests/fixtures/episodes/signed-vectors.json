@@ -1,0 +1,374 @@
+{
+  "notice": "Public synthetic test-only key and evidence. Never use this key in production.",
+  "seed_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "body_hex": "53594e544845544943207075626c6963207369676e696e6720616e642070726f7465637465642d626f647920746573742c206e6f742070726f64756374696f6e2065766964656e63652e",
+  "assessed_at": "2026-09-11T00:00:00.000000Z",
+  "snapshot": {
+    "schema": "ancilis-episode/1",
+    "tenant": "tenant",
+    "episode": "episode",
+    "open": {
+      "schema": "ancilis-episode-open/1",
+      "tenant": "tenant",
+      "episode": "episode",
+      "owner_source": "source",
+      "open_nonce": "01010101010101010101010101010101",
+      "allowed_source_instances": [
+        "instance"
+      ],
+      "expected_surfaces": [
+        "document"
+      ],
+      "correlation_basis": "APPLICATION_ASSIGNED",
+      "created_at": "2026-09-11T00:00:00.000000Z",
+      "policy_sha256": "5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63"
+    },
+    "open_sha256": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+    "revision": 3,
+    "revision_id": "9fce7c14163ddd114a9df6f23970412937e706a267acd322c2f6a3a19d17c558",
+    "previous_revision_id": "0885ae7c1746f8514a81d7e7a381e48ede178f83d7091384b3aa2ea201b538e9",
+    "observations": [
+      {
+        "call_id": "call",
+        "occurred_at": "2026-09-11T00:00:00.000000Z",
+        "surface": "document",
+        "operation": "READ",
+        "phase": "START",
+        "chunk_index": null,
+        "outcome": "STARTED",
+        "authority": {
+          "principal": null,
+          "service": null,
+          "delegation": null,
+          "approval": null,
+          "scope": null,
+          "basis": "APPLICATION_ASSERTION"
+        },
+        "artifacts": [],
+        "relationships": [],
+        "provenance_refs": [],
+        "capture_gaps": [],
+        "schema": "ancilis-observation/1",
+        "tenant": "tenant",
+        "episode": "episode",
+        "episode_open": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+        "event_id": "1999df7f3ef13e4d9d5c59906adc716581f3604427aa33afd9fb2faac52c958c",
+        "source": {
+          "id": "source",
+          "instance": "instance",
+          "sequence": 1
+        },
+        "captured_at": "2026-09-11T00:00:00.000000Z",
+        "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+        "clock_evidence_refs": []
+      },
+      {
+        "call_id": "call",
+        "occurred_at": "2026-09-11T00:00:00.000000Z",
+        "surface": "document",
+        "operation": "READ",
+        "phase": "END",
+        "chunk_index": null,
+        "outcome": "SUCCEEDED",
+        "authority": {
+          "principal": null,
+          "service": null,
+          "delegation": null,
+          "approval": null,
+          "scope": null,
+          "basis": "APPLICATION_ASSERTION"
+        },
+        "artifacts": [
+          {
+            "artifact": "document",
+            "sha256": "4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406",
+            "byte_length": 74,
+            "role": "INPUT",
+            "access_scope": "scope",
+            "classification_receipt_refs": []
+          }
+        ],
+        "relationships": [],
+        "provenance_refs": [],
+        "capture_gaps": [],
+        "schema": "ancilis-observation/1",
+        "tenant": "tenant",
+        "episode": "episode",
+        "episode_open": "43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0",
+        "event_id": "d3f40f7f5d23f7fec84e7fa261c81b715e8c1156443fcd06b6f60e4310e8438f",
+        "source": {
+          "id": "source",
+          "instance": "instance",
+          "sequence": 2
+        },
+        "captured_at": "2026-09-11T00:00:00.000000Z",
+        "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+        "clock_evidence_refs": []
+      }
+    ],
+    "coverage": {
+      "expected_surfaces": [
+        "document"
+      ],
+      "observed_surfaces": [
+        "document"
+      ],
+      "missing_surfaces": [],
+      "complete": false,
+      "lost_events": 0,
+      "incomplete_calls": 0,
+      "reasons": [],
+      "reconstruction_exclusions": []
+    },
+    "method": "ancilis-native-observation-ledger/1",
+    "claims_basis": "COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION",
+    "determination_refs": [],
+    "observation_chain_sha256": "2ca25fa5d5767efcadfe06847980552f0d15907d2180b873646cc6c50017e60d",
+    "revision_method": "ancilis-native-revision/2"
+  },
+  "trust_policy": {
+    "schema": "ancilis-episode-trust-policy/1",
+    "tenant": "tenant",
+    "source": "source",
+    "keys": [
+      {
+        "key_id": "key-1",
+        "public_key": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+        "not_before": "2026-01-01T00:00:00.000000Z",
+        "not_after": "2027-01-01T00:00:00.000000Z",
+        "revoked": false
+      }
+    ],
+    "body_mode": "ALL_REFERENCED",
+    "max_body_bytes": 16777216,
+    "max_total_body_bytes": 67108864,
+    "max_body_requests": 1024
+  },
+  "signing_preimage_hex": "616e63696c69732d7369676e65642d657069736f64652f310a7b22616c676f726974686d223a2245643235353139222c226b65795f6964223a226b65792d31222c22736368656d61223a22616e63696c69732d7369676e65642d657069736f64652f31222c22736e617073686f74223a7b22636c61696d735f6261736973223a22434f4c4c4543544f525f415353455254494f4e5f4e4f545f494e444550454e44454e545f5245434f4e535452554354494f4e222c22636f766572616765223a7b22636f6d706c657465223a66616c73652c2265787065637465645f7375726661636573223a5b22646f63756d656e74225d2c22696e636f6d706c6574655f63616c6c73223a302c226c6f73745f6576656e7473223a302c226d697373696e675f7375726661636573223a5b5d2c226f627365727665645f7375726661636573223a5b22646f63756d656e74225d2c22726561736f6e73223a5b5d2c227265636f6e737472756374696f6e5f6578636c7573696f6e73223a5b5d7d2c2264657465726d696e6174696f6e5f72656673223a5b5d2c22657069736f6465223a22657069736f6465222c226d6574686f64223a22616e63696c69732d6e61746976652d6f62736572766174696f6e2d6c65646765722f31222c226f62736572766174696f6e5f636861696e5f736861323536223a2232636132356661356435373637656663616466653036383437393830353532663064313539303764323138306238373336343663633663353030313765363064222c226f62736572766174696f6e73223a5b7b22617274696661637473223a5b5d2c22617574686f72697479223a7b22617070726f76616c223a6e756c6c2c226261736973223a224150504c49434154494f4e5f415353455254494f4e222c2264656c65676174696f6e223a6e756c6c2c227072696e636970616c223a6e756c6c2c2273636f7065223a6e756c6c2c2273657276696365223a6e756c6c7d2c2263616c6c5f6964223a2263616c6c222c22636170747572655f67617073223a5b5d2c2263617074757265645f6174223a22323032362d30392d31315430303a30303a30302e3030303030305a222c226368756e6b5f696e646578223a6e756c6c2c22636c6f636b5f6261736973223a22434f4c4c4543544f525f434c4f434b5f415353455254494f4e222c22636c6f636b5f65766964656e63655f72656673223a5b5d2c22657069736f6465223a22657069736f6465222c22657069736f64655f6f70656e223a2234336434316162623635313535626231343833633665306163353165303065383330326531663666633036333661643931333130646230623833313062386330222c226576656e745f6964223a2231393939646637663365663133653464396435633539393036616463373136353831663336303434323761613333616664396662326661616335326339353863222c226f636375727265645f6174223a22323032362d30392d31315430303a30303a30302e3030303030305a222c226f7065726174696f6e223a2252454144222c226f7574636f6d65223a2253544152544544222c227068617365223a225354415254222c2270726f76656e616e63655f72656673223a5b5d2c2272656c6174696f6e7368697073223a5b5d2c22736368656d61223a22616e63696c69732d6f62736572766174696f6e2f31222c22736f75726365223a7b226964223a22736f75726365222c22696e7374616e6365223a22696e7374616e6365222c2273657175656e6365223a317d2c2273757266616365223a22646f63756d656e74222c2274656e616e74223a2274656e616e74227d2c7b22617274696661637473223a5b7b226163636573735f73636f7065223a2273636f7065222c226172746966616374223a22646f63756d656e74222c22627974655f6c656e677468223a37342c22636c617373696669636174696f6e5f726563656970745f72656673223a5b5d2c22726f6c65223a22494e505554222c22736861323536223a2234623566646466653561616564313036346439643536613738316637626534343136313338326438343962316237373030656463323237656665353734343036227d5d2c22617574686f72697479223a7b22617070726f76616c223a6e756c6c2c226261736973223a224150504c49434154494f4e5f415353455254494f4e222c2264656c65676174696f6e223a6e756c6c2c227072696e636970616c223a6e756c6c2c2273636f7065223a6e756c6c2c2273657276696365223a6e756c6c7d2c2263616c6c5f6964223a2263616c6c222c22636170747572655f67617073223a5b5d2c2263617074757265645f6174223a22323032362d30392d31315430303a30303a30302e3030303030305a222c226368756e6b5f696e646578223a6e756c6c2c22636c6f636b5f6261736973223a22434f4c4c4543544f525f434c4f434b5f415353455254494f4e222c22636c6f636b5f65766964656e63655f72656673223a5b5d2c22657069736f6465223a22657069736f6465222c22657069736f64655f6f70656e223a2234336434316162623635313535626231343833633665306163353165303065383330326531663666633036333661643931333130646230623833313062386330222c226576656e745f6964223a2264336634306637663564323366376665633834653766613236316338316237313565386331313536343433666364303662366636306534333130653834333866222c226f636375727265645f6174223a22323032362d30392d31315430303a30303a30302e3030303030305a222c226f7065726174696f6e223a2252454144222c226f7574636f6d65223a22535543434545444544222c227068617365223a22454e44222c2270726f76656e616e63655f72656673223a5b5d2c2272656c6174696f6e7368697073223a5b5d2c22736368656d61223a22616e63696c69732d6f62736572766174696f6e2f31222c22736f75726365223a7b226964223a22736f75726365222c22696e7374616e6365223a22696e7374616e6365222c2273657175656e6365223a327d2c2273757266616365223a22646f63756d656e74222c2274656e616e74223a2274656e616e74227d5d2c226f70656e223a7b22616c6c6f7765645f736f757263655f696e7374616e636573223a5b22696e7374616e6365225d2c22636f7272656c6174696f6e5f6261736973223a224150504c49434154494f4e5f41535349474e4544222c22637265617465645f6174223a22323032362d30392d31315430303a30303a30302e3030303030305a222c22657069736f6465223a22657069736f6465222c2265787065637465645f7375726661636573223a5b22646f63756d656e74225d2c226f70656e5f6e6f6e6365223a223031303130313031303130313031303130313031303130313031303130313031222c226f776e65725f736f75726365223a22736f75726365222c22706f6c6963795f736861323536223a2235666336373230633262313432663164616666373366326432633863356463386364316135616138333165313461666231333362343230643834613536623633222c22736368656d61223a22616e63696c69732d657069736f64652d6f70656e2f31222c2274656e616e74223a2274656e616e74227d2c226f70656e5f736861323536223a2234336434316162623635313535626231343833633665306163353165303065383330326531663666633036333661643931333130646230623833313062386330222c2270726576696f75735f7265766973696f6e5f6964223a2230383835616537633137343666383531346138316437653761333831653438656465313738663833643730393133383462336161326561323031623533386539222c227265766973696f6e223a332c227265766973696f6e5f6964223a2239666365376331343136336464643131346139646636663233393730343132393337653730366132363761636433323263326636613361313964313763353538222c227265766973696f6e5f6d6574686f64223a22616e63696c69732d6e61746976652d7265766973696f6e2f32222c22736368656d61223a22616e63696c69732d657069736f64652f31222c2274656e616e74223a2274656e616e74227d7d",
+  "export": "{\"algorithm\":\"Ed25519\",\"key_id\":\"key-1\",\"schema\":\"ancilis-signed-episode/1\",\"signature\":\"9d9a2830d9b47b08c2ff5a020b006924087f69f24d60e68431dc9dc1137c8134c6ba9499c357382fcfc0838daa76ca4273d3b2255fbb943a35e11ac6f20a0207\",\"snapshot\":{\"claims_basis\":\"COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION\",\"coverage\":{\"complete\":false,\"expected_surfaces\":[\"document\"],\"incomplete_calls\":0,\"lost_events\":0,\"missing_surfaces\":[],\"observed_surfaces\":[\"document\"],\"reasons\":[],\"reconstruction_exclusions\":[]},\"determination_refs\":[],\"episode\":\"episode\",\"method\":\"ancilis-native-observation-ledger/1\",\"observation_chain_sha256\":\"2ca25fa5d5767efcadfe06847980552f0d15907d2180b873646cc6c50017e60d\",\"observations\":[{\"artifacts\":[],\"authority\":{\"approval\":null,\"basis\":\"APPLICATION_ASSERTION\",\"delegation\":null,\"principal\":null,\"scope\":null,\"service\":null},\"call_id\":\"call\",\"capture_gaps\":[],\"captured_at\":\"2026-09-11T00:00:00.000000Z\",\"chunk_index\":null,\"clock_basis\":\"COLLECTOR_CLOCK_ASSERTION\",\"clock_evidence_refs\":[],\"episode\":\"episode\",\"episode_open\":\"43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0\",\"event_id\":\"1999df7f3ef13e4d9d5c59906adc716581f3604427aa33afd9fb2faac52c958c\",\"occurred_at\":\"2026-09-11T00:00:00.000000Z\",\"operation\":\"READ\",\"outcome\":\"STARTED\",\"phase\":\"START\",\"provenance_refs\":[],\"relationships\":[],\"schema\":\"ancilis-observation/1\",\"source\":{\"id\":\"source\",\"instance\":\"instance\",\"sequence\":1},\"surface\":\"document\",\"tenant\":\"tenant\"},{\"artifacts\":[{\"access_scope\":\"scope\",\"artifact\":\"document\",\"byte_length\":74,\"classification_receipt_refs\":[],\"role\":\"INPUT\",\"sha256\":\"4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406\"}],\"authority\":{\"approval\":null,\"basis\":\"APPLICATION_ASSERTION\",\"delegation\":null,\"principal\":null,\"scope\":null,\"service\":null},\"call_id\":\"call\",\"capture_gaps\":[],\"captured_at\":\"2026-09-11T00:00:00.000000Z\",\"chunk_index\":null,\"clock_basis\":\"COLLECTOR_CLOCK_ASSERTION\",\"clock_evidence_refs\":[],\"episode\":\"episode\",\"episode_open\":\"43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0\",\"event_id\":\"d3f40f7f5d23f7fec84e7fa261c81b715e8c1156443fcd06b6f60e4310e8438f\",\"occurred_at\":\"2026-09-11T00:00:00.000000Z\",\"operation\":\"READ\",\"outcome\":\"SUCCEEDED\",\"phase\":\"END\",\"provenance_refs\":[],\"relationships\":[],\"schema\":\"ancilis-observation/1\",\"source\":{\"id\":\"source\",\"instance\":\"instance\",\"sequence\":2},\"surface\":\"document\",\"tenant\":\"tenant\"}],\"open\":{\"allowed_source_instances\":[\"instance\"],\"correlation_basis\":\"APPLICATION_ASSIGNED\",\"created_at\":\"2026-09-11T00:00:00.000000Z\",\"episode\":\"episode\",\"expected_surfaces\":[\"document\"],\"open_nonce\":\"01010101010101010101010101010101\",\"owner_source\":\"source\",\"policy_sha256\":\"5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63\",\"schema\":\"ancilis-episode-open/1\",\"tenant\":\"tenant\"},\"open_sha256\":\"43d41abb65155bb1483c6e0ac51e00e8302e1f6fc0636ad91310db0b8310b8c0\",\"previous_revision_id\":\"0885ae7c1746f8514a81d7e7a381e48ede178f83d7091384b3aa2ea201b538e9\",\"revision\":3,\"revision_id\":\"9fce7c14163ddd114a9df6f23970412937e706a267acd322c2f6a3a19d17c558\",\"revision_method\":\"ancilis-native-revision/2\",\"schema\":\"ancilis-episode/1\",\"tenant\":\"tenant\"}}",
+  "expected": {
+    "schema": "ancilis-signed-verification/1",
+    "status": "AUTHENTICATED",
+    "envelope_authenticated": true,
+    "protected_bodies": "VERIFIED",
+    "reconstruction": "UNSUPPORTED",
+    "policy_sha256": "1826e7515249c5d3d48842945e48ff0f50c71ca09efd6674cd7d7d6f100de152",
+    "assessed_at": "2026-09-11T00:00:00.000000Z",
+    "export_sha256": "acc79c96e3ab0fed49186ce1ab69e8247e17a3e2910d9cad1032ddc1d1aa2d21",
+    "verified_body_count": 1,
+    "reasons": [
+      "ENVELOPE_AUTHENTICATED",
+      "BODIES_VERIFIED"
+    ],
+    "verified_claim_refs": []
+  },
+  "multiple_snapshot": {
+    "schema": "ancilis-episode/1",
+    "tenant": "tenant",
+    "episode": "multiple",
+    "open": {
+      "schema": "ancilis-episode-open/1",
+      "tenant": "tenant",
+      "episode": "multiple",
+      "owner_source": "source",
+      "open_nonce": "02020202020202020202020202020202",
+      "allowed_source_instances": [
+        "instance"
+      ],
+      "expected_surfaces": [
+        "document"
+      ],
+      "correlation_basis": "APPLICATION_ASSIGNED",
+      "created_at": "2026-09-11T00:00:00.000000Z",
+      "policy_sha256": "5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63"
+    },
+    "open_sha256": "2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687",
+    "revision": 5,
+    "revision_id": "a0f655a42eba07e69db146c2ea45efc66775679e7daf043d3d2b7b3c3eec76fd",
+    "previous_revision_id": "e9b17e0312d9e771ab2a842409c6412e5670ae69e538d7d137deab5d57abd6ff",
+    "observations": [
+      {
+        "call_id": "first",
+        "occurred_at": "2026-09-11T00:00:00.000000Z",
+        "surface": "document",
+        "operation": "READ",
+        "phase": "START",
+        "chunk_index": null,
+        "outcome": "STARTED",
+        "authority": {
+          "principal": null,
+          "service": null,
+          "delegation": null,
+          "approval": null,
+          "scope": null,
+          "basis": "APPLICATION_ASSERTION"
+        },
+        "artifacts": [],
+        "relationships": [],
+        "provenance_refs": [],
+        "capture_gaps": [],
+        "schema": "ancilis-observation/1",
+        "tenant": "tenant",
+        "episode": "multiple",
+        "episode_open": "2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687",
+        "event_id": "91061cf803b93aa57fd34c150a2e490e54e4a94bfd8bce9d0bcc2e28cee9ccd1",
+        "source": {
+          "id": "source",
+          "instance": "instance",
+          "sequence": 1
+        },
+        "captured_at": "2026-09-11T00:00:00.000000Z",
+        "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+        "clock_evidence_refs": []
+      },
+      {
+        "call_id": "first",
+        "occurred_at": "2026-09-11T00:00:00.000000Z",
+        "surface": "document",
+        "operation": "READ",
+        "phase": "END",
+        "chunk_index": null,
+        "outcome": "SUCCEEDED",
+        "authority": {
+          "principal": null,
+          "service": null,
+          "delegation": null,
+          "approval": null,
+          "scope": null,
+          "basis": "APPLICATION_ASSERTION"
+        },
+        "artifacts": [
+          {
+            "artifact": "document",
+            "sha256": "4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406",
+            "byte_length": 74,
+            "role": "INPUT",
+            "access_scope": "scope-one",
+            "classification_receipt_refs": []
+          },
+          {
+            "artifact": "document",
+            "sha256": "4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406",
+            "byte_length": 74,
+            "role": "OUTPUT",
+            "access_scope": "scope-two",
+            "classification_receipt_refs": []
+          }
+        ],
+        "relationships": [],
+        "provenance_refs": [],
+        "capture_gaps": [],
+        "schema": "ancilis-observation/1",
+        "tenant": "tenant",
+        "episode": "multiple",
+        "episode_open": "2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687",
+        "event_id": "b72bf3b8304a45ac8647e7af461eb6f1b5e40307a3e69f5b5ce85c51a67e33aa",
+        "source": {
+          "id": "source",
+          "instance": "instance",
+          "sequence": 2
+        },
+        "captured_at": "2026-09-11T00:00:00.000000Z",
+        "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+        "clock_evidence_refs": []
+      },
+      {
+        "call_id": "second",
+        "occurred_at": "2026-09-11T00:00:00.000000Z",
+        "surface": "document",
+        "operation": "READ",
+        "phase": "START",
+        "chunk_index": null,
+        "outcome": "STARTED",
+        "authority": {
+          "principal": null,
+          "service": null,
+          "delegation": null,
+          "approval": null,
+          "scope": null,
+          "basis": "APPLICATION_ASSERTION"
+        },
+        "artifacts": [],
+        "relationships": [],
+        "provenance_refs": [],
+        "capture_gaps": [],
+        "schema": "ancilis-observation/1",
+        "tenant": "tenant",
+        "episode": "multiple",
+        "episode_open": "2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687",
+        "event_id": "9b2b0fef97f3e6db4cdb0b32ea50d84de282342e884c8c0e5cd7a55eac7caf80",
+        "source": {
+          "id": "source",
+          "instance": "instance",
+          "sequence": 3
+        },
+        "captured_at": "2026-09-11T00:00:00.000000Z",
+        "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+        "clock_evidence_refs": []
+      },
+      {
+        "call_id": "second",
+        "occurred_at": "2026-09-11T00:00:00.000000Z",
+        "surface": "document",
+        "operation": "READ",
+        "phase": "END",
+        "chunk_index": null,
+        "outcome": "SUCCEEDED",
+        "authority": {
+          "principal": null,
+          "service": null,
+          "delegation": null,
+          "approval": null,
+          "scope": null,
+          "basis": "APPLICATION_ASSERTION"
+        },
+        "artifacts": [
+          {
+            "artifact": "document",
+            "sha256": "4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406",
+            "byte_length": 74,
+            "role": "INPUT",
+            "access_scope": "scope-three",
+            "classification_receipt_refs": []
+          }
+        ],
+        "relationships": [],
+        "provenance_refs": [],
+        "capture_gaps": [],
+        "schema": "ancilis-observation/1",
+        "tenant": "tenant",
+        "episode": "multiple",
+        "episode_open": "2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687",
+        "event_id": "1ef17d0da38a79f3a0586f63a0ccfa141895801429789c9e67cce2cb1601114d",
+        "source": {
+          "id": "source",
+          "instance": "instance",
+          "sequence": 4
+        },
+        "captured_at": "2026-09-11T00:00:00.000000Z",
+        "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+        "clock_evidence_refs": []
+      }
+    ],
+    "coverage": {
+      "expected_surfaces": [
+        "document"
+      ],
+      "observed_surfaces": [
+        "document"
+      ],
+      "missing_surfaces": [],
+      "complete": false,
+      "lost_events": 0,
+      "incomplete_calls": 0,
+      "reasons": [],
+      "reconstruction_exclusions": []
+    },
+    "method": "ancilis-native-observation-ledger/1",
+    "claims_basis": "COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION",
+    "determination_refs": [],
+    "observation_chain_sha256": "740d39f6b261113079eba1504fe07aad41f05bfef9c6c546bac23713f8306560",
+    "revision_method": "ancilis-native-revision/2"
+  },
+  "multiple_export": "{\"algorithm\":\"Ed25519\",\"key_id\":\"key-1\",\"schema\":\"ancilis-signed-episode/1\",\"signature\":\"9f5fc1406ccc5b85c1190995e94883b346b721c983d529f7d1838150523322880354ded408feb635832afbd31da7582fe5447a807bdc44fb01f8eab29d100c0d\",\"snapshot\":{\"claims_basis\":\"COLLECTOR_ASSERTION_NOT_INDEPENDENT_RECONSTRUCTION\",\"coverage\":{\"complete\":false,\"expected_surfaces\":[\"document\"],\"incomplete_calls\":0,\"lost_events\":0,\"missing_surfaces\":[],\"observed_surfaces\":[\"document\"],\"reasons\":[],\"reconstruction_exclusions\":[]},\"determination_refs\":[],\"episode\":\"multiple\",\"method\":\"ancilis-native-observation-ledger/1\",\"observation_chain_sha256\":\"740d39f6b261113079eba1504fe07aad41f05bfef9c6c546bac23713f8306560\",\"observations\":[{\"artifacts\":[],\"authority\":{\"approval\":null,\"basis\":\"APPLICATION_ASSERTION\",\"delegation\":null,\"principal\":null,\"scope\":null,\"service\":null},\"call_id\":\"first\",\"capture_gaps\":[],\"captured_at\":\"2026-09-11T00:00:00.000000Z\",\"chunk_index\":null,\"clock_basis\":\"COLLECTOR_CLOCK_ASSERTION\",\"clock_evidence_refs\":[],\"episode\":\"multiple\",\"episode_open\":\"2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687\",\"event_id\":\"91061cf803b93aa57fd34c150a2e490e54e4a94bfd8bce9d0bcc2e28cee9ccd1\",\"occurred_at\":\"2026-09-11T00:00:00.000000Z\",\"operation\":\"READ\",\"outcome\":\"STARTED\",\"phase\":\"START\",\"provenance_refs\":[],\"relationships\":[],\"schema\":\"ancilis-observation/1\",\"source\":{\"id\":\"source\",\"instance\":\"instance\",\"sequence\":1},\"surface\":\"document\",\"tenant\":\"tenant\"},{\"artifacts\":[{\"access_scope\":\"scope-one\",\"artifact\":\"document\",\"byte_length\":74,\"classification_receipt_refs\":[],\"role\":\"INPUT\",\"sha256\":\"4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406\"},{\"access_scope\":\"scope-two\",\"artifact\":\"document\",\"byte_length\":74,\"classification_receipt_refs\":[],\"role\":\"OUTPUT\",\"sha256\":\"4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406\"}],\"authority\":{\"approval\":null,\"basis\":\"APPLICATION_ASSERTION\",\"delegation\":null,\"principal\":null,\"scope\":null,\"service\":null},\"call_id\":\"first\",\"capture_gaps\":[],\"captured_at\":\"2026-09-11T00:00:00.000000Z\",\"chunk_index\":null,\"clock_basis\":\"COLLECTOR_CLOCK_ASSERTION\",\"clock_evidence_refs\":[],\"episode\":\"multiple\",\"episode_open\":\"2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687\",\"event_id\":\"b72bf3b8304a45ac8647e7af461eb6f1b5e40307a3e69f5b5ce85c51a67e33aa\",\"occurred_at\":\"2026-09-11T00:00:00.000000Z\",\"operation\":\"READ\",\"outcome\":\"SUCCEEDED\",\"phase\":\"END\",\"provenance_refs\":[],\"relationships\":[],\"schema\":\"ancilis-observation/1\",\"source\":{\"id\":\"source\",\"instance\":\"instance\",\"sequence\":2},\"surface\":\"document\",\"tenant\":\"tenant\"},{\"artifacts\":[],\"authority\":{\"approval\":null,\"basis\":\"APPLICATION_ASSERTION\",\"delegation\":null,\"principal\":null,\"scope\":null,\"service\":null},\"call_id\":\"second\",\"capture_gaps\":[],\"captured_at\":\"2026-09-11T00:00:00.000000Z\",\"chunk_index\":null,\"clock_basis\":\"COLLECTOR_CLOCK_ASSERTION\",\"clock_evidence_refs\":[],\"episode\":\"multiple\",\"episode_open\":\"2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687\",\"event_id\":\"9b2b0fef97f3e6db4cdb0b32ea50d84de282342e884c8c0e5cd7a55eac7caf80\",\"occurred_at\":\"2026-09-11T00:00:00.000000Z\",\"operation\":\"READ\",\"outcome\":\"STARTED\",\"phase\":\"START\",\"provenance_refs\":[],\"relationships\":[],\"schema\":\"ancilis-observation/1\",\"source\":{\"id\":\"source\",\"instance\":\"instance\",\"sequence\":3},\"surface\":\"document\",\"tenant\":\"tenant\"},{\"artifacts\":[{\"access_scope\":\"scope-three\",\"artifact\":\"document\",\"byte_length\":74,\"classification_receipt_refs\":[],\"role\":\"INPUT\",\"sha256\":\"4b5fddfe5aaed1064d9d56a781f7be44161382d849b1b7700edc227efe574406\"}],\"authority\":{\"approval\":null,\"basis\":\"APPLICATION_ASSERTION\",\"delegation\":null,\"principal\":null,\"scope\":null,\"service\":null},\"call_id\":\"second\",\"capture_gaps\":[],\"captured_at\":\"2026-09-11T00:00:00.000000Z\",\"chunk_index\":null,\"clock_basis\":\"COLLECTOR_CLOCK_ASSERTION\",\"clock_evidence_refs\":[],\"episode\":\"multiple\",\"episode_open\":\"2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687\",\"event_id\":\"1ef17d0da38a79f3a0586f63a0ccfa141895801429789c9e67cce2cb1601114d\",\"occurred_at\":\"2026-09-11T00:00:00.000000Z\",\"operation\":\"READ\",\"outcome\":\"SUCCEEDED\",\"phase\":\"END\",\"provenance_refs\":[],\"relationships\":[],\"schema\":\"ancilis-observation/1\",\"source\":{\"id\":\"source\",\"instance\":\"instance\",\"sequence\":4},\"surface\":\"document\",\"tenant\":\"tenant\"}],\"open\":{\"allowed_source_instances\":[\"instance\"],\"correlation_basis\":\"APPLICATION_ASSIGNED\",\"created_at\":\"2026-09-11T00:00:00.000000Z\",\"episode\":\"multiple\",\"expected_surfaces\":[\"document\"],\"open_nonce\":\"02020202020202020202020202020202\",\"owner_source\":\"source\",\"policy_sha256\":\"5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63\",\"schema\":\"ancilis-episode-open/1\",\"tenant\":\"tenant\"},\"open_sha256\":\"2b905c983e0dfe7b9d513128cab013d456db27913a5d5eb1d8ee94e838905687\",\"previous_revision_id\":\"e9b17e0312d9e771ab2a842409c6412e5670ae69e538d7d137deab5d57abd6ff\",\"revision\":5,\"revision_id\":\"a0f655a42eba07e69db146c2ea45efc66775679e7daf043d3d2b7b3c3eec76fd\",\"revision_method\":\"ancilis-native-revision/2\",\"schema\":\"ancilis-episode/1\",\"tenant\":\"tenant\"}}"
+}
