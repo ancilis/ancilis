@@ -42,6 +42,8 @@ source provenance.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import fnmatch
 import hashlib
 import json
@@ -54,13 +56,8 @@ from collections.abc import Iterable
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-# Mapping table lives at <repo>/shared/mappings/composio-aksi-controls.json.
-# This file lives at <repo>/python/src/ancilis/importers/composio.py — five
-# .parent traversals after .resolve() reach the repo root.
-_MAPPING_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "composio-aksi-controls.json"
-)
+# Packaged shared assets, with an exact-checkout fallback for development.
+_MAPPING_PATH = shared_path("mappings", 'composio-aksi-controls.json')
 
 _CONTROL_NAMES: dict[str, str] = {
     "PR-01": "Prompt Injection Prevention",

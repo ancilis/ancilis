@@ -44,6 +44,8 @@ JSON wire format directly.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import hashlib
 import json
 import uuid
@@ -63,16 +65,8 @@ _MAPPING_FILENAME = "honeycomb-aksi-controls.json"
 
 
 def _resolve_mapping_path() -> Path:
-    """Walk up from this file to find ``shared/mappings/<filename>``."""
-    here = Path(__file__).resolve()
-    for ancestor in [here.parent, *here.parents]:
-        candidate = ancestor / "shared" / "mappings" / _MAPPING_FILENAME
-        if candidate.is_file():
-            return candidate
-    return (
-        here.parent.parent.parent.parent.parent.parent
-        / "shared" / "mappings" / _MAPPING_FILENAME
-    )
+    """Resolve the mapping from this installation or its exact source checkout."""
+    return shared_path("mappings", _MAPPING_FILENAME)
 
 
 _MAPPING_PATH = _resolve_mapping_path()

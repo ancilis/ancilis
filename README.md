@@ -36,6 +36,8 @@ What AKSI gives you:
 
 ## See Value In 30 Seconds
 
+The unreleased SDK uplift also provides [episode capture](docs/sdk/episodes.mdx), [signed export and protected-body verification](docs/signed-episodes.md), and [classification adapters and history](docs/classification-providers.md). See the [capability and migration matrix](docs/sdk/episode-capabilities.mdx) for current limits. These candidate APIs are separate from the published installation workflow below and do not yet include a deployable reconstruction service or durable receiver.
+
 Install Ancilis, name your agent, allow the tools it should use, and wrap the first callable surface. The first call creates an evaluated Action and a local evidence record.
 
 ```bash

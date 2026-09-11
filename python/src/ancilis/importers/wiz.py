@@ -76,6 +76,8 @@ GraphQL over raw HTTP and this importer is a pure JSON parser.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import fnmatch  # noqa: F401  (parity with snyk.py — pattern matching reserved for future glob mappings)
 import hashlib
 import json
@@ -93,12 +95,8 @@ _MAPPING_FILENAME = "wiz-aksi-controls.json"
 
 
 def _resolve_mapping_path() -> Path:
-    here = Path(__file__).resolve()
-    for ancestor in here.parents:
-        candidate = ancestor / "shared" / "mappings" / _MAPPING_FILENAME
-        if candidate.is_file():
-            return candidate
-    return here.parents[4] / "shared" / "mappings" / _MAPPING_FILENAME
+    """Resolve the mapping from this installation or its exact source checkout."""
+    return shared_path("mappings", _MAPPING_FILENAME)
 
 
 _MAPPING_PATH = _resolve_mapping_path()

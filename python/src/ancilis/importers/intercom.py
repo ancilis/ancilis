@@ -91,6 +91,8 @@ exports are parsed with the standard library only.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import fnmatch
 import hashlib
 import json
@@ -103,13 +105,8 @@ from typing import Any
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-# Path to the shared mapping table. This file lives at:
-#   <repo>/python/src/ancilis/importers/intercom.py
-# so five .parent traversals reach the repo root containing shared/.
-_MAPPING_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "intercom-aksi-controls.json"
-)
+# Packaged shared assets, with an exact-checkout fallback for development.
+_MAPPING_PATH = shared_path("mappings", 'intercom-aksi-controls.json')
 
 _CONTROL_NAMES: dict[str, str] = {
     "PR-01": "Prompt Injection Prevention",

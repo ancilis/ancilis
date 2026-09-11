@@ -105,6 +105,10 @@
           {
             "group": "SDK",
             "pages": [
+              "sdk/episodes",
+              "sdk/episode-capabilities",
+              "signed-episodes",
+              "classification-providers",
               "sdk/python",
               "sdk/typescript",
               "sdk/testing",

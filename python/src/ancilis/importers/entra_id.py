@@ -70,6 +70,8 @@ sign-in JSON exports are parsed with the standard library only.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import fnmatch
 import hashlib
 import ipaddress
@@ -83,13 +85,8 @@ from typing import Any
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-# Path to the shared mapping table. This file lives at:
-#   <repo>/python/src/ancilis/importers/entra_id.py
-# so five .parent traversals reach the repo root containing shared/.
-_MAPPING_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "entra-id-aksi-controls.json"
-)
+# Packaged shared assets, with an exact-checkout fallback for development.
+_MAPPING_PATH = shared_path("mappings", 'entra-id-aksi-controls.json')
 
 _CONTROL_NAMES: dict[str, str] = {
     "PR-01": "Prompt Injection Prevention",

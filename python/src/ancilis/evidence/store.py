@@ -775,6 +775,8 @@ class EvidenceStore:
         decision: str | None = None,
         since: str | None = None,
         limit: int | None = 100,
+        *,
+        source_type: str | None = None,
     ) -> list[EvidenceRecord]:
         """Query evidence records with optional filters."""
         self._ensure_initialized()
@@ -787,6 +789,9 @@ class EvidenceStore:
         if agent_id is not None:
             conditions.append("agent_id = ?")
             params.append(agent_id)
+        if source_type is not None:
+            conditions.append("source_type = ?")
+            params.append(source_type)
         if session_id is not None:
             conditions.append("session_id = ?")
             params.append(session_id)

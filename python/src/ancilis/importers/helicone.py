@@ -19,6 +19,8 @@ evidence.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import hashlib
 import json
 import uuid
@@ -29,10 +31,7 @@ from typing import Any
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-_MAPPING_PATH = (
-    Path(__file__).parent.parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "helicone-aksi-controls.json"
-)
+_MAPPING_PATH = shared_path("mappings", 'helicone-aksi-controls.json')
 
 _CONTROL_NAMES: dict[str, str] = {
     "PR-01": "Prompt Injection Prevention",

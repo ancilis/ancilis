@@ -65,6 +65,11 @@ def smoke_install_from_artifact(python: str, artifact: Path, extra: str = "") ->
         env = os.environ | {"PYTHONPATH": ""}
 
         run([vpy, "-c", "import ancilis; print(ancilis.__all__[0])"], env=env)
+        run(
+            [vpy, str(ROOT / "scripts/check_installed_importer_assets.py")],
+            cwd=Path(tmp),
+            env=env,
+        )
         run([ancilis, "doctor", "--config", str(smoke_config)], env=env, allowed_exit_codes=(0, 1))
         run([ancilis, "config", "validate", "--config", str(smoke_config)], env=env)
         run([ancilis, "status", "--config", str(smoke_config)], env=env)

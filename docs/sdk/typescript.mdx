@@ -5,13 +5,15 @@ description: "Complete reference for the Ancilis TypeScript SDK — producers, e
 
 ## Installation
 
+For the unreleased episode API, start with [Episode capture](/sdk/episodes), [capabilities and migration limits](/sdk/episode-capabilities), [signed export](/signed-episodes) and [classification providers](/classification-providers). `Ancilis.open` owns advisory episode capture; `Ancilis.load` retains the existing configured evaluation facade.
+
 ```bash
 npm install ancilis
 # or
 yarn add ancilis
 ```
 
-**Requirements:** Node.js ≥ 18, TypeScript ≥ 4.7
+**Requirements:** Node.js ≥ 20; the candidate targets Node 20 and 22. Public declarations are checked with the repository's TypeScript 5 toolchain.
 
 ---
 
@@ -27,7 +29,7 @@ it does, a few controls evaluate differently — or are absent — in TypeScript
 | `DE-02` | Classification Drift & Boundary Validation | **Config Drift** (pre-v0.6) |
 | `PR-05` | Context & Tenant Isolation | **Audit** (pre-v0.6) |
 | `PR-06` | Audit Trail Completeness | **Config Baseline** (pre-v0.6) |
-| `GOV-03`, `PR-09`, `DE-03`, `RS-02` | evaluated | **not yet implemented** |
+| `GOV-03`, `PR-09`, `DE-03`, `RS-02` | direct evaluators | Catalog-backed attestation route; no direct runtime evaluator |
 
 If you need the v0.6 control semantics today, use the Python SDK. The TypeScript
 v0.6 migration is tracked and will align these controls; this note will be

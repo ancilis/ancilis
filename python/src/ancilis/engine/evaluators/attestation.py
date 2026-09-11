@@ -551,8 +551,16 @@ def latest_attestation_event(
     get_records = getattr(evidence_store, "get_records", None)
     if not callable(get_records):
         return None
+    # The built-in store can filter before decoding JSON. Keep the historical
+    # structural-store contract, including subclass query overrides, unchanged.
+    from ancilis.evidence.store import EvidenceStore
+
+    if type(evidence_store) is EvidenceStore:
+        records = evidence_store.get_records(source_type="attestation", limit=None)
+    else:
+        records = get_records(limit=None)
     events: list[_AttestationEvent] = []
-    for record in get_records(limit=None):
+    for record in records:
         if record.source_type != "attestation":
             continue
         for result in record.control_results:

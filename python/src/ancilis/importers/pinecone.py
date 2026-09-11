@@ -55,6 +55,8 @@ and operation-shape fields are captured.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import hashlib
 import json
 import uuid
@@ -66,13 +68,8 @@ from collections.abc import Iterable
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-# Path to the shared mapping table.
-# This file lives at <repo>/python/src/ancilis/importers/pinecone.py — five
-# .parent traversals after .resolve() reach the repo root containing shared/.
-_MAPPING_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "pinecone-aksi-controls.json"
-)
+# Packaged shared assets, with an exact-checkout fallback for development.
+_MAPPING_PATH = shared_path("mappings", 'pinecone-aksi-controls.json')
 
 _CONTROL_NAMES: dict[str, str] = {
     "PR-01": "Prompt Injection Prevention",

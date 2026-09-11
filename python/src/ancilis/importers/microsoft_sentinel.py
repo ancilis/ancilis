@@ -66,6 +66,8 @@ importer parses the Microsoft Graph Security incident JSON schema directly.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import fnmatch
 import hashlib
 import json
@@ -87,13 +89,8 @@ _MAPPING_FILENAME = "microsoft-sentinel-aksi-controls.json"
 
 
 def _resolve_mapping_path() -> Path:
-    """Locate ``shared/mappings/<filename>`` by walking upward from this file."""
-    here = Path(__file__).resolve()
-    for ancestor in here.parents:
-        candidate = ancestor / "shared" / "mappings" / _MAPPING_FILENAME
-        if candidate.is_file():
-            return candidate
-    return here.parents[4] / "shared" / "mappings" / _MAPPING_FILENAME
+    """Resolve the mapping from this installation or its exact source checkout."""
+    return shared_path("mappings", _MAPPING_FILENAME)
 
 
 _MAPPING_PATH = _resolve_mapping_path()

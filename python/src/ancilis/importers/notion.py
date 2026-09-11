@@ -71,6 +71,8 @@ exports are parsed with the standard library only.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import fnmatch  # noqa: F401  # reserved for future tag-pattern matching
 import hashlib
 import ipaddress
@@ -82,13 +84,8 @@ from pathlib import Path
 from typing import Any
 
 
-# Path to the shared mapping table. This file lives at
-# <repo>/python/src/ancilis/importers/notion.py — five .parent traversals
-# after .resolve() reach the repo root.
-_MAPPING_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "notion-aksi-controls.json"
-)
+# Packaged shared assets, with an exact-checkout fallback for development.
+_MAPPING_PATH = shared_path("mappings", 'notion-aksi-controls.json')
 
 _CONTROL_NAMES: dict[str, str] = {
     "PR-01": "Prompt Injection Prevention",
