@@ -11,7 +11,7 @@ Classification-driven controls, runtime security decisions, and audit-ready evid
 
 AKSI is Ancilis's common-control model for agents: a harmonized catalog of agent controls drawn from industry and regulatory frameworks, expressed as runtime checks, evidence requirements, and compliance overlays.
 
-Ancilis starts from the two things compliance and security teams already care about: what data your agent handles, and which certification or regulatory targets it needs to support. Declare classifications such as `health_records`, `credit_cards`, or `personal_info` (which activate framework overlays like SOC 2, PCI-DSS, and GDPR); add a certification target such as `aiuc-1`; Ancilis activates the right AKSI controls and reporting overlays without manual framework crosswalking.
+Ancilis starts from the data your agent handles and the certification or regulatory targets it needs to support. Declarations such as `health_records`, `credit_cards`, or `personal_info`, and targets such as `aiuc-1`, select AKSI controls and reporting overlays through the existing catalog. These associations require a separate applicability and coverage assessment. See [framework scope and current mapping limits](docs/sdk/framework-support.mdx).
 
 AI agents do real work now: they call tools, run shell commands, invoke MCP servers, and send requests to LLM providers. Ancilis gives those actions a policy decision before they become invisible operational risk. It evaluates each action against the active AKSI controls, records the result in a local tamper-evident evidence store, and turns the same evidence into compliance posture reports.
 
@@ -28,7 +28,7 @@ Ancilis runs locally. Core evaluation does not require a hosted service, network
 What AKSI gives you:
 
 - **Classification-driven control activation**: data declarations such as `health_records` and `credit_cards` activate the controls and overlays that matter for that agent.
-- **Certification-driven readiness**: a certification target such as `aiuc-1` adds framework-specific posture reporting without hand-maintained crosswalks (framework overlays like SOC 2 activate from data declarations).
+- **Certification-driven readiness**: a target such as `aiuc-1` selects a stored reporting crosswalk; framework overlays like SOC 2 activate from data declarations. Current requirement validation and organizational assessment remain separate.
 - **Policy decisions at runtime**: audit mode observes every action; enforce mode blocks violations before execution on enforce-capable producers (MCP, CLI, the tool wrapper, and the Semantic Kernel filter) — see the producer table below.
 - **Tamper-evident evidence**: each record is written to DuckDB with a SHA-256 hash chain.
 - **Compliance posture from runtime evidence**: the same evaluated Actions feed security review, trust review, and audit-readiness reports.
@@ -37,6 +37,8 @@ What AKSI gives you:
 ## See Value In 30 Seconds
 
 The unreleased SDK uplift also provides [episode capture](docs/sdk/episodes.mdx), [signed export and protected-body verification](docs/signed-episodes.md), and [classification adapters and history](docs/classification-providers.md). See the [capability and migration matrix](docs/sdk/episode-capabilities.mdx) for current limits. These candidate APIs are separate from the published installation workflow below and do not yet include a deployable reconstruction service or durable receiver.
+
+As checked on September 11, 2026, npm and PyPI still serve version 0.1.0. The control counts and output examples in this checkout describe the candidate; they are not a promise about that published version. A local package version or passing source test does not establish publication.
 
 Install Ancilis, name your agent, allow the tools it should use, and wrap the first callable surface. The first call creates an evaluated Action and a local evidence record.
 

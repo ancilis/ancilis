@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import date
 if sys.version_info >= (3, 11):
     import tomllib
 else:
@@ -192,7 +193,13 @@ def test_public_release_versions_are_aligned_and_not_stale_0_1_0():
     assert package_json["version"] == version
     assert package_lock["version"] == version
     assert package_lock["packages"][""]["version"] == version
-    assert f"## [{version}] - 2026-06-10" in (ROOT / "CHANGELOG.md").read_text()
+    release_heading = next(
+        line for line in (ROOT / "CHANGELOG.md").read_text().splitlines()
+        if line.startswith(f"## [{version}] - ")
+    )
+    release_date = release_heading.removeprefix(f"## [{version}] - ")
+    if release_date != "Unreleased":
+        assert date.fromisoformat(release_date).isoformat() == release_date
 
 
 @pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")

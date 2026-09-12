@@ -98,9 +98,13 @@ def check_sdk_version(config: ResolvedConfig | None, verbose: bool) -> CheckResu
     try:
         from packaging.version import parse as vparse
 
-        outdated = vparse(latest) > vparse(installed)
+        latest_version = vparse(latest)
+        installed_version = vparse(installed)
+        outdated = latest_version > installed_version
+        ahead_of_pypi = installed_version > latest_version
     except Exception:
         outdated = latest != installed
+        ahead_of_pypi = False
 
     if outdated:
         return CheckResult(
@@ -110,6 +114,14 @@ def check_sdk_version(config: ResolvedConfig | None, verbose: bool) -> CheckResu
             detail=f"{installed} (latest: {latest} {source})",
             fix_hint="Run: pip install --upgrade ancilis",
             verbose_detail=f"Installed: {installed}, Available: {latest}",
+        )
+    if ahead_of_pypi:
+        return CheckResult(
+            name="sdk_version",
+            status=CheckStatus.PASS,
+            label="SDK version",
+            detail=f"{installed} (ahead of PyPI: {latest} {source})".strip(),
+            verbose_detail=f"Installed: {installed}, PyPI latest: {latest}",
         )
     return CheckResult(
         name="sdk_version",
@@ -123,20 +135,20 @@ def check_sdk_version(config: ResolvedConfig | None, verbose: bool) -> CheckResu
 def check_python_version(config: ResolvedConfig | None, verbose: bool) -> CheckResult:
     vi = sys.version_info
     version_str = f"{vi[0]}.{vi[1]}.{vi[2]}"
-    if vi >= (3, 9):
+    if vi >= (3, 10):
         return CheckResult(
             name="python_version",
             status=CheckStatus.PASS,
             label="Python version",
-            detail=f"{version_str} (>=3.9 required)",
+            detail=f"{version_str} (>=3.10 required)",
             verbose_detail=f"Full version: {sys.version}",
         )
     return CheckResult(
         name="python_version",
         status=CheckStatus.FAIL,
         label="Python version",
-        detail=f"{version_str} (>=3.9 required)",
-        fix_hint="Install Python 3.9+ from https://www.python.org/downloads/",
+        detail=f"{version_str} (>=3.10 required)",
+        fix_hint="Install Python 3.10+ from https://www.python.org/downloads/",
         verbose_detail=f"Full version: {sys.version}",
         error_code="E010",
     )

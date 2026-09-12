@@ -10,6 +10,11 @@ The project follows a conservative pre-1.0 release posture:
 
 ## [Unreleased]
 
+### Diagnostics and coverage corrections
+
+- `ancilis doctor` now checks the package's Python 3.10 minimum and distinguishes a local version ahead of PyPI from the latest published version.
+- Framework support documentation distinguishes currentness checks, unresolved crosswalks, runtime evaluation and manual claims. TypeScript control differences now include `GOV-01` and `PR-01`, alongside the actual 14 direct / 27 caller-attestation registration split.
+
 ### Added
 
 - Python and TypeScript native episode owners, explicit function/MCP attachment, observations, relationships, coverage, bounded loss diagnostics and immutable revisions. Capture is advisory and memory-only; existing enforcement APIs remain available.
@@ -28,7 +33,7 @@ The project follows a conservative pre-1.0 release posture:
 - This entry describes unreleased source. GE reconstruction deployment, durable receiver updates, final supported-runtime/CI acceptance and release approval remain open; no qualified semantic recovery or production middleware integration is claimed.
 - Native attachment does not replace an existing enforcement wrapper. TypeScript's legacy evaluator differences remain documented separately from the common episode contract.
 
-## [0.2.0] - 2026-06-10
+## [0.2.0] - Unreleased
 
 ### Added
 - **15 net-new SDK producers** covering the highest-leverage day-one runtime evidence gaps for the 2026 AI agent ecosystem:

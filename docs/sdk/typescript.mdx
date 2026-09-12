@@ -26,15 +26,35 @@ it does, a few controls evaluate differently — or are absent — in TypeScript
 
 | Control | Python / catalog (v0.6) | TypeScript today |
 |---------|-------------------------|------------------|
+| `GOV-01` | Declared identity and owner consistency | Governance configuration completeness |
+| `PR-01` | Action identity, context and destination authorization | Configured identity and owner consistency |
 | `DE-02` | Classification Drift & Boundary Validation | **Config Drift** (pre-v0.6) |
 | `PR-05` | Context & Tenant Isolation | **Audit** (pre-v0.6) |
 | `PR-06` | Audit Trail Completeness | **Config Baseline** (pre-v0.6) |
 | `GOV-03`, `PR-09`, `DE-03`, `RS-02` | direct evaluators | Catalog-backed attestation route; no direct runtime evaluator |
 
 If you need the v0.6 control semantics today, use the Python SDK. The TypeScript
-v0.6 migration is tracked and will align these controls; this note will be
-removed when it lands.
+v0.6 migration remains incomplete. A matching control ID does not establish
+matching evaluation behavior.
 </Warning>
+
+Python registers 18 direct evaluators and 23 stored manual-attestation routes.
+TypeScript registers 14 direct evaluators and 27 caller-attestation fallbacks.
+The catalog's `support_level` describes the shared control classification, not a
+guarantee that each language has implemented that evaluator.
+
+The attestation routes also differ. Python checks required fields, recorded
+freshness and revocation in its local evidence store; it returns `SKIP` for a
+missing or revoked attestation, `FAIL` for incomplete fields, and `FLAG` for a
+stale attestation. TypeScript accepts recognized values in the action's
+`parameters.raw.manual_attestations` field and otherwise returns `FLAG`. It does not perform
+the Python route's freshness, required-field or revocation checks. Keywords
+alone do not produce `PASS`. Neither manual route authenticates an independent
+issuer or proves that a control operated.
+
+These legacy evaluation routes are separate from native episode capture,
+signed-export authentication and classification-provider contracts. Framework
+mappings require their own [scope and coverage assessment](/sdk/framework-support).
 
 ---
 
@@ -348,6 +368,9 @@ const resolved = resolver.resolve();
 ```
 
 ### Control IDs
+
+These are shared catalog names. Consult the language differences above before
+interpreting a TypeScript evaluation result as the catalog's v0.6 behavior.
 
 | ID | Name |
 |----|------|

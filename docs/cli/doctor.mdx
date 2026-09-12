@@ -25,16 +25,15 @@ ancilis doctor [OPTIONS]
 
 | Code | Meaning |
 |------|---------|
-| `0` | All checks pass |
-| `1` | One or more warnings |
+| `0` | All checks pass, or warnings only with no errors |
 | `2` | One or more errors |
 
 ## Checks Run
 
 | Check | What It Verifies |
 |-------|-----------------|
-| `sdk_version` | Installed version vs latest on PyPI |
-| `python_version` | Python ≥ 3.9 |
+| `sdk_version` | Installed version vs latest on PyPI; builds ahead of the registry are identified explicitly |
+| `python_version` | Python ≥ 3.10 |
 | `config` | `ancilis.yaml` loadable and valid |
 | `overlay` | Configured overlays exist and are valid |
 | `platform_connectivity` | Platform API reachable |
@@ -56,7 +55,7 @@ Ancilis Doctor
 ==============
 
 [✓] SDK version: 0.1.0 (latest)
-[✓] Python version: 3.11.4 (>=3.9 required)
+[✓] Python version: 3.11.4 (>=3.10 required)
 [✓] Configuration: ancilis.yaml loaded for agent 'my-agent' in audit mode
 [✓] Overlay: soc2 (1 active)
 [!] Platform API: not connected (platform.json not found)
@@ -94,11 +93,11 @@ ancilis doctor --json
   "version": "0.1.0",
   "checks": [
     { "name": "sdk_version", "status": "pass", "detail": "0.1.0 (latest)" },
-    { "name": "python_version", "status": "pass", "detail": "3.11.4 (>=3.9 required)" },
+    { "name": "python_version", "status": "pass", "detail": "3.11.4 (>=3.10 required)" },
     { "name": "config", "status": "pass", "detail": "ancilis.yaml loaded for agent 'my-agent' in audit mode" }
   ],
   "summary": { "passed": 8, "warnings": 2, "errors": 0 },
-  "exit_code": 1
+  "exit_code": 0
 }
 ```
 
@@ -110,7 +109,7 @@ ancilis doctor --json
 | `ANCILIS-E002` | `config` | `ancilis.yaml` not found or invalid |
 | `ANCILIS-E003` | `overlay` | Overlay ID not found |
 | `ANCILIS-E004` | `evidence_cache` | `~/.ancilis/` not writable — run `chmod 700 ~/.ancilis` |
-| `ANCILIS-E010` | `python_version` | Python < 3.9 — upgrade required |
+| `ANCILIS-E010` | `python_version` | Python < 3.10 — upgrade required |
 
 ## Common Errors
 

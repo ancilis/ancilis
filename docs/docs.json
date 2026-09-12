@@ -107,6 +107,7 @@
             "pages": [
               "sdk/episodes",
               "sdk/episode-capabilities",
+              "sdk/framework-support",
               "signed-episodes",
               "classification-providers",
               "sdk/python",
