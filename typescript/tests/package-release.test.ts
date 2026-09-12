@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { parse as parseYaml } from "yaml";
@@ -107,6 +107,43 @@ describe("packaged CLI release readiness", () => {
 });
 
 describe("publish configuration", () => {
+  it("dry-runs the workflow tarball path as a local package", () => {
+    const workflow = parseYaml(
+      readFileSync(join(process.cwd(), ".github", "workflows", "release-typescript.yml"), "utf-8"),
+    ) as { jobs: { verify_typescript_release: { steps: Array<{ run?: string }> } } };
+    const run = workflow.jobs.verify_typescript_release.steps.find(
+      (step) => step.run?.startsWith("npm publish"),
+    )?.run;
+    // Only accept the verification command; this test must never publish.
+    const command = run?.match(
+      /^npm publish "((?:\.\/)?release-artifacts\/ancilis-\$\{VERSION\}\.tgz)" --dry-run --ignore-scripts$/,
+    );
+    expect(command).toBeTruthy();
+    const version = (JSON.parse(readFileSync("package.json", "utf-8")) as { version: string }).version;
+    const verifyDir = makeTempDir("ancilis-publish-dry-run-");
+    const packDir = join(verifyDir, "release-artifacts");
+    mkdirSync(packDir);
+    withNpmPackLock(() =>
+      execFileSync("npm", ["pack", "--json", "--pack-destination", packDir], {
+        cwd: process.cwd(),
+        encoding: "utf-8",
+      }),
+    );
+
+    const output = execFileSync(
+      "npm",
+      ["publish", command![1]!.replace("${VERSION}", version), "--dry-run", "--ignore-scripts"],
+      {
+        cwd: verifyDir,
+        encoding: "utf-8",
+        stdio: "pipe",
+        env: { ...process.env, GIT_SSH_COMMAND: "false" },
+      },
+    );
+
+    expect(output).toContain(`+ ancilis@${version}`);
+  }, 120_000);
+
   it("defines a prepublishOnly gate that builds, tests, and runs the package smoke check", () => {
     const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8")) as {
       scripts?: Record<string, string>;
@@ -187,7 +224,7 @@ describe("publish configuration", () => {
     expect(publishRuns.some((run) => run.includes("scripts/release_manifest.py registry") && run.includes('--digest "$MANIFEST_SHA256"'))).toBe(true);
 
     const publishStep = publishJob?.steps?.find((step) => step.run?.includes("npm publish"));
-    expect(publishStep?.run).toBe('npm publish "release-artifacts/ancilis-${VERSION}.tgz" --ignore-scripts --provenance --access public');
+    expect(publishStep?.run).toBe('npm publish "./release-artifacts/ancilis-${VERSION}.tgz" --ignore-scripts --provenance --access public');
     expect(publishStep?.if).toBe("steps.registry.outputs.state == 'absent'");
     expect(publishStep?.env).toMatchObject({
       NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}",

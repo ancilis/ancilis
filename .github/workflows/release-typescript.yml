@@ -79,7 +79,7 @@ jobs:
       - name: Dry-run the exact tarball without credentials or lifecycle scripts
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: npm publish "release-artifacts/ancilis-${VERSION}.tgz" --dry-run --ignore-scripts
+        run: npm publish "./release-artifacts/ancilis-${VERSION}.tgz" --dry-run --ignore-scripts
       - name: Freeze archive inventory and build manifest digest
         id: manifest
         env:
@@ -157,7 +157,7 @@ jobs:
         run: python scripts/release_manifest.py registry --directory release-artifacts --kind npm --version "$VERSION" --source "$GITHUB_SHA" --digest "$MANIFEST_SHA256" --evidence registry-before.json
       - name: Publish the verified tarball with token authentication and provenance
         if: steps.registry.outputs.state == 'absent'
-        run: npm publish "release-artifacts/ancilis-${VERSION}.tgz" --ignore-scripts --provenance --access public
+        run: npm publish "./release-artifacts/ancilis-${VERSION}.tgz" --ignore-scripts --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Verify registry contains these exact bytes
