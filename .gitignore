@@ -126,3 +126,12 @@ workspace/
 # Environment overrides
 .env.local
 .env.*.local
+
+# Closed release workflow outputs (never source).
+/python-release-artifacts/
+/release-artifacts/
+/pack-diagnostic.json
+/release-approval.json
+/publish-dist/
+/registry-before.json
+/registry-after.json

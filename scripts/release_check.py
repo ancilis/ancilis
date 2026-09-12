@@ -38,14 +38,33 @@ def run(
 def build_python_artifacts(python: str) -> tuple[Path, Path]:
     if DIST.exists():
         shutil.rmtree(DIST)
-    run([python, "-m", "pip", "install", "--upgrade", "build", "twine"])
-    run([python, "-m", "build", "--sdist", "--wheel"])
-    wheels = sorted(DIST.glob("ancilis-*.whl"))
+    run([python, "-m", "pip", "install", "build==1.6.0", "twine==7.0.0"])
+    run([python, "-m", "build", "--sdist", "--outdir", str(DIST)])
     sdists = sorted(DIST.glob("ancilis-*.tar.gz"))
-    if not wheels or not sdists:
-        raise SystemExit("Expected both wheel and sdist artifacts in dist/.")
-    run([python, "-m", "twine", "check", str(wheels[-1]), str(sdists[-1])])
-    return wheels[-1], sdists[-1]
+    if len(sdists) != 1:
+        raise SystemExit("Expected exactly one sdist artifact.")
+    # pip builds the wheel from this archive in an isolated build environment.
+    # A temporary working directory prevents accidental checkout imports.
+    with tempfile.TemporaryDirectory(prefix="ancilis-wheel-from-sdist-") as tmp:
+        run(
+            [
+                python,
+                "-m",
+                "pip",
+                "wheel",
+                "--no-deps",
+                "--no-cache-dir",
+                "--wheel-dir",
+                str(DIST),
+                str(sdists[0]),
+            ],
+            cwd=Path(tmp),
+        )
+    wheels = sorted(DIST.glob("ancilis-*.whl"))
+    if len(wheels) != 1 or len(list(DIST.iterdir())) != 2:
+        raise SystemExit("Expected exactly one wheel and one sdist artifact.")
+    run([python, "-m", "twine", "check", str(wheels[0]), str(sdists[0])])
+    return wheels[0], sdists[0]
 
 
 def smoke_install_from_artifact(python: str, artifact: Path, extra: str = "") -> None:

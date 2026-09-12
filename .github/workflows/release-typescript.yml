@@ -8,15 +8,25 @@ on:
 
 permissions:
   contents: read
-  id-token: write
+
+# Serialize the sole publisher for each package/version; never cancel a publish.
+concurrency:
+  group: ancilis-typescript-${{ github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   verify_typescript_release:
     name: Verify TypeScript release artifacts
+    outputs:
+      manifest_sha256: ${{ steps.manifest.outputs.manifest_sha256 }}
+      version: ${{ steps.version.outputs.version }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
       - name: Verify version-tag alignment
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#v}"
           PKG_VERSION=$(node -p "require('./package.json').version")
@@ -59,38 +69,76 @@ jobs:
         run: |
           TARBALL=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; const [{ filename }] = JSON.parse(readFileSync('release-artifacts/pack.json', 'utf8')); console.log(filename);")
           node scripts/ts_package_smoke.mjs "release-artifacts/$TARBALL"
-      - name: Compute SHA-256 hash
-        id: hash
-        run: |
-          TARBALL=$(ls release-artifacts/*.tgz)
-          (cd release-artifacts && sha256sum "$(basename "$TARBALL")") > release-artifacts/SHA256SUMS
-          echo "sha256=$(sha256sum "$TARBALL" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-          cat release-artifacts/SHA256SUMS
-      - name: Dry-run publish
-        run: npm publish release-artifacts/*.tgz --dry-run
+      - name: Record candidate version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Retain pack diagnostic outside publication directory
+        run: mv release-artifacts/pack.json pack-diagnostic.json
+      - name: Dry-run the exact tarball without credentials or lifecycle scripts
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Upload artifacts
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm publish "release-artifacts/ancilis-${VERSION}.tgz" --dry-run --ignore-scripts
+      - name: Freeze archive inventory and build manifest digest
+        id: manifest
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python scripts/release_manifest.py create --directory release-artifacts --kind npm --version "$VERSION" --source "$GITHUB_SHA"
+      - name: Upload exact verified artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ancilis-typescript-package
-          path: |
-            release-artifacts/*.tgz
-            release-artifacts/pack.json
-            release-artifacts/SHA256SUMS
+          path: release-artifacts/
+          if-no-files-found: error
+
+  release_gate:
+    name: Verify approved release commit
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Verify merged source, reviews and required CI
+        run: python scripts/release_gate.py --repository "$GITHUB_REPOSITORY" --source "$GITHUB_SHA" --output release-approval.json
+        env:
+          # Dedicated read-only credential also needs Administration:read.
+          # Missing authorization or API visibility fails closed.
+          RELEASE_POLICY_READ_TOKEN: ${{ secrets.RELEASE_POLICY_READ_TOKEN }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: npm-release-approval
+          path: release-approval.json
+          if-no-files-found: error
 
   publish_typescript:
     name: Publish TypeScript package
-    needs: verify_typescript_release
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [verify_typescript_release, release_gate]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       id-token: write
     environment:
+      # Remote protection is a separate release prerequisite; a name is not a gate.
       name: npm
       url: https://www.npmjs.com/package/ancilis
+    env:
+      VERSION: ${{ needs.verify_typescript_release.outputs.version }}
+      MANIFEST_SHA256: ${{ needs.verify_typescript_release.outputs.manifest_sha256 }}
     steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
@@ -99,18 +147,23 @@ jobs:
         with:
           name: ancilis-typescript-package
           path: release-artifacts
-      - name: Verify SHA-256 integrity
-        run: |
-          cd release-artifacts
-          sha256sum -c SHA256SUMS
-          echo "Tarball integrity verified"
-      - run: npm publish release-artifacts/*.tgz --provenance
+      - name: Verify downloaded bytes and immutable registry state
+        id: registry
+        run: python scripts/release_manifest.py registry --directory release-artifacts --kind npm --version "$VERSION" --source "$GITHUB_SHA" --digest "$MANIFEST_SHA256" --evidence registry-before.json
+      - name: Publish the verified tarball with token authentication and provenance
+        if: steps.registry.outputs.state == 'absent'
+        run: npm publish "release-artifacts/ancilis-${VERSION}.tgz" --ignore-scripts --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+      - name: Verify registry contains these exact bytes
+        run: python scripts/release_manifest.py registry --directory release-artifacts --kind npm --version "$VERSION" --source "$GITHUB_SHA" --digest "$MANIFEST_SHA256" --require-identical --evidence registry-after.json
+      - name: Retain publication evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          files: |
-            release-artifacts/*.tgz
-            release-artifacts/SHA256SUMS
-          generate_release_notes: true
+          name: npm-publication-evidence
+          path: |
+            registry-before.json
+            registry-after.json
+            release-artifacts/release-manifest.json
+          if-no-files-found: error
