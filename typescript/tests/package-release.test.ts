@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { afterEach, describe, expect, it } from "vitest";
 import { withNpmPackLock } from "./helpers/npm-pack-lock.js";
@@ -79,6 +79,28 @@ describe("packaged CLI release readiness", () => {
     });
 
     expect(output).toContain("ts-cli-formats-ok");
+    expect(output).toContain("ts-report-oscal-ok");
+  }, 120_000);
+
+  it("package smoke script installs a tarball supplied relative to the caller", () => {
+    const packDir = mkdtempSync(join(process.cwd(), "release-smoke-relative-"));
+    tempDirs.push(packDir);
+    const packed = withNpmPackLock(() =>
+      JSON.parse(
+        execFileSync("npm", ["pack", "--json", "--pack-destination", packDir], {
+          cwd: process.cwd(),
+          encoding: "utf-8",
+        }),
+      ) as Array<{ filename: string }>,
+    );
+    const tarballPath = relative(process.cwd(), join(packDir, packed[0]!.filename));
+    const output = execFileSync("node", ["scripts/ts_package_smoke.mjs", tarballPath], {
+      cwd: process.cwd(),
+      encoding: "utf-8",
+      env: { ...process.env, GIT_SSH_COMMAND: "false" },
+    });
+
+    expect(output).toContain("ts-package-ok");
     expect(output).toContain("ts-report-oscal-ok");
   }, 120_000);
 
