@@ -13,6 +13,8 @@ heuristic).
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import hashlib
 import json
 import re
@@ -26,13 +28,8 @@ from collections.abc import Iterable
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-# Path to the shared mapping table (relative to this file's package root).
-# This file lives at: <repo>/python/src/ancilis/importers/langfuse.py
-# So five .parent traversals reach the repo root containing shared/.
-_MAPPING_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "langfuse-aksi-controls.json"
-)
+# Packaged shared assets, with an exact-checkout fallback for development.
+_MAPPING_PATH = shared_path("mappings", 'langfuse-aksi-controls.json')
 
 _CONTROL_NAMES: dict[str, str] = {
     "PR-01": "Prompt Injection Prevention",

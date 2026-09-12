@@ -167,6 +167,45 @@ describe("Tenant Scoping — evidence store", () => {
     expect(errorsB).toEqual([]);
   });
 
+  it("tenant-scoped summary excludes interleaved records from other tenants", async () => {
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+    const { randomUUID } = await import("node:crypto");
+    const dbPath = join(tmpdir(), `ancilis-tenant-summary-${randomUUID()}.duckdb`);
+
+    storeA = new EvidenceStore(makeConfig(), { dbPath, tenantId: "tenant-A" });
+    storeB = new EvidenceStore(makeConfig(), { dbPath, tenantId: "tenant-B" });
+    await storeA.store(makeEvaluation({ evaluationId: "a1", decision: "ALLOW" }), "tool-a");
+    await storeB.store(makeEvaluation({ evaluationId: "b1", decision: "BLOCK" }), "tool-b");
+    await storeA.store(makeEvaluation({ evaluationId: "a2", decision: "ALLOW" }), "tool-a");
+
+    const summary = await storeA.getSummary();
+
+    expect(summary.totalEvaluations).toBe(2);
+    expect(summary.decisions).toEqual({ ALLOW: 2 });
+    expect(summary.toolsEvaluated).toEqual(["tool-a"]);
+    expect(summary.chainValid).toBe(true);
+  });
+
+  it("tenant-scoped reset and purge refuse without deleting either tenant", async () => {
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+    const { randomUUID } = await import("node:crypto");
+    const dbPath = join(tmpdir(), `ancilis-tenant-destructive-${randomUUID()}.duckdb`);
+
+    storeA = new EvidenceStore(makeConfig(), { dbPath, tenantId: "tenant-A" });
+    storeB = new EvidenceStore(makeConfig(), { dbPath, tenantId: "tenant-B" });
+    await storeA.store(makeEvaluation({ evaluationId: "a1", timestamp: "2024-01-01T00:00:00Z" }), "tool-a");
+    await storeB.store(makeEvaluation({ evaluationId: "b1", timestamp: "2024-01-01T00:00:00Z" }), "tool-b");
+
+    await expect(storeA.reset()).rejects.toThrow(/reset.*tenant-scoped.*unscoped/i);
+    await expect(storeA.purgeBefore("2025-01-01T00:00:00Z")).rejects.toThrow(/purge.*tenant-scoped.*unscoped/i);
+
+    expect(await storeA.count()).toBe(1);
+    expect(await storeB.count()).toBe(1);
+    await expect(storeB.verifyChain()).resolves.toEqual({ valid: true, errors: [] });
+  });
+
   // AC: backward-compatible when tenantId undefined
   it("no tenant backward compatible — existing behavior unchanged", async () => {
     storeNoTenant = new EvidenceStore(makeConfig(), { inMemory: true });

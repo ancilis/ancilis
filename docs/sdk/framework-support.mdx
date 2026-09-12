@@ -1,0 +1,91 @@
+---
+title: "Framework scope and coverage"
+description: "What AKSI mappings, runtime checks and manual attestations establish, and where current framework coverage remains unresolved."
+---
+
+The candidate contains 41 AKSI controls, 37 overlays and two certification
+profiles. These are configuration and evidence crosswalks. A framework ID,
+activated control or passing SDK result does not establish legal applicability,
+complete framework coverage or certification.
+
+The SDK freezes AKSI v0.6 to framework source commit
+`aeda1839054090a8384f3d9d2700a656fab519a2`, recorded in `shared/aksi_version.json`.
+That provenance identifies the catalog used by this candidate; it does not
+establish that every external framework reference remains current.
+
+## How to interpret support
+
+| Evidence route | What it provides | What remains separate |
+|---|---|---|
+| Direct runtime evaluator | A result from the inputs available to the configured legacy engine | Correct instrumentation, input completeness, organizational scope and requirement conformance |
+| Stored manual attestation in Python | A local claim with required-field, freshness and revocation checks | Independent issuer authentication and proof that the stated process occurred |
+| Caller manual attestation in TypeScript | An accepted action-level assertion | Required-field, freshness, revocation and issuer checks |
+| Framework mapping | A catalog association between an AKSI control and a requirement reference | Current normative validation, applicability and complete coverage |
+| Native episode capture | Observations, revisions, relationships and explicit coverage gaps | Automatic enforcement or proof of control operation |
+| Organizational action | A documented external process, decision or assessment | Execution and approval by the responsible organization |
+
+Python has 18 direct evaluators and 23 stored attestation routes; TypeScript has
+14 direct evaluators and 27 caller-attestation fallbacks. Several direct
+evaluators also have different meanings under the same IDs. See the
+[TypeScript capability differences](/sdk/typescript#control-parity-with-the-python-sdk).
+Do not count a fallback or a shared catalog entry as a direct evaluator.
+
+## Framework currentness
+
+The following is a builder assessment from September 10–11, 2026. Linked
+official sources support the stated edition or scope findings. **None of the
+existing crosswalks has completed current requirement-by-requirement
+validation.** A verified catalog edition is separate from a validated mapping.
+Restricted standards text is not reproduced here.
+
+| Catalog entry | Official source or edition reviewed | Current mapping limitation |
+|---|---|---|
+| CCPA/CPRA | [California regulations](https://cppa.ca.gov/regulations/ccpa_updates.html), 2026 amendments | Covered-business scope and distinct implementation timelines need review |
+| CMMC L2 | [DoD policy and assessment sources](https://dodcio.defense.gov/CMMC/Policy/) | Existing Rev. 2/Rev. 3 references are conflated; program timetable requires separate assessment |
+| Colorado AI Act | [SB26-189](https://leg.colorado.gov/bills/sb26-189) | Superseded provisions in the old crosswalk require remapping; full section-level review remains open |
+| DORA | [EIOPA regulation and implementing measures](https://www.eiopa.europa.eu/digital-operational-resilience-act-dora_en) | Financial-entity and ICT-provider scope, delegated acts and detailed requirements remain unresolved |
+| EU AI Act | [Commission amendment notice](https://digital-strategy.ec.europa.eu/en/news/ai-omnibus-enters-force) | Existing single-date and output-based applicability claims are overbroad; provider/deployer roles and phased requirements matter |
+| Cyber Resilience Act | [Commission reporting rules](https://digital-strategy.ec.europa.eu/en/policies/cra-reporting) | Reporting applies from September 11, 2026; manufacturer, product and incident scope must be established separately |
+| GDPR | [Regulation 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj) | Controller/processor, territorial, lawful-basis and transfer determinations remain external; consolidated-text review incomplete |
+| GLBA financial-services profile | [FTC Safeguards Rule](https://www.ecfr.gov/current/title-16/chapter-I/subchapter-C/part-314) | Bundled GLBA, SOX and DORA references need separate regime and entity scope |
+| HIPAA | [HHS Security Rule sources](https://www.hhs.gov/hipaa/for-professionals/security/laws-regulations/index.html) | Covered-entity/business-associate and ePHI scope; current rule and proposed changes must remain distinct |
+| ITAR/EAR | [ITAR regulatory text](https://www.ecfr.gov/current/title-22/chapter-I/subchapter-M) | Partial source verification; EAR and export jurisdiction/authorization review remain open |
+| NIS2 | [Directive 2022/2555](https://digital-strategy.ec.europa.eu/en/policies/nis-transposition) | Applicable national transposition and entity classification must be assessed |
+| NYDFS 500 | [NYDFS cybersecurity resources](https://www.dfs.ny.gov/industry_guidance/cybersecurity) | Regulator page verified; current section-level crosswalk and entity scope unresolved |
+| SEC cyber disclosure | [SEC final rule 33-11216](https://www.sec.gov/rule-release/33-11216) | Issuer, materiality and reporting determinations are external organizational work |
+| Securities/MNPI profile | [Regulation FD](https://www.ecfr.gov/current/title-17/chapter-II/part-243) | Separate securities, disclosure and SOX scope; a data label does not establish a legal obligation |
+| FDA AI device/PCCP profile | [FDA final PCCP guidance, August 2025](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence) | Existing profile mixes PCCP, cybersecurity and draft lifecycle references; separate their status and device applicability |
+| SOC 2 | [AICPA Trust Services Criteria](https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2/) | Criteria catalog identified; requirement coverage and independent examination remain separate |
+| CSA AICM | [CSA AI Controls Matrix](https://cloudsecurityalliance.org/artifacts/ai-controls-matrix) | Edition and scope reconciliation required; AICM and CCM are separate sources |
+| FedRAMP | [FedRAMP program documentation](https://www.fedramp.gov/2026/timeline/) | Program transition and authorization requirements need review; runtime evidence is not an authorization |
+| HITRUST AI security | [HITRUST framework](https://hitrustalliance.net/advisories/haa-2026-003-csf-v11.7-creation-deadline-for-e1-and-i1-assessments) | Current program/assessment requirements and source rights remain unresolved |
+| ISO/IEC 27001 | [ISO catalog](https://www.iso.org/standard/27001) — 2022 edition and 2024 amendment | Catalog verification does not validate clause coverage or certification |
+| ISO/IEC 27701 | [ISO catalog](https://www.iso.org/standard/27701) — 2025 edition | Existing 2019 crosswalk is superseded and requires licensed source review |
+| ISO/IEC 42001 | [ISO catalog](https://www.iso.org/standard/42001) — 2023 edition | Management-system requirements are not exhausted by runtime checks |
+| ISO/IEC 23894 | [ISO catalog](https://www.iso.org/standard/77304.html) — 2023 edition | Risk-management guidance mapping remains unvalidated |
+| NIST AI RMF | [NIST AI RMF](https://www.nist.gov/itl/ai-risk-management-framework) — 1.0 | Final framework and revision work must remain distinct |
+| NIST CSF | [NIST CSF](https://www.nist.gov/cyberframework) — 2.0 | Catalog edition verified; organization-specific implementation and mapping remain open |
+| NIST AI 600-1 | [NIST publication](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence) — final 2024 profile | Generative-AI profile mapping remains unvalidated |
+| NIST Privacy Framework | [NIST Privacy Framework](https://www.nist.gov/privacy-framework/new-projects/privacy-framework-version-11) | Final 1.0 and draft successor must remain distinct |
+| NIST SSDF | [NIST SSDF project](https://csrc.nist.gov/pubs/sp/800/218/r1/ipd) | Final 1.1 and draft 1.2 must remain distinct; development-process evidence is required |
+| PCI DSS | [PCI SSC document library](https://www.pcisecuritystandards.org/document_library/?class=pcidss&doc=pci_dss) — 4.0.1 | Existing 4.0 references require review; payment-data scope and assessment remain external |
+| IMDA MGF | [IMDA AI governance resources](https://www.imda.gov.sg/resources/press-releases-factsheets-and-speeches/press-releases/2026/new-model-ai-governance-framework-for-agentic-ai) | Related agentic-AI framework is missing from the existing profile; do not infer coverage |
+| MAS TRM | [MAS guideline URL](https://www.mas.gov.sg/regulation/guidelines/technology-risk-management-guidelines) | Official page unavailable during checks; current guideline version and mapping unresolved |
+| Anthropic usage policy | [Provider policy](https://www.anthropic.com/legal/aup) | Provider-specific policy, not a regulatory framework or SDK integration; mapping and use applicability require review |
+| Agent payments | No official framework mapping in this scaffold | Payment control activation is not mapped regulatory coverage |
+| Agent runtime threats | No official framework mapping in this scaffold | Threat-oriented configuration scaffold only |
+| CSA CCM | [CSA CCM](https://cloudsecurityalliance.org/research/cloud-controls-matrix) | Scaffold has no requirement mapping; current catalog does not fill that gap |
+| EU GPAI Code | [Commission code resources](https://digital-strategy.ec.europa.eu/en/policies/contents-code-gpai) | Scaffold has no requirement mapping; code participation and legal duties are distinct |
+| FDA device cybersecurity | [FDA device cybersecurity resources](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/cybersecurity-medical-devices-quality-management-system-considerations-and-content-premarket) | Scaffold has no requirement mapping; device requirements cannot be inferred from capture |
+| AIUC-1 certification profile | [AIUC-1 standard](https://www.aiuc-1.com/scoping) | Requirement-ID drift remains unresolved; operator documentation and assessment are required |
+| Government contractor certification profile | [CMMC](https://dodcio.defense.gov/CMMC/Policy/) and [FedRAMP](https://www.fedramp.gov/2026/timeline/) | Combined program profile has revision/program drift; SSP, remediation and authorization work remain external |
+
+Existing JSON assets preserve historical references for compatibility. Their
+descriptions, dates and mappings must not be interpreted as overriding the
+limitations above. Data-classification triggers identify candidate evidence
+scope; they do not determine regulated status, jurisdiction, provider role,
+device clearance, authorization or certification.
+
+Agent libraries, MCP attachment and telemetry formats are integration surfaces,
+not additional regulatory frameworks. Adding a producer does not add a
+normative crosswalk or establish that every required field is available.

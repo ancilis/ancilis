@@ -9,9 +9,16 @@ from collections.abc import Iterator
 
 
 def _source_tree_shared_root() -> Path:
-    for parent in Path(__file__).resolve().parents:
-        candidate = parent / "shared"
-        if candidate.is_dir():
+    here = Path(__file__).resolve()
+    # An installed package with missing assets must not adopt arbitrary parent data.
+    if len(here.parents) >= 4:
+        root = here.parents[3]
+        candidate = root / "shared"
+        if (
+            (root / "python/src/ancilis/_shared.py").resolve() == here
+            and (root / "pyproject.toml").is_file()
+            and candidate.is_dir()
+        ):
             return candidate
     raise FileNotFoundError("Could not locate shared/ runtime assets")
 

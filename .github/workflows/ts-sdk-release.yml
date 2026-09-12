@@ -1,11 +1,11 @@
 name: TypeScript SDK Release
 
-# Artifact-bound release pipeline — the tarball produced in `build` is the
-# exact artifact verified in `verify` and published in `publish`.  No rebuild,
-# no repack between stages.
-#
-# Tag convention:  ts-v<semver>  (e.g. ts-v0.1.0)
-# This decouples TypeScript releases from Python releases (python uses py-v*).
+# Legacy ts-v tags remain verification-only. Both registries publish from v tags
+# through release-python.yml and the sole npm publisher release-typescript.yml.
+# No publishing credentials are available in this workflow.
+
+permissions:
+  contents: read
 
 on:
   push:
@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run — build and verify but skip publish'
+        description: 'Compatibility input; this workflow always verifies only'
         type: boolean
-        default: false
+        default: true
 
 # ────────────────────────────────────────────────────────────────
 # Job 1: BUILD
@@ -135,63 +135,26 @@ jobs:
       - name: TypeScript type-check against installed package
         run: |
           TARBALL=$(ls release-dist/*.tgz)
+          TSC_VERSION=$(node -p "require('./package-lock.json').packages['node_modules/typescript'].version")
+          NODE_TYPES_VERSION=$(node -p "require('./package-lock.json').packages['node_modules/@types/node'].version")
           VERIFY_DIR=$(mktemp -d)
+          trap 'rm -rf "$VERIFY_DIR"' EXIT
           cd "$VERIFY_DIR"
           npm init -y
           npm install "$OLDPWD/$TARBALL"
-          npm install typescript@latest
+          npm install "typescript@$TSC_VERSION" "@types/node@$NODE_TYPES_VERSION"
+          node --version
+          npm --version
+          npx tsc --version
           # Verify type exports compile under strict mode
-          cat > check.ts <<'EOF'
+          cat > check.mts <<'EOF'
           import type { Engine, AncilisMiddleware, EvidenceStore, ReportGenerator } from 'ancilis';
           import type { CLIActionProducer, HTTPActionProducer, ToolActionProducer } from 'ancilis';
           import type { BaselineManager } from 'ancilis';
           // If this file compiles, the .d.ts exports are correct
           const _: [Engine, AncilisMiddleware, EvidenceStore, ReportGenerator, CLIActionProducer, HTTPActionProducer, ToolActionProducer, BaselineManager] = undefined as any;
           EOF
-          npx tsc --noEmit --strict --moduleResolution node16 --module node16 check.ts
+          npx tsc --noEmit --strict --moduleResolution node16 --module node16 check.mts
           echo "TypeScript type check passed ✓"
           cd -
           rm -rf "$VERIFY_DIR"
-
-# ────────────────────────────────────────────────────────────────
-# Job 3: PUBLISH
-#   Downloads the verified artifact (never rebuilds), verifies
-#   checksum one final time, then publishes with SLSA provenance.
-#   Gated by the `npm-publish` GitHub environment (manual approval).
-# ────────────────────────────────────────────────────────────────
-  publish:
-    name: Publish to npm
-    needs: verify
-    if: >-
-      startsWith(github.ref, 'refs/tags/ts-v') &&
-      github.event.inputs.dry_run != 'true'
-    runs-on: ubuntu-latest
-    environment:
-      name: npm-publish
-      url: https://www.npmjs.com/package/ancilis
-    permissions:
-      id-token: write   # Required for npm --provenance (SLSA attestation)
-      contents: read
-    steps:
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Download artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: ts-sdk-tarball
-          path: ./release-dist
-
-      - name: Verify SHA-256 checksum (final gate)
-        run: |
-          cd release-dist
-          sha256sum -c SHA256SUMS
-          echo "Final checksum verified ✓  — publishing this exact artifact"
-
-      - name: Publish verified tarball
-        # CRITICAL: publish the artifact, never `npm publish .`
-        run: npm publish ./release-dist/*.tgz --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

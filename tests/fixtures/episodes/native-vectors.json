@@ -1,0 +1,180 @@
+{
+  "synthetic": true,
+  "implementation_status": "DESIGN_VECTORS_NOT_SDK_ACCEPTANCE",
+  "canonical_nonbmp": {
+    "value": {
+      "𐀀": 2,
+      "": 1
+    },
+    "utf8_hex": "7b22ee8080223a312c22f0908080223a327d"
+  },
+  "policy": {
+    "schema": "ancilis-native-policy/1",
+    "max_events": 4096,
+    "max_bytes": 16777216,
+    "max_episodes": 256,
+    "max_attachments": 256,
+    "max_body_bytes": 1048576,
+    "max_diagnostic_keys": 128,
+    "strict_capture": false
+  },
+  "policy_sha256": "5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63",
+  "open": {
+    "schema": "ancilis-episode-open/1",
+    "tenant": "synthetic-tenant",
+    "episode": "synthetic-episode",
+    "owner_source": "synthetic-source",
+    "open_nonce": "00000000000000000000000000000000",
+    "allowed_source_instances": [
+      "synthetic-instance"
+    ],
+    "expected_surfaces": [
+      "document",
+      "tool",
+      "execution",
+      "memory",
+      "output"
+    ],
+    "correlation_basis": "APPLICATION_ASSIGNED",
+    "created_at": "2026-09-10T00:00:00.000000Z",
+    "policy_sha256": "5fc6720c2b142f1daff73f2d2c8c5dc8cd1a5aa831e14afb133b420d84a56b63"
+  },
+  "open_sha256": "e3baf53c26735fab9f79a55cc8da3ebba7ba4c1a1630181e01f6e82797babf17",
+  "manual_input": {
+    "call_id": "c1",
+    "occurred_at": "2026-09-10T00:00:00.000000Z",
+    "surface": "document",
+    "operation": "READ",
+    "phase": "START",
+    "chunk_index": null,
+    "outcome": "STARTED",
+    "authority": {
+      "principal": null,
+      "service": null,
+      "delegation": null,
+      "approval": null,
+      "scope": null,
+      "basis": "APPLICATION_ASSERTION"
+    },
+    "artifacts": [],
+    "relationships": [],
+    "provenance_refs": [],
+    "capture_gaps": []
+  },
+  "event_preimage": {
+    "tenant": "synthetic-tenant",
+    "episode_open": "e3baf53c26735fab9f79a55cc8da3ebba7ba4c1a1630181e01f6e82797babf17",
+    "source_instance": "synthetic-instance",
+    "call_id": "c1",
+    "phase": "START",
+    "chunk_index": null
+  },
+  "event_id": "fff34caf61de8179bfff6a7603e26b67df2342f1e4acfcf03c36e265fbb0a0ff",
+  "observation": {
+    "call_id": "c1",
+    "occurred_at": "2026-09-10T00:00:00.000000Z",
+    "surface": "document",
+    "operation": "READ",
+    "phase": "START",
+    "chunk_index": null,
+    "outcome": "STARTED",
+    "authority": {
+      "principal": null,
+      "service": null,
+      "delegation": null,
+      "approval": null,
+      "scope": null,
+      "basis": "APPLICATION_ASSERTION"
+    },
+    "artifacts": [],
+    "relationships": [],
+    "provenance_refs": [],
+    "capture_gaps": [],
+    "schema": "ancilis-observation/1",
+    "tenant": "synthetic-tenant",
+    "episode": "synthetic-episode",
+    "episode_open": "e3baf53c26735fab9f79a55cc8da3ebba7ba4c1a1630181e01f6e82797babf17",
+    "event_id": "fff34caf61de8179bfff6a7603e26b67df2342f1e4acfcf03c36e265fbb0a0ff",
+    "source": {
+      "id": "synthetic-source",
+      "instance": "synthetic-instance",
+      "sequence": 1
+    },
+    "captured_at": "2026-09-10T00:00:00.000000Z",
+    "clock_basis": "COLLECTOR_CLOCK_ASSERTION",
+    "clock_evidence_refs": []
+  },
+  "revision_preimage": {
+    "open_sha256": "e3baf53c26735fab9f79a55cc8da3ebba7ba4c1a1630181e01f6e82797babf17",
+    "revision": 1,
+    "previous_revision_id": null,
+    "observation_chain_sha256": "3807351a45813d88fb85317656e0ee9eb19695d84b2dd40695563e7a88d762bb",
+    "coverage": {
+      "expected_surfaces": [
+        "document",
+        "tool",
+        "execution",
+        "memory",
+        "output"
+      ],
+      "observed_surfaces": [],
+      "missing_surfaces": [
+        "document",
+        "tool",
+        "execution",
+        "memory",
+        "output"
+      ],
+      "complete": false,
+      "lost_events": 0,
+      "incomplete_calls": 0,
+      "reasons": [],
+      "reconstruction_exclusions": []
+    }
+  },
+  "revision_id": "a96b3769987c9eedfdeeb09b6750266bd5538e210410e4eab0edb84247a4086b",
+  "revision_method": "ancilis-native-revision/2",
+  "genesis_chain": "3807351a45813d88fb85317656e0ee9eb19695d84b2dd40695563e7a88d762bb",
+  "observation_payload_sha256": "1be8f1c01a8d72806aad7eed0ddb63083f22d0d92471f3fa860cfbe465e29dff",
+  "first_observation_chain": "4fb98cf0710d1f1b8d2e46adf472cb855a3bbe2d50ea109ec59e4bf5bbeff0ca",
+  "partial_revision_preimage": {
+    "open_sha256": "e3baf53c26735fab9f79a55cc8da3ebba7ba4c1a1630181e01f6e82797babf17",
+    "revision": 2,
+    "previous_revision_id": "a96b3769987c9eedfdeeb09b6750266bd5538e210410e4eab0edb84247a4086b",
+    "observation_chain_sha256": "4fb98cf0710d1f1b8d2e46adf472cb855a3bbe2d50ea109ec59e4bf5bbeff0ca",
+    "coverage": {
+      "expected_surfaces": [
+        "document",
+        "tool",
+        "execution",
+        "memory",
+        "output"
+      ],
+      "observed_surfaces": [
+        "document",
+        "memory"
+      ],
+      "missing_surfaces": [
+        "tool",
+        "execution",
+        "output"
+      ],
+      "complete": false,
+      "lost_events": 0,
+      "incomplete_calls": 1,
+      "reasons": [
+        "CONTENT_NOT_CAPTURED",
+        "MISSING_END"
+      ],
+      "reconstruction_exclusions": []
+    }
+  },
+  "partial_revision_id": "2861f52df385dd86fe482b14aad4cf9bea9fe1196c7bde8216b6adc7ccfa2700",
+  "verification_policy": {
+    "schema": "ancilis-native-verification-policy/1",
+    "mode": "INTEGRITY_ONLY",
+    "revision_method": "ancilis-native-revision/2",
+    "expected_tenant": null
+  },
+  "verification_policy_sha256": "694a14f817e89354647a3cc6afe4254068fb7e9103a7cbc2620a955d7171b378"
+}

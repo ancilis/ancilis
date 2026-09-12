@@ -10,7 +10,30 @@ The project follows a conservative pre-1.0 release posture:
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-06-10
+### Diagnostics and coverage corrections
+
+- `ancilis doctor` now checks the package's Python 3.10 minimum and distinguishes a local version ahead of PyPI from the latest published version.
+- Framework support documentation distinguishes currentness checks, unresolved crosswalks, runtime evaluation and manual claims. TypeScript control differences now include `GOV-01` and `PR-01`, alongside the actual 14 direct / 27 caller-attestation registration split.
+
+### Added
+
+- Python and TypeScript native episode owners, explicit function/MCP attachment, observations, relationships, coverage, bounded loss diagnostics and immutable revisions. Capture is advisory and memory-only; existing enforcement APIs remain available.
+- Canonical Ed25519 episode export and scoped trust policies, with separate signature authentication and authorized protected-body verification. Missing or altered required content cannot become a verified positive assertion.
+- Typed classification adapters and bounded assessment history, with exact occurrence, policy, time and receipt-set bindings. Positive rows are adapter-attested. Explicit experimental semantic proposals remain unqualified and cannot replace unresolved classifications.
+- Public signing/classification examples, shared schemas, cross-language contract fixtures, and episode setup, migration and capability documentation.
+
+### Fixed
+
+- Native generator bookkeeping, frozen TypeScript MCP client handling, all-or-nothing MCP attachment mapping validation, tenant isolation and CLI provenance validation received additional regression coverage.
+- Python importers now select their packaged mapping assets when installed from a wheel or sdist. Missing installation assets cannot silently select an unrelated ancestor directory. Release checks exercise every importer's installed mapping path.
+- Built-in Python attestation lookup filters out ordinary runtime records in the database before decoding their payloads, preserving timestamp precedence, revocation, tenant scope and custom-store behavior.
+
+### Candidate limits
+
+- This entry describes unreleased source. GE reconstruction deployment, durable receiver updates, final supported-runtime/CI acceptance and release approval remain open; no qualified semantic recovery or production middleware integration is claimed.
+- Native attachment does not replace an existing enforcement wrapper. TypeScript's legacy evaluator differences remain documented separately from the common episode contract.
+
+## [0.2.0] - Unreleased
 
 ### Added
 - **15 net-new SDK producers** covering the highest-leverage day-one runtime evidence gaps for the 2026 AI agent ecosystem:

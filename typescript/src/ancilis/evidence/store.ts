@@ -487,6 +487,12 @@ export class EvidenceStore {
     return { valid: errors.length === 0, errors };
   }
 
+  /**
+   * Summarize records in this handle's configured tenant scope.
+   *
+   * Optional time and session filters narrow that tenant-only result; an empty
+   * persistent store returns the standard empty summary without creating its DB.
+   */
   async getSummary(options?: { since?: string; sessionId?: string }): Promise<Record<string, unknown>> {
     if (!this._initialized && !this._inMemory && !existsSync(this._dbPath)) {
       return {
@@ -503,6 +509,10 @@ export class EvidenceStore {
     await this.ensureInitialized();
     const conditions: string[] = [];
     const params: unknown[] = [];
+    if (this._tenantId) {
+      conditions.push("tenant_id = ?");
+      params.push(this._tenantId);
+    }
     if (options?.since) {
       conditions.push("timestamp >= ?");
       params.push(options.since);
@@ -651,7 +661,14 @@ export class EvidenceStore {
     return row ? (row.session_id as string) : null;
   }
 
+  /**
+   * Delete every record in an unscoped store and return the count deleted.
+   *
+   * Throws when constructed with tenantId because reset is a global operation;
+   * use an unscoped operator handle rather than risking other tenants' data.
+   */
   async reset(): Promise<number> {
+    this.requireUnscopedDestructiveOperation("reset");
     await this.ensureInitialized();
     const countRows = await allAsync(this._conn!, "SELECT COUNT(*)::INTEGER as cnt FROM evidence_records", []);
     const n = ((countRows[0] as Record<string, unknown>).cnt as number) ?? 0;
@@ -661,7 +678,14 @@ export class EvidenceStore {
     return n;
   }
 
+  /**
+   * Delete pre-boundary records in an unscoped store and return the count deleted.
+   *
+   * Throws when constructed with tenantId because the existing hash-chain
+   * checkpoints are global; use an unscoped operator handle for a full-store purge.
+   */
   async purgeBefore(beforeTimestamp: string): Promise<number> {
+    this.requireUnscopedDestructiveOperation("purge");
     await this.ensureInitialized();
     const countRows = await allAsync(
       this._conn!,
@@ -679,6 +703,15 @@ export class EvidenceStore {
     }
 
     return count;
+  }
+
+  private requireUnscopedDestructiveOperation(operation: "reset" | "purge"): void {
+    if (this._tenantId) {
+      throw new Error(
+        `Cannot ${operation} through a tenant-scoped EvidenceStore; ` +
+        "use an unscoped operator handle for the full-store operation.",
+      );
+    }
   }
 
   private rowToRecord(row: Record<string, unknown>): EvidenceRecord {

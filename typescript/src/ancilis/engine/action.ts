@@ -5,6 +5,7 @@ export interface ToolInfo {
   version?: string | null;
   server?: string | null;
   descriptionHash?: string | null;
+  contentFingerprint?: string | null;
 }
 
 export interface ActionParameters {

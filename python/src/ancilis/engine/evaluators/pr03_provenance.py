@@ -7,7 +7,7 @@ from typing import Any
 
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action
-from ancilis.engine.registry import ToolRegistry
+from ancilis.engine.registry import ContentFingerprintStatus, ToolRegistry
 from ancilis.engine.result import ControlResult
 
 
@@ -75,6 +75,58 @@ class PR03ProvenanceEvaluator:
                 control_name=self.control_name,
                 result="FAIL",
                 detail=f"Tool version mismatch: action has '{action.tool.version}', registry has '{entry.version}'.",
+                evidence_data=evidence,
+                duration_ms=(time.perf_counter() - start) * 1000,
+            )
+
+        # CLI content fingerprint baselines are intentionally separate from
+        # description hashes. Missing or unreadable bytes are never evidence of
+        # authentic provenance, while entries without this status retain the
+        # established description-only behavior below.
+        if entry.content_fingerprint_status is not None or tool_name.startswith("cli:"):
+            evidence["content_fingerprint_status"] = (entry.content_fingerprint_status.value if entry.content_fingerprint_status is not None else "unavailable")
+            if entry.content_fingerprint_status != ContentFingerprintStatus.AVAILABLE:
+                evidence["hash_match"] = "no_baseline"
+                return ControlResult(
+                    control_id=self.control_id,
+                    control_name=self.control_name,
+                    result="FLAG",
+                    detail=(
+                        f"Tool '{tool_name}' is approved but has no readable binary content "
+                        "baseline. Provenance cannot be positively verified."
+                    ),
+                    evidence_data=evidence,
+                    duration_ms=(time.perf_counter() - start) * 1000,
+                )
+            if entry.content_fingerprint is None or action.tool.content_fingerprint is None:
+                evidence["hash_match"] = "no_baseline"
+                return ControlResult(
+                    control_id=self.control_id,
+                    control_name=self.control_name,
+                    result="FLAG",
+                    detail=(
+                        f"Tool '{tool_name}' is approved but its current binary content is unavailable. "
+                        "Provenance cannot be positively verified."
+                    ),
+                    evidence_data=evidence,
+                    duration_ms=(time.perf_counter() - start) * 1000,
+                )
+            if action.tool.content_fingerprint != entry.content_fingerprint:
+                evidence["hash_match"] = False
+                return ControlResult(
+                    control_id=self.control_id,
+                    control_name=self.control_name,
+                    result="FAIL",
+                    detail="Binary content fingerprint drift detected — possible tampering.",
+                    evidence_data=evidence,
+                    duration_ms=(time.perf_counter() - start) * 1000,
+                )
+            evidence["hash_match"] = True
+            return ControlResult(
+                control_id=self.control_id,
+                control_name=self.control_name,
+                result="PASS",
+                detail="Binary content matches the configured approval baseline; publisher identity is not verified.",
                 evidence_data=evidence,
                 duration_ms=(time.perf_counter() - start) * 1000,
             )

@@ -4,7 +4,7 @@ import type { Action } from "../action.js";
 import type { ControlResult } from "../result.js";
 import type { ResolvedConfig } from "../../config/index.js";
 import type { ControlEvaluator } from "./base.js";
-import { type ToolRegistry, ToolStatus } from "../registry.js";
+import { ContentFingerprintStatus, type ToolRegistry, ToolStatus } from "../registry.js";
 
 export class PR03ProvenanceEvaluator implements ControlEvaluator {
   controlId = "PR-03";
@@ -66,6 +66,44 @@ export class PR03ProvenanceEvaluator implements ControlEvaluator {
         controlId: this.controlId, controlName: this.controlName,
         result: "FAIL",
         detail: `Tool version mismatch: action has '${action.tool.version}', registry has '${entry.version}'.`,
+        evidenceData: evidence, durationMs: performance.now() - start,
+      };
+    }
+
+    // CLI content fingerprint baselines are separate from legacy description
+    // hashes. Unavailable bytes never produce a positive provenance result.
+    if (entry.contentFingerprintStatus != null || toolName.startsWith("cli:")) {
+      evidence.content_fingerprint_status = entry.contentFingerprintStatus ?? "unavailable";
+      if (entry.contentFingerprintStatus !== ContentFingerprintStatus.AVAILABLE) {
+        evidence.hash_match = "no_baseline";
+        return {
+          controlId: this.controlId, controlName: this.controlName,
+          result: "FLAG",
+          detail: `Tool '${toolName}' is approved but has no readable binary content baseline. Provenance cannot be positively verified.`,
+          evidenceData: evidence, durationMs: performance.now() - start,
+        };
+      }
+      if (entry.contentFingerprint == null || action.tool.contentFingerprint == null) {
+        evidence.hash_match = "no_baseline";
+        return {
+          controlId: this.controlId, controlName: this.controlName,
+          result: "FLAG",
+          detail: `Tool '${toolName}' is approved but its current binary content is unavailable. Provenance cannot be positively verified.`,
+          evidenceData: evidence, durationMs: performance.now() - start,
+        };
+      }
+      if (action.tool.contentFingerprint !== entry.contentFingerprint) {
+        evidence.hash_match = false;
+        return {
+          controlId: this.controlId, controlName: this.controlName,
+          result: "FAIL", detail: "Binary content fingerprint drift detected — possible tampering.",
+          evidenceData: evidence, durationMs: performance.now() - start,
+        };
+      }
+      evidence.hash_match = true;
+      return {
+        controlId: this.controlId, controlName: this.controlName,
+        result: "PASS", detail: "Binary content matches the configured approval baseline; publisher identity is not verified.",
         evidenceData: evidence, durationMs: performance.now() - start,
       };
     }

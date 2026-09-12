@@ -15,6 +15,13 @@ class ToolStatus(str, Enum):
     BLOCKED = "blocked"      # Explicitly blocked
 
 
+class ContentFingerprintStatus(str, Enum):
+    """Availability of a CLI binary content fingerprint baseline."""
+
+    AVAILABLE = "available"
+    UNAVAILABLE = "unavailable"
+
+
 @dataclass
 class ToolEntry:
     name: str
@@ -24,6 +31,9 @@ class ToolEntry:
     approved_by: str | None = None
     first_seen: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     status_changed: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    # None preserves description-only provenance semantics for existing producers.
+    content_fingerprint: str | None = None
+    content_fingerprint_status: ContentFingerprintStatus | None = None
 
     @property
     def approved(self) -> bool:

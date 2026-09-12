@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
     from ancilis.engine.engine import Engine
-    from ancilis.engine.registry import ToolEntry, ToolRegistry
+    from ancilis.engine.registry import ContentFingerprintStatus, ToolEntry, ToolRegistry
     from ancilis.engine.result import ControlResult, EvaluationResult
 
 
@@ -17,6 +17,7 @@ _EXPORTS: dict[str, tuple[str, str]] = {
     "ActionContext": ("ancilis.engine.action", "ActionContext"),
     "ActionParameters": ("ancilis.engine.action", "ActionParameters"),
     "ControlResult": ("ancilis.engine.result", "ControlResult"),
+    "ContentFingerprintStatus": ("ancilis.engine.registry", "ContentFingerprintStatus"),
     "Engine": ("ancilis.engine.engine", "Engine"),
     "EvaluationResult": ("ancilis.engine.result", "EvaluationResult"),
     "ToolEntry": ("ancilis.engine.registry", "ToolEntry"),

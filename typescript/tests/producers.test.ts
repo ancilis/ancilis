@@ -2,7 +2,8 @@
  * Tests for protocol-agnostic producers.
  */
 
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, truncateSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -16,7 +17,7 @@ import { CLIActionProducer } from "../src/ancilis/producers/cli.js";
 import { HTTPActionProducer } from "../src/ancilis/producers/http.js";
 import { MCPActionProducer } from "../src/ancilis/producers/mcp.js";
 import { ToolActionProducer } from "../src/ancilis/producers/tool.js";
-import { ToolRegistry, ToolStatus } from "../src/ancilis/engine/registry.js";
+import { ContentFingerprintStatus, ToolRegistry, ToolStatus } from "../src/ancilis/engine/registry.js";
 
 function makeConfig(options: {
   mode?: "audit" | "enforce";
@@ -166,7 +167,8 @@ describe("CLIActionProducer", () => {
     expect(registered).toEqual(["cli:echo", "cli:cat"]);
     expect(registry.lookup("cli:echo")?.status).toBe(ToolStatus.APPROVED);
     expect(registry.lookup("cli:echo")?.approvedBy).toBe("config");
-    expect(registry.lookup("cli:echo")?.descriptionHash).toHaveLength(64);
+    expect(registry.lookup("cli:echo")?.contentFingerprintStatus).toBe(ContentFingerprintStatus.AVAILABLE);
+    expect(registry.lookup("cli:echo")?.contentFingerprint).toHaveLength(64);
   });
 
   it("includes the resolved binary path in computeToolHash for Python parity", () => {
@@ -203,7 +205,89 @@ describe("CLIActionProducer", () => {
     }
   });
 
-  it("does not leak version-probe stderr while hashing CLI tools", () => {
+  it("hashes executable content without executing it", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-content-hash-"));
+    const tool = join(directory, "content-hash-tool");
+    const marker = join(directory, "invoked");
+    writeFileSync(tool, `#!/bin/sh\nprintf invoked > ${marker}\nprintf stable-version\n`);
+    chmodSync(tool, 0o755);
+
+    const first = producer.computeToolHash(tool);
+    writeFileSync(tool, `#!/bin/sh\n# changed content\nprintf invoked > ${marker}\nprintf stable-version\n`);
+    const second = producer.computeToolHash(tool);
+
+    expect(first).not.toBe(second);
+    expect(() => readFileSync(marker, "utf-8")).toThrow();
+  });
+
+  it("rejects oversized executable content", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(config, new Engine(config), undefined, new EvidenceStore(config, { inMemory: true }));
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-oversized-hash-"));
+    const tool = join(directory, "oversized-tool");
+    writeFileSync(tool, "");
+    truncateSync(tool, 64 * 1024 * 1024 + 1);
+
+    expect((producer as unknown as { _getExecutableContentHash(path: string | null): string })
+      ._getExecutableContentHash(tool)).toBe("unavailable");
+  });
+
+  it("rejects unreadable executable content", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(config, new Engine(config), undefined, new EvidenceStore(config, { inMemory: true }));
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-unreadable-hash-"));
+    const tool = join(directory, "unreadable-tool");
+    writeFileSync(tool, "content");
+    chmodSync(tool, 0o000);
+
+    try {
+      expect((producer as unknown as { _getExecutableContentHash(path: string | null): string })
+        ._getExecutableContentHash(tool)).toBe("unavailable");
+    } finally {
+      chmodSync(tool, 0o600);
+    }
+  });
+
+  it.skipIf(process.platform === "win32")("rejects FIFO content without waiting or executing it", () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(config, new Engine(config), undefined, new EvidenceStore(config, { inMemory: true }));
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-fifo-hash-"));
+    const fifo = join(directory, "tool-fifo");
+    execFileSync("mkfifo", [fifo]);
+
+    expect((producer as unknown as { _getExecutableContentHash(path: string | null): string })
+      ._getExecutableContentHash(fifo)).toBe("unavailable");
+  });
+
+  it("rejects content when descriptor metadata changes while hashing", async () => {
+    const config = makeConfig({ mode: "audit" });
+    const producer = new CLIActionProducer(config, new Engine(config), undefined, new EvidenceStore(config, { inMemory: true }));
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-changing-hash-"));
+    const tool = join(directory, "changing-tool");
+    writeFileSync(tool, Buffer.alloc(8 * 1024 * 1024));
+    const writer = spawn(process.execPath, ["-e", `
+      const fs = require("node:fs");
+      process.send("ready");
+      setInterval(() => fs.appendFileSync(process.argv[1], "x"), 0);
+    `, tool], { stdio: ["ignore", "ignore", "ignore", "ipc"] });
+    await new Promise<void>((resolve) => writer.once("message", resolve));
+
+    try {
+      expect((producer as unknown as { _getExecutableContentHash(path: string | null): string })
+        ._getExecutableContentHash(tool)).toBe("unavailable");
+    } finally {
+      writer.kill();
+    }
+  });
+
+  it("does not write to stderr while hashing CLI tools", () => {
     const config = makeConfig({ mode: "audit" });
     const producer = new CLIActionProducer(
       config,
@@ -259,6 +343,114 @@ describe("CLIActionProducer", () => {
     expect(producer.registerTools(registry)).toEqual([]);
   });
 
+  it("flags an unavailable allowlisted binary without claiming a hash match", () => {
+    const config = makeConfig({ mode: "audit", toolsAllowed: ["missing-cli-tool-for-provenance"] });
+    const registry = new ToolRegistry();
+    const engine = new Engine(config, { registry });
+    const producer = new CLIActionProducer(
+      config,
+      engine,
+      registry,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    producer.registerTools(registry);
+    const action = producer.translate({
+      command: ["missing-cli-tool-for-provenance"],
+      agentName: "runtime-agent",
+    });
+    const pr03 = engine.evaluate(action).controlResults.find((result) => result.controlId === "PR-03");
+
+    expect(pr03?.result).toBe("FLAG");
+    expect(pr03?.evidenceData.hash_match).toBe("no_baseline");
+  });
+
+  it("does not treat a legacy CLI description as a binary-content baseline", () => {
+    const config = makeConfig({mode:"audit"}); const registry = new ToolRegistry();
+    registry.register({name:"cli:missing-legacy", descriptionHash:"legacy-hash",status:ToolStatus.APPROVED,approvedBy:"operator",firstSeen:"2026-09-10T00:00:00Z",statusChanged:"2026-09-10T00:00:00Z"});
+    const engine = new Engine(config, {registry});
+    const producer = new CLIActionProducer(config, engine, registry, new EvidenceStore(config,{inMemory:true}));
+    const result = engine.evaluate(producer.translate({command:["missing-legacy"],agentName:"app"})).controlResults.find(r=>r.controlId==="PR-03");
+    expect(result?.result).toBe("FLAG");
+    expect(result?.evidenceData.hash_match).toBe("no_baseline");
+  });
+
+  it("fails provenance after a same-path binary replacement before execution", () => {
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-provenance-"));
+    const tool = join(directory, "same-path-tool");
+    const marker = join(directory, "invoked");
+    writeFileSync(tool, `#!/bin/sh\nprintf invoked > ${marker}\n`);
+    chmodSync(tool, 0o755);
+    const config = makeConfig({ mode: "audit" });
+    const registry = new ToolRegistry();
+    const engine = new Engine(config, { registry });
+    const producer = new CLIActionProducer(
+      config,
+      engine,
+      registry,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    const toolName = (producer as unknown as { _resolveToolName(command: string[]): string })
+      ._resolveToolName([tool]);
+    (producer as unknown as { _autoRegister(name: string, command: string[]): void })
+      ._autoRegister(toolName, [tool]);
+    expect(registry.approve(toolName)).toBe(true);
+    writeFileSync(tool, `#!/bin/sh\n# replacement\nprintf invoked > ${marker}\n`);
+    const action = producer.translate({ command: [tool], agentName: "runtime-agent" });
+    const pr03 = engine.evaluate(action).controlResults.find((result) => result.controlId === "PR-03");
+
+    expect(pr03?.result).toBe("FAIL");
+    expect(pr03?.evidenceData.hash_match).toBe(false);
+    expect(() => readFileSync(marker, "utf-8")).toThrow();
+  });
+
+  it("passes provenance for unchanged bounded binary content without executing it", () => {
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-provenance-"));
+    const tool = join(directory, "unchanged-tool");
+    const marker = join(directory, "invoked");
+    writeFileSync(tool, `#!/bin/sh\nprintf invoked > ${marker}\n`);
+    chmodSync(tool, 0o755);
+    const config = makeConfig({ mode: "audit" });
+    const registry = new ToolRegistry();
+    const engine = new Engine(config, { registry });
+    const producer = new CLIActionProducer(config, engine, registry, new EvidenceStore(config, { inMemory: true }));
+    const toolName = (producer as unknown as { _resolveToolName(command: string[]): string })._resolveToolName([tool]);
+    (producer as unknown as { _autoRegister(name: string, command: string[]): void })._autoRegister(toolName, [tool]);
+    expect(registry.approve(toolName)).toBe(true);
+
+    const action = producer.translate({ command: [tool], agentName: "runtime-agent" });
+    const pr03 = engine.evaluate(action).controlResults.find((result) => result.controlId === "PR-03");
+
+    expect(pr03?.result).toBe("PASS");
+    expect(pr03?.evidenceData.hash_match).toBe(true);
+    expect(() => readFileSync(marker, "utf-8")).toThrow();
+  });
+
+  it("flags an unreadable current binary instead of passing its prior baseline", () => {
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-provenance-"));
+    const tool = join(directory, "becomes-unreadable-tool");
+    writeFileSync(tool, "#!/bin/sh\nexit 0\n");
+    chmodSync(tool, 0o755);
+    const config = makeConfig({ mode: "audit" });
+    const registry = new ToolRegistry();
+    const engine = new Engine(config, { registry });
+    const producer = new CLIActionProducer(config, engine, registry, new EvidenceStore(config, { inMemory: true }));
+    const toolName = (producer as unknown as { _resolveToolName(command: string[]): string })._resolveToolName([tool]);
+    (producer as unknown as { _autoRegister(name: string, command: string[]): void })._autoRegister(toolName, [tool]);
+    expect(registry.approve(toolName)).toBe(true);
+    chmodSync(tool, 0o000);
+    try {
+      const action = producer.translate({ command: [tool], agentName: "runtime-agent" });
+      const pr03 = engine.evaluate(action).controlResults.find((result) => result.controlId === "PR-03");
+
+      expect(pr03?.result).toBe("FLAG");
+      expect(pr03?.evidenceData.hash_match).toBe("no_baseline");
+    } finally {
+      chmodSync(tool, 0o600);
+    }
+  });
+
   it("treats a bare blocked entry as a block for the prefixed CLI tool", async () => {
     const config = makeConfig({ mode: "enforce", toolsBlocked: ["echo"] });
     const producer = new CLIActionProducer(
@@ -273,6 +465,33 @@ describe("CLIActionProducer", () => {
     expect(result.blocked).toBe(true);
     expect(result.stdout).toBeUndefined();
     expect(result.returnCode).toBeUndefined();
+  });
+
+  it("does not run a blocked command during auto-registration", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "ancilis-cli-blocked-"));
+    const toolName = "blocked-side-effect-tool";
+    const tool = join(directory, toolName);
+    const marker = join(directory, "invoked");
+    writeFileSync(tool, `#!/bin/sh\nprintf invoked > ${marker}\n`);
+    chmodSync(tool, 0o755);
+    const originalPath = process.env.PATH ?? "";
+    process.env.PATH = `${directory}:${originalPath}`;
+    const config = makeConfig({ mode: "enforce", toolsBlocked: [toolName] });
+    const producer = new CLIActionProducer(
+      config,
+      new Engine(config),
+      undefined,
+      new EvidenceStore(config, { inMemory: true }),
+    );
+
+    try {
+      const result = await producer.execute([tool, "--version"], "runtime-agent");
+
+      expect(result.blocked).toBe(true);
+      expect(() => readFileSync(marker, "utf-8")).toThrow();
+    } finally {
+      process.env.PATH = originalPath;
+    }
   });
 
   it("flags sensitive stdout patterns for Python parity", async () => {

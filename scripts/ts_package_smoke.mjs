@@ -1,6 +1,6 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 
 const cwd = process.cwd();
@@ -10,7 +10,7 @@ const tarballArg = process.argv[2];
 try {
   const tarballPath = (() => {
     if (tarballArg) {
-      return tarballArg;
+      return resolve(cwd, tarballArg);
     }
 
     const pkg = execFileSync("npm", ["pack", "--json"], { cwd, encoding: "utf8" });

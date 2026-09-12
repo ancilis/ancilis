@@ -65,6 +65,8 @@ the JSON wire format directly.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import hashlib
 import json
 import uuid
@@ -79,13 +81,8 @@ from ancilis.engine.result import ControlResult, EvaluationResult
 
 # Mapping table lives at <repo>/shared/mappings/mixpanel-aksi-controls.json.
 def _resolve_mapping_path() -> Path:
-    """Locate ``shared/mappings/mixpanel-aksi-controls.json`` by walking upward."""
-    here = Path(__file__).resolve()
-    for ancestor in here.parents:
-        candidate = ancestor / "shared" / "mappings" / "mixpanel-aksi-controls.json"
-        if candidate.exists():
-            return candidate
-    return here.parents[4] / "shared" / "mappings" / "mixpanel-aksi-controls.json"
+    """Resolve the mapping from this installation or its exact source checkout."""
+    return shared_path("mappings", 'mixpanel-aksi-controls.json')
 
 
 _MAPPING_PATH = _resolve_mapping_path()

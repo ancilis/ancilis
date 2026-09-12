@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import uuid
 from unittest.mock import patch
 
@@ -11,7 +12,7 @@ import pytest
 from ancilis.config import load_config
 from ancilis.engine import Engine
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
-from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
+from ancilis.engine.registry import ContentFingerprintStatus, ToolEntry, ToolRegistry, ToolStatus
 from ancilis.producers.protocol import ActionProducer, ProducerType
 from ancilis.producers.cli import CLIActionProducer, CLIExecutionResult, CLIInvocation
 from ancilis.producers.mcp import MCPActionProducer
@@ -249,6 +250,66 @@ class TestCLIToolHash:
         h = producer.compute_tool_hash("nonexistent_tool_xyz_12345")
         assert len(h) == 64
 
+    def test_hashes_executable_content_without_executing_it(self, tmp_path):
+        tool = tmp_path / "content-hash-tool"
+        marker = tmp_path / "invoked"
+        tool.write_text(
+            f"#!/bin/sh\nprintf invoked > {marker}\nprintf stable-version\n"
+        )
+        tool.chmod(0o755)
+        producer = self._make_producer()
+
+        first = producer.compute_tool_hash(str(tool))
+        tool.write_text(
+            f"#!/bin/sh\n# changed content\nprintf invoked > {marker}\nprintf stable-version\n"
+        )
+        second = producer.compute_tool_hash(str(tool))
+
+        assert first != second
+        assert not marker.exists()
+
+    def test_rejects_oversized_executable_content(self, tmp_path):
+        tool = tmp_path / "oversized-tool"
+        with tool.open("wb") as executable:
+            executable.truncate(64 * 1024 * 1024 + 1)
+
+        assert self._make_producer()._get_executable_content_hash(str(tool)) == "unavailable"
+
+    def test_rejects_unreadable_executable_content(self, tmp_path):
+        unreadable = tmp_path / "unreadable-tool"
+        unreadable.write_bytes(b"content")
+        unreadable.chmod(0)
+
+        try:
+            assert self._make_producer()._get_executable_content_hash(str(unreadable)) == "unavailable"
+        finally:
+            unreadable.chmod(0o600)
+
+    @pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="FIFOs are not supported on this platform")
+    def test_rejects_fifo_without_waiting_or_executing_it(self, tmp_path):
+        fifo = tmp_path / "tool-fifo"
+        os.mkfifo(fifo)
+
+        assert self._make_producer()._get_executable_content_hash(str(fifo)) == "unavailable"
+
+    def test_rejects_content_when_descriptor_metadata_changes_while_hashing(self, tmp_path, monkeypatch):
+        tool = tmp_path / "changing-tool"
+        tool.write_bytes(b"original content")
+        original_fstat = os.fstat
+        fstat_calls = 0
+
+        def grow_after_initial_fstat(fd):
+            nonlocal fstat_calls
+            fstat_calls += 1
+            if fstat_calls == 2:
+                with tool.open("ab") as executable:
+                    executable.write(b" changed")
+            return original_fstat(fd)
+
+        monkeypatch.setattr(os, "fstat", grow_after_initial_fstat)
+
+        assert self._make_producer()._get_executable_content_hash(str(tool)) == "unavailable"
+
 
 # --- CLI Tool Registration ---
 
@@ -283,8 +344,9 @@ class TestCLIToolRegistration:
         producer.register_tools(registry)
         entry = registry.lookup("cli:echo")
         assert entry is not None
-        assert entry.description_hash is not None
-        assert len(entry.description_hash) == 64
+        assert entry.content_fingerprint_status == ContentFingerprintStatus.AVAILABLE
+        assert entry.content_fingerprint is not None
+        assert len(entry.content_fingerprint) == 64
 
     def test_empty_allowlist_registers_nothing(self):
         config = _config()
@@ -294,8 +356,126 @@ class TestCLIToolRegistration:
         registered = producer.register_tools(registry)
         assert registered == []
 
+    def test_unavailable_allowlisted_binary_flags_without_claiming_hash_match(self):
+        """An approved CLI entry without readable bytes is not positive provenance."""
+        config = _config(security={"tools": {"allowed": ["missing-cli-tool-for-provenance"]}})
+        registry = ToolRegistry()
+        engine = _make_engine(config, registry=registry)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            registry=registry,
+            evidence_store=EvidenceStore(config, in_memory=True),
+        )
+
+        producer.register_tools(registry)
+        action = producer.translate(
+            CLIInvocation(command=["missing-cli-tool-for-provenance"], agent_name="test-agent")
+        )
+        pr03 = next(result for result in engine.evaluate(action).control_results if result.control_id == "PR-03")
+
+        assert pr03.result == "FLAG"
+        assert pr03.evidence_data["hash_match"] == "no_baseline"
+
+    def test_replaced_binary_at_same_path_fails_provenance_before_execution(self, tmp_path):
+        """The current content fingerprint must not be copied from the registry baseline."""
+        tool = tmp_path / "same-path-tool"
+        marker = tmp_path / "invoked"
+        tool.write_text(f"#!/bin/sh\nprintf invoked > {marker}\n")
+        tool.chmod(0o755)
+        config = _config(security={"tools": {"allowed": []}})
+        registry = ToolRegistry()
+        engine = _make_engine(config, registry=registry)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            registry=registry,
+            evidence_store=EvidenceStore(config, in_memory=True),
+        )
+
+        tool_name = producer._resolve_tool_name([str(tool)])
+        producer._auto_register(tool_name, [str(tool)])
+        assert registry.approve(tool_name)
+        tool.write_text(f"#!/bin/sh\n# replacement\nprintf invoked > {marker}\n")
+        action = producer.translate(CLIInvocation(command=[str(tool)], agent_name="test-agent"))
+        pr03 = next(result for result in engine.evaluate(action).control_results if result.control_id == "PR-03")
+
+        assert pr03.result == "FAIL"
+        assert pr03.evidence_data["hash_match"] is False
+        assert not marker.exists()
+
+    def test_unchanged_binary_content_passes_provenance_before_execution(self, tmp_path):
+        tool = tmp_path / "unchanged-tool"
+        marker = tmp_path / "invoked"
+        tool.write_text(f"#!/bin/sh\nprintf invoked > {marker}\n")
+        tool.chmod(0o755)
+        config = _config()
+        registry = ToolRegistry()
+        engine = _make_engine(config, registry=registry)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            registry=registry,
+            evidence_store=EvidenceStore(config, in_memory=True),
+        )
+
+        tool_name = producer._resolve_tool_name([str(tool)])
+        producer._auto_register(tool_name, [str(tool)])
+        assert registry.approve(tool_name)
+        action = producer.translate(CLIInvocation(command=[str(tool)], agent_name="test-agent"))
+        pr03 = next(result for result in engine.evaluate(action).control_results if result.control_id == "PR-03")
+
+        assert pr03.result == "PASS"
+        assert pr03.evidence_data["hash_match"] is True
+        assert not marker.exists()
+
+    def test_unreadable_after_baseline_flags_instead_of_passing(self, tmp_path):
+        tool = tmp_path / "becomes-unreadable-tool"
+        tool.write_text("#!/bin/sh\nexit 0\n")
+        tool.chmod(0o755)
+        config = _config()
+        registry = ToolRegistry()
+        engine = _make_engine(config, registry=registry)
+        producer = CLIActionProducer(
+            config=config,
+            engine=engine,
+            registry=registry,
+            evidence_store=EvidenceStore(config, in_memory=True),
+        )
+        tool_name = producer._resolve_tool_name([str(tool)])
+        producer._auto_register(tool_name, [str(tool)])
+        assert registry.approve(tool_name)
+        tool.chmod(0)
+        try:
+            action = producer.translate(CLIInvocation(command=[str(tool)], agent_name="test-agent"))
+            pr03 = next(result for result in engine.evaluate(action).control_results if result.control_id == "PR-03")
+
+            assert pr03.result == "FLAG"
+            assert pr03.evidence_data["hash_match"] == "no_baseline"
+        finally:
+            tool.chmod(0o600)
+
 
 # --- CLI Execute: Audit Mode ---
+
+
+def test_legacy_cli_description_baseline_cannot_claim_binary_provenance():
+    config = _config()
+    registry = ToolRegistry()
+    registry.register(ToolEntry(name="cli:missing-legacy", description_hash="legacy-hash", status=ToolStatus.APPROVED))
+    engine = _make_engine(config, registry)
+    producer = CLIActionProducer(config=config, engine=engine, registry=registry, evidence_store=EvidenceStore(config, in_memory=True))
+    action = producer.translate(CLIInvocation(command=["missing-legacy"], agent_name="test-agent"))
+    result = next(r for r in engine.evaluate(action).control_results if r.control_id == "PR-03")
+    assert result.result == "FLAG"
+    assert result.evidence_data["hash_match"] == "no_baseline"
+
+
+def test_tool_entry_positional_approval_is_backward_compatible():
+    entry = ToolEntry("tool", None, "description", ToolStatus.APPROVED, "operator")
+    assert entry.status == ToolStatus.APPROVED
+    assert entry.approved_by == "operator"
+    assert entry.content_fingerprint_status is None
 
 
 class TestCLIExecuteAudit:
@@ -754,6 +934,24 @@ class TestCLIEvidencePersistence:
 
 
 class TestCLITrustLifecycle:
+    def test_blocked_command_is_not_run_during_auto_registration(self, tmp_path, monkeypatch):
+        """The policy decision is the first point that may run a CLI command."""
+        tool = tmp_path / "blocked-side-effect-tool"
+        marker = tmp_path / "invoked"
+        tool.write_text(f"#!/bin/sh\nprintf invoked > {marker}\n")
+        tool.chmod(0o755)
+        monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ.get('PATH', '')}")
+
+        config = _enforce_config(
+            security={"mode": "enforce", "tools": {"blocked": [tool.name]}}
+        )
+        producer = _make_cli_producer(config=config)
+
+        result = producer.execute(command=[str(tool), "--version"], agent_name="test-agent")
+
+        assert result.blocked
+        assert not marker.exists()
+
     def test_allowlisted_tool_auto_registers_as_approved(self):
         """Auto-register honors config allowlist: echo in allowed -> APPROVED."""
         config = _config(security={"tools": {"allowed": ["echo"]}})

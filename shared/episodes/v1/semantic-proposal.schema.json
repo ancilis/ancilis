@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ancilis-semantic-proposal/1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "ancilis-semantic-proposal/1"
+    },
+    "request_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "status": {
+      "enum": [
+        "PROPOSED",
+        "UNKNOWN",
+        "ABSTAIN",
+        "ERROR",
+        "UNSUPPORTED"
+      ]
+    },
+    "proposed_classification": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+      },
+      "maxItems": 64,
+      "uniqueItems": true
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}(?![\\s\\S])"
+      },
+      "maxItems": 64,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema",
+    "request_sha256",
+    "status",
+    "proposed_classification",
+    "evidence_refs",
+    "reasons"
+  ],
+  "additionalProperties": false
+}

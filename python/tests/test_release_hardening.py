@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import date
 if sys.version_info >= (3, 11):
     import tomllib
 else:
@@ -192,7 +193,13 @@ def test_public_release_versions_are_aligned_and_not_stale_0_1_0():
     assert package_json["version"] == version
     assert package_lock["version"] == version
     assert package_lock["packages"][""]["version"] == version
-    assert f"## [{version}] - 2026-06-10" in (ROOT / "CHANGELOG.md").read_text()
+    release_heading = next(
+        line for line in (ROOT / "CHANGELOG.md").read_text().splitlines()
+        if line.startswith(f"## [{version}] - ")
+    )
+    release_date = release_heading.removeprefix(f"## [{version}] - ")
+    if release_date != "Unreleased":
+        assert date.fromisoformat(release_date).isoformat() == release_date
 
 
 @pytest.mark.skipif(tomllib is None, reason="tomllib requires Python >=3.11 or tomli package")
@@ -313,7 +320,7 @@ def test_release_python_workflow_uses_release_check_and_trusted_publishing():
 
     assert workflow["name"] == "Release Python"
     assert "v*" in workflow_on["push"]["tags"]
-    assert workflow["permissions"] == {"contents": "read", "id-token": "write"}
+    assert workflow["permissions"] == {"contents": "read"}
 
     verify_job = workflow["jobs"]["verify_python_release"]
     verify_runs = [step["run"] for step in verify_job["steps"] if "run" in step]
@@ -323,9 +330,9 @@ def test_release_python_workflow_uses_release_check_and_trusted_publishing():
     assert "python scripts/release_check.py" in verify_runs
 
     publish_job = workflow["jobs"]["publish_python"]
-    assert publish_job["needs"] == "verify_python_release"
+    assert set(publish_job["needs"]) == {"verify_python_release", "release_gate"}
     publish_uses = [step["uses"] for step in publish_job["steps"] if "uses" in step]
-    assert "pypa/gh-action-pypi-publish@release/v1" in publish_uses
+    assert "pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33" in publish_uses
 
 
 def test_scorecard_workflow_pins_release_commits_and_keeps_publication_steps():
@@ -370,10 +377,13 @@ def test_release_check_expands_twine_artifact_paths(monkeypatch, tmp_path: Path)
 
     def fake_run(cmd: list[str], *, cwd: Path | None = None, env: dict[str, str] | None = None) -> None:
         commands.append(cmd)
-        if cmd == ["python", "-m", "build", "--sdist", "--wheel"]:
+        if cmd[:4] == ["python", "-m", "build", "--sdist"]:
             dist.mkdir(parents=True, exist_ok=True)
-            (dist / "ancilis-0.1.0-py3-none-any.whl").write_text("wheel")
             (dist / "ancilis-0.1.0.tar.gz").write_text("sdist")
+        if cmd[:4] == ["python", "-m", "pip", "wheel"]:
+            assert cmd[-1] == str(dist / "ancilis-0.1.0.tar.gz")
+            assert cwd is not None and cwd != ROOT
+            (dist / "ancilis-0.1.0-py3-none-any.whl").write_text("wheel")
 
     monkeypatch.setattr(release_check, "DIST", dist)
     monkeypatch.setattr(release_check, "run", fake_run)

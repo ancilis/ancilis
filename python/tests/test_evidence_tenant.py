@@ -6,6 +6,8 @@ import os
 import tempfile
 import uuid
 
+import pytest
+
 from ancilis.config import ResolvedConfig, load_config
 from ancilis.engine.result import ControlResult, EvaluationResult
 from ancilis.evidence.store import EvidenceStore
@@ -126,6 +128,58 @@ class TestTenantScopedStore:
             assert records[0].tenant_id == "acme-corp"
 
             store.close()
+        finally:
+            if os.path.exists(db):
+                os.unlink(db)
+
+    def test_summary_does_not_disclose_interleaved_other_tenant_records(self):
+        """A tenant-scoped summary aggregates only that tenant's records."""
+        config = make_config()
+        db = make_temp_db()
+        try:
+            tenant_a = EvidenceStore(config, db_path=db, tenant_id="tenant-a")
+            tenant_b = EvidenceStore(config, db_path=db, tenant_id="tenant-b")
+            tenant_a.store(make_evaluation(decision="ALLOW"), tool_name="tool-a")
+            tenant_b.store(make_evaluation(decision="BLOCK"), tool_name="tool-b")
+            tenant_a.store(make_evaluation(decision="ALLOW"), tool_name="tool-a")
+
+            summary = tenant_a.get_summary()
+
+            assert summary["total_evaluations"] == 2
+            assert summary["decisions"] == {"ALLOW": 2}
+            assert summary["tools_evaluated"] == ["tool-a"]
+            assert summary["chain_valid"] is True
+            tenant_a.close()
+            tenant_b.close()
+        finally:
+            if os.path.exists(db):
+                os.unlink(db)
+
+    def test_scoped_reset_and_purge_refuse_without_touching_other_tenant_or_sync_state(self):
+        """Scoped destructive calls fail closed because audit checkpoints are global."""
+        config = make_config()
+        db = make_temp_db()
+        try:
+            tenant_a = EvidenceStore(config, db_path=db, tenant_id="tenant-a")
+            tenant_b = EvidenceStore(config, db_path=db, tenant_id="tenant-b")
+            tenant_a.store(
+                make_evaluation(timestamp="2024-01-01T00:00:00Z"), tool_name="tool-a"
+            )
+            tenant_b_record = tenant_b.store(
+                make_evaluation(timestamp="2024-01-01T00:00:00Z"), tool_name="tool-b"
+            )
+
+            with pytest.raises(RuntimeError, match="reset.*tenant-scoped.*unscoped"):
+                tenant_a.reset()
+            with pytest.raises(RuntimeError, match="purge.*tenant-scoped.*unscoped"):
+                tenant_a.purge_before("2025-01-01T00:00:00Z")
+
+            assert tenant_a.count() == 1
+            assert tenant_b.count() == 1
+            assert tenant_b.get_sync_state(tenant_b_record.record_id) is not None
+            assert tenant_b.verify_chain() == (True, [])
+            tenant_a.close()
+            tenant_b.close()
         finally:
             if os.path.exists(db):
                 os.unlink(db)

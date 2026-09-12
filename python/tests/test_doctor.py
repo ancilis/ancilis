@@ -98,7 +98,7 @@ def test_doctor_config_missing(tmp_path: Path) -> None:
 def test_doctor_python_version_too_old() -> None:
     """Mock old Python version → check_python_version returns FAIL."""
     fake_vi = MagicMock()
-    fake_vi.__ge__ = lambda self, other: False  # always < (3,9)
+    fake_vi.__ge__ = lambda self, other: False  # always < (3,10)
 
     with patch("ancilis.cli.doctor.sys") as mock_sys:
         mock_sys.version_info = (3, 8, 0)
@@ -107,13 +107,36 @@ def test_doctor_python_version_too_old() -> None:
         result = check_python_version(None, False)
 
     assert result.status == CheckStatus.FAIL
-    assert "3.8" in result.detail or "3.9" in result.detail
+    assert "3.8" in result.detail or "3.10" in result.detail
 
 
 def test_doctor_python_version_ok() -> None:
-    """Current Python is >=3.9 → PASS."""
+    """Current Python is >=3.10 → PASS."""
     result = check_python_version(None, False)
     assert result.status == CheckStatus.PASS
+
+
+@pytest.mark.parametrize("version, expected", [((3, 9, 18), CheckStatus.FAIL), ((3, 10, 0), CheckStatus.PASS)])
+def test_doctor_python_floor_matches_package(version, expected) -> None:
+    """The diagnostic agrees with the package's supported Python boundary."""
+    with patch("ancilis.cli.doctor.sys") as mock_sys:
+        mock_sys.version_info = version
+        mock_sys.version = ".".join(map(str, version))
+        result = check_python_version(None, False)
+    assert result.status == expected
+    assert ">=3.10 required" in result.detail
+
+
+def test_doctor_sdk_version_ahead_of_pypi_is_explicit() -> None:
+    """A local candidate ahead of the registry is not the latest published SDK."""
+    with (
+        patch("ancilis.cli.doctor.read_cache", return_value={"latest_version": "0.1.0"}),
+        patch("ancilis.cli.doctor.importlib.metadata.version", return_value="0.2.0"),
+    ):
+        result = check_sdk_version(None, False)
+    assert result.status == CheckStatus.PASS
+    assert "ahead of PyPI: 0.1.0" in result.detail
+    assert "latest" not in result.detail
 
 
 # ---------------------------------------------------------------------------

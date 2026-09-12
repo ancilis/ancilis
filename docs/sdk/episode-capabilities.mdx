@@ -1,0 +1,53 @@
+---
+title: "Episode capabilities and limits"
+description: "Common Python and TypeScript episode behavior, resource ownership, and verification limits."
+---
+
+This describes the unreleased candidate's implemented contract. Supported runtime targets are Python 3.10–3.13 and Node 20/22. A runtime target is separate from final release-matrix acceptance. The existing TypeScript control-evaluator differences remain documented in the [TypeScript reference](/sdk/typescript#control-parity-with-the-python-sdk); episode contract parity does not establish control-evaluator parity.
+
+| Capability | Python | TypeScript / Node |
+|---|---|---|
+| Native owner | `Ancilis(tenant, source)` | `Ancilis.open({tenant, source})` |
+| Real function attachment | `attach_tool` | `attachTool` |
+| Structural MCP attachment | Returned adapter intercepts `call_tool` | Returned adapter intercepts `callTool` |
+| Episode context | Sync/async context manager | Callback; preserves sync return or Promise |
+| Explicit context binding | `bind_episode(fn, episode)` | `bindEpisode(fn, episode)` |
+| Missing handle lookup | `get_episode` returns `None` | `getEpisode` raises `INVALID_OBSERVATION` |
+| Snapshot | `inspect().to_dict()` | `inspect()` |
+| Signed export | `export_signed(signer)` | `exportSigned(signer)` |
+| Signed verification | Sync and separate async API | Async API with optional `AbortSignal` |
+| Classification | Sync/async caller-trusted adapter | Async caller-trusted adapter |
+| Classification history | Bounded, volatile, thread-serialized | Bounded, volatile, caller-owned |
+| Flush | Sync `flush`, async `aflush` | Async `flush` |
+| Close | Sync `close`, async `aclose`, context exit | Async `close` |
+| Durable storage / delivery | Not supplied by native owner | Not supplied by native owner |
+| GE reconstruction | Provider/deployment absent from package | Provider/deployment absent from package |
+| Semantic recovery | Explicit unqualified proposal interface | Explicit unqualified proposal interface |
+
+## Capture and application behavior
+
+An attachment observes calls made through the returned wrapper. It does not patch the original function everywhere it is used. Default capture retains operation metadata and records `CONTENT_NOT_CAPTURED`; a callback must deliberately provide content references. Callback failure records loss without replacing the application's return or exception. Strict capture can reject explicit invalid/capacity operations; it does not turn advisory wrappers into an enforcement boundary.
+
+Python generators and async generators forward their supported iteration operations. Explicitly close abandoned iterators. Garbage-collection cleanup may release bookkeeping and report `MISSING_END`, but its timing is not guaranteed and it does not call capture callbacks during finalization. Generator argument errors may be deferred until first iteration. Custom iterator objects are not universally observed as streams.
+
+Node iterator cancellation or early return is observable only when the wrapper receives it. Silently abandoning an iterator supplies no reliable cancellation signal; missing completion must remain visible. Abort-aware verification and classification pass the signal to callbacks, but cannot stop a callback that ignores it. Class constructors and proxies are outside supported callable attachment; function-based constructor detection is not a comprehensive JavaScript constructor policy.
+
+Python's MCP adapter forwards normal attributes and methods but does not preserve every special method or context-manager protocol of the original class. Supply ordinary JSON dictionaries for the tool mapping despite the broader `Mapping` annotation. TypeScript's structural adapter supports frozen clients and preserves original-client receivers, including private fields; using the adapter still does not intercept calls made directly on the original client.
+
+## Bounds, lifecycle and diagnostics
+
+The owner defaults to 4,096 observations, 16 MiB of accounted observation bytes, 256 episodes, 256 attachments and a 1 MiB body-reference limit. These are bounded ledger/capture limits, not total process-memory guarantees. Signed verification and classification use their separate [body and export budgets](/signed-episodes#authorized-protected-body-retrieval).
+
+Inspect `lost`, reason counters, attachment counters and episode coverage together. An attachment with no observed calls does not prove capture. `pending: 0` in a memory-only flush does not prove durable delivery or absence of loss. Discarding an episode frees ledger capacity and records discard counts; it does not retract evidence already exported elsewhere. Signing rejects discarded history.
+
+Python diagnostics include a schema marker and `discarded_episodes`; TypeScript diagnostics omit those fields. Both provide attachment/loss information and report reconstruction `UNAVAILABLE` and semantic recovery `UNQUALIFIED`. Consume each language's public type rather than assuming diagnostic objects have identical keys. The portable episode, signing and classification schemas provide the cross-language interchange contract.
+
+Closing an owner finishes capture and deactivates its attachments. It does not wait for or cancel unfinished application operations, persist bytes, send receiver updates or close a caller-owned MCP client. Finish or explicitly cancel/close application work before closing capture when complete termination evidence matters.
+
+## Evidence and trust
+
+Unsigned digest agreement is self-consistency. A signed export authenticates admitted collector assertions. Matching protected bytes adds content integrity under the supplied access policy. None alone establishes classification truth, actual semantic use, control operation, independent authority, complete capture or global latestness.
+
+Classification responses require an explicit trusted-code adapter and exact request binding. A report parsed from JSON has `PARSED_UNAUTHENTICATED` origin even when its internal digests are consistent. History records local append order and preserves prior assessments; it does not supply durable withdrawal, receiver ordering or continuity proof. The rejected experimental semantic method has not become qualified by exposing a proposal API.
+
+Existing CLI provenance checks inspect a tool before execution. An externally changed executable between inspection and execution remains a time-of-check/time-of-use limitation; that check is not immutable execution attestation.

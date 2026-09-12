@@ -84,6 +84,8 @@ AKSI mapping for audit logs:
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import fnmatch
 import hashlib
 import json
@@ -100,13 +102,8 @@ from urllib.parse import urlparse
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-# Mapping file lives at <repo>/shared/mappings/mlflow-aksi-controls.json.
-# This source file lives at <repo>/python/src/ancilis/importers/mlflow.py,
-# so .resolve() + 5 .parent traversals land at the repo root.
-_MAPPING_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "mlflow-aksi-controls.json"
-)
+# Packaged shared assets, with an exact-checkout fallback for development.
+_MAPPING_PATH = shared_path("mappings", 'mlflow-aksi-controls.json')
 
 
 _CONTROL_NAMES: dict[str, str] = {

@@ -11,6 +11,8 @@ schema directly.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import hashlib
 import json
 import re
@@ -24,14 +26,8 @@ from ancilis.engine.result import ControlResult, EvaluationResult
 
 
 def _resolve_mapping_path() -> Path:
-    """Locate ``shared/mappings/langsmith-aksi-controls.json`` by walking upward."""
-    here = Path(__file__).resolve()
-    for ancestor in here.parents:
-        candidate = ancestor / "shared" / "mappings" / "langsmith-aksi-controls.json"
-        if candidate.exists():
-            return candidate
-    # Fallback: return a non-existent path five levels up (matches the SARIF layout).
-    return here.parents[4] / "shared" / "mappings" / "langsmith-aksi-controls.json"
+    """Resolve the mapping from this installation or its exact source checkout."""
+    return shared_path("mappings", 'langsmith-aksi-controls.json')
 
 
 _MAPPING_PATH = _resolve_mapping_path()

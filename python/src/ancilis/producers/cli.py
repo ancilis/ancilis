@@ -31,8 +31,10 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import stat
 import subprocess
 import uuid
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -40,13 +42,19 @@ from typing import Any
 from ancilis.config import ResolvedConfig
 from ancilis.engine.action import Action, ActionContext, ActionParameters, ToolInfo
 from ancilis.engine.engine import Engine
-from ancilis.engine.registry import ToolEntry, ToolRegistry, ToolStatus
+from ancilis.engine.registry import ContentFingerprintStatus, ToolEntry, ToolRegistry, ToolStatus
 from ancilis.engine.result import EvaluationResult
 from ancilis.evidence.store import EvidenceStore
 from ancilis.middleware.response_scanner import ScanResult, scan_response
 from ancilis.producers.enforcement import ENFORCE_CAPABLE
 from ancilis.producers.protocol import ProducerType
 from ancilis.telemetry import record_adapter_used
+
+
+# Fingerprinting is deliberately capped: provenance collection must not turn a
+# large or growing executable into an unbounded I/O or memory operation.
+_EXECUTABLE_HASH_MAX_BYTES = 64 * 1024 * 1024
+_EXECUTABLE_HASH_CHUNK_BYTES = 64 * 1024
 
 
 @dataclass
@@ -126,9 +134,16 @@ class CLIActionProducer:
             str(raw_invocation.command).encode()
         ).hexdigest()
 
-        # Look up tool in registry for provenance
+        # Description hashes remain the legacy provenance channel for non-CLI
+        # producers. CLI entries carry a separately persisted content baseline.
         entry = self._registry.lookup(tool_name)
-        description_hash = entry.description_hash if entry else None
+        is_cli_content_entry = entry and entry.content_fingerprint_status is not None
+        description_hash = entry.description_hash if entry and not is_cli_content_entry else None
+        content_fingerprint = (
+            self._content_fingerprint(raw_invocation.command[0])
+            if is_cli_content_entry and raw_invocation.command
+            else None
+        )
 
         # Collect DC codes from config
         dc_codes: list[str] = []
@@ -149,6 +164,7 @@ class CLIActionProducer:
             tool=ToolInfo(
                 name=tool_name,
                 description_hash=description_hash,
+                content_fingerprint=content_fingerprint,
             ),
             parameters=ActionParameters(
                 raw=raw_params,
@@ -166,14 +182,20 @@ class CLIActionProducer:
     def compute_tool_hash(self, tool_identifier: str) -> str:
         """Compute provenance hash for a CLI tool.
 
-        Uses the tool's resolved path + version output.
-        Detects both binary swaps (path change) and updates (version bump).
+        Uses the tool's resolved path and executable content without running it.
+        Missing or unreadable tools are still hashed so policy evaluation remains
+        the first execution boundary.
         """
         tool_path = shutil.which(tool_identifier)
-        version_output = self._get_version_output(tool_identifier)
+        content_hash = self._get_executable_content_hash(tool_path)
 
-        hash_input = f"{tool_path or tool_identifier}:{version_output or 'no-version'}"
+        hash_input = f"{tool_path or tool_identifier}:{content_hash}"
         return hashlib.sha256(hash_input.encode()).hexdigest()
+
+    def _content_fingerprint(self, tool_identifier: str) -> str | None:
+        """Return current bounded binary bytes, or None when unavailable."""
+        content_hash = self._get_executable_content_hash(shutil.which(tool_identifier))
+        return None if content_hash == "unavailable" else content_hash
 
     def register_tools(self, registry: ToolRegistry) -> list[str]:
         """Register CLI tools from config allowlist.
@@ -195,11 +217,16 @@ class CLIActionProducer:
                 bare_name = bare_name[4:]
 
             cli_name = f"cli:{bare_name}"
-            tool_hash = self.compute_tool_hash(bare_name)
+            content_fingerprint = self._content_fingerprint(bare_name)
             registry.register(
                 ToolEntry(
                     name=cli_name,
-                    description_hash=tool_hash,
+                    content_fingerprint=content_fingerprint,
+                    content_fingerprint_status=(
+                        ContentFingerprintStatus.AVAILABLE
+                        if content_fingerprint is not None
+                        else ContentFingerprintStatus.UNAVAILABLE
+                    ),
                     status=ToolStatus.APPROVED,
                     approved_by="config",
                 )
@@ -216,13 +243,18 @@ class CLIActionProducer:
         """
         if self._registry.lookup(tool_name) is not None:
             return
-        bare_name = command[0] if command else "unknown"
-        tool_hash = self.compute_tool_hash(os.path.basename(bare_name))
+        tool_identifier = command[0] if command else "unknown"
+        content_fingerprint = self._content_fingerprint(tool_identifier)
         status = self._resolve_initial_status(tool_name)
         self._registry.register(
             ToolEntry(
                 name=tool_name,
-                description_hash=tool_hash,
+                content_fingerprint=content_fingerprint,
+                content_fingerprint_status=(
+                    ContentFingerprintStatus.AVAILABLE
+                    if content_fingerprint is not None
+                    else ContentFingerprintStatus.UNAVAILABLE
+                ),
                 status=status,
                 approved_by="config" if status == ToolStatus.APPROVED else None,
             )
@@ -328,18 +360,51 @@ class CLIActionProducer:
         return f"cli:{base}"
 
     @staticmethod
-    def _get_version_output(tool_name: str) -> str | None:
-        """Attempt to get version output from a CLI tool."""
-        for flag in ["--version", "-V", "version"]:
-            try:
-                result = subprocess.run(
-                    [tool_name, flag],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    return result.stdout.strip()
-            except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-                continue
-        return None
+    def _get_executable_content_hash(tool_path: str | None) -> str:
+        """Return a bounded content digest without executing the resolved tool.
+
+        Only stable regular files at most 64 MiB are fingerprinted. All other
+        cases return ``"unavailable"`` rather than a claimed content digest.
+        """
+        if tool_path is None:
+            return "unavailable"
+
+        descriptor: int | None = None
+        digest = hashlib.sha256()
+        try:
+            flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_CLOEXEC", 0)
+            descriptor = os.open(tool_path, flags)
+            initial = os.fstat(descriptor)
+            if not stat.S_ISREG(initial.st_mode) or initial.st_size > _EXECUTABLE_HASH_MAX_BYTES:
+                return "unavailable"
+
+            remaining = initial.st_size
+            while remaining:
+                chunk = os.read(descriptor, min(_EXECUTABLE_HASH_CHUNK_BYTES, remaining))
+                if not chunk:
+                    return "unavailable"
+                digest.update(chunk)
+                remaining -= len(chunk)
+
+            final = os.fstat(descriptor)
+            if (
+                final.st_dev,
+                final.st_ino,
+                final.st_size,
+                final.st_mtime_ns,
+                final.st_ctime_ns,
+            ) != (
+                initial.st_dev,
+                initial.st_ino,
+                initial.st_size,
+                initial.st_mtime_ns,
+                initial.st_ctime_ns,
+            ):
+                return "unavailable"
+        except OSError:
+            return "unavailable"
+        finally:
+            if descriptor is not None:
+                with suppress(OSError):
+                    os.close(descriptor)
+        return digest.hexdigest()

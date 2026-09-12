@@ -35,6 +35,8 @@ parses the JSON schema directly.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import contextlib
 import hashlib
 import json
@@ -49,13 +51,8 @@ from ancilis.engine.result import ControlResult, EvaluationResult
 
 
 def _resolve_mapping_path() -> Path:
-    """Locate ``shared/mappings/datadog-llm-aksi-controls.json`` by walking upward."""
-    here = Path(__file__).resolve()
-    for ancestor in here.parents:
-        candidate = ancestor / "shared" / "mappings" / "datadog-llm-aksi-controls.json"
-        if candidate.exists():
-            return candidate
-    return here.parents[4] / "shared" / "mappings" / "datadog-llm-aksi-controls.json"
+    """Resolve the mapping from this installation or its exact source checkout."""
+    return shared_path("mappings", 'datadog-llm-aksi-controls.json')
 
 
 _MAPPING_PATH = _resolve_mapping_path()

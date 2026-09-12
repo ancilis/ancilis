@@ -1,0 +1,100 @@
+---
+title: "Episode capture"
+description: "Attach functions, inspect observations and coverage, and export an episode from Python or TypeScript."
+---
+
+The unreleased episode API gives an application one owner for explicit capture and lifecycle. Attach an existing function, run it in an episode context, then inspect observations, relationships, revisions and coverage. These APIs are present in the release candidate source; they are not a promise that the currently published package contains them.
+
+Capture is advisory and stored in memory. It preserves the function's result and error, and reports capture failures separately. Keep an existing enforcement producer or middleware when you need its pre-call policy decision. Creating an episode does not enable enforcement, a durable queue, a reconstruction service or a semantic model.
+
+## Python
+
+```python
+from ancilis import Ancilis, CaptureFrame, CaptureResult, ContentEvidence
+
+document = b"A synthetic document for this example."
+
+def read_document() -> bytes:
+    return document
+
+def capture(frame: CaptureFrame) -> CaptureResult:
+    if frame.phase == "END" and frame.error is None:
+        return CaptureResult(artifacts=(ContentEvidence.from_bytes(
+            "document", frame.result, role="INPUT", access_scope="example"
+        ),))
+    return CaptureResult()
+
+with Ancilis("example-tenant", "application") as sdk:
+    read = sdk.attach_tool(
+        read_document, name="read-document", surface="document",
+        operation="READ", capture=capture,
+    )
+    with sdk.episode("episode-1", expected_surfaces=("document", "memory")) as episode:
+        assert read() is document
+    snapshot = episode.inspect().to_dict()
+    print(snapshot["coverage"])
+    print(sdk.diagnostics().to_dict())
+```
+
+## TypeScript
+
+The same example runs as an ES module on Node 20 or 22. TypeScript can infer its types from the public package declarations.
+
+```typescript
+import { Ancilis, ContentEvidence } from "ancilis";
+
+const document = new TextEncoder().encode("A synthetic document for this example.");
+const sdk = Ancilis.open({ tenant: "example-tenant", source: "application" });
+try {
+  const read = sdk.attachTool(() => document, {
+    name: "read-document", surface: "document", operation: "READ",
+    capture(frame) {
+      if (frame.phase !== "END" || frame.error !== undefined) return {};
+      if (!(frame.result instanceof Uint8Array)) throw new TypeError("Expected bytes");
+      return { artifacts: [ContentEvidence.fromBytes("document", frame.result, {
+        role: "INPUT", accessScope: "example",
+      })] };
+    },
+  });
+  const episode = sdk.episode("episode-1", {
+    expectedSurfaces: ["document", "memory"],
+  }, episode => {
+    if (read() !== document) throw new Error("Unexpected application result");
+    return episode;
+  });
+  console.log(episode.inspect().coverage);
+  console.log(sdk.diagnostics());
+} finally {
+  await sdk.close();
+}
+```
+
+These examples deliberately expect a memory surface without attaching one. The coverage output identifies that missing surface. Attach and actually call the appropriate memory operation to collect its evidence; changing an expected set is not proof that missing work was observed. The callback captures only a content reference. The application owns the protected bytes and authorizes their later retrieval.
+
+## Attachment and context
+
+`attach_tool` / `attachTool` supports explicit `document`, `tool`, `execution`, `memory` and `output` surfaces. The supported operation vocabulary is `REQUEST`, `READ`, `EXECUTE`, `WRITE` and `RECEIVE`. A surface or operation name describes the attached application function; it does not establish system-wide interception or actual semantic use.
+
+`attach_mcp` / `attachMcp` returns a structural client adapter. Supply an explicit tool-name mapping to surface and operation, and use the returned adapter for calls. Python intercepts `call_tool`; TypeScript intercepts `callTool`. Merely detecting an installed framework or creating an unused producer does not capture activity. Reusing an identical attachment is idempotent; incompatible options are rejected. The complete mapping and capacity are checked before tool registrations are added.
+
+Python context managers and Node callbacks isolate nested and concurrent episode contexts. Use `bind_episode(fn, episode)` / `bindEpisode(fn, episode)` for an explicit executor or event boundary. Python thread pools need this binding or deliberate context propagation. Episode identity is application-assigned correlation, not independently reconstructed membership. A handle belongs to its SDK owner; another owner's handle is rejected.
+
+Capture callbacks are synchronous and explicitly return references and relationships. Arbitrary results are not recursively serialized. Streaming records represent observed chunks and termination; consult the [capability limits](/sdk/episode-capabilities) before using custom iterables or relying on abandonment cleanup.
+
+## Inspect, verify and retain
+
+`episode.inspect()` returns a detached snapshot: Python uses `.to_dict()`, TypeScript returns the document directly. It retains native observations, revision history and coverage. A new observation can create a later revision; inspection does not establish an authoritative global latest head. Relationships distinguish their asserted or observed basis and do not automatically propagate classifications.
+
+Use [signed episodes](/signed-episodes) to export with an application-owned key and verify against independently provisioned trust. Required body retrieval verifies digest and byte length under the caller's access checks. An unsigned integrity result remains `UNVERIFIED`; successful signing does not create classification, reconstruction or control-operation claims.
+
+Use [classification providers and history](/classification-providers) for an explicitly configured trusted adapter. Positive rows are `ADAPTER_ATTESTED`. Experimental semantic proposals remain `UNQUALIFIED` and cannot replace unresolved trusted outcomes. The candidate does not include a deployable GE gateway or qualified semantic classifier.
+
+`flush()` reports `MEMORY_ONLY`, admitted/lost counts and `durable: 0`; TypeScript awaits it. It does not persist or send an update. `close()` is idempotent, finishes owned episode capture and deactivates attachments; Python also offers async context/close APIs. It does not cancel application work or close the wrapped callable/client. Export data you need before discarding an episode or ending the process. A crash loses this in-memory ledger.
+
+## Migrate an existing integration
+
+Existing `Engine`, producer and middleware APIs remain available. Keep their configured audit/enforce behavior, evidence stores and caller-owned resources. Add episode capture around the application operation whose evidence you need, with one attachment per surface and deliberate content selection. Do not replace an enforcement wrapper with advisory attachment and assume the policy decision is preserved.
+
+Python's new `Ancilis(tenant, source)` owns native capture. TypeScript uses `Ancilis.open({tenant, source})`; existing `Ancilis.load(...).tool(...).call(...)` continues to serve its configured legacy evaluation path. The two entry points have different resource and enforcement behavior. Their output contracts are documented separately in the [Python](/sdk/python) and [TypeScript](/sdk/typescript) references.
+
+The [capability matrix](/sdk/episode-capabilities) lists the common contract and material differences. The runnable signing and classification examples linked from those guides use public imports and explicitly synthetic trust; they do not demonstrate a production middleware deployment.

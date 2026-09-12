@@ -58,6 +58,8 @@ JSON parser.
 
 from __future__ import annotations
 
+from ancilis._shared import shared_path
+
 import fnmatch  # noqa: F401  (parity with sarif.py — pattern matching reserved for future glob mappings)
 import hashlib
 import json
@@ -71,13 +73,8 @@ from typing import Any
 from ancilis.engine.result import ControlResult, EvaluationResult
 
 
-# Path to the shared mapping table. This file lives at:
-#   <repo>/python/src/ancilis/importers/snyk.py
-# so five .parent traversals reach the repo root containing shared/.
-_MAPPING_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "shared" / "mappings" / "snyk-aksi-controls.json"
-)
+# Packaged shared assets, with an exact-checkout fallback for development.
+_MAPPING_PATH = shared_path("mappings", 'snyk-aksi-controls.json')
 
 _CONTROL_NAMES: dict[str, str] = {
     "PR-01": "Prompt Injection Prevention",

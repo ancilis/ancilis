@@ -6,10 +6,18 @@ export enum ToolStatus {
   BLOCKED = "blocked",
 }
 
+export enum ContentFingerprintStatus {
+  AVAILABLE = "available",
+  UNAVAILABLE = "unavailable",
+}
+
 export interface ToolEntry {
   name: string;
   version?: string | null;
   descriptionHash?: string | null;
+  /** Undefined preserves legacy description-only provenance producers. */
+  contentFingerprint?: string | null;
+  contentFingerprintStatus?: ContentFingerprintStatus | null;
   status: ToolStatus;
   approvedBy?: string | null;
   firstSeen: string;
