@@ -81,6 +81,9 @@ jobs:
 
   release_gate:
     name: Verify approved release commit
+    # Configure protection before any tag push; the name alone grants no protection.
+    environment:
+      name: pypi
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

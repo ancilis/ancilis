@@ -61,10 +61,12 @@ jobs:
         run: npm run security:audit
         working-directory: scan-action
       - run: npx vitest run
+      - name: Build the TypeScript package
+        run: npm run build
       - name: Pack verified tarball
         run: |
           mkdir -p release-artifacts
-          npm pack --json --pack-destination release-artifacts > release-artifacts/pack.json
+          npm pack --ignore-scripts --json --pack-destination release-artifacts > release-artifacts/pack.json
       - name: Smoke test verified tarball
         run: |
           TARBALL=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; const [{ filename }] = JSON.parse(readFileSync('release-artifacts/pack.json', 'utf8')); console.log(filename);")
@@ -92,6 +94,9 @@ jobs:
 
   release_gate:
     name: Verify approved release commit
+    # Configure protection before any tag push; the name alone grants no protection.
+    environment:
+      name: npm
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

@@ -143,6 +143,9 @@ jobs:
           npm init -y
           npm install "$OLDPWD/$TARBALL"
           npm install "typescript@$TSC_VERSION" "@types/node@$NODE_TYPES_VERSION"
+          node --version
+          npm --version
+          npx tsc --version
           # Verify type exports compile under strict mode
           cat > check.mts <<'EOF'
           import type { Engine, AncilisMiddleware, EvidenceStore, ReportGenerator } from 'ancilis';

@@ -191,6 +191,7 @@ def test_publish_routes_are_push_only_and_have_no_verification_secrets():
         assert "release_gate" in job["needs"]
         assert workflow["concurrency"]["cancel-in-progress"] is False
         gate = workflow["jobs"]["release_gate"]
+        assert gate["environment"]["name"] == job["environment"]["name"]
         assert all(v == "read" for v in gate["permissions"].values())
         for jname, j in workflow["jobs"].items():
             if jname != jobname:

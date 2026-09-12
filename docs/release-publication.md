@@ -49,7 +49,10 @@ access. GitHub's full branch-protection endpoint requires administration read;
 the ordinary workflow token must not be assumed to provide it. Missing or
 inaccessible credentials stop verification. Never supply a write-enabled or
 administrative bypass token as a shortcut. The workflow's own token has only
-read permissions in that job. Token values are not included in evidence.
+read permissions in that job. Token values are not included in evidence. Each gate uses its publishing
+environment (`pypi` or `npm`); scope the policy credential to that protected
+environment and verify its policy before a tag push. This source declaration
+does not configure remote protection.
 
 The gate enforces at least one approval and the eight current required CI
 contexts. It also respects a larger live approval count and additional checks.
@@ -91,3 +94,7 @@ References: [GitHub branch protection API](https://docs.github.com/en/rest/branc
 [PR reviews API](https://docs.github.com/en/rest/pulls/reviews),
 [check runs API](https://docs.github.com/en/rest/checks/runs),
 and [npm provenance](https://docs.npmjs.com/generating-provenance-statements/).
+
+`scripts/publish.sh` is a legacy manual twine upload helper. It does not enforce
+these gates and is not the approved route for this launch. Do not use it to
+work around a failed workflow or an unresolved release prerequisite.
