@@ -39,8 +39,11 @@ function hasRun(stepList: WorkflowStep[], expected: string, workingDirectory?: s
   });
 }
 
-function indexOfRun(stepList: WorkflowStep[], expected: string): number {
-  return stepList.findIndex((step) => step.run?.includes(expected));
+function indexOfRun(stepList: WorkflowStep[], expected: string, workingDirectory?: string): number {
+  return stepList.findIndex((step) =>
+    (workingDirectory === undefined || step["working-directory"] === workingDirectory) &&
+    (step.run?.includes(expected) ?? false),
+  );
 }
 
 describe("release dependency security gates", () => {
@@ -68,13 +71,18 @@ describe("release dependency security gates", () => {
 
   it("runs TypeScript release audits before packing the published tarball", () => {
     const verifyReleaseSteps = steps(readWorkflow("release-typescript.yml"), "verify_typescript_release");
-    const packVerifiedTarballIndex = indexOfRun(verifyReleaseSteps, "npm pack --json --pack-destination release-artifacts");
+    const packVerifiedTarballIndex = indexOfRun(verifyReleaseSteps, "npm pack --ignore-scripts --json --pack-destination release-artifacts");
 
     expect(packVerifiedTarballIndex).toBeGreaterThan(0);
     expect(indexOfRun(verifyReleaseSteps, "npm run security:audit:npm")).toBeGreaterThanOrEqual(0);
     expect(indexOfRun(verifyReleaseSteps, "npm run security:audit:npm")).toBeLessThan(packVerifiedTarballIndex);
     expect(hasRun(verifyReleaseSteps, "npm ci --include=dev", "scan-action")).toBe(true);
-    expect(indexOfRun(verifyReleaseSteps, "npm run security:audit")).toBeLessThan(packVerifiedTarballIndex);
+    const scanAuditIndex = indexOfRun(verifyReleaseSteps, "npm run security:audit", "scan-action");
+    expect(scanAuditIndex).toBeGreaterThanOrEqual(0);
+    expect(scanAuditIndex).toBeLessThan(packVerifiedTarballIndex);
+    const buildIndex = indexOfRun(verifyReleaseSteps, "npm run build");
+    expect(buildIndex).toBeGreaterThanOrEqual(0);
+    expect(buildIndex).toBeLessThan(packVerifiedTarballIndex);
 
     const buildSteps = steps(readWorkflow("ts-sdk-release.yml"), "build");
     const packTarballIndex = indexOfRun(buildSteps, "npm pack --json --pack-destination release-dist");
@@ -83,7 +91,9 @@ describe("release dependency security gates", () => {
     expect(indexOfRun(buildSteps, "npm run security:audit:npm")).toBeGreaterThanOrEqual(0);
     expect(indexOfRun(buildSteps, "npm run security:audit:npm")).toBeLessThan(packTarballIndex);
     expect(hasRun(buildSteps, "npm ci --include=dev", "scan-action")).toBe(true);
-    expect(indexOfRun(buildSteps, "npm run security:audit")).toBeLessThan(packTarballIndex);
+    const legacyScanAuditIndex = indexOfRun(buildSteps, "npm run security:audit", "scan-action");
+    expect(legacyScanAuditIndex).toBeGreaterThanOrEqual(0);
+    expect(legacyScanAuditIndex).toBeLessThan(packTarballIndex);
   });
 
   it("audits requirements-lock.txt during Python release verification", () => {

@@ -93,7 +93,7 @@ describe("publish configuration", () => {
     expect(pkg.scripts?.prepublishOnly).toBe("npm run build && npm test && node scripts/ts_package_smoke.mjs");
   });
 
-  it("ships a dedicated npm release workflow with OIDC provenance publishing", () => {
+  it("scopes token-based npm publication and provenance to the gated publish job", () => {
     const workflow = parseYaml(
       readFileSync(join(process.cwd(), ".github", "workflows", "release-typescript.yml"), "utf-8"),
     ) as {
@@ -104,17 +104,18 @@ describe("publish configuration", () => {
         string,
         {
           needs?: string | string[];
-          steps?: Array<{ uses?: string; run?: string }>;
+          if?: string;
+          permissions?: Record<string, string>;
+          environment?: { name: string };
+          env?: Record<string, string>;
+          steps?: Array<{ uses?: string; run?: string; if?: string; env?: Record<string, string> }>;
         }
       >;
     };
 
     expect(workflow.name).toBe("Release TypeScript");
     expect(workflow.on?.push?.tags).toContain("v*");
-    expect(workflow.permissions).toMatchObject({
-      contents: "read",
-      "id-token": "write",
-    });
+    expect(workflow.permissions).toEqual({ contents: "read" });
 
     const verifyJob = workflow.jobs?.verify_typescript_release;
     expect(verifyJob).toBeDefined();
@@ -124,7 +125,15 @@ describe("publish configuration", () => {
     expect(verifyRuns.some((run) => run.includes("ts_package_smoke.mjs"))).toBe(true);
 
     const publishJob = workflow.jobs?.publish_typescript;
-    expect(publishJob?.needs).toBe("verify_typescript_release");
+    expect(new Set(publishJob?.needs)).toEqual(new Set(["verify_typescript_release", "release_gate"]));
+    expect(publishJob?.if).toBe("github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')");
+    expect(publishJob?.permissions).toEqual({ contents: "read", "id-token": "write" });
+    const gateJob = workflow.jobs?.release_gate;
+    expect(gateJob?.permissions).toEqual({ contents: "read", "pull-requests": "read", checks: "read" });
+    expect(publishJob?.environment?.name).toBe("npm");
+    expect(gateJob?.environment?.name).toBe(publishJob?.environment?.name);
+    expect(JSON.stringify(verifyJob)).not.toContain("NPM_TOKEN");
+    expect(JSON.stringify(gateJob)).not.toContain("NPM_TOKEN");
     const publishRuns = publishJob?.steps?.flatMap((step) => (step.run ? [step.run] : [])) ?? [];
     expect(publishRuns.some((run) => run.includes("npm publish") && run.includes("--provenance"))).toBe(true);
   });
@@ -136,7 +145,8 @@ describe("publish configuration", () => {
       jobs?: Record<
         string,
         {
-          steps?: Array<{ uses?: string; run?: string; env?: Record<string, string> }>;
+          env?: Record<string, string>;
+          steps?: Array<{ uses?: string; run?: string; if?: string; env?: Record<string, string> }>;
         }
       >;
     };
@@ -150,11 +160,13 @@ describe("publish configuration", () => {
     expect(publishUses.some((u) => u.includes("actions/download-artifact@"))).toBe(true);
 
     const publishRuns = publishJob?.steps?.flatMap((step) => (step.run ? [step.run] : [])) ?? [];
-    expect(publishRuns).not.toContain("npm ci");
-    expect(publishRuns).not.toContain("npm run build");
-    expect(publishRuns.some((run) => /npm publish .*\.tgz --provenance/.test(run))).toBe(true);
+    expect(publishRuns.some((run) => /npm (ci|install|pack|run build)\b/.test(run))).toBe(false);
+    expect(publishJob?.env?.MANIFEST_SHA256).toBe("${{ needs.verify_typescript_release.outputs.manifest_sha256 }}");
+    expect(publishRuns.some((run) => run.includes("scripts/release_manifest.py registry") && run.includes('--digest "$MANIFEST_SHA256"'))).toBe(true);
 
     const publishStep = publishJob?.steps?.find((step) => step.run?.includes("npm publish"));
+    expect(publishStep?.run).toBe('npm publish "release-artifacts/ancilis-${VERSION}.tgz" --ignore-scripts --provenance --access public');
+    expect(publishStep?.if).toBe("steps.registry.outputs.state == 'absent'");
     expect(publishStep?.env).toMatchObject({
       NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}",
     });
